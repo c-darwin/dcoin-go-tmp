@@ -27,6 +27,11 @@ import (
 	"reflect"
 	"regexp"
 	//"fmt"
+	"os"
+	"net/http"
+	"io"
+	"time"
+	"log"
 )
 const (
 	DB_USER     = "postgres"
@@ -45,6 +50,26 @@ type prevBlockType struct {
 //var db *sql.DB
 //var err error
 
+func Sleep(sec float64) {
+	time.Sleep(time.Duration(sec) * 1000 * time.Millisecond)
+}
+
+func Round(f float64, places int) (float64) {
+	if places==0 {
+		return math.Floor(f + .5)
+	} else {
+		shift := math.Pow(10, float64(places))
+		return math.Floor((f * shift)+.5) / shift;
+	}
+}
+
+func UpdDaemonTime(name string) {
+
+}
+
+func CheckDaemonRestart(name string) bool {
+	return false
+}
 
 // функция проверки входящих данных
 func CheckInputData(data, dataType string) bool {
@@ -77,6 +102,25 @@ func StrToInt(s string) int {
 	return int_
 }
 
+func DownloadToFile(url, file string) (int64, error) {
+	out, err := os.Create(file)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	countBytes, err := io.Copy(out, resp.Body)
+	if err != nil {
+		return countBytes, err
+	}
+	return countBytes, nil
+}
 func CheckErr(err error) {
 	if err != nil {
 		panic(fmt.Sprintf("%s", err))
@@ -390,6 +434,10 @@ func Int64ToStr(num int64) string {
 	return strconv.FormatInt(num, 10)
 }
 
+func IntToStr(num int) string {
+	return strconv.Itoa(num)
+}
+
 func BinToHex(bin string) string {
 	return fmt.Sprintf("%x", bin)
 }
@@ -514,4 +562,21 @@ func MerkleTreeRoot(dataArray []string) string {
 	}
 	result_ := result[int32(len(result)-1)];
 	return result_[0]
+}
+
+func DbConnect(configIni map[string]string) *DCDB {
+	DB_CONNECT:
+		db, err := NewDbConnect(configIni)
+		if err != nil {
+			Sleep(1)
+			goto DB_CONNECT
+		}
+		return db
+}
+
+func DbClose(c *DCDB) {
+	err := c.Close()
+	if err != nil {
+		log.Print(err)
+	}
 }

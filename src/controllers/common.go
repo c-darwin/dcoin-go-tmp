@@ -17,7 +17,7 @@ import (
 	"unicode"
 	"os"
 	"io/ioutil"
-	"bindatastatic"
+	"static"
 )
 
 type Controller struct {
@@ -71,7 +71,7 @@ DB_NAME=`)
 
 	globalLangReadOnly = make(map[int]map[string]string)
 	for _, v := range consts.LangMap{
-		data, err := bindatastatic.Asset(fmt.Sprintf("static/lang/%d.ini", v))
+		data, err := static.Asset(fmt.Sprintf("static/lang/%d.ini", v))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -92,6 +92,7 @@ func CallController(c *Controller, name string)  (string, error) {
 	a := []rune(name)
 	a[0] = unicode.ToUpper(a[0])
 	name = string(a)
+	fmt.Println("Controller", name)
 	return CallMethod(c, name)
 }
 
@@ -251,7 +252,14 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dbInit {
-		c.DCDB, _ = utils.NewDbConnect(configIni)
+		var err error
+		c.DCDB, err = utils.NewDbConnect(configIni)
+		if err != nil {
+			log.Print(err)
+			dbInit = false
+		} else {
+			defer c.DCDB.Close()
+		}
 	}
 
 	lang:=GetLang(w, r)
@@ -268,6 +276,8 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(html))
 }
+
+
 
 func Content(w http.ResponseWriter, r *http.Request) {
 
@@ -286,20 +296,36 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	var lastBlockTime int64
 
 	dbInit := false;
-	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
+	if len(configIni["db_user"]) > 0 || (configIni["db_type"]=="sqlite") {
 		dbInit = true
 	}
 
 	if dbInit {
 		var err error
-		//fmt.Println(configIni["db_user"])
-		c.DCDB, _ = utils.NewDbConnect(configIni)
-		installProgress, err = c.DCDB.Single("SELECT progress FROM install")
-		if err!=nil {
+		c.DCDB, err = utils.NewDbConnect(configIni)
+		if err != nil {
+			log.Print(err)
+			dbInit = false
+		} else {
+			defer utils.DbClose(c.DCDB)
+			//defer c.DCDB.Close()
+		}
+		// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
+		_, err = c.DCDB.Single("SELECT progress FROM install")
+		if err != nil {
+			fmt.Println(err)
+			dbInit = false
+		}
+	}
+
+	if dbInit {
+		var err error
+		installProgress, err := c.DCDB.Single("SELECT progress FROM install")
+		if err != nil {
 			log.Print(err)
 		}
 		firstLoadBlockchain, err = c.DCDB.Single("SELECT first_load_blockchain FROM config")
-		if err!=nil {
+		if err != nil {
 			log.Print(err)
 		}
 
@@ -341,6 +367,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tplName = "install_step_0" // самый первый запуск
 	}
+	fmt.Println("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
 
 	var communityUsers []int64
 	var err error
@@ -350,7 +377,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 		}
 	}
-	fmt.Println(err)
+
+
+	fmt.Println("dbInit", dbInit)
 	// идет загрузка блокчейна
 	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*2) && firstLoadBlockchain!="" {
 		if len(communityUsers) > 0 {
@@ -362,12 +391,12 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			if sessUserId != utils.StrToInt64(poolAdminUserId) {
 				tplName = "updating_blockchain"
 			}
+		} else {
+			tplName = "updating_blockchain"
 		}
-	} else {
-		tplName = "updating_blockchain"
 	}
 
-	fmt.Println("tplName",tplName)
+	fmt.Println("tplName2=",tplName)
 
 	// кол-во ключей=подписей у юзера
 	countSign := 0
@@ -396,7 +425,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
-		userPublicKey, err := c.DCDB.GetUserPublicKey2(userId);
+		userPublicKey, err := c.DCDB.GetUserPublicKey(userId);
 		if err != nil {
 			log.Print(err)
 		}

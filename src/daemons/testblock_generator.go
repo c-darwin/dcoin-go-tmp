@@ -17,51 +17,79 @@ import (
 	"os"
 	"errors"
 	"utils"
+	"log"
    // "github.com/alyu/configparser"
 	//"io/ioutil"
     //"github.com/astaxie/beego/config"
 )
 
-/*type DCDB struct {
-    *DCDB
-}*/
 
-//var db *sql.DB
 var err error
 
 func Testblock_generator(configIni map[string]string) {
 
-    db, _ := utils.NewDbConnect(configIni)
-	defer db.Close()
+    db := utils.DbConnect(configIni)
+
+    // Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
+    INSTALL:
+    progress, err := db.Single("SELECT progress FROM install")
+    if err != nil || progress != "complete" {
+        utils.Sleep(1)
+        goto INSTALL
+    }
 
     BEGIN:
 	for {
 
-        //DbLock()
-        blockId := db.GetBlockId();
+        db.DbLock()
+
+        blockId, err := db.GetBlockId()
+		if err != nil {
+            db.DbUnlock()
+			log.Print(err)
+            utils.Sleep(1)
+            continue BEGIN
+        }
         newBlockId := blockId + 1;
         fmt.Println(newBlockId, "newBlockId")
-        testBlockId := db.GetTestBlockId()
+        testBlockId, err := db.GetTestBlockId()
+        if err != nil {
+            db.DbUnlock()
+            log.Print(err)
+            utils.Sleep(1)
+            continue BEGIN
+        }
         fmt.Println(testBlockId, "testBlockId")
 
-        if db.GetMyLocalGateIp() != "" {
-            db.DbUnlock();
-            time.Sleep(5000 * time.Millisecond)
-            continue;
+        if x, err := db.GetMyLocalGateIp(); x!="" {
+            if err != nil {
+                log.Print(err)
+			}
+            log.Print("continue")
+            db.DbUnlock()
+            utils.Sleep(1)
+            continue BEGIN
         }
 
         if testBlockId==newBlockId {
-            db.DbUnlock();
-            time.Sleep(1000 * time.Millisecond)
+            db.DbUnlock()
+            log.Print(err)
+            utils.Sleep(1)
             continue
         }
 
-        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange := db.TestBlock();
+        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
+        if err != nil {
+            db.DbUnlock()
+            log.Print(err)
+            utils.Sleep(1)
+            continue BEGIN
+        }
         fmt.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId==0 {
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
 			continue
 		}
 
@@ -114,7 +142,13 @@ func Testblock_generator(configIni map[string]string) {
 		 * */
         db.DbLock();
 
-        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange = db.TestBlock();
+        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
+		if err != nil {
+			log.Print(err)
+            db.DbUnlock()
+            utils.Sleep(1)
+            continue
+		}
         fmt.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
         // сколько прошло сек с момента генерации прошлого блока
         diff = time.Now().Unix() - prevBlock.Time;
@@ -318,6 +352,10 @@ func Testblock_generator(configIni map[string]string) {
         // ############################################
 
         db.DbUnlock();
+
+		// в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
+        db.Close()
+        db = utils.DbConnect(configIni)
 
         time.Sleep(3000 * time.Millisecond)
 		break

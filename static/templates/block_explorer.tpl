@@ -89,4 +89,4 @@ if ($tpl['block_id']) {
 ?>
 <?php echo $tpl['data']?>
 
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

@@ -153,4 +153,4 @@ if (isset($tpl['actualization_promised_amounts']))
 		//$('#promised_amount_list').stacktable();
 	});
 </script>
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

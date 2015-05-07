@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	//"github.com/astaxie/beego/config"
 	"consts"
+//	"os"
 )
 
 type DCDB struct {
@@ -24,9 +25,10 @@ func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 	var err error
 	switch configIni["db_type"] {
 	case "sqlite":
+
 		db, err = sql.Open("sqlite3", "./litedb.db")
 		if err!=nil {
-			return &DCDB{}, nil
+			return &DCDB{}, err
 		}
 		ddl := `
 				PRAGMA automatic_index = ON;
@@ -45,10 +47,17 @@ func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 				PRAGMA encoding = "UTF-8";
 				`
 		_, err = db.Exec(ddl);
+		if err != nil {
+			db.Close()
+			return &DCDB{}, err
+		}
 	case "postgresql":
-		db, _ = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		if err != nil {
+			return &DCDB{}, err
+		}
 	}
-	//fmt.Println("db", db)
+
 	return &DCDB{db, configIni}, err
 }
 /*
@@ -62,10 +71,17 @@ func (db *DCDB) DbConnect() {
 	//}
 	//return db
 }*/
+
+func (db *DCDB) GetMainLockName() (string, error) {
+	name, err := db.Single("SELECT script_name FROM main_lock")
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
 func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	var result []byte
-	//fmt.Println("query", query)
-	//fmt.Println("db", db)
 	err := db.QueryRow(query, args...).Scan(&result)
 	switch {
 	case err == sql.ErrNoRows:
@@ -357,8 +373,23 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 	return result, nil
 }
 
+func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
+	result, err := db.Single("SELECT pool_admin_user_id FROM config")
+	if err != nil {
+		return 0, ErrInfo(err)
+	}
+	return StrToInt64(result), nil
+}
 
-func (db *DCDB) GetUserPublicKey2(userId int64) (string, error) {
+func (db *DCDB) GetMyPublicKey(myPrefix string) (string, error) {
+	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys")
+	if err != nil {
+		return "", ErrInfo(err)
+	}
+	return result, nil
+}
+
+func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
 	result, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = $1", userId)
 	if err != nil {
 		return "", ErrInfo(err)
@@ -377,10 +408,20 @@ func (db *DCDB) GetNodePrivateKey(myPrefix string) string {
 	return key
 }
 
-func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]int64) {
+func (db *DCDB) GetNodeConfig() (map[string]string, error) {
+	var result map[string]string
+	result, err := db.OneRow("SELECT * FROM config")
+	if err != nil{
+		return result, ErrInfo(err)
+	}
+	return result, nil
+}
+
+func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]int64, error) {
 
 	var minerId, userId, level, i, currentMinerId, currentUserId int64;
-
+	prevBlock := new(prevBlockType)
+	var levelsRange [][][]int64
 	// последний успешно записанный блок
 	rows, err := db.Query(`
             SELECT LOWER(encode(hash, 'hex')),
@@ -390,25 +431,23 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
             level
             FROM info_block
             `)
+
 	defer rows.Close()
-	CheckErr(err)
-	prevBlock := new(prevBlockType)
+
 	if  ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)
-		CheckErr(err)
+		if err!= nil {
+			return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+		}
 	}
 	//fmt.Println("prevBlock", prevBlock)
 
 	// общее кол-во майнеров
-	rows, err = db.Query("SELECT max(miner_id) FROM miners")
-	defer rows.Close()
-	CheckErr(err)
-	var maxMinerId int64
-	if  ok := rows.Next(); ok {
-		// если ошибка, то maxMinerId просто будет равно 0
-		rows.Scan(&maxMinerId)
+	row, err := db.Single("SELECT max(miner_id) FROM miners")
+	if err != nil {
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 	}
-	//fmt.Println("maxMinerId", maxMinerId)
+	maxMinerId := StrToInt64(row)
 
 	for currentUserId == 0 {
 		// если майнера заморозили то у него исчезает miner_id, чтобы не попасть на такой пустой miner_id
@@ -438,29 +477,24 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy);
 
 		// получим ID юзера по его miner_id
-		rows, err = db.Query("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10))
-		defer rows.Close()
-		CheckErr(err)
-
-		if  ok := rows.Next(); ok {
-			var cur string;
-			err = rows.Scan(&cur)
-			CheckErr(err)
-			currentUserId, err = strconv.ParseInt(cur, 0, 64)
-			CheckErr(err)
+		row, err = db.Single("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10))
+		if err != nil {
+			return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 		}
-		//fmt.Println("currentUserId0=", currentUserId)
+		currentUserId = StrToInt64(row)
 		i++;
 	}
 
 	collective, err := db.GetMyUsersIds(true)
-	//fmt.Println("collective", collective)
+	if err != nil {
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+	}
 
 	// в сингл-моде будет только $my_miners_ids[0]
-	myMinersIds := db.GetMyMinersIds(collective);
-	//fmt.Println("myMinersIds", myMinersIds)
-
-	var levelsRange [][][]int64
+	myMinersIds, err := db.GetMyMinersIds(collective);
+	if err != nil {
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+	}
 
 	// есть ли кто-то из нашего пула (или сингл-мода), кто находится на 0-м уровне
 	if InSliceInt64(currentMinerId, myMinersIds) {
@@ -478,8 +512,10 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		}
 	}
 	err = db.QueryRow("SELECT user_id FROM miners_data WHERE miner_id = $1", 1).Scan(&userId)
-	CheckErr(err)
-	return prevBlock, userId, minerId, currentUserId, level, levelsRange
+	if err != nil {
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+	}
+	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
 }
 
 func  (db *DCDB) GetSleepData() map[string][]int64 {
@@ -493,18 +529,22 @@ func  (db *DCDB) GetSleepData() map[string][]int64 {
 }
 
 
-func  (db *DCDB) GetMyMinersIds(collective []int64) []int64 {
+func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 	var miners []int64
 	rows, err := db.Query("SELECT miner_id FROM miners_data WHERE user_id IN ($1) AND miner_id > 0", strings.Join(SliceInt64ToString(collective), ","))
+	if err != nil {
+		return miners, err
+	}
 	defer rows.Close()
-	CheckErr(err)
 	for rows.Next() {
 		var minerId int64
 		err = rows.Scan(&minerId)
-		CheckErr(err)
+		if err != nil {
+			return miners, err
+		}
 		miners = append(miners, minerId);
 	}
-	return miners;
+	return miners, nil;
 }
 
 func (db *DCDB) GetConfirmedBlockId() (int64, error) {
@@ -513,11 +553,13 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 		return 0, err
 	}
 	if localGateIp!="" {
-		return db.GetBlockId(), nil
+		blockId, err := db.GetBlockId()
+		if err != nil {
+			return 0, err
+		}
+		return blockId, nil
 	} else {
 		result, err := db.Single("SELECT max(block_id) FROM confirmations WHERE good >= $1", consts.MIN_CONFIRMED_NODES)
-		log.Print("result",result)
-		log.Print("err",err)
 		if err != nil {
 			return 0, err
 		}
@@ -545,10 +587,10 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 	var users []int64
 	rows, err := db.Query("SELECT user_id FROM community")
-	defer rows.Close()
 	if err != nil {
 		return users, ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var userId int64
 		err = rows.Scan(&userId)
@@ -567,12 +609,16 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 	}
 	if len(usersIds) == 0 { // сингл-мод
 		rows, err := db.Query("SELECT user_id FROM my_table")
+		if err != nil {
+			return usersIds, err
+		}
 		defer rows.Close()
-		CheckErr(err)
 		if  ok := rows.Next(); ok {
 			var x int64;
 			err = rows.Scan(&x)
-			CheckErr(err)
+			if err != nil {
+				return usersIds, err
+			}
 			usersIds = append(usersIds, x)
 		}
 	} else{
@@ -581,29 +627,41 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 		if checkCommission {
 			// комиссия на пуле
 			rows, err := db.Query("SELECT commission FROM config")
+			if err != nil {
+				return usersIds, err
+			}
 			defer rows.Close()
-			CheckErr(err)
 			if  ok := rows.Next(); ok {
 				var commissionJson []byte;
 				err = rows.Scan(&commissionJson)
-				CheckErr(err)
+				if err != nil {
+					return usersIds, err
+				}
 
 				var commissionPoolMap map[string][]float64
 				err := json.Unmarshal(commissionJson, &commissionPoolMap)
-				CheckErr(err)
+				if err != nil {
+					return usersIds, err
+				}
 
 				rows, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
+				if err != nil {
+					return usersIds, err
+				}
 				defer rows.Close()
-				CheckErr(err)
 				if  ok := rows.Next(); ok {
 					var uid int64;
 					var commJson []byte;
 					err = rows.Scan(&uid, &commJson)
-					CheckErr(err)
+					if err != nil {
+						return usersIds, err
+					}
 
 					var commissionUserMap map[string][]float64
 					err := json.Unmarshal(commJson, &commissionUserMap)
-					CheckErr(err)
+					if err != nil {
+						return usersIds, err
+					}
 
 					for currencyId, Commissions := range commissionUserMap {
 
@@ -620,43 +678,67 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 	return usersIds, nil;
 }
 
-func (db *DCDB) GetBlockId() int64 {
-	rows, err := db.Query("SELECT block_id FROM info_block")
-	defer rows.Close()
-	CheckErr(err)
-	if  ok := rows.Next(); ok {
-		var block_id int64
-		err = rows.Scan(&block_id)
-		CheckErr(err)
-		return block_id
+func (db *DCDB) GetBlockId() (int64, error) {
+	blockId, err := db.Single("SELECT block_id FROM info_block")
+	if err != nil {
+		return 0, err
 	}
-	return 0
+	return StrToInt64(blockId), nil
 }
 
-func (db *DCDB) GetTestBlockId() int64 {
+func (db *DCDB) GetInfoBlock() (map[string]string, error) {
+	var result map[string]string
+	result, err := db.OneRow("SELECT * FROM info_block")
+	if err != nil{
+		return result, ErrInfo(err)
+	}
+	return result, nil
+}
+
+func (db *DCDB) GetTestBlockId() (int64, error) {
 	rows, err := db.Query("SELECT block_id FROM testblock")
+	if err != nil {
+		return 0, err
+	}
 	defer rows.Close()
-	CheckErr(err)
 	if  ok := rows.Next(); ok {
 		var block_id int64
 		err = rows.Scan(&block_id)
-		CheckErr(err)
-		return block_id
+		if err != nil {
+			return 0, err
+		}
+		return block_id, nil
 	}
-	return 0
+	return 0, nil
 }
 
-func (db *DCDB) GetMyLocalGateIp() string {
-	rows, err := db.Query("SELECT local_gate_ip FROM config")
-	defer rows.Close()
-	CheckErr(err)
-	if  ok := rows.Next(); ok {
-		var localGateIp string
-		err = rows.Scan(&localGateIp)
-		CheckErr(err)
-		return localGateIp
+func (db *DCDB) GetMyPrefix() (string, error) {
+	collective, err := db.GetCommunityUsers()
+	if err != nil {
+		return "", ErrInfo(err)
 	}
-	return ""
+	if len(collective) == 0 {
+		return "", nil
+	} else {
+		myUserId, err := db.GetPoolAdminUserId()
+		if err != nil || myUserId == 0  {
+			if err != nil {
+				return "", ErrInfo(err)
+			} else {
+				return "", fmt.Errorf("myUserId==0")
+			}
+		}
+		return Int64ToStr(myUserId)+"_", nil
+	}
+}
+
+
+func (db *DCDB) GetMyLocalGateIp() (string, error) {
+	result, err := db.Single("SELECT local_gate_ip FROM config")
+	if err != nil {
+		return "", err
+	}
+	return result, nil
 }
 
 func (db *DCDB) DbLock() {

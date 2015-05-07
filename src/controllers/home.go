@@ -7,7 +7,7 @@ import (
 	"html/template"
 	//"bufio"
 	"bytes"
-	"bindatastatic"
+	"static"
 )
 
 type page struct {
@@ -17,7 +17,7 @@ type page struct {
 
 func (p *Controller) Home() (string, error) {
 	fmt.Println("Home1")
-	data, err := bindatastatic.Asset("static/templates/home.html")
+	data, err := static.Asset("static/templates/home.html")
 	t := template.New("template")
 	t, err = t.Parse(string(data))
 	if err!=nil{

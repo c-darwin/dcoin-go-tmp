@@ -247,4 +247,4 @@ $( "#main_div select").width(100);
 
 </div>
 <?php echo $tpl['last_tx_formatted']?>
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

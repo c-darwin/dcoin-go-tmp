@@ -1,7 +1,7 @@
 package main
 import (
 	"fmt"
-	"schema"
+	//"schema"
 	//"encoding/binary"
 	//"bytes"
 	//"encoding/hex"
@@ -33,16 +33,24 @@ import (
 	//"reflect"
 	"github.com/astaxie/beego/config"
     "github.com/elazarl/go-bindata-assetfs"
-	"bindatastatic"
+	"static"
 	_ "github.com/mattn/go-sqlite3"
 	//"runtime"
 //	"database/sql"
 	//"os/exec"
 	"io/ioutil"
+	"schema"
+	//"utils"
+	//"time"
 )
 
 var configIni map[string]string
 func main() {
+
+	if _, err := os.Stat("public"); os.IsNotExist(err) {
+		os.Mkdir("public", 0755)
+	}
+
 /*
 	t := time.Unix(time.Now().Unix(), 0)
 	fmt.Println(t.Format("2006-01-02 15:04:05"))
@@ -72,7 +80,9 @@ func main() {
 	//fmt.Println(langIni.String())
 */
 	//fmt.Println(xx)
-	schema.GetSchema("sqlite")
+	schema := schema.GetSchema("sqlite", 555555)
+	fmt.Println("schema", schema)
+
 	// читаем config.ini
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
 		fmt.Println("NO")
@@ -107,9 +117,11 @@ DB_NAME=`)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 
+	//go daemons.BlocksCollection(configIni)
 	if len(os.Args)>1 {
 		// запускаем всех демонов
 		go daemons.Testblock_generator(configIni)
+		go daemons.BlocksCollection(configIni)
 		go daemons.Testblock_is_ready()
 	}
 	// включаем листинг TCP-сервером и обработку входящих запросов
@@ -117,9 +129,9 @@ DB_NAME=`)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
 	http.HandleFunc("/content", controllers.Content)
-	http.HandleFunc("/ajax", controllers.Ajax)
+	//http.HandleFunc("/ajax", controllers.Ajax)
 
-	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: bindatastatic.Asset, AssetDir: bindatastatic.AssetDir, Prefix: ""}))
+	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 /*
 fmt.Println(runtime.GOOS)
 switch runtime.GOOS {

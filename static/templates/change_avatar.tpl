@@ -88,4 +88,4 @@ check_key_and_show_modal();
 
 	<?php require_once( 'signatures.tpl' );?>
 
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

@@ -32,10 +32,10 @@ function map_navigate (page) {
 function user_photo_navigate (page) {
 
     $('#wrapper').spin();
-    $.getScript("js/jquery.webcam.as3.js", function(){
+    $.getScript("static/js/jquery.webcam.as3.js", function(){
 
                 $( "#dc_content" ).load( "content.php", { tpl_name: page }, function() {
-                    $.getScript("js/sAS3Cam.js", function(){
+                    $.getScript("static/js/sAS3Cam.js", function(){
                         $('#wrapper').spin(false);
                     });
                 });
@@ -61,10 +61,10 @@ function user_webcam_navigate (page) {
 }
 
 function load_menu() {
-    $( "#dc_menu" ).load( "ajax/menu.php", { }, function() {
+    $( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
        // $( "#dc_content" ).load( "content.php", { }, function() {
-            $.getScript("js/plugins/metisMenu/metisMenu.min.js", function(){
-                $.getScript("js/sb-admin.js");
+            $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function(){
+                $.getScript("static/js/sb-admin.js");
             });
         //});
     });
@@ -89,8 +89,8 @@ function login_ok (result) {
 
             $( "#dc_menu" ).load( "ajax/menu.php", { }, function() {
                 $( "#dc_content" ).load( "content.php", { tpl_name: tpl_name}, function() {
-                    $.getScript("js/plugins/metisMenu/metisMenu.min.js", function() {
-                        $.getScript("js/sb-admin.js");
+                    $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function() {
+                        $.getScript("static/js/sb-admin.js");
                         $("#main-login").html('');
                         $("#wrapper").spin(false);
                     });

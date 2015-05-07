@@ -451,4 +451,4 @@ function simple_protection_mode() {
 
 </div>
 
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

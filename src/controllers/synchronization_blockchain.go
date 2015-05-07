@@ -4,34 +4,50 @@ import (
 	//_ "github.com/lib/pq"
 	//"reflect"
 	"fmt"
-	"html/template"
+	//"html/template"
 	//"bufio"
-	"bytes"
+	//"bytes"
+	"time"
+	"utils"
+    "encoding/json"
 )
 
-type synchronization_blockchainStruct struct {
-	Lang map[string]string
-	WaitText string
+type synchronizationBlockchainStruct struct {
+
 }
 
 func (c *Controller) Synchronization_blockchain() (string, error) {
-	fmt.Println("updating_blockchain")
-	t := template.New("template")
-	t, err := t.Parse("1")
+	fmt.Println("Synchronization_blockchain")
+
+	blockData, err:=c.DCDB.GetInfoBlock()
 	if err != nil {
 		return "", err
 	}
-	var waitText string
-	firstLoadBlockchain, err := c.DCDB.Single("SELECT first_load_blockchain FROM config")
-	if err != nil {
-		return "", err
+	blockId := blockData["bock_id"]
+	blockTime := blockData["time"]
+	if len(blockId)==0 {
+		blockId = "0"
 	}
-	if firstLoadBlockchain=="file" {
-		waitText = c.Lang["loading_blockchain_please_wait"]
-	} else {
-		waitText = c.Lang["is_synchronized_with_the_dc_network"]
+	if len(blockTime)==0 {
+		blockTime = "0"
 	}
-	b := new(bytes.Buffer)
-	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText})
-	return b.String(), nil
+
+	// если время более 12 часов от текущего, то выдаем не подвержденные, а просто те, что есть в блокчейне
+	if time.Now().Unix() - utils.StrToInt64(blockData["time"]) < 3600*12  {
+		lastBlockData, err := c.DCDB.GetLastBlockData()
+		if err != nil {
+			return "", err
+		}
+		// если уже почти собрали все блоки
+		if time.Now().Unix() - lastBlockData["lastBlockTime"] < 3600 {
+			blockId = "-1"
+			blockTime = "-1"
+		}
+	}
+
+	result := map[string]string{"block_id": blockId, "block_time": blockTime}
+	resultJ, _ := json.Marshal(result)
+	fmt.Println(string(resultJ))
+
+	return string(resultJ), nil
 }

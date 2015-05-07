@@ -146,4 +146,4 @@
 </div>
 
 <?php require_once( 'signatures.tpl' );?>
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>

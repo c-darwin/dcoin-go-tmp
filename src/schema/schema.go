@@ -7,37 +7,307 @@ import (
 	"utils"
 )
 
-type dbSet struct {
-	mysql string
-	postgresql string
-	sqlite string
-	comment string
-}
 type recmap map[string]interface{}
 type recmapi map[int]interface{}
 type recmap2 map[string]string
 
-func GetSchema(dbType string) string {
-	/*
-	schema:=make(map[string]map[string]map[string]dbSet)
-	schema["log_arbitrator_conditions"] = make(map[string]map[string]dbSet)
-	schema["log_arbitrator_conditions"]["fileds"] = make(map[string]dbSet)
-	schema["log_arbitrator_conditions"]["fileds"]["log_id"].mysql = "bigint(20) unsigned NOT NULL AUTO_INCREMENT"
-	schema["log_arbitrator_conditions"]["fileds"]["log_id"].postgresql = ""
-	schema["log_arbitrator_conditions"]["fileds"]["log_id"].sqlite = "bigint(20) unsigned NOT NULL AUTO_INCREMENT"
-	schema["log_arbitrator_conditions"]["fileds"]["log_id"].comment = ""
+/*type Schema struct {
+	DbType string
+	MyTables bool
+}*/
 
-	schema["log_arbitrator_conditions"]["fileds"]["conditions"].mysql = "text NOT NULL"
-	schema["log_arbitrator_conditions"]["fileds"]["conditions"].postgresql = ""
-	schema["log_arbitrator_conditions"]["fileds"]["conditions"].sqlite = "text NOT NULL"
-	schema["log_arbitrator_conditions"]["fileds"]["conditions"].comment = ""
-
-	//schema["log_arbitrator_conditions"]["table"] = "111111111"
-	fmt.Println(schema)
-	*/
+func GetSchema(dbType string, prefixUserId int) string {
+	var result string
 	s:=make(recmap)
 	s1:=make(recmap)
 	s2:=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"bigint(20) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"bigint NOT NULL  default nextval('[my_prefix]my_cf_funding_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"from_user_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"project_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"amount", "mysql":"decimal(15,2) NOT NULL", "sqlite":"decimal(15,2) NOT NULL","postgresql":"decimal(15,2) NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"del_block_id", "mysql":"int(11) unsigned NOT NULL", "sqlite":"int(11)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Блок, в котором данная транзакция была отменена"}
+	s2[5] = map[string]string{"name":"time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время, когда транзакцию создал юзер"}
+	s2[6] = map[string]string{"name":"block_id", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Блок, в котором данная транзакция была запечатана. При откате блока все транзакции с таким block_id будут удалены"}
+	s2[7] = map[string]string{"name":"comment", "mysql":"text CHARACTER SET utf8 NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": ""}
+	s2[8] = map[string]string{"name":"comment_status", "mysql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'decrypted'","postgresql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = "Нужно чтобы автор проекта мог узнать, кому какие товары отправлять"
+	s["[my_prefix]my_cf_funding"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"type", "mysql":"enum('promised_amount','miner') NOT NULL", "sqlite":"varchar(100)  NOT NULL","postgresql":"enum('promised_amount','miner') NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["comment"] = ""
+	s["[my_prefix]my_tasks"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"user_id", "mysql":"int(10) NOT NULL", "sqlite":"int(10) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"public_key", "mysql":"varbinary(512) NOT NULL", "sqlite":"varbinary(512) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Нужен просто чтобы опознать в блоке зареганного юзера и отметить approved"}
+	s2[3] = map[string]string{"name":"private_key", "mysql":"varchar(3096) NOT NULL", "sqlite":"varchar(3096) NOT NULL","postgresql":"varchar(3096) NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"status", "mysql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s1["fileds"] = s2
+	s1["comment"] = "Чтобы после генерации нового юзера не потерять его приватный ключ можно сохранить его тут"
+	s["[my_prefix]my_new_users"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"int NOT NULL  default nextval('[my_prefix]my_admin_messages_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"parent_id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"subject", "mysql":"varchar(255) CHARACTER SET utf8 NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": "Появляется после расшифровки"}
+	s2[4] = map[string]string{"name":"message", "mysql":"text CHARACTER SET utf8 NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": ""}
+	s2[5] = map[string]string{"name":"message_type", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "0-баг-репорты"}
+	s2[6] = map[string]string{"name":"message_subtype", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[7] = map[string]string{"name":"encrypted", "mysql":"blob NOT NULL", "sqlite":"blob NOT NULL","postgresql":"bytea NOT NULL", "comment": ""}
+	s2[8] = map[string]string{"name":"decrypted", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[9] = map[string]string{"name":"status", "mysql":"enum('approved','my_pending') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('approved','my_pending') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[10] = map[string]string{"name":"type", "mysql":"enum('from_admin','to_admin') NOT NULL DEFAULT 'to_admin'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'to_admin'","postgresql":"enum('from_admin','to_admin') NOT NULL DEFAULT 'to_admin'", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = "Общение с админом, баг-репорты и пр."
+	s["[my_prefix]my_admin_messages"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"tinyint(3) unsigned NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"smallint  NOT NULL  default nextval('[my_prefix]my_promised_amount_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"amount", "mysql":"decimal(13,2) NOT NULL", "sqlite":"decimal(13,2) NOT NULL","postgresql":"decimal(13,2) NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"currency_id", "mysql":"tinyint(3) unsigned NOT NULL", "sqlite":"tinyint(3)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = "Просто показываем, какие данные еще не попали в блоки. Те, что уже попали тут удалены"
+	s["[my_prefix]my_promised_amount"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"bigint(20) unsigned NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"bigint  NOT NULL  default nextval('[my_prefix]my_cash_requests_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"time", "mysql":"int(11) unsigned NOT NULL", "sqlite":"int(11)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время попадания в блок"}
+	s2[3] = map[string]string{"name":"notification", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"to_user_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[5] = map[string]string{"name":"currency_id", "mysql":"tinyint(3) unsigned NOT NULL", "sqlite":"tinyint(3)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": ""}
+	s2[6] = map[string]string{"name":"amount", "mysql":"decimal(13,2) NOT NULL", "sqlite":"decimal(13,2) NOT NULL","postgresql":"decimal(13,2) NOT NULL", "comment": ""}
+	s2[7] = map[string]string{"name":"comment", "mysql":"text CHARACTER SET utf8 NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": ""}
+	s2[8] = map[string]string{"name":"comment_status", "mysql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'decrypted'","postgresql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "comment": ""}
+	s2[9] = map[string]string{"name":"code", "mysql":"varchar(64) NOT NULL", "sqlite":"varchar(64) NOT NULL","postgresql":"varchar(64) NOT NULL", "comment": "Секретный код, который нужно передать тому, кто отдает фиат"}
+	s2[10] = map[string]string{"name":"hash_code", "mysql":"varchar(64) NOT NULL", "sqlite":"varchar(64) NOT NULL","postgresql":"varchar(64) NOT NULL", "comment": ""}
+	s2[11] = map[string]string{"name":"status", "mysql":"enum('my_pending','pending','approved','rejected') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','pending','approved','rejected') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[12] = map[string]string{"name":"cash_request_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = ""
+	s["[my_prefix]my_cash_requests"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"bigint(20) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"bigint NOT NULL  default nextval('[my_prefix]my_dc_transactions_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"status", "mysql":"enum('pending','approved') NOT NULL DEFAULT 'approved'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'approved'","postgresql":"enum('pending','approved') NOT NULL DEFAULT 'approved'", "comment": "pending - только при отправки DC с нашего кошелька, т.к. нужно показать юзеру, что запрос принят"}
+	s2[2] = map[string]string{"name":"notification", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "Уведомления по sms и email"}
+	s2[3] = map[string]string{"name":"type", "mysql":"enum('cash_request','from_mining_id','from_repaid','from_user','node_commission','system_commission','referral','cf_project','cf_project_refund','loan_payment','arbitrator_commission', 'money_back') NOT NULL", "sqlite":"varchar(100) ","postgresql":"enum('cash_request','from_mining_id','from_repaid','from_user','node_commission','system_commission','referral','cf_project','cf_project_refund','loan_payment','arbitrator_commission', 'money_back') NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"type_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[5] = map[string]string{"name":"to_user_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": "Тут не всегда user_id, может быть ID проекта или cash_request"}
+	s2[6] = map[string]string{"name":"amount", "mysql":"decimal(15,2) NOT NULL", "sqlite":"decimal(15,2) NOT NULL","postgresql":"decimal(15,2) NOT NULL", "comment": ""}
+	s2[7] = map[string]string{"name":"commission", "mysql":"decimal(15,2) NOT NULL", "sqlite":"decimal(15,2) NOT NULL","postgresql":"decimal(15,2) NOT NULL", "comment": ""}
+	s2[8] = map[string]string{"name":"del_block_id", "mysql":"int(11) unsigned NOT NULL", "sqlite":"int(11)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Блок, в котором данная транзакция была отменена"}
+	s2[9] = map[string]string{"name":"time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время, когда транзакцию создал юзер"}
+	s2[10] = map[string]string{"name":"block_id", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Блок, в котором данная транзакция была запечатана. При откате блока все транзакции с таким block_id будут удалены"}
+	s2[11] = map[string]string{"name":"currency_id", "mysql":"bigint(20) unsigned NOT NULL", "sqlite":"bigint(20)  NOT NULL","postgresql":"bigint  NOT NULL", "comment": ""}
+	s2[12] = map[string]string{"name":"comment", "mysql":"text CHARACTER SET utf8 NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": "Если это перевод средств между юзерами или это комиссия, то тут будет расшифрованный комментарий"}
+	s2[13] = map[string]string{"name":"comment_status", "mysql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'decrypted'","postgresql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "comment": ""}
+	s2[14] = map[string]string{"name":"merchant_checked", "mysql":"tinyint(1) unsigned NOT NULL", "sqlite":"tinyint(1)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = "Нужно только для отчетов, которые показываются юзеру"
+	s["[my_prefix]my_dc_transactions"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"smallint(6) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"smallint NOT NULL  default nextval('[my_prefix]my_holidays_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"start_time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"end_time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = ""
+	s["[my_prefix]my_holidays"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"int NOT NULL  default nextval('[my_prefix]my_keys_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"notification", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"public_key", "mysql":"varbinary(512) NOT NULL", "sqlite":"varbinary(512) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Нужно для поиска в users"}
+	s2[4] = map[string]string{"name":"private_key", "mysql":"varchar(3096) NOT NULL", "sqlite":"varchar(3096) NOT NULL","postgresql":"varchar(3096) NOT NULL", "comment": "Хранят те, кто не боятся"}
+	s2[5] = map[string]string{"name":"password_hash", "mysql":"varchar(64) NOT NULL", "sqlite":"varchar(64) NOT NULL","postgresql":"varchar(64) NOT NULL", "comment": "Хранят те, кто не боятся"}
+	s2[6] = map[string]string{"name":"status", "mysql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[7] = map[string]string{"name":"my_time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время создания записи"}
+	s2[8] = map[string]string{"name":"time", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время из блока"}
+	s2[9] = map[string]string{"name":"block_id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "Для откатов и определения крайнего"}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = "Ключи для авторизации юзера. Используем крайний"
+	s["[my_prefix]my_keys"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"int NOT NULL  default nextval('[my_prefix]my_node_keys_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name":"add_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "для удаления старых my_pending"}
+	s2[2] = map[string]string{"name":"public_key", "mysql":"varbinary(512) NOT NULL", "sqlite":"varbinary(512) NOT NULL","postgresql":"bytea  NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"private_key", "mysql":"varchar(3096) NOT NULL", "sqlite":"varchar(3096) NOT NULL","postgresql":"varchar(3096) NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"status", "mysql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[5] = map[string]string{"name":"my_time", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "Время создания записи"}
+	s2[6] = map[string]string{"name":"time", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[7] = map[string]string{"name":"block_id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = ""
+	s["[my_prefix]my_node_keys"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"name", "mysql":"varchar(200) NOT NULL", "sqlite":"varchar(200) NOT NULL","postgresql":"varchar(200) NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"email", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"sms", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"sort", "mysql":"tinyint(3) unsigned NOT NULL", "sqlite":"tinyint(3)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": ""}
+	s2[4] = map[string]string{"name":"important", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"name"}
+	s1["comment"] = ""
+	s["[my_prefix]my_notifications"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"last_voting", "mysql":"int(11) unsigned NOT NULL", "sqlite":"int(11)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Время последнего голосования"}
+	s2[1] = map[string]string{"name":"notification", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "Уведомление о том, что со времени последнего голоса прошло более 2 недель"}
+	s1["fileds"] = s2
+	s1["PRIMARY"] = []string{"last_voting"}
+	s1["comment"] = "Нужно только для отсылки уведомлений, что пора голосовать"
+	s["[my_prefix]my_complex_votes"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"user_id", "mysql":"bigint(20) NOT NULL", "sqlite":"bigint(20) NOT NULL","postgresql":"bigint NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"miner_id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"status", "mysql":"enum('bad_key','my_pending','miner','user','passive_miner','suspended_miner') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('bad_key','my_pending','miner','user','passive_miner','suspended_miner') NOT NULL DEFAULT 'my_pending'", "comment": "bad_key - это когда юзер зарегался по чужому ключу, который нашел в паблике, либо если указал старый ключ вместо нового"}
+	s2[3] = map[string]string{"name":"race", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "Раса. От 1 до 3"}
+	s2[4] = map[string]string{"name":"country", "mysql":"tinyint(3) unsigned NOT NULL", "sqlite":"tinyint(3)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": "Используется только локально для проверки майнеров из нужной страны"}
+	s2[5] = map[string]string{"name":"notification_status", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "Уведомления. При смене статуса обнуляется"}
+	s2[6] = map[string]string{"name":"mail_code", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[7] = map[string]string{"name":"login_code", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": "Для подписания при авторизации"}
+	s2[8] = map[string]string{"name":"email", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[9] = map[string]string{"name":"notification_email", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[10] = map[string]string{"name":"host", "mysql":"varchar(255) NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": "Хост юзера, по которому он доступен из вне"}
+	s2[11] = map[string]string{"name":"host_status", "mysql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[12] = map[string]string{"name":"geolocation", "mysql":"varchar(200) NOT NULL", "sqlite":"varchar(200) NOT NULL","postgresql":"varchar(200) NOT NULL", "comment": "Текущее местонахождение майнера"}
+	s2[13] = map[string]string{"name":"geolocation_status", "mysql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'my_pending'","postgresql":"enum('my_pending','approved') NOT NULL DEFAULT 'my_pending'", "comment": ""}
+	s2[14] = map[string]string{"name":"location_country", "mysql":"tinyint(3) unsigned NOT NULL", "sqlite":"tinyint(3)  NOT NULL","postgresql":"smallint  NOT NULL", "comment": ""}
+	s2[15] = map[string]string{"name":"invite", "mysql":"char(128) NOT NULL", "sqlite":"char(128) NOT NULL","postgresql":"char(128) NOT NULL", "comment": ""}
+	s2[16] = map[string]string{"name":"face_coords", "mysql":"varchar(1024) NOT NULL", "sqlite":"varchar(1024) NOT NULL","postgresql":"varchar(1024) NOT NULL", "comment": "Точки, которе юзер нанес на свое фото"}
+	s2[17] = map[string]string{"name":"node_voting_send_request", "mysql":"int(10) unsigned NOT NULL", "sqlite":"int(10)  NOT NULL","postgresql":"int  NOT NULL", "comment": "Когда мы отправили запрос в DC-сеть на присвоение нам статуса \"майнер\""}
+	s2[18] = map[string]string{"name":"profile_coords", "mysql":"varchar(1024) NOT NULL", "sqlite":"varchar(1024) NOT NULL","postgresql":"varchar(1024) NOT NULL", "comment": "Точки, которе юзер нанес на свое фото"}
+	s2[19] = map[string]string{"name":"video_url_id", "mysql":"varchar(255) NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": "Видео, где показывается лицо юзера"}
+	s2[20] = map[string]string{"name":"video_type", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[21] = map[string]string{"name":"lang", "mysql":"char(2) NOT NULL", "sqlite":"char(2) NOT NULL","postgresql":"char(2) NOT NULL", "comment": "Запоминаем язык для юзера"}
+	s2[22] = map[string]string{"name":"use_smtp", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[23] = map[string]string{"name":"smtp_server", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[24] = map[string]string{"name":"smtp_port", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[25] = map[string]string{"name":"smtp_ssl", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[26] = map[string]string{"name":"smtp_auth", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[27] = map[string]string{"name":"smtp_username", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[28] = map[string]string{"name":"smtp_password", "mysql":"varchar(100) NOT NULL", "sqlite":"varchar(100) NOT NULL","postgresql":"varchar(100) NOT NULL", "comment": ""}
+	s2[29] = map[string]string{"name":"miner_pct_id", "mysql":"smallint(5) NOT NULL", "sqlite":"smallint(5) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[30] = map[string]string{"name":"user_pct_id", "mysql":"smallint(5) NOT NULL", "sqlite":"smallint(5) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[31] = map[string]string{"name":"repaid_pct_id", "mysql":"smallint(5) NOT NULL", "sqlite":"smallint(5) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[32] = map[string]string{"name":"api_token_hash", "mysql":"varchar(64) NOT NULL", "sqlite":"varchar(64) NOT NULL","postgresql":"varchar(64) NOT NULL", "comment": ""}
+	s2[33] = map[string]string{"name":"sms_http_get_request", "mysql":"varchar(255) NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": ""}
+	s2[34] = map[string]string{"name":"notification_sms_http_get_request", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[35] = map[string]string{"name":"show_sign_data", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": "Если 0, тогда не показываем данные для подписи, если у юзера только один праймари ключ"}
+	s2[36] = map[string]string{"name":"show_map", "mysql":"tinyint(1) NOT NULL DEFAULT '1'", "sqlite":"tinyint(1) NOT NULL DEFAULT '1'","postgresql":"smallint NOT NULL DEFAULT '1'", "comment": ""}
+	s2[37] = map[string]string{"name":"show_progress_bar", "mysql":"tinyint(1) NOT NULL DEFAULT '1'", "sqlite":"tinyint(1) NOT NULL DEFAULT '1'","postgresql":"smallint NOT NULL DEFAULT '1'", "comment": ""}
+	s2[38] = map[string]string{"name":"hide_first_promised_amount", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[39] = map[string]string{"name":"hide_first_commission", "mysql":"tinyint(1) NOT NULL", "sqlite":"tinyint(1) NOT NULL","postgresql":"smallint NOT NULL", "comment": ""}
+	s2[40] = map[string]string{"name":"shop_secret_key", "mysql":"varchar(255) NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": "Секреный ключ, который используется в cron/shop.php в хэше для проверки данных на callback-е "}
+	s2[41] = map[string]string{"name":"shop_callback_url", "mysql":"varchar(255) NOT NULL", "sqlite":"varchar(255) NOT NULL","postgresql":"varchar(255) NOT NULL", "comment": "Куда скрипт cron/shop.php будет отстукивать"}
+	s2[42] = map[string]string{"name":"uniq", "mysql":"tinyint(1) NOT NULL DEFAULT '1'", "sqlite":"tinyint(1) NOT NULL DEFAULT '1'","postgresql":"smallint NOT NULL DEFAULT '1'", "comment": ""}
+	s1["fileds"] = s2
+	s1["UNIQ"] = []string{"uniq"}
+	s1["comment"] = ""
+	s["[my_prefix]my_table"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"currency_id", "mysql":"int(11) unsigned NOT NULL", "sqlite":"int(11)  NOT NULL","postgresql":"int  NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"pct", "mysql":"float NOT NULL", "sqlite":"float NOT NULL","postgresql":"float NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"min", "mysql":"float NOT NULL", "sqlite":"float NOT NULL","postgresql":"float NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"max", "mysql":"float NOT NULL", "sqlite":"float NOT NULL","postgresql":"float NOT NULL", "comment": ""}
+	s1["fileds"] = s2
+	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
+	s["[my_prefix]my_commission"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"type", "mysql":"enum('miner','promised_amount','arbitrator','seller') NOT NULL", "sqlite":"varchar(100)  NOT NULL","postgresql":"enum('miner','promised_amount','arbitrator','seller') NOT NULL", "comment": ""}
+	s2[1] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
+	s2[2] = map[string]string{"name":"comment", "mysql":"text CHARACTER SET utf8 NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": ""}
+	s2[3] = map[string]string{"name":"comment_status", "mysql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "sqlite":"varchar(100)  NOT NULL DEFAULT 'decrypted'","postgresql":"enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "comment": ""}
+	s1["fileds"] = s2
+	s1["comment"] = "Чтобы было проще понять причину отказов при апгрейде акка или добавлении обещанной суммы. Также сюда пишутся комменты арбитрам и продавцам, когда покупатели запрашивают манибек"
+	s["[my_prefix]my_comments"] = s1
+	result+=printSchema(s, dbType, prefixUserId)
+
+	/*s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s1["fileds"] = s2
+	s1["comment"] = "Чтобы было проще понять причину отказов при апгрейде акка или добавлении обещанной суммы. Также сюда пишутся комменты арбитрам и продавцам, когда покупатели запрашивают манибек"
+	s["[my_prefix]my_notifications"] = s1
+	result+=printSchema(s, dbType, prefixUserId)*/
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
 	s2[0] = map[string]string{"name":"log_id", "mysql":"bigint(20) unsigned NOT NULL AUTO_INCREMENT", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"bigint  NOT NULL  default nextval('log_arbitrator_conditions_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name":"conditions", "mysql":"text NOT NULL", "sqlite":"text NOT NULL","postgresql":"text NOT NULL", "comment": ""}
 	s2[2] = map[string]string{"name":"block_id", "mysql":"int(11) NOT NULL", "sqlite":"int(11) NOT NULL","postgresql":"int NOT NULL", "comment": ""}
@@ -47,7 +317,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitrator_conditions"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -59,7 +329,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["arbitrator_conditions"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -69,7 +339,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_ca"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -79,7 +349,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_seller_hold_back"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -89,7 +359,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_arbitrator_conditions"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -99,7 +369,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_arbitration_trust_list"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -109,7 +379,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_money_back_request"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -120,7 +390,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Список арбитров, кому доверяют юзеры"
 	s["arbitration_trust_list"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -133,7 +403,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitration_trust_list"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -164,7 +434,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["orders"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -185,7 +455,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_orders"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -199,7 +469,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Для вывода статы по рефам"
 	s["referral_stats"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -214,7 +484,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Для удобства незарегенных юзеров на пуле. Показываем им статус их тр-ий"
 	s["transactions_status"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -227,7 +497,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"block_id"}
 	s1["comment"] = "Результаты сверки имеющегося у нас блока с блоками у случайных нодов"
 	s["confirmations"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -237,7 +507,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_key_request"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -247,7 +517,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_key_active"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -258,15 +528,15 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
-	s=make(recmap)
+	/*s=make(recmap)
 	s1=make(recmap)
 	s2=make(recmapi)
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)*/
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -281,7 +551,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -294,7 +564,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["votes_admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -309,7 +579,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -319,7 +589,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_new_credit"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -329,7 +599,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_creditor"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -339,7 +609,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_repayment_credit"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -349,7 +619,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_credit_part"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -377,7 +647,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["credits"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -395,7 +665,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_credits"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -413,7 +683,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Каждому CF-проекту вручную указывается платежные системы"
 	s["cf_projects_ps"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -423,7 +693,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Какие проекты не выводим в CF-каталоге"
 	s["cf_blacklist"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -435,7 +705,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"email"}
 	s1["comment"] = ""
 	s["pool_waiting_list"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -447,15 +717,15 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_lang"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
-	s=make(recmap)
+	/*s=make(recmap)
 	s1=make(recmap)
 	s2=make(recmapi)
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["cf_lang"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)*/
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -465,7 +735,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_user_avatar"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -475,7 +745,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_comments"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -485,7 +755,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_new_cf_project"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -495,7 +765,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_project_data"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -505,7 +775,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_send_dc"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -522,7 +792,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_comments"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -543,7 +813,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_funding"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -557,7 +827,7 @@ func GetSchema(dbType string) string {
 	s1["AI_START"] = "1000"
 	s1["comment"] = ""
 	s["cf_currency"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -586,7 +856,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -610,7 +880,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects_data"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -624,7 +894,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -647,7 +917,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects_data"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -659,7 +929,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Абузы на майнеров от майнеров"
 	s["abuses"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -674,7 +944,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Блог админа"
 	s["admin_blog"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -690,7 +960,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Сообщения от админа, которые выводятся в интерфейсе софта"
 	s["alert_messages"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -703,7 +973,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"id"}
 	s1["comment"] = "Главная таблица. Хранит цепочку блоков"
 	s["block_chain"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -724,7 +994,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Запросы на обмен DC на наличные"
 	s["cash_requests"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -740,7 +1010,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["currency"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -754,7 +1024,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_currency"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -771,7 +1041,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"script"}
 	s1["comment"] = "Демоны"
 	s["daemons"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -826,7 +1096,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Точки по каждому юзеру"
 	s["faces"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -841,7 +1111,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Время, в которое майнер не получает %, т.к. отдыхает"
 	s["holidays"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -856,7 +1126,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Текущий блок, данные из которого мы уже занесли к себе"
 	s["info_block"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -894,7 +1164,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["promised_amount"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -921,7 +1191,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_promised_amount"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -979,7 +1249,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Точки по каждому юзеру"
 	s["log_faces"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1010,7 +1280,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners_data"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1021,7 +1291,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["log_minute"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1037,7 +1307,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_recycle_bin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1055,7 +1325,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_spots_compatibility"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1065,7 +1335,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_actualization"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1075,7 +1345,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "можно создавать только 1 тр-ю с абузами за 24h"
 	s["log_time_abuses"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1085,7 +1355,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_for_repaid_fix"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1095,7 +1365,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_commission"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1105,7 +1375,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Для учета кол-ва запр. на доб. / удал. / изменение promised_amount. Чистим кроном"
 	s["log_time_promised_amount"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1115,7 +1385,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_cash_requests"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1125,7 +1395,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_geolocation"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1135,7 +1405,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_holidays"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1145,7 +1415,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_message_to_admin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1155,7 +1425,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_mining"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1165,7 +1435,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_change_host"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1175,7 +1445,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_new_miner"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1185,7 +1455,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_new_user"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1195,7 +1465,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_node_key"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1205,7 +1475,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_primary_key"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1215,7 +1485,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Храним данные за 1 сутки"
 	s["log_time_votes"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1225,7 +1495,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Лимиты для повторых запросов, за которые голосуют ноды"
 	s["log_time_votes_miners"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1235,7 +1505,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Голоса от нодов"
 	s["log_time_votes_nodes"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1245,7 +1515,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["log_time_votes_complex"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1256,7 +1526,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Храним данные за сутки, чтобы избежать дублей."
 	s["log_transactions"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1285,7 +1555,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_users"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1297,7 +1567,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_variables"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1310,7 +1580,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","type"}
 	s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 	s["log_votes"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1326,7 +1596,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Таблица, где будет браться инфа при откате блока"
 	s["log_wallets"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1338,7 +1608,7 @@ func GetSchema(dbType string) string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Полная блокировка на поступление новых блоков/тр-ий"
 	s["main_lock"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1351,7 +1621,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "miner_id"
 	s1["comment"] = ""
 	s["miners"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1364,7 +1634,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1393,7 +1663,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["miners_data"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1405,7 +1675,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Сюда пишется новая версия, которая загружена в public"
 	s["new_version"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1417,7 +1687,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баним на 1 час тех, кто дает нам данные с ошибками"
 	s["nodes_ban"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1429,7 +1699,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"host"}
 	s1["comment"] = "Ноды, которым шлем данные и от которых принимаем данные"
 	s["nodes_connection"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1446,7 +1716,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "% майнера, юзера. На основе  pct_votes"
 	s["pct"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1462,7 +1732,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "На основе votes_max_promised_amount"
 	s["max_promised_amounts"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1472,7 +1742,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"time"}
 	s1["comment"] = "Время последнего обновления max_other_currencies_time в currency "
 	s["max_other_currencies_time"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1489,7 +1759,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Когда была последняя процедура урезания для конкретной валюты. Чтобы отсчитывать 2 недели до следующей"
 	s["reduction"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1503,7 +1773,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_miner_pct"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1519,7 +1789,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_miner_pct"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1532,7 +1802,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_user_pct"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1547,7 +1817,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_user_pct"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1561,7 +1831,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за уполовинивание денежной массы. Каждые 14 дней пересчет"
 	s["votes_reduction"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1577,7 +1847,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_reduction"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1590,7 +1860,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = ""
 	s["votes_max_promised_amount"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1605,7 +1875,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_promised_amount"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1618,7 +1888,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = ""
 	s["votes_max_other_currencies"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1633,7 +1903,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_other_currencies"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1646,7 +1916,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баллы майнеров, по которым решается - получат они майнерские % или юзерские"
 	s["points"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1661,7 +1931,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_points"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1673,7 +1943,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Статусы юзеров на основе подсчета points"
 	s["points_status"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1686,7 +1956,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"head_hash","hash"}
 	s1["comment"] = "Блоки, которые мы должны забрать у указанных нодов"
 	s["queue_blocks"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1697,7 +1967,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"head_hash"}
 	s1["comment"] = "Очередь на фронтальную проверку соревнующихся блоков"
 	s["queue_testblock"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1710,7 +1980,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Тр-ии, которые мы должны проверить"
 	s["queue_tx"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1723,7 +1993,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["recycle_bin"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1738,7 +2008,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Совместимость текущей версии точек с предыдущими"
 	s["spots_compatibility"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1757,7 +2027,7 @@ func GetSchema(dbType string) string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Нужно на этапе соревнования, у кого меньше хэш"
 	s["testblock"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1769,7 +2039,7 @@ func GetSchema(dbType string) string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["testblock_lock"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1789,7 +2059,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Все незанесенные в блок тр-ии, которые у нас есть"
 	s["transactions"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1806,7 +2076,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Тр-ии, которые используются в текущем testblock"
 	s["transactions_testblock"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1820,7 +2090,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["log_commission"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1832,7 +2102,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["commission"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1860,7 +2130,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "user_id"
 	s1["comment"] = ""
 	s["users"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1872,7 +2142,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"name"}
 	s1["comment"] = ""
 	s["variables"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1891,7 +2161,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Отдел. от miners_data, чтобы гол. шли точно за свежие данные"
 	s["votes_miners"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1905,7 +2175,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Голосвание за рефские %. Каждые 14 дней пересчет"
 	s["votes_referral"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1922,7 +2192,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_referral"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1934,7 +2204,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["referral"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1950,7 +2220,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_referral"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1959,7 +2229,7 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = "Используется только в момент установки"
 	s["install"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1975,7 +2245,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "user_id"
 	s1["comment"] = "У кого сколько какой валюты"
 	s["wallets"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1990,7 +2260,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Суммируем все списания, которые еще не в блоке"
 	s["wallets_buffer"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2010,7 +2280,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["forex_orders"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2027,7 +2297,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Все ордеры, который были затронуты в результате тр-ии"
 	s["log_forex_orders"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2039,7 +2309,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Каждый ордер пишется сюда. При откате любого ордера просто берем последнюю строку отсюда"
 	s["log_forex_orders_main"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2051,7 +2321,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"tx_hash"}
 	s1["comment"] = "В один блок не должно попасть более чем 10 тр-ий перевода средств или создания forex-ордеров на суммы менее эквивалента 0.05-0.1$ по текущему курсу"
 	s["log_time_money_orders"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2075,7 +2345,7 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Эта табла видна только админу"
 	s["_my_admin_messages"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2086,7 +2356,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = ""
 	s["authorization"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2096,7 +2366,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Если не пусто, то работаем в режиме пула"
 	s["community"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2107,7 +2377,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["backup_community"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2119,15 +2389,15 @@ func GetSchema(dbType string) string {
 	s1["AI"] = "id"
 	s1["comment"] = "Для тех, кто не хочет встречаться для обмена кода на наличные"
 	s["payment_systems"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
-	s=make(recmap)
+	/*s=make(recmap)
 	s1=make(recmap)
 	s2=make(recmapi)
 	s1["fileds"] = s2
 	s1["comment"] = "Для тех, кто не хочет встречаться для обмена кода на наличные"
 	s["payment_systems"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)*/
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2138,7 +2408,7 @@ func GetSchema(dbType string) string {
 	s1["PRIMARY"] = []string{"ip"}
 	s1["comment"] = "Защита от случайного ддоса"
 	s["ddos_protection"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2169,21 +2439,13 @@ func GetSchema(dbType string) string {
 	s1["fileds"] = s2
 	s1["comment"] = ""
 	s["config"] = s1
-	printSchema(s, dbType)
+	result+=printSchema(s, dbType, prefixUserId)
 
-
-
-	/*
-		m3["mysql"] = "text NOT NULL"
-		m3["postgresql"] = "text NOT NULL"
-		m2["conditions"]=m3
-		m1["fileds"]=m2
-		m["log_111111111"]=m1*/
-
-	return ""
+	return result
 }
 
-func typeMysql(s recmap) {
+func typeMysql(s recmap, prefixUserId int) string {
+	var result string
 	for table_name, v := range s {
 		fmt.Printf("DROP TABLE IF EXISTS %[1]s; CREATE TABLE IF NOT EXISTS %[1]s (\n", table_name)
 		var tableComment string
@@ -2232,9 +2494,11 @@ func typeMysql(s recmap) {
 		}
 		fmt.Printf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='%s';\n\n", tableComment)
 	}
+	return result
 }
 
-func typePostgresql(s recmap) {
+func typePostgresql(s recmap, prefixUserId int) string {
+	var result string
 	for table_name, v := range s {
 		//var tableComment string
 		primaryKey := ""
@@ -2317,11 +2581,25 @@ func typePostgresql(s recmap) {
 
 		fmt.Println("\n\n")
 	}
+	return result
 }
 
-func typeSqlite(s recmap) {
+func typeSqlite(s recmap, prefixUserId int) string {
+
+	var result string
+
 	for table_name, v := range s {
-		fmt.Printf("DROP TABLE IF EXISTS \"%[1]s\"; CREATE TABLE \"%[1]s\" (\n", table_name)
+
+		r, _ := regexp.Compile(`^\[my_prefix\](.*?)$`)
+		table := r.FindStringSubmatch(table_name)
+		if (len(table) > 1 && prefixUserId == 0) || (len(table) == 0 && prefixUserId > 0) {
+			continue
+		}
+		if len(table) > 1 {
+			table_name = utils.IntToStr(prefixUserId)+"_"+table[1]
+		}
+
+		result+=fmt.Sprintf("DROP TABLE IF EXISTS \"%[1]s\"; CREATE TABLE \"%[1]s\" (\n", table_name)
 		//var tableComment string
 		primaryKey := ""
 		uniqKey := ""
@@ -2364,23 +2642,24 @@ func typeSqlite(s recmap) {
 		//fmt.Println(tableSlice)
 		for i, line:= range tableSlice {
 			if i == len(tableSlice) - 1{
-				fmt.Printf("%s\n", line)
+				result+=fmt.Sprintf("%s\n", line)
 			} else {
-				fmt.Printf("%s,\n", line)
+				result+=fmt.Sprintf("%s,\n", line)
 			}
 		}
-		fmt.Println(");\n\n")
+		result+=fmt.Sprintln(");\n\n")
 	}
+	return result
 }
 
-func printSchema(s recmap, dbType string) {
+func printSchema(s recmap, dbType string, prefixUserId int) string {
 	switch dbType {
 	case "mysql":
-		typeMysql(s)
+		return typeMysql(s, prefixUserId)
 	case "sqlite":
-		typeSqlite(s)
+		return typeSqlite(s, prefixUserId)
 	case "postgresql":
-		typePostgresql(s)
-
+		return typePostgresql(s, prefixUserId)
 	}
+	return ""
 }

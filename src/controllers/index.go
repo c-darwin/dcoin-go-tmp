@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"net/http"
 	"strings"
-	"bindatastatic"
+	"static"
 )
 
 type index struct {
@@ -44,7 +44,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	setLang := r.FormValue("lang")
 
-	data, err := bindatastatic.Asset("static/templates/index.html")
+	data, err := static.Asset("static/templates/index.html")
 	t := template.New("template")
 	t, err = t.Parse(string(data))
 	//t, err := template.Parse("templates/index.html")

@@ -737,4 +737,4 @@ function foattoupper(x) {
 		?>
 
 </script>
-<script src="js/unixtime.js"></script>
+<script src="static/js/unixtime.js"></script>
