@@ -2,6 +2,7 @@ package utils
 import (
 	 "fmt"
 	 _ "github.com/lib/pq"
+     _ "github.com/go-sql-driver/mysql"
 	 "database/sql"
 	"strings"
 	"regexp"
@@ -52,7 +53,16 @@ func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 			return &DCDB{}, err
 		}
 	case "postgresql":
-		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		//fmt.Println(db)
+		//fmt.Println(err)
+		if err != nil {
+			return &DCDB{}, err
+		}
+	case "mysql":
+		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		//fmt.Println("db",db)
+		//fmt.Println(err)
 		if err != nil {
 			return &DCDB{}, err
 		}
@@ -80,6 +90,24 @@ func (db *DCDB) GetMainLockName() (string, error) {
 	return name, nil
 }
 
+func (db *DCDB) GetAllTables() ([]string, error) {
+	var result []string
+	var sql string
+	switch db.configIni["db_type"] {
+	case "sqlite" :
+		sql = "SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'"
+	case "postgresql" :
+		sql = "SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND    table_schema NOT IN ('pg_catalog', 'information_schema')"
+	case "mysql" :
+		sql = "SHOW TABLES"
+	}
+	result, err := db.GetList(sql)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	var result []byte
 	err := db.QueryRow(query, args...).Scan(&result)
@@ -95,6 +123,19 @@ func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	return string(result), nil
 }
 
+func (db *DCDB) GetList(query string, args ...interface{}) ([]string, error) {
+	var result []string
+	all, err := db.GetAll(query, -1, args...)
+	if err != nil {
+		return result, err
+	}
+	for _, v := range all {
+		for _, v2 := range v {
+			result = append(result, v2)
+		}
+	}
+	return result, nil
+}
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[int]map[string]string, error) {
 
@@ -305,7 +346,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	}
 	log.Print("confirmedBlockId", confirmedBlockId)
 	// получим время из последнего подвержденного блока
-	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =$1", confirmedBlockId)
+	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId)
 	if err != nil || len(lastBlockBin)==0 {
 		return result, ErrInfo(err)
 	}
@@ -382,11 +423,37 @@ func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
 }
 
 func (db *DCDB) GetMyPublicKey(myPrefix string) (string, error) {
-	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys")
+	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)")
 	if err != nil {
 		return "", ErrInfo(err)
 	}
 	return result, nil
+}
+
+func (db *DCDB) GetDataAuthorization(hash string) (string, error) {
+	// получим данные для подписи
+	var sql string
+	switch db.configIni["db_type"] {
+	case "sqlite":
+		sql = `SELECT data FROM authorization WHERE hash = $1`
+	case "postgresql":
+		sql = `select data from "authorization" where "hash" = '\x$1'`
+	case "mysql":
+		sql = `SELECT data FROM authorization WHERE hash = 0x$1`
+	}
+	data, err := db.Single(sql, hash)
+	if err != nil {
+		return "", ErrInfo(err)
+	}
+	return data, nil
+}
+
+func (db *DCDB) GetAdminUserId() (int64, error) {
+	result, err := db.Single("SELECT user_id FROM admin")
+	if err != nil {
+		return 0, ErrInfo(err)
+	}
+	return StrToInt64(result), nil
 }
 
 func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
@@ -559,7 +626,7 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 		}
 		return blockId, nil
 	} else {
-		result, err := db.Single("SELECT max(block_id) FROM confirmations WHERE good >= $1", consts.MIN_CONFIRMED_NODES)
+		result, err := db.Single("SELECT max(block_id) FROM confirmations WHERE good >= ?", consts.MIN_CONFIRMED_NODES)
 		if err != nil {
 			return 0, err
 		}
@@ -601,6 +668,15 @@ func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 	}
 	return users, err;
 }
+
+func (db *DCDB) GetMyUsersId(myPrefix string) (int64, error) {
+	userId, err := db.Single("SELECT user_id FROM "+myPrefix+"my_table")
+	if err != nil {
+		return 0, err
+	}
+	return StrToInt64(userId), nil
+}
+
 func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 	var usersIds []int64
 	usersIds, err := db.GetCommunityUsers();
@@ -686,11 +762,48 @@ func (db *DCDB) GetBlockId() (int64, error) {
 	return StrToInt64(blockId), nil
 }
 
+func (db *DCDB) GetUserIdByPublicKey(publicKey string) (string, error) {
+	var sql string
+	switch db.configIni["db_type"] {
+	case "sqlite":
+		sql = `SELECT user_id FROM users WHERE public_key_0 = $1`
+	case "postgresql":
+		sql = `SELECT user_id FROM users WHERE public_key_0 = '\x$1'`
+	case "mysql":
+		sql = `SELECT user_id FROM users WHERE public_key_0 = 0x$1`
+	}
+	userId, err := db.Single(sql, publicKey)
+	if err != nil{
+		return "", ErrInfo(err)
+	}
+	return userId, nil
+}
+
+func (db *DCDB) InsertIntoMyKey(userId, publicKey, curBlockId string) error {
+	var sql string
+	switch db.configIni["db_type"] {
+	case "sqlite":
+		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES ($1,'approved', $2)`
+	case "postgresql":
+		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES ('\x$1','approved', $2)`
+	case "mysql":
+		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES (0x$1,'approved', $2)`
+	}
+	_, err := db.ExecSql(sql, publicKey, curBlockId )
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (db *DCDB) GetInfoBlock() (map[string]string, error) {
 	var result map[string]string
 	result, err := db.OneRow("SELECT * FROM info_block")
 	if err != nil{
 		return result, ErrInfo(err)
+	}
+	if len(result)==0 {
+		return result, fmt.Errorf("empty info_block")
 	}
 	return result, nil
 }

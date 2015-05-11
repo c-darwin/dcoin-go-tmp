@@ -39,7 +39,7 @@ import (
 //	"database/sql"
 	//"os/exec"
 	"io/ioutil"
-	"schema"
+//	"schema"
 	//"utils"
 	//"time"
 )
@@ -80,8 +80,8 @@ func main() {
 	//fmt.Println(langIni.String())
 */
 	//fmt.Println(xx)
-	schema := schema.GetSchema("sqlite", 555555)
-	fmt.Println("schema", schema)
+	//schema := schema.GetSchema("sqlite", 555555)
+	//fmt.Println("schema", schema)
 
 	// читаем config.ini
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -97,9 +97,11 @@ log_tables=
 log_fns=
 sign_hash=ip
 db_type=sqlite
-DB_USER=
-DB_PASSWORD=
-DB_NAME=`)
+db_user=
+db_host=
+db_port=
+db_password=
+db_name=`)
 		ioutil.WriteFile("config.ini", d1, 0644)
 	} else {
 		fmt.Println("YES")
@@ -129,7 +131,7 @@ DB_NAME=`)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
 	http.HandleFunc("/content", controllers.Content)
-	//http.HandleFunc("/ajax", controllers.Ajax)
+	http.HandleFunc("/ajax", controllers.Ajax)
 
 	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 /*

@@ -2,7 +2,7 @@
 function fc_navigate (page, parameters) {
 
     $('#wrapper').spin();
-    $.post("content.php?page="+page, { tpl_name: page, parameters: parameters },
+    $.post("content?page="+page, { tpl_name: page, parameters: parameters },
         function(data) {
             $("#wrapper").spin(false);
             //console.log('$("#wrapper").spin(false)');
@@ -18,7 +18,7 @@ function fc_navigate (page, parameters) {
 function map_navigate (page) {
 
     $('#wrapper').spin();
-    $( "#dc_content" ).load( "content.php", { tpl_name: page }, function() {
+    $( "#dc_content" ).load( "content", { tpl_name: page }, function() {
         $.getScript("https://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize", function(){
             $('#wrapper').spin(false);
         });
@@ -34,7 +34,7 @@ function user_photo_navigate (page) {
     $('#wrapper').spin();
     $.getScript("static/js/jquery.webcam.as3.js", function(){
 
-                $( "#dc_content" ).load( "content.php", { tpl_name: page }, function() {
+                $( "#dc_content" ).load( "content", { tpl_name: page }, function() {
                     $.getScript("static/js/sAS3Cam.js", function(){
                         $('#wrapper').spin(false);
                     });
@@ -52,7 +52,7 @@ function user_photo_navigate (page) {
 function user_webcam_navigate (page) {
 
     $('#wrapper').spin();
-        $( "#dc_content" ).load( "content.php", { tpl_name: page }, function() { });
+        $( "#dc_content" ).load( "content", { tpl_name: page }, function() { });
         $('#wrapper').spin(false);
         window.scrollTo(0,0);
         if ($(".sidebar-collapse").is(":visible") && $(".navbar-toggle").is(":visible")) {
@@ -62,7 +62,7 @@ function user_webcam_navigate (page) {
 
 function load_menu() {
     $( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
-       // $( "#dc_content" ).load( "content.php", { }, function() {
+       // $( "#dc_content" ).load( "content", { }, function() {
             $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function(){
                 $.getScript("static/js/sb-admin.js");
             });
@@ -88,7 +88,7 @@ function login_ok (result) {
                 tpl_name = 'home';
 
             $( "#dc_menu" ).load( "ajax/menu.php", { }, function() {
-                $( "#dc_content" ).load( "content.php", { tpl_name: tpl_name}, function() {
+                $( "#dc_content" ).load( "content", { tpl_name: tpl_name}, function() {
                     $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function() {
                         $.getScript("static/js/sb-admin.js");
                         $("#main-login").html('');
@@ -454,7 +454,7 @@ function doSign_(type, mcrypt_iv) {
     else {
         if (key) {
             // авторизация с ключем и паролем
-            var forsignature = $.getValues("ajax/sign_login.php");
+            var forsignature = $.getValues("ajax?controllerName=sign_login");
             SIGN_LOGIN = true;
         }
         else {
@@ -474,7 +474,7 @@ function doSign_(type, mcrypt_iv) {
 			//$("#wrapper").spin();
 			if (key) {
 				// шлем подпись на сервер на проверку
-				$.post( 'ajax/check_sign.php', {
+				$.post( 'ajax?controllerName=check_sign', {
 							'sign': e_n_sign['hSig'],
 							'n' : e_n_sign['modulus'],
 							'e': e_n_sign['exp']
@@ -490,7 +490,7 @@ function doSign_(type, mcrypt_iv) {
 
 				hash_pass = hex_sha256(hex_sha256(pass));
 				// шлем хэш пароля на проверку и получаем приватный ключ
-				$.post( 'ajax/check_pass.php', {
+				$.post( 'ajax?controllerName=check_pass', {
 							'hash_pass': hash_pass
 						}, function (data) {
 							// залогинились

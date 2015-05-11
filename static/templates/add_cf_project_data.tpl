@@ -65,7 +65,7 @@ $('#send_to_net').bind('click', function () {
 	
 	<div id="change_host">
 
-		<form class="form-horizontal" target="_blank" method="post" action="content.php">
+		<form class="form-horizontal" target="_blank" method="post" action="content">
 			<fieldset>
 
 				<input type="hidden" name="project_id" id="project_id" value="<?php echo $tpl['project_id']?>"><br>

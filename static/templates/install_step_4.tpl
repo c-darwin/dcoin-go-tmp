@@ -50,7 +50,7 @@
 			save_private_key = 0;
 		//}
 
-		$.post( 'content.php', {
+		$.post( 'content', {
 					'tpl_name' : 'install_step_5',
 					'n' : modulus,
 					'e': exp,

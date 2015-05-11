@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	//"crypto/md5"
 	"encoding/hex"
+	"crypto/rsa"
 	//"bufio"
 	//"os"
 	//"errors"
@@ -32,11 +33,10 @@ import (
 	"io"
 	"time"
 	"log"
-)
-const (
-	DB_USER     = "postgres"
-	DB_PASSWORD = "111"
-	DB_NAME     = "postgres"
+	"math/big"
+	"crypto/x509"
+	"encoding/base64"
+	"math/rand"
 )
 
 type prevBlockType struct {
@@ -86,6 +86,12 @@ func CheckInputData(data, dataType string) bool {
 	case "alert":
 		if ok, _ := regexp.MatchString("^[\\pL0-9\\,\\s\\.\\-\\:\\=\\;\\?\\!\\%\\)\\(\\@\\/]{1,512}$", data); ok{
 			return true
+		}
+	case "hex_sign", "hex":
+		if ok, _ := regexp.MatchString("^[0-9a-z]+$", data); ok{
+			if len(data) < 2048 {
+				return true
+			}
 		}
 	}
 
@@ -396,6 +402,9 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 
 func Encode_length(len0 int64) string  {
 	if len0<=127 {
+		if len0%2 > 0 {
+			return fmt.Sprintf("0"+Int64ToStr(len0))
+		}
 		return fmt.Sprintf("%x", len0)
 	}
 	temphex:= fmt.Sprintf("%x", len0)
@@ -421,13 +430,29 @@ func Encode_length(len0 int64) string  {
 	return len_and_t1
 }
 
-func DecToHec(dec int64) string {
+func DecToHex(dec int64) string {
 	return strconv.FormatInt(dec, 16)
 }
 
 func HexToDec(h string) int64 {
 	int64, _ := strconv.ParseInt(h, 16, 0)
 	return int64
+}
+
+func HexToDecBig(hex string) string {
+	i := new(big.Int)
+	i.SetString(hex, 16)
+	return fmt.Sprintf("%d", i)
+}
+
+func DecToHexBig(hex string) string {
+	i := new(big.Int)
+	i.SetString(hex, 10)
+	hex = fmt.Sprintf("%x", i)
+	if len(hex)%2 >0{
+		hex = "0"+hex
+	}
+	return hex
 }
 
 func Int64ToStr(num int64) string {
@@ -438,14 +463,17 @@ func IntToStr(num int) string {
 	return strconv.Itoa(num)
 }
 
-func BinToHex(bin string) string {
+func BinToHex(bin []byte) string {
 	return fmt.Sprintf("%x", bin)
 }
 
 func HexToBin(hex_ string) string {
 	// без проверки на ошибки т.к. эта функция используется только там где валидность была проверена ранее
 	var str []byte
-	str, _ = hex.DecodeString(hex_)
+	str, err := hex.DecodeString(hex_)
+	if err!=nil {
+		fmt.Println(err)
+	}
 	return string(str)
 }
 
@@ -520,11 +548,72 @@ func AllTxParser() {
 
 }
 
+func RandSeq(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	rand.Seed(time.Now().UnixNano())
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func MakeAsn1(hex_n, hex_e string) string {
+	n_ := HexToBin(hex_n)
+	n_ = "02"+Encode_length(int64(len(hex_n))) + hex_n
+	e_ := "02"+Encode_length(int64(len(HexToBin(hex_e)))) + hex_e
+	length := Encode_length(int64(len(HexToBin(n_+e_))))
+	return "30"+length+n_+e_;
+	//b64:=base64.StdEncoding.EncodeToString([]byte(utils.HexToBin("30"+length+bin_enc)))
+	//fmt.Println(b64)
+}
+
+func CheckSign(publicKeys []string, forSign, signs string, nodeKeyOrLogin bool ) (bool, error) {
+	var signsSlice []string
+	// у нода всегда 1 подпись
+	if nodeKeyOrLogin {
+		signsSlice = append(signsSlice, signs)
+	} else {
+		// в 1 signs может быть от 1 до 3-х подписей
+		for {
+			if len(signs)==0 {
+				break
+			}
+			length := DecodeLength(&signs)
+			signsSlice = append(signsSlice, StringShift(&signs, length))
+		}
+		if len(publicKeys) != len(signsSlice) {
+			return false, fmt.Errorf("sign error %d=%d", len(publicKeys), len(signsSlice) )
+		}
+	}
+
+	for i:=0; i<len(publicKeys); i++ {
+		key, _ := base64.StdEncoding.DecodeString(publicKeys[i])
+		re, err := x509.ParsePKIXPublicKey(key)
+		pub := re.(*rsa.PublicKey)
+		if err != nil {
+			return false, err
+		}
+		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), []byte(signsSlice[i]))
+		if err != nil {
+			return false, fmt.Errorf("incorrect sign")
+		}
+	}
+	return true, nil
+}
+
 func HashSha1(msg string) []byte {
 	sh := crypto.SHA1.New()
 	sh.Write([]byte(msg))
 	hash := sh.Sum(nil)
 	return hash
+}
+
+func Md5(msg string) string {
+	sh := crypto.MD5.New()
+	sh.Write([]byte(msg))
+	hash := sh.Sum(nil)
+	return BinToHex(hash)
 }
 
 func DSha256(data []byte) string {

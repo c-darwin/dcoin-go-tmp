@@ -1,4 +1,4 @@
-package static
+package bindatastatic
 
 import (
 	"fmt"
@@ -675,24 +675,6 @@ func static_img_us_ru_png() (*asset, error) {
 func static_js_serpent_js() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/js/Serpent.js"
 	name := "static/js/Serpent.js"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_js_aes_js reads file data from disk. It returns an error on failure.
-func static_js_aes_js() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/js/aes.js"
-	name := "static/js/aes.js"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2813,10 +2795,10 @@ func static_templates_information_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_install_step_0_html reads file data from disk. It returns an error on failure.
-func static_templates_install_step_0_html() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/install_step_0.html"
-	name := "static/templates/install_step_0.html"
+// static_templates_install_step_1_tpl reads file data from disk. It returns an error on failure.
+func static_templates_install_step_1_tpl() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/install_step_1.tpl"
+	name := "static/templates/install_step_1.tpl"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2831,28 +2813,10 @@ func static_templates_install_step_0_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_install_step_1_html reads file data from disk. It returns an error on failure.
-func static_templates_install_step_1_html() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/install_step_1.html"
-	name := "static/templates/install_step_1.html"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_templates_install_step_2_html reads file data from disk. It returns an error on failure.
-func static_templates_install_step_2_html() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/install_step_2.html"
-	name := "static/templates/install_step_2.html"
+// static_templates_install_step_2_tpl reads file data from disk. It returns an error on failure.
+func static_templates_install_step_2_tpl() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/install_step_2.tpl"
+	name := "static/templates/install_step_2.tpl"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2943,6 +2907,24 @@ func static_templates_install_step_5_tpl() (*asset, error) {
 func static_templates_install_step_6_tpl() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/install_step_6.tpl"
 	name := "static/templates/install_step_6.tpl"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_templates_installstep0_html reads file data from disk. It returns an error on failure.
+func static_templates_installstep0_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/installstep0.html"
+	name := "static/templates/installstep0.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3946,7 +3928,6 @@ var _bindata = map[string]func() (*asset, error){
 	"static/img/race.gif": static_img_race_gif,
 	"static/img/us-ru.png": static_img_us_ru_png,
 	"static/js/Serpent.js": static_js_serpent_js,
-	"static/js/aes.js": static_js_aes_js,
 	"static/js/asn1hex-1.1.js": static_js_asn1hex_1_1_js,
 	"static/js/asn1hex-1.1.min.js": static_js_asn1hex_1_1_min_js,
 	"static/js/asn1hex-1.js": static_js_asn1hex_1_js,
@@ -4064,14 +4045,14 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/index.html": static_templates_index_html,
 	"static/templates/index_cf.tpl": static_templates_index_cf_tpl,
 	"static/templates/information.tpl": static_templates_information_tpl,
-	"static/templates/install_step_0.html": static_templates_install_step_0_html,
-	"static/templates/install_step_1.html": static_templates_install_step_1_html,
-	"static/templates/install_step_2.html": static_templates_install_step_2_html,
+	"static/templates/install_step_1.tpl": static_templates_install_step_1_tpl,
+	"static/templates/install_step_2.tpl": static_templates_install_step_2_tpl,
 	"static/templates/install_step_2_1.tpl": static_templates_install_step_2_1_tpl,
 	"static/templates/install_step_3.tpl": static_templates_install_step_3_tpl,
 	"static/templates/install_step_4.tpl": static_templates_install_step_4_tpl,
 	"static/templates/install_step_5.tpl": static_templates_install_step_5_tpl,
 	"static/templates/install_step_6.tpl": static_templates_install_step_6_tpl,
+	"static/templates/installstep0.html": static_templates_installstep0_html,
 	"static/templates/interface.tpl": static_templates_interface_tpl,
 	"static/templates/list_cf_projects.tpl": static_templates_list_cf_projects_tpl,
 	"static/templates/login.html": static_templates_login_html,
@@ -4247,8 +4228,6 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 		}},
 		"js": &_bintree_t{nil, map[string]*_bintree_t{
 			"Serpent.js": &_bintree_t{static_js_serpent_js, map[string]*_bintree_t{
-			}},
-			"aes.js": &_bintree_t{static_js_aes_js, map[string]*_bintree_t{
 			}},
 			"asn1hex-1.1.js": &_bintree_t{static_js_asn1hex_1_1_js, map[string]*_bintree_t{
 			}},
@@ -4492,11 +4471,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"information.tpl": &_bintree_t{static_templates_information_tpl, map[string]*_bintree_t{
 			}},
-			"install_step_0.html": &_bintree_t{static_templates_install_step_0_html, map[string]*_bintree_t{
+			"install_step_1.tpl": &_bintree_t{static_templates_install_step_1_tpl, map[string]*_bintree_t{
 			}},
-			"install_step_1.html": &_bintree_t{static_templates_install_step_1_html, map[string]*_bintree_t{
-			}},
-			"install_step_2.html": &_bintree_t{static_templates_install_step_2_html, map[string]*_bintree_t{
+			"install_step_2.tpl": &_bintree_t{static_templates_install_step_2_tpl, map[string]*_bintree_t{
 			}},
 			"install_step_2_1.tpl": &_bintree_t{static_templates_install_step_2_1_tpl, map[string]*_bintree_t{
 			}},
@@ -4507,6 +4484,8 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			"install_step_5.tpl": &_bintree_t{static_templates_install_step_5_tpl, map[string]*_bintree_t{
 			}},
 			"install_step_6.tpl": &_bintree_t{static_templates_install_step_6_tpl, map[string]*_bintree_t{
+			}},
+			"installstep0.html": &_bintree_t{static_templates_installstep0_html, map[string]*_bintree_t{
 			}},
 			"interface.tpl": &_bintree_t{static_templates_interface_tpl, map[string]*_bintree_t{
 			}},

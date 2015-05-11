@@ -43,7 +43,11 @@ func (c *Controller) Install_step_0() (string, error) {
 	}
 	fmt.Println("res", res)*/
 
-	data, _ := static.Asset("static/templates/install_step_0.html")
+	data, err := static.Asset("static/templates/install_step_0.html")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Println(data)
 	t := template.New("template")
 	t, _ = t.Parse(string(data))
 

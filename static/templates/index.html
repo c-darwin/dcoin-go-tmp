@@ -69,6 +69,7 @@
 		iv=CryptoJS.enc.Hex.parse(Generate_key());
 		//doSign_(type, <?php print json_encode(utf8_encode(mcrypt_create_iv(mcrypt_get_iv_size('rijndael-128', MCRYPT_MODE_ECB), MCRYPT_RAND)))?>);
 		doSign_(type, iv.toString());
+		console.log(iv.toString())
 	}
 </script>
 

@@ -22,6 +22,7 @@ type index struct {
 func Index(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Index")
+	fmt.Println(r.URL.RawQuery)
 
 	lang := GetLang(w, r)
 

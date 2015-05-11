@@ -160,6 +160,12 @@ func GetSessUserId(w http.ResponseWriter, r *http.Request) int64 {
 	return 0
 }
 
+func DelSessResctricted(w http.ResponseWriter, r *http.Request) {
+	sess, _ := globalSessions.SessionStart(w, r)
+	defer sess.SessionRelease(w)
+	sess.Delete("restricted")
+}
+
 func GetSessRestricted(w http.ResponseWriter, r *http.Request) int {
 	sess, _ := globalSessions.SessionStart(w, r)
 	defer sess.SessionRelease(w)
@@ -219,8 +225,11 @@ func CheckLang(lang int) bool {
 }
 func GetLang(w http.ResponseWriter, r *http.Request) int {
 	var lang int = 1
-	if langCookie, err := r.Cookie("lang"); err==nil {
-		lang, _ = strconv.Atoi(langCookie.Value)
+	lang = utils.StrToInt(r.FormValue("parameters[lang]"))
+	if !CheckLang(lang) {
+		if langCookie, err := r.Cookie("lang"); err==nil {
+			lang, _ = strconv.Atoi(langCookie.Value)
+		}
 	}
 	if !CheckLang(lang) {
 		al := r.Header.Get("Accept-Language")  // en-US,en;q=0.5
@@ -246,6 +255,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	defer sess.SessionRelease(w)*/
 
 	c := new(Controller)
+	c.r = r
 	dbInit := false;
 	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
 		dbInit = true
@@ -292,6 +302,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	//sess.Set("user_id", 1212)
 
 	c := new(Controller)
+	c.r = r
 	var installProgress, firstLoadBlockchain string
 	var lastBlockTime int64
 
@@ -345,15 +356,14 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	// если в параметрах пришел язык, то установим его
 	newLang := utils.StrToInt(r.FormValue("parameters[lang]"))
 	if newLang > 0 {
+		fmt.Println("newLang", newLang)
 		SetLang(w, r, newLang)
 	}
-	fmt.Println("Form:", r.Form)
 
 	lang:=GetLang(w, r)
 	fmt.Println("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]
-
 
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист

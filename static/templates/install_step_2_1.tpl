@@ -14,7 +14,7 @@
 
 <script>
 	$('#next').bind('click', function () {
-		$.post( 'content.php', {
+		$.post( 'content', {
 			'tpl_name' : 'install_step_3',
 			'php_path' : $('#php_path').val()
 		}, function (data) { $('#dc_content').html( data ); }, 'html' );

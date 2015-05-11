@@ -33,7 +33,7 @@ $('#send_to_net').bind('click', function () {
 $('#new_cf_project').bind('click', function () {
 
 	$('#wrapper').spin();
-	$( "#dc_content" ).load( "content.php", { tpl_name: "new_cf_project" }, function() {
+	$( "#dc_content" ).load( "content", { tpl_name: "new_cf_project" }, function() {
 		$.getScript("https://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize", function(){
 			$('#wrapper').spin(false);
 		});
