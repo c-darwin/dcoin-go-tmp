@@ -103,6 +103,10 @@ func StrToInt64(s string) int64 {
 	int64, _ := strconv.ParseInt(s, 10, 64)
 	return int64
 }
+func StrToUint64(s string) uint64 {
+	int64, _ := strconv.ParseInt(s, 10, 64)
+	return uint64(int64)
+}
 func StrToInt(s string) int {
 	int_, _ := strconv.Atoi(s)
 	return int_
@@ -477,14 +481,14 @@ func HexToBin(hex_ string) string {
 	return string(str)
 }
 
-func BinToDec(bin []byte) uint32 {
-	var a uint32
+func BinToDec(bin []byte) int64 {
+	var a uint64
 	l := len(bin)
 	for i, b := range bin {
-		shift := uint32((l-i-1) * 8)
-		a |= uint32(b) << shift
+		shift := uint64((l-i-1) * 8)
+		a |= uint64(b) << shift
 	}
-	return a
+	return int64(a)
 }
 /*
 func BinToDec(bin []byte) int64 {
@@ -506,20 +510,34 @@ func StringShift(str *string, index int64) string {
 	return substr
 }
 
-func DecodeLength(str *string) int64 {
-	var str_ string
+
+func BytesShift(str *[]byte, index int64) []byte {
+	var substr []byte
+	var str_ []byte
+	substr = *str
+	substr = substr[0:index]
+	//fmt.Println(substr)
 	str_ = *str
-	length_ := []byte(StringShift(&str_, 1))
+	str_ = str_[index:]
+	*str = str_
+	//fmt.Println(utils.BinToHex(str_))
+	return substr
+}
+
+func DecodeLength(str *[]byte) int64 {
+	var str_ []byte
+	str_ = *str
+	length_ := []byte(BytesShift(&str_, 1))
 	*str = str_
 	length := int64(length_[0])
-	fmt.Println(length)
+	//fmt.Println(length)
 	t1 := (length & 0x80)
 	//fmt.Printf("length&0x80 %x", t1)
 	if t1>0 {
-		fmt.Println("1")
+		//fmt.Println("1")
 		length &= 0x7F;
 		//fmt.Printf("length %x\n", length)
-		temp := StringShift(&str_, length)
+		temp := BytesShift(&str_, length)
 		*str = str_
 		//fmt.Printf("temp %x\n", temp)
 		temp2 := fmt.Sprintf("%08x", temp)
@@ -530,6 +548,7 @@ func DecodeLength(str *string) int64 {
 	}
 	return length
 }
+
 func SleepDiff(sleep *int64, diff int64) {
 	// вычитаем уже прошедшее время
 	if *sleep > diff {
@@ -568,8 +587,8 @@ func MakeAsn1(hex_n, hex_e string) string {
 	//fmt.Println(b64)
 }
 
-func CheckSign(publicKeys []string, forSign, signs string, nodeKeyOrLogin bool ) (bool, error) {
-	var signsSlice []string
+func CheckSign(publicKeys []string, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
+	var signsSlice [][]byte
 	// у нода всегда 1 подпись
 	if nodeKeyOrLogin {
 		signsSlice = append(signsSlice, signs)
@@ -580,7 +599,7 @@ func CheckSign(publicKeys []string, forSign, signs string, nodeKeyOrLogin bool )
 				break
 			}
 			length := DecodeLength(&signs)
-			signsSlice = append(signsSlice, StringShift(&signs, length))
+			signsSlice = append(signsSlice, BytesShift(&signs, length))
 		}
 		if len(publicKeys) != len(signsSlice) {
 			return false, fmt.Errorf("sign error %d=%d", len(publicKeys), len(signsSlice) )
@@ -594,7 +613,7 @@ func CheckSign(publicKeys []string, forSign, signs string, nodeKeyOrLogin bool )
 		if err != nil {
 			return false, err
 		}
-		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), []byte(signsSlice[i]))
+		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
 			return false, fmt.Errorf("incorrect sign")
 		}

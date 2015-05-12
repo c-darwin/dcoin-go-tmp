@@ -27,9 +27,12 @@ func (p *Parser) NewHolidays() (error) {
 		return err
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ := p.GetMyUserId(utils.StrToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.StrToInt64(p.TxMap["user_id"]))
+	if err != nil {
+		return err
+	}
 	//fmt.Println(myUserIds)
-	if utils.StrToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= utils.StrToInt64(p.BlockData["block_id"]) {
+	if utils.StrToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
 		// обновим статус в нашей локальной табле
 		_, err := p.ExecSql("DELETE FROM "+myPrefix+"my_holidays WHERE start_time=$1 AND end_time=$2", p.TxMap["start_time"], p.TxMap["end_time"])
 		if err != nil {

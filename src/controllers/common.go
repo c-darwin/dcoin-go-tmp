@@ -303,7 +303,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c := new(Controller)
 	c.r = r
-	var installProgress, firstLoadBlockchain string
+	var installProgress, configExists string
 	var lastBlockTime int64
 
 	dbInit := false;
@@ -331,11 +331,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	if dbInit {
 		var err error
-		installProgress, err := c.DCDB.Single("SELECT progress FROM install")
+		installProgress, err = c.DCDB.Single("SELECT progress FROM install")
 		if err != nil {
 			log.Print(err)
 		}
-		firstLoadBlockchain, err = c.DCDB.Single("SELECT first_load_blockchain FROM config")
+		configExists, err = c.DCDB.Single("SELECT first_load_blockchain_url FROM config")
 		if err != nil {
 			log.Print(err)
 		}
@@ -347,7 +347,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		//время последнего блока
 		lastBlockTime := blockData["lastBlockTime"]
-		fmt.Println("installProgress", installProgress, "firstLoadBlockchain", firstLoadBlockchain,  "lastBlockTime", lastBlockTime)
+		fmt.Println("installProgress", installProgress, "configExists", configExists,  "lastBlockTime", lastBlockTime)
 	}
 	r.ParseForm()
 	tplName := r.FormValue("tpl_name")
@@ -369,7 +369,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
 		tplName = tplName
-	} else if dbInit && installProgress=="complete" && len(firstLoadBlockchain)==0  {
+	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
 		// первый запуск, еще не загружен блокчейн
 		tplName = "after_install"
 	} else if dbInit && installProgress=="complete" {
@@ -377,6 +377,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tplName = "install_step_0" // самый первый запуск
 	}
+	fmt.Println("dbInit", dbInit, "installProgress", installProgress,  "configExists", configExists)
 	fmt.Println("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
 
 	var communityUsers []int64
@@ -389,9 +390,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 
 
+
+
 	fmt.Println("dbInit", dbInit)
 	// идет загрузка блокчейна
-	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*2) && firstLoadBlockchain!="" {
+	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*2) && len(configExists)>0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
 			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config")

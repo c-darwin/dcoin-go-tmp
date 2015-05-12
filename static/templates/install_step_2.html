@@ -20,15 +20,6 @@
 
 	{{.Lang.install_compete}}<br><br>
 
-	<a href="#" id="show_login" role="button">{{.Lang.login_to_your_account}}</a>
+	<a href="#" role="button" onclick="location.reload();">Next</a>
 
-	{{ template "modal". }}
-
-	<script>
-		$('#myModal').remove();
-		$('#show_login').bind('click', function () {
-			$('#tpl_name').val('home');
-			$('#myModalLogin').modal({ backdrop: 'static' });
-		});
-	</script>
 </div>

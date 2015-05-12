@@ -21,13 +21,28 @@ type DCDB struct {
 	configIni map[string]string
 }
 
+func replQ(q string) string {
+	q1:=strings.Split(q, "?")
+	fmt.Println(q1)
+	result:=""
+	for i:=0; i < len(q1); i++ {
+		if i != len(q1)-1 {
+			result+=q1[i]+"$"+IntToStr(i+1)
+		} else {
+			result+=q1[i]
+		}
+	}
+	return result
+}
+
 func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 	var db *sql.DB
 	var err error
 	switch configIni["db_type"] {
 	case "sqlite":
 
-		db, err = sql.Open("sqlite3", "./litedb.db")
+		fmt.Println("sqlite")
+		db, err = sql.Open("sqlite3", "litedb.db")
 		if err!=nil {
 			return &DCDB{}, err
 		}
@@ -108,7 +123,82 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 	return result, nil
 }
 
+func (db *DCDB) GetAllVariables() (map[string]string, error) {
+	var result map[string]string
+	all, err := db.GetAll("SELECT * FROM variables", -1)
+	if err != nil {
+		return result, err
+	}
+	for _, v := range all {
+		for k2, v2 := range v {
+			result[k2] = v2
+		}
+	}
+	return result, err
+}
+
+func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
+	result, err := db.Single(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return StrToInt64(result), nil
+}
+
+func  parseBlockHeader(binaryBlock *[]byte) (dcparser.BlockData) {
+	// распарсим заголовок блока
+	/*
+	Заголовок (от 143 до 527 байт )
+	TYPE (0-блок, 1-тр-я)        1
+	BLOCK_ID   				       4
+	TIME       					       4
+	USER_ID                         5
+	LEVEL                              1
+	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+	Далее - тело блока (Тр-ии)
+	*/
+}
+/*
+function parse_block_header (&$binary_block)
+{
+
+$block_data['block_id'] = ParseData::binary_dec_string_shift( $binary_block, 4);
+$block_data['time'] = ParseData::binary_dec_string_shift( $binary_block, 4 );
+$block_data['user_id'] = ParseData::binary_dec_string_shift( $binary_block, 5 );
+$block_data['level'] = ParseData::binary_dec_string_shift ( $binary_block, 1 );
+$sign_size = ParseData::decode_length($binary_block);
+$block_data['sign'] = ParseData::string_shift ( $binary_block, $sign_size ) ;
+return $block_data;
+
+}*/
+func (db *DCDB) getBlockDataFromBlockChain(blockId int64) () {
+	err, data = db.OneRow("SELECT * FROM block_chain WHERE id=?", blockId)
+
+}
+
+/*	function get_prev_block($block_id)
+	{
+		if (!$this->prev_block) {
+			$data = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+						SELECT `hash`, `head_hash`, `data`
+						FROM `".DB_PREFIX."block_chain`
+						WHERE `id` = {$block_id}
+						", 'fetch_array' );
+			$binary_data = $data['data'];
+			string_shift ($binary_data, 1 ); // 0 - блок, >0 - тр-ии
+			$this->block_info = parse_block_header($binary_data);
+			$this->block_info['hash'] = bin2hex($data['hash']);
+			$this->block_info['head_hash'] = bin2hex($data['head_hash']);
+		}
+		$this->prev_block = $this->block_info;
+
+	}
+*/
+
 func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
+	if db.configIni["db_type"] == "postgresql" {
+		query = replQ(query)
+	}
 	var result []byte
 	err := db.QueryRow(query, args...).Scan(&result)
 	switch {
@@ -138,7 +228,9 @@ func (db *DCDB) GetList(query string, args ...interface{}) ([]string, error) {
 }
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[int]map[string]string, error) {
-
+	if db.configIni["db_type"] == "postgresql" {
+		query = replQ(query)
+	}
 	result := make(map[int]map[string]string)
 	// Execute the query
 	//fmt.Println("query", query)
@@ -214,6 +306,10 @@ func (db *DCDB) OneRow(query string, args ...interface{}) (map[string]string, er
 }
 
 func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
+	// postgres не понимает ?, надо зменить на $
+	if db.configIni["db_type"] == "postgresql" {
+		query = replQ(query)
+	}
 	res, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
@@ -669,7 +765,7 @@ func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 	return users, err;
 }
 
-func (db *DCDB) GetMyUsersId(myPrefix string) (int64, error) {
+func (db *DCDB) GetMyUserId(myPrefix string) (int64, error) {
 	userId, err := db.Single("SELECT user_id FROM "+myPrefix+"my_table")
 	if err != nil {
 		return 0, err
@@ -854,23 +950,29 @@ func (db *DCDB) GetMyLocalGateIp() (string, error) {
 	return result, nil
 }
 
-func (db *DCDB) DbLock() {
+func (db *DCDB) DbLock() error {
 	var affect int64;
 	for affect==0 {
 		t := time.Now().Unix();
+
 		stmt, err := db.Prepare(`INSERT INTO main_lock(lock_time,script_name)
                                                     VALUES($1,$2)`)
-		CheckErr(err)
+		if err != nil {
+			return err
+		}
 		defer stmt.Close()
 
 		res, err := stmt.Exec(t, "testblock_generator")
 		if fmt.Sprintf("%s", err)=="pq: duplicate key value violates unique constraint \"main_lock_pkey\"" {
-			//fmt.Println(err)
+			fmt.Println(err)
 		} else {
-			CheckErr(err)
+			if err != nil {
+				return err
+			}
 			affect, err = res.RowsAffected()
-			CheckErr(err)
-			//fmt.Println(affect, "rows changed")
+			if err != nil {
+				return err
+			}
 		}
 		defer stmt.Close()
 
@@ -878,13 +980,15 @@ func (db *DCDB) DbLock() {
 			time.Sleep(200 * time.Millisecond)
 		}
 	}
+	return nil
 }
 
-func (db *DCDB) DbUnlock() {
-	rows, err := db.Query("DELETE FROM main_lock WHERE script_name='testblock_generator'")
-	defer rows.Close()
-	CheckErr(err)
-	defer rows.Close()
+func (db *DCDB) DbUnlock(name string) error {
+	_, err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db *DCDB) GetIsReadySleep(level int64) int64 {

@@ -28,7 +28,7 @@ func (c *Controller) Check_sign() (string, error) {
 	fmt.Println(c.r.Form)
 	n := c.r.FormValue("n")
 	e := c.r.FormValue("e")
-	sign := c.r.FormValue("sign")
+	sign := []byte(c.r.FormValue("sign"))
 	if !utils.CheckInputData(n, "hex") {
 		fmt.Println("n", n)
 		return `{"result":"incorrect n"}`, nil
@@ -36,7 +36,7 @@ func (c *Controller) Check_sign() (string, error) {
 	if !utils.CheckInputData(e, "hex") {
 		return `{"result":"incorrect e"}`, nil
 	}
-	if !utils.CheckInputData(sign, "hex_sign") {
+	if !utils.CheckInputData(string(sign), "hex_sign") {
 		return `{"result":"incorrect sign"}`, nil
 	}
 
@@ -173,7 +173,7 @@ func (c *Controller) Check_sign() (string, error) {
 				return "{\"result\":0}", err
 			}
 			fmt.Println("infoBlock", infoBlock)
-			// если последний блок старше 2-х часов
+			// если последний блок не старше 2-х часов
 			if (time.Now().Unix() - utils.StrToInt64(infoBlock["time"])) < 3600*2  {
 				publicKey := utils.MakeAsn1(n, e)
 				userId, err := c.DCDB.GetUserIdByPublicKey(publicKey)
@@ -185,7 +185,7 @@ func (c *Controller) Check_sign() (string, error) {
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					c.DCDB.ExecSql("UPDATE my_table SET user_id=$1, status = 'user'", userId)
+					c.DCDB.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
 				} else {
 					checkError = true
 				}
@@ -216,7 +216,7 @@ func (c *Controller) Check_sign() (string, error) {
 		if checkError {
 			return "{\"result\":0}", nil
 		} else {
-			myUserId, err := c.DCDB.GetMyUsersId("")
+			myUserId, err := c.DCDB.GetMyUserId("")
 			if myUserId==0 {
 				myUserId = -1
 			}
@@ -230,7 +230,7 @@ func (c *Controller) Check_sign() (string, error) {
 			defer sess.SessionRelease(*c.w)
 			sess.Delete("restricted")
 			sess.Set("user_id", myUserId)
-			// если уже пришел блок, в котором зарегат ключ юзера
+			// если уже пришел блок, в котором зареган ключ юзера
 			if (myUserId!=-1) {
 
 				public_key, err := c.DCDB.GetUserPublicKey(myUserId)

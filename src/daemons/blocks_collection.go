@@ -29,8 +29,11 @@ import (
     //"github.com/astaxie/beego/config"
 	"fmt"
 	"os"
-	"bufio"
+	"dcparser"
+//	"bufio"
 )
+
+const mainName = "testblock_generator"
 
 func BlocksCollection(configIni map[string]string) {
 
@@ -68,28 +71,21 @@ func BlocksCollection(configIni map[string]string) {
             utils.Sleep(1)
             continue BEGIN
         }
-        userPublicKey, err:= db.GetMyPublicKey(myPrefix)
+		fmt.Println(myPrefix)
+
+       err = db.DbLock();
         if err != nil {
             log.Print(utils.ErrInfo(err))
             utils.Sleep(1)
             continue BEGIN
         }
-
-        // если это первый запуск во время инсталяции, то нужно дождаться, пока юзер загрузит свой ключ
-        // т.к. возможно этот ключ уже есть в блоках и нужно обновить внутренние таблицы
-        if (len(userPublicKey)==0 && config["first_load_blockchain"]!="file" && config["first_load_blockchain"]!="nodes") {
-            log.Print("continue")
-            utils.Sleep(1)
-            continue BEGIN
-        }
-
-        db.DbLock();
 
         // если это первый запуск во время инсталяции
         currentBlockId, err := db.GetBlockId()
         if err != nil {
             log.Print(utils.ErrInfo(err))
             utils.Sleep(1)
+            db.DbUnlock(mainName);
             continue BEGIN
         }
         if currentBlockId==0 {
@@ -102,6 +98,7 @@ func BlocksCollection(configIni map[string]string) {
                         log.Print(fmt.Sprintf("%v < %v", blockchainSize, consts.BLOCKCHAIN_SIZE))
 					}
                     utils.Sleep(1)
+                    db.DbUnlock(mainName);
                     continue BEGIN
                 }
 			}
@@ -111,6 +108,7 @@ func BlocksCollection(configIni map[string]string) {
             if err != nil {
                 log.Print(utils.ErrInfo(err))
                 utils.Sleep(1)
+                db.DbUnlock(mainName);
                 continue BEGIN
             }
 
@@ -118,37 +116,96 @@ func BlocksCollection(configIni map[string]string) {
             if err != nil {
                 log.Print(utils.ErrInfo(err))
                 utils.Sleep(1)
+                db.DbUnlock(mainName);
+                file.Close()
                 continue BEGIN
             }
 			if stat.Size() < consts.BLOCKCHAIN_SIZE {
                 log.Print(fmt.Sprintf("%v < %v", stat.Size(), consts.BLOCKCHAIN_SIZE))
                 utils.Sleep(1)
+                db.DbUnlock(mainName);
+                file.Close()
                 continue BEGIN
 			}
 
-			// читаем побайтно
-            buf := bufio.NewReader(file)
-            b4, err := buf.Peek(5)
-            if err != nil {
-                log.Print(utils.ErrInfo(err))
+			for {
+                b1 := make([]byte, 5)
+                file.Read(b1)
+                dataSize := utils.BinToDec(b1)
+                fmt.Println("dataSize", dataSize)
+                if dataSize > 0 {
+
+                    data := make([]byte, dataSize)
+                    file.Read(data)
+                    fmt.Printf("data %x\n", data)
+                    blockId := utils.BinToDec(data[0:5])
+                    fmt.Println("blockId", blockId)
+					data2:=data[5:]
+                    length := utils.DecodeLength(&data2)
+                    fmt.Println("length", length)
+                    fmt.Printf("data2 %x\n", data2)
+					blockBin := utils.BytesShift(&data2, length)
+                    fmt.Printf("blockDin %x\n", blockBin)
+
+					// парсинг блока
+                    parser := new(dcparser.Parser)
+                    parser.DCDB = db
+                    parser.BinaryData = blockBin;
+
+                    err = parser.ParseDataFull()
+                    if err != nil {
+                        log.Print(utils.ErrInfo(err))
+                        utils.Sleep(1)
+                        db.DbUnlock(mainName);
+                        file.Close()
+                        continue BEGIN
+					}
+                    // ненужный тут размер в конце блока данных
+                    data = make([]byte, 5)
+                    file.Read(data)
+                }
+				/*
+                // читаем побайтно
+                buf := bufio.NewReader(file)
+                b5, err := buf.Peek(5)
+                if err != nil {
+                    log.Print(utils.ErrInfo(err))
+                    utils.Sleep(1)
+                    db.DbUnlock(mainName);
+                    continue BEGIN
+                }
+                //file.Close()
+                dataSize := utils.BinToDec(b5)
+                fmt.Println(dataSize)
+                if dataSize > 0 {
+                    //buf := bufio.NewReader(file)
+                    data, err := buf.Peek(int(dataSize))
+                    if err != nil {
+                        log.Print(utils.ErrInfo(err))
+                        utils.Sleep(1)
+                        db.DbUnlock(mainName);
+                        continue BEGIN
+                    }
+                    file.Close()
+					fmt.Printf("%x", data)
+				} else {
+                    file.Close()
+					break
+				}*/
                 utils.Sleep(1)
-                continue BEGIN
             }
-            fmt.Printf("5 bytes: %s\n", string(b4))
-
             file.Close()
-
 
 	    }
 
-		db.DbUnlock();
+		db.DbUnlock(mainName);
 
         // в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
         db.Close()
         db = utils.DbConnect(configIni)
 
         utils.Sleep(3)
-		break
+		//break
     }
 }
 

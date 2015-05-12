@@ -11,6 +11,7 @@ import (
 	//"strings"
 	"utils"
 	//"text/tabwriter"
+	"static"
 )
 
 type loginStruct struct {
@@ -32,11 +33,23 @@ func (c *Controller) Login() (string, error) {
 			return template.HTML(s)
 		},
 	}
-
+/*
 	t, err := template.New("Dcoin").Funcs(funcMap).ParseFiles("templates/login.html", "templates/modal.html")
 	if err!=nil{
 		fmt.Println(err)
+	}*/
+	data, err := static.Asset("static/templates/login.html")
+	if err != nil {
+		return "", err
 	}
+	modal, err := static.Asset("static/templates/modal.html")
+	if err != nil {
+		return "", err
+	}
+
+	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+	t = template.Must(t.Parse(string(modal)))
+
 	b := new(bytes.Buffer)
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле

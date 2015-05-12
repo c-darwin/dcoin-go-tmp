@@ -32,6 +32,8 @@ func (c *Controller) Install_step_2() (string, error) {
 	fmt.Println(c.r.Form)
 	installType := c.r.FormValue("type")
 	url := c.r.FormValue("url")
+	setupPassword := c.r.FormValue("setup_password")
+	userId := c.r.FormValue("user_id")
 	firstLoad := c.r.FormValue("first_load")
 	dbType := c.r.FormValue("db_type")
 	dbHost := c.r.FormValue("host")
@@ -88,18 +90,19 @@ func (c *Controller) Install_step_2() (string, error) {
 	//fmt.Println("c.DCDB", c.DCDB)
 
 
-	schema := &schema.SchemaStruct{c.DCDB, dbType, 0}
+	schema_ := &schema.SchemaStruct{}
+	schema_.DCDB = c.DCDB
+	schema_.DbType = dbType
+	schema_.PrefixUserId = 0
+	schema_.GetSchema()
 
-	sql := schema.GetSchema(dbType, 0, c.DB)
-	//fmt.Println(sql)
-	if len(sql)>0 {
-		_, err = c.DCDB.ExecSql(sql)
+	if len(userId)>0 {
+		_, err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
 		if err != nil {
 			return "", err
 		}
 	}
-
-	_, err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url) VALUES (?,?)", firstLoad, url)
+	_, err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password) VALUES (?,?,?)", firstLoad, url, setupPassword)
 	if err != nil {
 		return "", err
 	}
@@ -197,9 +200,6 @@ func (c *Controller) Install_step_2() (string, error) {
 	}
 
 	t := template.Must(template.New("template").Parse(string(data)))
-	if err != nil {
-		return "", err
-	}
 	t = template.Must(t.Parse(string(modal)))
 
 	b := new(bytes.Buffer)

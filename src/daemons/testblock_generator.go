@@ -45,7 +45,7 @@ func Testblock_generator(configIni map[string]string) {
 
         blockId, err := db.GetBlockId()
 		if err != nil {
-            db.DbUnlock()
+            db.DbUnlock(mainName)
 			log.Print(err)
             utils.Sleep(1)
             continue BEGIN
@@ -54,7 +54,7 @@ func Testblock_generator(configIni map[string]string) {
         fmt.Println(newBlockId, "newBlockId")
         testBlockId, err := db.GetTestBlockId()
         if err != nil {
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             log.Print(err)
             utils.Sleep(1)
             continue BEGIN
@@ -66,13 +66,13 @@ func Testblock_generator(configIni map[string]string) {
                 log.Print(err)
 			}
             log.Print("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             utils.Sleep(1)
             continue BEGIN
         }
 
         if testBlockId==newBlockId {
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             log.Print(err)
             utils.Sleep(1)
             continue
@@ -80,7 +80,7 @@ func Testblock_generator(configIni map[string]string) {
 
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
         if err != nil {
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             log.Print(err)
             utils.Sleep(1)
             continue BEGIN
@@ -88,7 +88,7 @@ func Testblock_generator(configIni map[string]string) {
         fmt.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId==0 {
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             utils.Sleep(1)
 			continue
 		}
@@ -113,7 +113,7 @@ func Testblock_generator(configIni map[string]string) {
         startSleep := time.Now().Unix();
         fmt.Println("startSleep", startSleep)
 
-        db.DbUnlock()
+        db.DbUnlock(mainName)
 
         for i := 0; i < int(sleep); i++ {
             db.DbLock();
@@ -123,7 +123,7 @@ func Testblock_generator(configIni map[string]string) {
             err := db.QueryRow("SELECT LOWER(encode(head_hash, 'hex')) FROM info_block").Scan(&newHeadHash)
             utils.CheckErr(err)
             fmt.Println("newHeadHash", newHeadHash)
-            db.DbUnlock();
+            db.DbUnlock(mainName);
             if (newHeadHash != prevHeadHash) {
                 fmt.Println("newHeadHash!=prevHeadHash", newHeadHash, prevHeadHash)
                 continue BEGIN
@@ -145,7 +145,7 @@ func Testblock_generator(configIni map[string]string) {
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
 		if err != nil {
 			log.Print(err)
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             utils.Sleep(1)
             continue
 		}
@@ -159,7 +159,7 @@ func Testblock_generator(configIni map[string]string) {
         // если нужно доспать, то просто вернемся в начало и доспим нужное время. И на всякий случай убедимся, что блок не изменился
         if sleep > 0 || prevBlock.HeadHash != prevHeadHash {
             fmt.Println("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             time.Sleep(1000 * time.Millisecond)
             continue
         }
@@ -167,7 +167,7 @@ func Testblock_generator(configIni map[string]string) {
         blockId = prevBlock.BlockId;
         if blockId < 1 {
             fmt.Println("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             time.Sleep(1000 * time.Millisecond)
             continue
         }
@@ -183,7 +183,7 @@ func Testblock_generator(configIni map[string]string) {
         nodePrivateKey := db.GetNodePrivateKey(myPrefix)
 		if len(nodePrivateKey) < 1 {
             fmt.Println("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             time.Sleep(1000 * time.Millisecond)
             continue
         }
@@ -197,13 +197,13 @@ func Testblock_generator(configIni map[string]string) {
         fmt.Println(newBlockId, currentUserId)
         if currentUserId < 1 {
             fmt.Println("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             time.Sleep(1000 * time.Millisecond)
             continue
         }
         if prevBlock.BlockId >= newBlockId {
             fmt.Println("continue")
-            db.DbUnlock()
+            db.DbUnlock(mainName)
             time.Sleep(1000 * time.Millisecond)
             continue
         }
@@ -351,7 +351,7 @@ func Testblock_generator(configIni map[string]string) {
         }
         // ############################################
 
-        db.DbUnlock();
+        db.DbUnlock(mainName);
 
 		// в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
         db.Close()

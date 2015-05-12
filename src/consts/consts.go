@@ -16,7 +16,7 @@ const LAST_BLOCK = 250000
 const BLOCKCHAIN_SIZE = 65000000
 
 // где лежит блокчейн. для тех, кто не хочет собирать его с нодов
-const BLOCKCHAIN_URL = "http://dcoin.me/blockchain"
+const BLOCKCHAIN_URL = "http://localhost/blockchain"
 
 var LangMap = map[string]int{"en":1, "ru":42}
 

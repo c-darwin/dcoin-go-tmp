@@ -119,7 +119,7 @@ db_name=`)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 
-	//go daemons.BlocksCollection(configIni)
+	go daemons.BlocksCollection(configIni)
 	if len(os.Args)>1 {
 		// запускаем всех демонов
 		go daemons.Testblock_generator(configIni)

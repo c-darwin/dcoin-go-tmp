@@ -5,23 +5,21 @@ import (
 	"strings"
 	"regexp"
 	"utils"
-	"database/sql"
+	"log"
 )
 
 type recmap map[string]interface{}
 type recmapi map[int]interface{}
 type recmap2 map[string]string
 type SchemaStruct struct {
-	*DCDB
-	dbType string
-	prefixUserId int
+	*utils.DCDB
+	DbType string
+	PrefixUserId int
 	s recmap
 }
-var DB *sql.DB
 
-func (schema *SchemaStruct) GetSchema() string {
+func (schema *SchemaStruct) GetSchema() {
 
-	var result string
 	s:=make(recmap)
 	s1:=make(recmap)
 	s2:=make(recmapi)
@@ -39,7 +37,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Нужно чтобы автор проекта мог узнать, кому какие товары отправлять"
 	s["[my_prefix]my_cf_funding"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -50,7 +49,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["[my_prefix]my_tasks"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -63,7 +63,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Чтобы после генерации нового юзера не потерять его приватный ключ можно сохранить его тут"
 	s["[my_prefix]my_new_users"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -84,7 +85,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Общение с админом, баг-репорты и пр."
 	s["[my_prefix]my_admin_messages"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -98,7 +100,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Просто показываем, какие данные еще не попали в блоки. Те, что уже попали тут удалены"
 	s["[my_prefix]my_promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -121,7 +124,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_cash_requests"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -146,7 +150,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Нужно только для отчетов, которые показываются юзеру"
 	s["[my_prefix]my_dc_transactions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -160,7 +165,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_holidays"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -180,7 +186,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Ключи для авторизации юзера. Используем крайний"
 	s["[my_prefix]my_keys"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -198,7 +205,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_node_keys"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -212,7 +220,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"name"}
 	s1["comment"] = ""
 	s["[my_prefix]my_notifications"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -223,7 +232,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"last_voting"}
 	s1["comment"] = "Нужно только для отсылки уведомлений, что пора голосовать"
 	s["[my_prefix]my_complex_votes"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -275,7 +285,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["[my_prefix]my_table"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -287,7 +298,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["[my_prefix]my_commission"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -299,7 +311,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Чтобы было проще понять причину отказов при апгрейде акка или добавлении обещанной суммы. Также сюда пишутся комменты арбитрам и продавцам, когда покупатели запрашивают манибек"
 	s["[my_prefix]my_comments"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -313,7 +326,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitrator_conditions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -325,7 +339,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["arbitrator_conditions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -335,7 +350,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_ca"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -345,7 +361,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_seller_hold_back"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -355,7 +372,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_arbitrator_conditions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -365,7 +383,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_arbitration_trust_list"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -375,7 +394,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_money_back_request"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -386,7 +406,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Список арбитров, кому доверяют юзеры"
 	s["arbitration_trust_list"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -399,7 +420,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitration_trust_list"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -430,7 +452,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["orders"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -451,7 +474,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_orders"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -465,7 +489,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Для вывода статы по рефам"
 	s["referral_stats"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -480,7 +505,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Для удобства незарегенных юзеров на пуле. Показываем им статус их тр-ий"
 	s["transactions_status"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -493,7 +519,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"block_id"}
 	s1["comment"] = "Результаты сверки имеющегося у нас блока с блоками у случайных нодов"
 	s["confirmations"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -503,7 +530,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_key_request"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -513,7 +541,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_key_active"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -524,7 +553,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["admin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -539,7 +569,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_admin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -552,7 +583,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["votes_admin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -567,7 +599,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_admin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -577,7 +610,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_new_credit"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -587,7 +621,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_creditor"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -597,7 +632,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_repayment_credit"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -607,7 +643,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_credit_part"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -635,7 +672,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["credits"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -653,7 +691,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_credits"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -671,7 +710,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Каждому CF-проекту вручную указывается платежные системы"
 	s["cf_projects_ps"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -681,7 +721,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Какие проекты не выводим в CF-каталоге"
 	s["cf_blacklist"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -693,7 +734,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"email"}
 	s1["comment"] = ""
 	s["pool_waiting_list"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -705,7 +747,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_lang"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -715,7 +758,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_user_avatar"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -725,7 +769,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_comments"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -735,7 +780,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_new_cf_project"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -745,7 +791,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_project_data"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -755,7 +802,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_cf_send_dc"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -772,7 +820,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_comments"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -793,7 +842,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_funding"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -807,7 +857,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI_START"] = "1000"
 	s1["comment"] = ""
 	s["cf_currency"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -836,7 +887,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -860,7 +912,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects_data"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -874,7 +927,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -897,7 +951,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects_data"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -909,7 +964,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Абузы на майнеров от майнеров"
 	s["abuses"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -924,7 +980,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Блог админа"
 	s["admin_blog"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -940,7 +997,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Сообщения от админа, которые выводятся в интерфейсе софта"
 	s["alert_messages"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -953,7 +1011,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"id"}
 	s1["comment"] = "Главная таблица. Хранит цепочку блоков"
 	s["block_chain"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -974,7 +1033,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Запросы на обмен DC на наличные"
 	s["cash_requests"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -990,7 +1050,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["currency"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1004,7 +1065,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_currency"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1021,7 +1083,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"script"}
 	s1["comment"] = "Демоны"
 	s["daemons"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1076,7 +1139,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Точки по каждому юзеру"
 	s["faces"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1091,7 +1155,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Время, в которое майнер не получает %, т.к. отдыхает"
 	s["holidays"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1106,7 +1171,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Текущий блок, данные из которого мы уже занесли к себе"
 	s["info_block"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1144,7 +1210,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1171,7 +1238,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1229,7 +1297,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Точки по каждому юзеру"
 	s["log_faces"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1260,7 +1329,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners_data"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1271,7 +1341,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["log_minute"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1287,7 +1358,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_recycle_bin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1305,7 +1377,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_spots_compatibility"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1315,7 +1388,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_actualization"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1325,7 +1399,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "можно создавать только 1 тр-ю с абузами за 24h"
 	s["log_time_abuses"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1335,7 +1410,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_for_repaid_fix"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1345,7 +1421,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_commission"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1355,7 +1432,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Для учета кол-ва запр. на доб. / удал. / изменение promised_amount. Чистим кроном"
 	s["log_time_promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1365,7 +1443,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_cash_requests"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1375,7 +1454,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_geolocation"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1385,7 +1465,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_holidays"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1395,7 +1476,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_message_to_admin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1405,7 +1487,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_mining"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1415,7 +1498,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_change_host"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1425,7 +1509,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_new_miner"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1435,7 +1520,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_new_user"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1445,7 +1531,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_node_key"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1455,7 +1542,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_primary_key"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1465,7 +1553,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Храним данные за 1 сутки"
 	s["log_time_votes"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1475,7 +1564,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Лимиты для повторых запросов, за которые голосуют ноды"
 	s["log_time_votes_miners"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1485,7 +1575,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Голоса от нодов"
 	s["log_time_votes_nodes"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1495,7 +1586,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["log_time_votes_complex"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1506,7 +1598,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Храним данные за сутки, чтобы избежать дублей."
 	s["log_transactions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1535,7 +1628,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_users"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1547,7 +1641,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_variables"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1560,7 +1655,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","type"}
 	s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 	s["log_votes"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1576,7 +1672,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Таблица, где будет браться инфа при откате блока"
 	s["log_wallets"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1588,7 +1685,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Полная блокировка на поступление новых блоков/тр-ий"
 	s["main_lock"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1601,7 +1699,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "miner_id"
 	s1["comment"] = ""
 	s["miners"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1614,7 +1713,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1643,7 +1743,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["miners_data"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1655,7 +1756,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Сюда пишется новая версия, которая загружена в public"
 	s["new_version"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1667,7 +1769,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баним на 1 час тех, кто дает нам данные с ошибками"
 	s["nodes_ban"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1679,7 +1782,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"host"}
 	s1["comment"] = "Ноды, которым шлем данные и от которых принимаем данные"
 	s["nodes_connection"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1696,7 +1800,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "% майнера, юзера. На основе  pct_votes"
 	s["pct"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1712,7 +1817,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "На основе votes_max_promised_amount"
 	s["max_promised_amounts"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1722,7 +1828,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"time"}
 	s1["comment"] = "Время последнего обновления max_other_currencies_time в currency "
 	s["max_other_currencies_time"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1739,7 +1846,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Когда была последняя процедура урезания для конкретной валюты. Чтобы отсчитывать 2 недели до следующей"
 	s["reduction"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1753,7 +1861,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_miner_pct"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1769,7 +1878,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_miner_pct"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1782,7 +1892,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_user_pct"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1797,7 +1908,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_user_pct"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1811,7 +1923,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = "Голосвание за уполовинивание денежной массы. Каждые 14 дней пересчет"
 	s["votes_reduction"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1827,7 +1940,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_reduction"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1840,7 +1954,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = ""
 	s["votes_max_promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1855,7 +1970,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_promised_amount"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1868,7 +1984,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id","currency_id"}
 	s1["comment"] = ""
 	s["votes_max_other_currencies"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1883,7 +2000,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_other_currencies"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1896,7 +2014,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баллы майнеров, по которым решается - получат они майнерские % или юзерские"
 	s["points"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1911,7 +2030,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_points"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1923,7 +2043,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Статусы юзеров на основе подсчета points"
 	s["points_status"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1936,7 +2057,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"head_hash","hash"}
 	s1["comment"] = "Блоки, которые мы должны забрать у указанных нодов"
 	s["queue_blocks"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1947,7 +2069,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"head_hash"}
 	s1["comment"] = "Очередь на фронтальную проверку соревнующихся блоков"
 	s["queue_testblock"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1960,7 +2083,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Тр-ии, которые мы должны проверить"
 	s["queue_tx"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1973,7 +2097,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["recycle_bin"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -1988,7 +2113,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Совместимость текущей версии точек с предыдущими"
 	s["spots_compatibility"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2007,7 +2133,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Нужно на этапе соревнования, у кого меньше хэш"
 	s["testblock"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2019,7 +2146,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["testblock_lock"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2039,7 +2167,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Все незанесенные в блок тр-ии, которые у нас есть"
 	s["transactions"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2056,7 +2185,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Тр-ии, которые используются в текущем testblock"
 	s["transactions_testblock"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2070,7 +2200,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["log_commission"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2082,7 +2213,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["commission"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2110,7 +2242,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "user_id"
 	s1["comment"] = ""
 	s["users"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2122,7 +2255,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"name"}
 	s1["comment"] = ""
 	s["variables"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2141,7 +2275,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Отдел. от miners_data, чтобы гол. шли точно за свежие данные"
 	s["votes_miners"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2155,7 +2290,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Голосвание за рефские %. Каждые 14 дней пересчет"
 	s["votes_referral"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2172,7 +2308,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_referral"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2184,7 +2321,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["referral"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2200,7 +2338,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_referral"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2209,7 +2348,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["fields"] = s2
 	s1["comment"] = "Используется только в момент установки"
 	s["install"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2225,7 +2365,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "user_id"
 	s1["comment"] = "У кого сколько какой валюты"
 	s["wallets"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2240,7 +2381,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Суммируем все списания, которые еще не в блоке"
 	s["wallets_buffer"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2260,7 +2402,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["forex_orders"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2277,7 +2420,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Все ордеры, который были затронуты в результате тр-ии"
 	s["log_forex_orders"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2289,7 +2433,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Каждый ордер пишется сюда. При откате любого ордера просто берем последнюю строку отсюда"
 	s["log_forex_orders_main"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2301,7 +2446,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"tx_hash"}
 	s1["comment"] = "В один блок не должно попасть более чем 10 тр-ий перевода средств или создания forex-ордеров на суммы менее эквивалента 0.05-0.1$ по текущему курсу"
 	s["log_time_money_orders"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2325,7 +2471,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Эта табла видна только админу"
 	s["x_my_admin_messages"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2336,7 +2483,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = ""
 	s["authorization"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2346,7 +2494,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Если не пусто, то работаем в режиме пула"
 	s["community"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2357,7 +2506,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["backup_community"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2369,7 +2519,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["AI"] = "id"
 	s1["comment"] = "Для тех, кто не хочет встречаться для обмена кода на наличные"
 	s["payment_systems"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2380,7 +2531,8 @@ func (schema *SchemaStruct) GetSchema() string {
 	s1["PRIMARY"] = []string{"ip"}
 	s1["comment"] = "Защита от случайного ддоса"
 	s["ddos_protection"] = s1
-	result+=printSchema(s, dbType, prefixUserId)
+	schema.s = s
+	schema.printSchema()
 
 	s=make(recmap)
 	s1=make(recmap)
@@ -2407,8 +2559,9 @@ func (schema *SchemaStruct) GetSchema() string {
 	s2[19] = map[string]string{"name":"cf_ps", "mysql":"text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite":"text NOT NULL DEFAULT ''","postgresql":"text NOT NULL DEFAULT ''", "comment": "Массива с платежными системами, которые будут выводиться на cf_page_preview"}
 	s2[20] = map[string]string{"name":"auto_reload", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "Если произойдет сбой и в main_lock будет висеть запись более auto_reload секунд, тогда будет запущен сбор блоков с чистого листа"}
 	s2[21] = map[string]string{"name":"commission", "mysql":"text NOT NULL DEFAULT ''", "sqlite":"text NOT NULL DEFAULT ''","postgresql":"text NOT NULL DEFAULT ''", "comment": "Максимальная комиссия, которую могут поставить ноды на данном пуле"}
-	s2[22] = map[string]string{"name":"first_load_blockchain_url", "mysql":"varchar(255)  NOT NULL DEFAULT ''", "sqlite":"varchar(255)  NOT NULL DEFAULT ''","postgresql":"varchar(255)  NOT NULL DEFAULT ''", "comment": ""}
-	s2[23] = map[string]string{"name":"first_load_blockchain", "mysql":"enum('nodes','file')", "sqlite":"varchar(100) ","postgresql":"enum('nodes','file')", "comment": ""}
+	s2[22] = map[string]string{"name":"setup_password", "mysql":"varchar(255)  NOT NULL DEFAULT ''", "sqlite":"varchar(255)  NOT NULL DEFAULT ''","postgresql":"varchar(255)  NOT NULL DEFAULT ''", "comment": "После установки и после сбора блоков, появляется окно, когда кто-угодно может ввести главный ключ"}
+	s2[23] = map[string]string{"name":"first_load_blockchain_url", "mysql":"varchar(255)  NOT NULL DEFAULT ''", "sqlite":"varchar(255)  NOT NULL DEFAULT ''","postgresql":"varchar(255)  NOT NULL DEFAULT ''", "comment": ""}
+	s2[24] = map[string]string{"name":"first_load_blockchain", "mysql":"enum('nodes','file')", "sqlite":"varchar(100) ","postgresql":"enum('nodes','file')", "comment": ""}
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["config"] = s1
@@ -2418,14 +2571,15 @@ func (schema *SchemaStruct) GetSchema() string {
 
 
 
-	return result
+
+
 }
 
 func  (schema *SchemaStruct) typeMysql() {
 	var result string
 	for table_name, v := range schema.s {
-		replMy(&table_name, schema.prefixUserId)
-		_, err := DB.Exec("DROP TABLE IF EXISTS "+table_name)
+		schema.replMy(&table_name)
+		_, err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS "+table_name)
 		if err != nil {
 			fmt.Println("1", err, table_name)
 		}
@@ -2479,9 +2633,9 @@ func  (schema *SchemaStruct) typeMysql() {
 			}
 		}
 		result+=fmt.Sprintf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='%s';\n\n", tableComment)
-		_, err = DB.Exec(result)
+		_, err = schema.DCDB.ExecSql(result)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 }
@@ -2491,7 +2645,8 @@ func  (schema *SchemaStruct) typeMysql() {
 func  (schema *SchemaStruct)  typePostgresql() {
 	var result string
 	for table_name, v := range schema.s {
-		replMy(&table_name, schema.prefixUserId)
+		result = ""
+		schema.replMy(&table_name)
 		primaryKey := ""
 		uniqKey := ""
 		AI := ""
@@ -2531,10 +2686,10 @@ func  (schema *SchemaStruct)  typePostgresql() {
 						dType = fmt.Sprintf("%s_enum_%s %s", table_name, v1.(recmapi)[i].(map[string]string)["name"], rest[1])
 					}
 					if ok, _ := regexp.MatchString(`nextval\('\[my_prefix\]`, dType); ok {
-						if schema.prefixUserId == 0 {
+						if schema.PrefixUserId == 0 {
 							dType = strings.Replace(dType, "[my_prefix]", "", -1)
 						} else {
-							dType = strings.Replace(dType, "[my_prefix]", utils.IntToStr(schema.prefixUserId)+"_", -1)
+							dType = strings.Replace(dType, "[my_prefix]", utils.IntToStr(schema.PrefixUserId)+"_", -1)
 						}
 					}
 
@@ -2579,27 +2734,28 @@ func  (schema *SchemaStruct)  typePostgresql() {
 		}
 
 		result+=fmt.Sprintln("\n\n")
+		_, err := schema.DCDB.ExecSql(result)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
 func  (schema *SchemaStruct) replMy(table_name *string) {
 	if ok, _ := regexp.MatchString(`\[my_prefix\]`, *table_name); ok {
-		if schema.prefixUserId == 0 {
+		if schema.PrefixUserId == 0 {
 			*table_name = strings.Replace(*table_name, "[my_prefix]", "", -1)
 		} else {
-			*table_name = strings.Replace(*table_name, "[my_prefix]", utils.IntToStr(prefixUserId)+"_", -1)
+			*table_name = strings.Replace(*table_name, "[my_prefix]", utils.IntToStr(schema.PrefixUserId)+"_", -1)
 		}
 	}
 }
 
-func  (schema *SchemaStruct) typeSqlite() string {
-
+func  (schema *SchemaStruct) typeSqlite() {
 	var result string
-
 	for table_name, v := range schema.s {
-
-		replMy(&table_name, schema.prefixUserId)
-
+		result = ""
+		schema.replMy(&table_name)
 		result+=fmt.Sprintf("DROP TABLE IF EXISTS \"%[1]s\"; CREATE TABLE \"%[1]s\" (\n", table_name)
 		//var tableComment string
 		primaryKey := ""
@@ -2649,12 +2805,15 @@ func  (schema *SchemaStruct) typeSqlite() string {
 			}
 		}
 		result+=fmt.Sprintln(");\n\n")
+		_, err := schema.DCDB.ExecSql(result)
+		if err != nil {
+			log.Println(err)
+		}
 	}
-	return result
 }
 
-func (schema *SchemaStruct) printSchema() string {
-	switch schema.dbType {
+func (schema *SchemaStruct) printSchema() {
+	switch schema.DbType {
 	case "mysql":
 		schema.typeMysql()
 	case "sqlite":
@@ -2662,5 +2821,4 @@ func (schema *SchemaStruct) printSchema() string {
 	case "postgresql":
 		schema.typePostgresql()
 	}
-	return ""
 }
