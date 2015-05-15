@@ -17,7 +17,9 @@ type SchemaStruct struct {
 	PrefixUserId int
 	s recmap
 }
-
+/*
+В самом начале разработки dcoin-а таблицы log_ использовались для логирования, потом я их стал использовать для откатов, но название log_ так и осталось
+*/
 func (schema *SchemaStruct) GetSchema() {
 
 	s:=make(recmap)

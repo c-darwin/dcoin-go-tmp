@@ -33,9 +33,10 @@ import (
 //	"bufio"
 )
 
-const mainName = "testblock_generator"
 
 func BlocksCollection(configIni map[string]string) {
+
+    const GoroutineName = "blocks_collection"
 
     db := utils.DbConnect(configIni)
 
@@ -52,7 +53,7 @@ func BlocksCollection(configIni map[string]string) {
 
 		fmt.Println("BlocksCollection")
         // отметимся в БД, что мы живы.
-        utils.UpdDaemonTime("BlocksCollection")
+        db.UpdDaemonTime(GoroutineName)
         // проверим, не нужно нам выйти из цикла
         if utils.CheckDaemonRestart("BlocksCollection") {
 			break
@@ -73,7 +74,7 @@ func BlocksCollection(configIni map[string]string) {
         }
 		fmt.Println(myPrefix)
 
-       err = db.DbLock();
+       err = db.DbLock(GoroutineName);
         if err != nil {
             log.Print(utils.ErrInfo(err))
             utils.Sleep(1)
@@ -85,7 +86,7 @@ func BlocksCollection(configIni map[string]string) {
         if err != nil {
             log.Print(utils.ErrInfo(err))
             utils.Sleep(1)
-            db.DbUnlock(mainName);
+            db.DbUnlock(GoroutineName);
             continue BEGIN
         }
         if currentBlockId==0 {
@@ -98,7 +99,7 @@ func BlocksCollection(configIni map[string]string) {
                         log.Print(fmt.Sprintf("%v < %v", blockchainSize, consts.BLOCKCHAIN_SIZE))
 					}
                     utils.Sleep(1)
-                    db.DbUnlock(mainName);
+                    db.DbUnlock(GoroutineName);
                     continue BEGIN
                 }
 			}
@@ -108,7 +109,7 @@ func BlocksCollection(configIni map[string]string) {
             if err != nil {
                 log.Print(utils.ErrInfo(err))
                 utils.Sleep(1)
-                db.DbUnlock(mainName);
+                db.DbUnlock(GoroutineName);
                 continue BEGIN
             }
 
@@ -116,14 +117,14 @@ func BlocksCollection(configIni map[string]string) {
             if err != nil {
                 log.Print(utils.ErrInfo(err))
                 utils.Sleep(1)
-                db.DbUnlock(mainName);
+                db.DbUnlock(GoroutineName);
                 file.Close()
                 continue BEGIN
             }
 			if stat.Size() < consts.BLOCKCHAIN_SIZE {
                 log.Print(fmt.Sprintf("%v < %v", stat.Size(), consts.BLOCKCHAIN_SIZE))
                 utils.Sleep(1)
-                db.DbUnlock(mainName);
+                db.DbUnlock(GoroutineName);
                 file.Close()
                 continue BEGIN
 			}
@@ -151,12 +152,13 @@ func BlocksCollection(configIni map[string]string) {
                     parser := new(dcparser.Parser)
                     parser.DCDB = db
                     parser.BinaryData = blockBin;
+					parser.GoroutineName = GoroutineName
 
                     err = parser.ParseDataFull()
                     if err != nil {
                         log.Print(utils.ErrInfo(err))
                         utils.Sleep(1)
-                        db.DbUnlock(mainName);
+                        db.DbUnlock(GoroutineName);
                         file.Close()
                         continue BEGIN
 					}
@@ -171,7 +173,7 @@ func BlocksCollection(configIni map[string]string) {
                 if err != nil {
                     log.Print(utils.ErrInfo(err))
                     utils.Sleep(1)
-                    db.DbUnlock(mainName);
+                    db.DbUnlock(GoroutineName);
                     continue BEGIN
                 }
                 //file.Close()
@@ -183,7 +185,7 @@ func BlocksCollection(configIni map[string]string) {
                     if err != nil {
                         log.Print(utils.ErrInfo(err))
                         utils.Sleep(1)
-                        db.DbUnlock(mainName);
+                        db.DbUnlock(GoroutineName);
                         continue BEGIN
                     }
                     file.Close()
@@ -198,7 +200,7 @@ func BlocksCollection(configIni map[string]string) {
 
 	    }
 
-		db.DbUnlock(mainName);
+		db.DbUnlock(GoroutineName);
 
         // в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
         db.Close()

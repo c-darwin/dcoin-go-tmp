@@ -21,7 +21,7 @@ type signLoginStruct struct {
 func (c *Controller) Sign_login() (string, error) {
 
 	fmt.Println("sign_login")
-	var hash string
+	var hash []byte
 	loginCode := utils.RandSeq(20)
 	fmt.Println(c.r.RemoteAddr)
 	if configIni["sign_hash"] == "ip" {

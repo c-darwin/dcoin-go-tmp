@@ -39,6 +39,16 @@ import (
 	"math/rand"
 )
 
+type BlockData struct {
+	BlockId int64
+	Time int64
+	UserId int64
+	Level int64
+	Sign []byte
+	Hash []byte
+	HeadHash []byte
+}
+
 type prevBlockType struct {
 	Hash string
 	HeadHash string
@@ -54,6 +64,29 @@ func Sleep(sec float64) {
 	time.Sleep(time.Duration(sec) * 1000 * time.Millisecond)
 }
 
+
+func  ParseBlockHeader(binaryBlock *[]byte) (*BlockData) {
+	result := new(BlockData)
+	// распарсим заголовок блока
+	/*
+	Заголовок (от 143 до 527 байт )
+	TYPE (0-блок, 1-тр-я)        1
+	BLOCK_ID   				       4
+	TIME       					       4
+	USER_ID                         5
+	LEVEL                              1
+	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+	Далее - тело блока (Тр-ии)
+	*/
+	result.BlockId = BinToDecBytesShift(binaryBlock, 4)
+	result.Time = BinToDecBytesShift(binaryBlock, 4)
+	result.UserId = BinToDecBytesShift(binaryBlock, 5)
+	result.Level = BinToDecBytesShift(binaryBlock, 1)
+	signSize := DecodeLength(binaryBlock)
+	result.Sign = BytesShift(binaryBlock, signSize)
+	return result
+}
+
 func Round(f float64, places int) (float64) {
 	if places==0 {
 		return math.Floor(f + .5)
@@ -63,17 +96,29 @@ func Round(f float64, places int) (float64) {
 	}
 }
 
-func UpdDaemonTime(name string) {
 
-}
 
 func CheckDaemonRestart(name string) bool {
 	return false
 }
 
+func RandInt(min int, max int) int {
+	return min + rand.Intn(max-min)
+}
+
 // функция проверки входящих данных
-func CheckInputData(data, dataType string) bool {
-	fmt.Println(data)
+func CheckInputData(data_ interface{}, dataType string) bool {
+	var data string
+	switch data_.(type) {
+	case int:
+		data = IntToStr(data_.(int))
+	case int64:
+		data = Int64ToStr(data_.(int64))
+	case string:
+		data = data_.(string)
+	case []byte:
+		data = string(data_.([]byte))
+	}
 	switch dataType {
 	case "tpl_name":
 		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok{
@@ -85,6 +130,18 @@ func CheckInputData(data, dataType string) bool {
 		}
 	case "alert":
 		if ok, _ := regexp.MatchString("^[\\pL0-9\\,\\s\\.\\-\\:\\=\\;\\?\\!\\%\\)\\(\\@\\/]{1,512}$", data); ok{
+			return true
+		}
+	case "int":
+		if ok, _ := regexp.MatchString("^[0-9]{1,7}$", data); ok{
+			return true
+		}
+	case "int64":
+		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok{
+			return true
+		}
+	case "level":
+		if StrToInt(data) >= 0 && StrToInt(data) <= 34 {
 			return true
 		}
 	case "hex_sign", "hex":
@@ -109,6 +166,11 @@ func StrToUint64(s string) uint64 {
 }
 func StrToInt(s string) int {
 	int_, _ := strconv.Atoi(s)
+	return int_
+}
+
+func ByteToInt(s []byte) int {
+	int_, _ := strconv.Atoi(string(s))
 	return int_
 }
 
@@ -367,7 +429,11 @@ func FindMinerIdLevel(minersIds []int64, levelsRange [][][]int64) (int64, int64)
 }
 
 func GetIsReadySleep0(level int64, data []int64) int64 {
-	return data[level]
+	if int64(len(data)) > level {
+		return data[level]
+	} else {
+		return 0
+	}
 }
 
 func GetOurLevelNodes(level int64, levelsRange [][][]int64) []int64 {
@@ -388,9 +454,11 @@ func GetOurLevelNodes(level int64, levelsRange [][][]int64) []int64 {
 // на остальных уровнях - это время, за которое нужно успеть получить новый блок и занести его в БД
 func GetGeneratorSleep(level int64, data []int64) int64 {
 	var sleep int64;
-	// суммируем время со всех уровней, которые не успели сгенерить блок до нас
-	for i := 0; i <= int(level); i++ {
-		sleep+=data[i];
+	if int64(len(data)) > level {
+		// суммируем время со всех уровней, которые не успели сгенерить блок до нас
+		for i := 0; i <= int(level); i++ {
+			sleep+=data[i];
+		}
 	}
 	return sleep;
 }
@@ -404,34 +472,27 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 	return sum;
 }
 
-func Encode_length(len0 int64) string  {
+func EncodeLengthPlusData(data []byte) []byte  {
+	return append(EncodeLength(int64(len(data))) , data...)
+}
+
+func EncodeLength(len0 int64) []byte  {
 	if len0<=127 {
 		if len0%2 > 0 {
-			return fmt.Sprintf("0"+Int64ToStr(len0))
+			return []byte(fmt.Sprintf("0%x", len0))
 		}
-		return fmt.Sprintf("%x", len0)
+		return []byte(fmt.Sprintf("%x", len0))
 	}
 	temphex:= fmt.Sprintf("%x", len0)
 	if len(temphex)%2 > 0 {
 		temphex = "0"+temphex;
 	}
-	//fmt.Println("temphex", temphex)
-	str, err := hex.DecodeString(temphex)
-	if err!=nil {
-		//fmt.Println("err", err)
-	}
+	str, _ := hex.DecodeString(temphex)
 	temp := string(str)
-	//fmt.Println("str", str)
-	//fmt.Println("temp", temp)
-
 	t1 := (0x80 | len(temp))
-	//fmt.Println("len temp",len(temp))
-	//fmt.Println("t1",t1)
 	t1hex:= fmt.Sprintf("%x", t1)
-	//fmt.Println("t1hex",t1hex)
 	len_and_t1 := t1hex+temphex
-	//fmt.Println("len_and_t1",len_and_t1)
-	return len_and_t1
+	return []byte(len_and_t1)
 }
 
 func DecToHex(dec int64) string {
@@ -467,18 +528,18 @@ func IntToStr(num int) string {
 	return strconv.Itoa(num)
 }
 
-func BinToHex(bin []byte) string {
-	return fmt.Sprintf("%x", bin)
+func BinToHex(bin []byte) []byte {
+	return []byte(fmt.Sprintf("%x", bin))
 }
 
-func HexToBin(hex_ string) string {
+func HexToBin(hex_ []byte) []byte {
 	// без проверки на ошибки т.к. эта функция используется только там где валидность была проверена ранее
 	var str []byte
-	str, err := hex.DecodeString(hex_)
+	str, err := hex.DecodeString(string(hex_))
 	if err!=nil {
 		fmt.Println(err)
 	}
-	return string(str)
+	return str
 }
 
 func BinToDec(bin []byte) int64 {
@@ -490,26 +551,10 @@ func BinToDec(bin []byte) int64 {
 	}
 	return int64(a)
 }
-/*
-func BinToDec(bin []byte) int64 {
-	hex:=fmt.Sprintf("%x", bin)
-	int64, _ := strconv.ParseInt(hex, 16, 0)
-	return int64
-}
-*/
-func StringShift(str *string, index int64) string {
-	var substr string
-	var str_ string
-	substr = *str
-	substr = substr[0:index]
-	//fmt.Println(substr)
-	str_ = *str
-	str_ = str_[index:]
-	*str = str_
-	//fmt.Println(utils.BinToHex(str_))
-	return substr
-}
 
+func BinToDecBytesShift(bin *[]byte, num int64) int64 {
+	return BinToDec(BytesShift(bin, num))
+}
 
 func BytesShift(str *[]byte, index int64) []byte {
 	var substr []byte
@@ -524,9 +569,32 @@ func BytesShift(str *[]byte, index int64) []byte {
 	return substr
 }
 
+func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
+	var index int64
+	switch index_.(type) {
+	case int:
+		index = int64(index_.(int))
+	case int64:
+		index = index_.(int64)
+	}
+
+	var substr []byte
+	var str_ []byte
+	substr = *str
+	substr = substr[int64(len(substr))-index:]
+	//fmt.Println(substr)
+	str_ = *str
+	str_ = str_[0:int64(len(str_))-index]
+	*str = str_
+	//fmt.Println(utils.BinToHex(str_))
+	return substr
+}
+
+
 func DecodeLength(str *[]byte) int64 {
 	var str_ []byte
 	str_ = *str
+	fmt.Println("str_", str_)
 	length_ := []byte(BytesShift(&str_, 1))
 	*str = str_
 	length := int64(length_[0])
@@ -577,17 +645,23 @@ func RandSeq(n int) string {
 	return string(b)
 }
 
-func MakeAsn1(hex_n, hex_e string) string {
-	n_ := HexToBin(hex_n)
-	n_ = "02"+Encode_length(int64(len(hex_n))) + hex_n
-	e_ := "02"+Encode_length(int64(len(HexToBin(hex_e)))) + hex_e
-	length := Encode_length(int64(len(HexToBin(n_+e_))))
-	return "30"+length+n_+e_;
+func MakeAsn1(hex_n, hex_e []byte) []byte {
+	n_ := []byte(HexToBin(hex_n))
+	n_ = append([]byte("02"), EncodeLength(int64(len(HexToBin(hex_n))))...)
+	n_ = append(n_, hex_n...)
+	e_ := append([]byte("02"), EncodeLength(int64(len(HexToBin(hex_e))))...)
+	e_ = append(e_, hex_e...)
+	length := EncodeLength(int64(len(HexToBin(append(n_,e_...)))))
+	rez := append([]byte("30"), length...)
+	rez = append(rez, n_...)
+	rez = append(rez, e_...)
+	return rez
 	//b64:=base64.StdEncoding.EncodeToString([]byte(utils.HexToBin("30"+length+bin_enc)))
 	//fmt.Println(b64)
 }
 
-func CheckSign(publicKeys []string, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
+func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
+	fmt.Println("publicKeys", publicKeys)
 	var signsSlice [][]byte
 	// у нода всегда 1 подпись
 	if nodeKeyOrLogin {
@@ -607,7 +681,8 @@ func CheckSign(publicKeys []string, forSign string, signs []byte, nodeKeyOrLogin
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		key, _ := base64.StdEncoding.DecodeString(publicKeys[i])
+		fmt.Println("publicKeys[i]", publicKeys[i])
+		key, _ := base64.StdEncoding.DecodeString(string(publicKeys[i]))
 		re, err := x509.ParsePKIXPublicKey(key)
 		pub := re.(*rsa.PublicKey)
 		if err != nil {
@@ -628,48 +703,98 @@ func HashSha1(msg string) []byte {
 	return hash
 }
 
-func Md5(msg string) string {
+func Md5(msg_ interface {}) []byte {
+	var msg []byte
+	switch msg_.(type) {
+	case string:
+		msg = []byte(msg_.(string))
+	case []byte:
+		msg = msg_.([]byte)
+	}
 	sh := crypto.MD5.New()
-	sh.Write([]byte(msg))
+	sh.Write(msg)
 	hash := sh.Sum(nil)
 	return BinToHex(hash)
 }
 
-func DSha256(data []byte) string {
+func DSha256(data []byte) []byte {
 	sha256_ := sha256.New()
 	sha256_.Write(data)
 	hashSha256:=fmt.Sprintf("%x", sha256_.Sum(nil))
 	sha256_ = sha256.New()
 	sha256_.Write([]byte(hashSha256))
-	return fmt.Sprintf("%x", sha256_.Sum(nil))
+	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
 }
 
-func MerkleTreeRoot(dataArray []string) string {
-	result := make(map[int32][]string)
+func GetMrklroot(binaryData []byte, variables map[string]string, first bool) []byte {
+	var mrklSlice [][]byte
+	var txSize int64
+	// [error] парсим после вызова функции
+	if len(binaryData) > 0 {
+		for {
+			// чтобы исключить атаку на переполнение памяти
+			if !first {
+				if txSize > StrToInt64(variables["max_tx_size"]) {
+					return []byte("[error] MAX_TX_SIZE")
+				}
+			}
+			txSize = DecodeLength(&binaryData)
+
+			// отчекрыжим одну транзакцию от списка транзакций
+			if txSize > 0 {
+				transactionBinaryData := BytesShift(&binaryData, txSize)
+				mrklSlice = append(mrklSlice, DSha256(transactionBinaryData))
+			}
+
+			// чтобы исключить атаку на переполнение памяти
+			if !first {
+				if len(mrklSlice) > StrToInt(variables["max_tx_count"]) {
+					return []byte("[error] MAX_TX_COUNT")
+				}
+			}
+			if len(binaryData) == 0 {
+				break
+			}
+		}
+	} else {
+		mrklSlice = append(mrklSlice, []byte("0"))
+	}
+	return MerkleTreeRoot(mrklSlice)
+}
+
+func SliceReverse(s []int64) []int64 {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
+}
+
+func MerkleTreeRoot(dataArray [][]byte) []byte {
+	result := make(map[int32][][]byte)
 	for _, v := range dataArray {
-		result[0] = append(result[0], DSha256([]byte(v)))
+		result[0] = append(result[0], DSha256(v))
 	}
 	var j int32
 	for len(result[j]) > 1 {
 		for i := 0; i < len(result[j]); i = i + 2 {
 			if len(result[j]) <= (i+1) {
 				if _, ok := result[j+1]; !ok {
-					result[j+1] = []string {result[j][i]}
+					result[j+1] = [][]byte {result[j][i]}
 				} else {
 					result[j+1] = append(result[j+1], result[j][i])
 				}
 			} else {
 				if _, ok := result[j+1]; !ok {
-					result[j+1] = []string {DSha256([]byte(result[j][i]+result[j][i+1]))}
+					result[j+1] = [][]byte {DSha256(append(result[j][i], result[j][i+1]...))}
 				} else {
-					result[j+1] = append(result[j+1], DSha256([]byte(result[j][i]+result[j][i+1])))
+					result[j+1] = append(result[j+1], DSha256([]byte(append(result[j][i], result[j][i+1]...))))
 				}
 			}
 		}
 		j++
 	}
 	result_ := result[int32(len(result)-1)];
-	return result_[0]
+	return []byte(result_[0])
 }
 
 func DbConnect(configIni map[string]string) *DCDB {

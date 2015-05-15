@@ -13,12 +13,15 @@ import (
 	"encoding/json"
 	//"github.com/astaxie/beego/config"
 	"consts"
+	"sync"
+//	"sync/atomic"
 //	"os"
+	//"dcparser"
 )
 
 type DCDB struct {
 	 *sql.DB
-	configIni map[string]string
+	ConfigIni map[string]string
 }
 
 func replQ(q string) string {
@@ -35,10 +38,10 @@ func replQ(q string) string {
 	return result
 }
 
-func NewDbConnect(configIni map[string]string) (*DCDB, error) {
+func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	var db *sql.DB
 	var err error
-	switch configIni["db_type"] {
+	switch ConfigIni["db_type"] {
 	case "sqlite":
 
 		fmt.Println("sqlite")
@@ -68,14 +71,14 @@ func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 			return &DCDB{}, err
 		}
 	case "postgresql":
-		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
 		//fmt.Println(db)
 		//fmt.Println(err)
 		if err != nil {
 			return &DCDB{}, err
 		}
 	case "mysql":
-		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", configIni["db_user"], configIni["db_password"], configIni["db_name"]))
+		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
 		//fmt.Println("db",db)
 		//fmt.Println(err)
 		if err != nil {
@@ -83,7 +86,7 @@ func NewDbConnect(configIni map[string]string) (*DCDB, error) {
 		}
 	}
 
-	return &DCDB{db, configIni}, err
+	return &DCDB{db, ConfigIni}, err
 }
 /*
 func (db *DCDB) DbConnect() {
@@ -97,6 +100,10 @@ func (db *DCDB) DbConnect() {
 	//return db
 }*/
 
+func (db *DCDB) GetConfigIni(name string) string {
+	return db.ConfigIni[name]
+}
+
 func (db *DCDB) GetMainLockName() (string, error) {
 	name, err := db.Single("SELECT script_name FROM main_lock")
 	if err != nil {
@@ -108,7 +115,7 @@ func (db *DCDB) GetMainLockName() (string, error) {
 func (db *DCDB) GetAllTables() ([]string, error) {
 	var result []string
 	var sql string
-	switch db.configIni["db_type"] {
+	switch db.ConfigIni["db_type"] {
 	case "sqlite" :
 		sql = "SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'"
 	case "postgresql" :
@@ -124,7 +131,7 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 }
 
 func (db *DCDB) GetAllVariables() (map[string]string, error) {
-	var result map[string]string
+	result := make(map[string]string)
 	all, err := db.GetAll("SELECT * FROM variables", -1)
 	if err != nil {
 		return result, err
@@ -145,59 +152,15 @@ func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
 	return StrToInt64(result), nil
 }
 
-func  parseBlockHeader(binaryBlock *[]byte) (dcparser.BlockData) {
-	// распарсим заголовок блока
-	/*
-	Заголовок (от 143 до 527 байт )
-	TYPE (0-блок, 1-тр-я)        1
-	BLOCK_ID   				       4
-	TIME       					       4
-	USER_ID                         5
-	LEVEL                              1
-	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-	Далее - тело блока (Тр-ии)
-	*/
-}
-/*
-function parse_block_header (&$binary_block)
-{
-
-$block_data['block_id'] = ParseData::binary_dec_string_shift( $binary_block, 4);
-$block_data['time'] = ParseData::binary_dec_string_shift( $binary_block, 4 );
-$block_data['user_id'] = ParseData::binary_dec_string_shift( $binary_block, 5 );
-$block_data['level'] = ParseData::binary_dec_string_shift ( $binary_block, 1 );
-$sign_size = ParseData::decode_length($binary_block);
-$block_data['sign'] = ParseData::string_shift ( $binary_block, $sign_size ) ;
-return $block_data;
-
-}*/
-func (db *DCDB) getBlockDataFromBlockChain(blockId int64) () {
-	err, data = db.OneRow("SELECT * FROM block_chain WHERE id=?", blockId)
-
-}
-
-/*	function get_prev_block($block_id)
-	{
-		if (!$this->prev_block) {
-			$data = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-						SELECT `hash`, `head_hash`, `data`
-						FROM `".DB_PREFIX."block_chain`
-						WHERE `id` = {$block_id}
-						", 'fetch_array' );
-			$binary_data = $data['data'];
-			string_shift ($binary_data, 1 ); // 0 - блок, >0 - тр-ии
-			$this->block_info = parse_block_header($binary_data);
-			$this->block_info['hash'] = bin2hex($data['hash']);
-			$this->block_info['head_hash'] = bin2hex($data['head_hash']);
-		}
-		$this->prev_block = $this->block_info;
-
-	}
-*/
-
 func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
-	if db.configIni["db_type"] == "postgresql" {
+	switch db.ConfigIni["db_type"] {
+	case "sqlite":
+		query = strings.Replace(query, "[hex]", "?", -1)
+	case "postgresql":
+		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
 		query = replQ(query)
+	case "mysql":
+		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
 	}
 	var result []byte
 	err := db.QueryRow(query, args...).Scan(&result)
@@ -207,7 +170,7 @@ func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	case err != nil:
 		return "", fmt.Errorf("%s in query %s %s", err, query, args)
 	}
-	if db.configIni["log"]=="1" {
+	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / %v", query, args)
 	}
 	return string(result), nil
@@ -228,7 +191,7 @@ func (db *DCDB) GetList(query string, args ...interface{}) ([]string, error) {
 }
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[int]map[string]string, error) {
-	if db.configIni["db_type"] == "postgresql" {
+	if db.ConfigIni["db_type"] == "postgresql" {
 		query = replQ(query)
 	}
 	result := make(map[int]map[string]string)
@@ -239,7 +202,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[in
 		return result, fmt.Errorf("%s in query %s %s", err, query, args)
 	}
 
-	if db.configIni["log"]=="1" {
+	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / %v", query, args)
 	}
 	// Get column names
@@ -305,10 +268,33 @@ func (db *DCDB) OneRow(query string, args ...interface{}) (map[string]string, er
 	return all[0], nil
 }
 
+func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
+	txMD5 := Md5(binaryTx)
+	_, err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?})", txMD5, time)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
+}
+
+func (db *DCDB) DelLogTx(binaryTx []byte) error {
+	txMD5 := Md5(binaryTx)
+	_, err := db.ExecSql("DELETE FROM log_transactions WHERE hash=[hex]", txMD5)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
+}
+
 func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
-	// postgres не понимает ?, надо зменить на $
-	if db.configIni["db_type"] == "postgresql" {
+	switch db.ConfigIni["db_type"] {
+	case "sqlite":
+		query = strings.Replace(query, "[hex]", "?", -1)
+	case "postgresql":
+		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
 		query = replQ(query)
+	case "mysql":
+		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
 	}
 	res, err := db.Exec(query, args...)
 	if err != nil {
@@ -316,7 +302,7 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
-	if db.configIni["log"]=="1" {
+	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
 	}
 	return affect, nil
@@ -518,18 +504,18 @@ func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
 	return StrToInt64(result), nil
 }
 
-func (db *DCDB) GetMyPublicKey(myPrefix string) (string, error) {
+func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)")
 	if err != nil {
-		return "", ErrInfo(err)
+		return []byte(""), ErrInfo(err)
 	}
-	return result, nil
+	return []byte(result), nil
 }
 
-func (db *DCDB) GetDataAuthorization(hash string) (string, error) {
+func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	// получим данные для подписи
 	var sql string
-	switch db.configIni["db_type"] {
+	switch db.ConfigIni["db_type"] {
 	case "sqlite":
 		sql = `SELECT data FROM authorization WHERE hash = $1`
 	case "postgresql":
@@ -681,14 +667,21 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
 }
 
-func  (db *DCDB) GetSleepData() map[string][]int64 {
+func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
+	sleepDataMap := make(map[string][]int64)
 	var sleepDataJson []byte
-	err := db.QueryRow("SELECT value FROM variables WHERE name = 'sleep'").Scan(&sleepDataJson)
-	CheckErr(err)
-	var sleepDataMap map[string][]int64
-	err = json.Unmarshal(sleepDataJson, &sleepDataMap)
-	CheckErr(err)
-	return sleepDataMap;
+	data_, err := db.Single("SELECT value FROM variables WHERE name = 'sleep'")
+	sleepDataJson = []byte(data_)
+	if err != nil {
+		return sleepDataMap, ErrInfo(err)
+	}
+	if len(sleepDataJson) > 0 {
+		err = json.Unmarshal(sleepDataJson, &sleepDataMap)
+		if err != nil {
+			return sleepDataMap, ErrInfo(err)
+		}
+	}
+	return sleepDataMap, nil;
 }
 
 
@@ -730,22 +723,7 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 		return StrToInt64(result), nil
 	}
 }
-/*function get_confirmed_block_id($db)
-{
-	// в защищенном режиме нет прямого выхода в интернет, поэтому просто берем get_block_id
-	$config['local_gate_ip'] = $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-			SELECT `local_gate_ip`
-			FROM `".DB_PREFIX."config`
-			", 'fetch_one');
-	if ($config['local_gate_ip'])
-		return get_block_id($db);
-	else
-		return $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-				SELECT max(`block_id`)
-				FROM `".DB_PREFIX."confirmations`
-				WHERE `good` >= ".MIN_CONFIRMED_NODES."
-				", 'fetch_one');
-}*/
+
 
 func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 	var users []int64
@@ -858,9 +836,9 @@ func (db *DCDB) GetBlockId() (int64, error) {
 	return StrToInt64(blockId), nil
 }
 
-func (db *DCDB) GetUserIdByPublicKey(publicKey string) (string, error) {
+func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 	var sql string
-	switch db.configIni["db_type"] {
+	switch db.ConfigIni["db_type"] {
 	case "sqlite":
 		sql = `SELECT user_id FROM users WHERE public_key_0 = $1`
 	case "postgresql":
@@ -875,9 +853,9 @@ func (db *DCDB) GetUserIdByPublicKey(publicKey string) (string, error) {
 	return userId, nil
 }
 
-func (db *DCDB) InsertIntoMyKey(userId, publicKey, curBlockId string) error {
+func (db *DCDB) InsertIntoMyKey(userId string, publicKey []byte, curBlockId string) error {
 	var sql string
-	switch db.configIni["db_type"] {
+	switch db.ConfigIni["db_type"] {
 	case "sqlite":
 		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES ($1,'approved', $2)`
 	case "postgresql":
@@ -949,37 +927,44 @@ func (db *DCDB) GetMyLocalGateIp() (string, error) {
 	}
 	return result, nil
 }
+func (db *DCDB) GetNodePublicKey(userId int64) ([]byte, error) {
+	result, err := db.Single("SELECT node_public_key FROM miners_data WHERE user_id = ?", userId)
+	if err != nil {
+		return []byte(""), err
+	}
+	return []byte(result), nil
+}
 
-func (db *DCDB) DbLock() error {
-	var affect int64;
-	for affect==0 {
-		t := time.Now().Unix();
-
-		stmt, err := db.Prepare(`INSERT INTO main_lock(lock_time,script_name)
-                                                    VALUES($1,$2)`)
+func (db *DCDB) DbLock(name string) error {
+	var mutex = &sync.Mutex{}
+	var ok bool
+	for {
+		mutex.Lock()
+		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock")
 		if err != nil {
-			return err
+			return ErrInfo(err)
 		}
-		defer stmt.Close()
-
-		res, err := stmt.Exec(t, "testblock_generator")
-		if fmt.Sprintf("%s", err)=="pq: duplicate key value violates unique constraint \"main_lock_pkey\"" {
-			fmt.Println(err)
+		if exists["script_name"] == name {
+			_, err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
+			if err != nil {
+				return ErrInfo(err)
+			}
+			ok = true
+		} else if len(exists["script_name"])==0 {
+			_, err := db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), name)
+			if err != nil {
+				return ErrInfo(err)
+			}
+			ok = true
+		}
+		mutex.Unlock()
+		if !ok {
+			time.Sleep(time.Duration(RandInt(100, 200)) * time.Millisecond)
 		} else {
-			if err != nil {
-				return err
-			}
-			affect, err = res.RowsAffected()
-			if err != nil {
-				return err
-			}
-		}
-		defer stmt.Close()
-
-		if affect == 0 {
-			time.Sleep(200 * time.Millisecond)
+			break
 		}
 	}
+	fmt.Println("OK")
 	return nil
 }
 
@@ -991,17 +976,20 @@ func (db *DCDB) DbUnlock(name string) error {
 	return nil
 }
 
-func (db *DCDB) GetIsReadySleep(level int64) int64 {
-	SleepData := db.GetSleepData();
-	return GetIsReadySleep0(level, SleepData["is_ready"])
+func (db *DCDB) GetIsReadySleep(level int64, data []int64) int64 {
+	//SleepData := db.GetSleepData();
+	return GetIsReadySleep0(level, data)
 }
 
-func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) int64 {
+func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) (int64, error) {
 
-	sleepData := db.GetSleepData()
+	sleepData, err := db.GetSleepData()
+	if err != nil {
+		return 0, err
+	}
 
 	// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
-	isReadySleep := db.GetIsReadySleep(prevBlock.Level)
+	isReadySleep := db.GetIsReadySleep(prevBlock.Level , sleepData["is_ready"])
 	//fmt.Println("isReadySleep", isReadySleep)
 
 	// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
@@ -1014,5 +1002,42 @@ func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) int64 {
 
 	// узнаем, сколько нам нужно спать
 	sleep := isReadySleep + generatorSleep + isReadySleep2;
-	return sleep;
+	return sleep, nil;
 }
+
+func (db *DCDB) UpdDaemonTime(name string) {
+
+}
+
+func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
+	BlockData := new(BlockData)
+	data, err := db.OneRow("SELECT * FROM block_chain WHERE id = ?", blockId)
+	if err!=nil {
+		return BlockData, err
+	}
+	if len(data["data"]) > 0 {
+		binaryData := []byte(data["data"])
+		BytesShift(&binaryData, 1)  // не нужно. 0 - блок, >0 - тр-ии
+		BlockData = ParseBlockHeader(&binaryData)
+		BlockData.Hash = BinToHex([]byte(data["hash"]))
+		BlockData.HeadHash = BinToHex([]byte(data["head_hash"]))
+	}
+	return BlockData, nil
+}
+/*	function get_prev_block($block_id)
+	{
+		if (!$this->prev_block) {
+			$data = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+						SELECT `hash`, `head_hash`, `data`
+						FROM `".DB_PREFIX."block_chain`
+						WHERE `id` = {$block_id}
+						", 'fetch_array' );
+			$binary_data = $data['data'];
+			string_shift ($binary_data, 1 ); // 0 - блок, >0 - тр-ии
+			$this->block_info = parse_block_header($binary_data);
+			$this->block_info['hash'] = bin2hex($data['hash']);
+			$this->block_info['head_hash'] = bin2hex($data['head_hash']);
+		}
+		$this->prev_block = $this->block_info;
+
+	}*/

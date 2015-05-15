@@ -26,11 +26,10 @@ func (c *Controller) Check_sign() (string, error) {
 
 	c.r.ParseForm()
 	fmt.Println(c.r.Form)
-	n := c.r.FormValue("n")
-	e := c.r.FormValue("e")
+	n := []byte(c.r.FormValue("n"))
+	e := []byte(c.r.FormValue("e"))
 	sign := []byte(c.r.FormValue("sign"))
 	if !utils.CheckInputData(n, "hex") {
-		fmt.Println("n", n)
 		return `{"result":"incorrect n"}`, nil
 	}
 	if !utils.CheckInputData(e, "hex") {
@@ -45,7 +44,7 @@ func (c *Controller) Check_sign() (string, error) {
 		return "{\"result\":0}", err
 	}
 
-	var hash string
+	var hash []byte
 
 	community, err := c.DCDB.GetCommunityUsers()
 	if err != nil {
@@ -76,7 +75,7 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([]string{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}
@@ -123,7 +122,7 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([]string{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}
@@ -204,7 +203,7 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([]string{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}

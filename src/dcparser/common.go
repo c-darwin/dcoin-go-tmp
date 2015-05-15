@@ -5,28 +5,38 @@ import (
 	"fmt"
 	"utils"
 	"os"
+	"time"
+	"consts"
 )
-
-type BlockData struct {
-	BlockId int64
-	Time int64
-	UserId int64
-	Level int64
-	Sign []byte
-}
 
 type Parser struct {
 	*utils.DCDB
-	TxSlice []string
 	TxMap map[string]string
-	BlockData BlockData
+	BlockData *utils.BlockData
+	PrevBlock *utils.BlockData
 	BinaryData []byte
-	blockHashHex string
+	blockHashHex []byte
 	dataType int64
-	blockHex string
-	variables map[string]string
+	blockHex []byte
+	Variables map[string]string
 	CurrentBlockId int64
+	fullTxBinaryData []byte
+	halfRollback bool // уже не актуально, т.к. нет ни одной половинной фронт-проверки
+	TxHash []byte
+	TxSlice [][]byte
+	MerkleRoot []byte
+	GoroutineName string
 }
+/*
+func TypeArray (txType string) int32 {
+	for k, v := range x {
+		if v == txType {
+			return int32(k)
+		}
+	}
+	return 0
+}*/
+
 
 func (p *Parser) dataPre() {
 	p.blockHashHex = utils.DSha256(p.BinaryData)
@@ -35,6 +45,7 @@ func (p *Parser) dataPre() {
 	p.dataType =  utils.BinToDec(utils.BytesShift(&p.BinaryData, 1))
 	fmt.Println("dataType", p.dataType)
 }
+
 
 
 func (p *Parser) ParseBlock() error {
@@ -48,146 +59,414 @@ func (p *Parser) ParseBlock() error {
 	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
 	Далее - тело блока (Тр-ии)
 	*/
+	p.BlockData = utils.ParseBlockHeader(&p.BinaryData)
 
-	p.BlockData.BlockId = utils.BinToDec(utils.BytesShift(&p.BinaryData, 4))
-	p.BlockData.Time = utils.BinToDec(utils.BytesShift(&p.BinaryData, 4))
-	p.BlockData.UserId = utils.BinToDec(utils.BytesShift(&p.BinaryData, 5))
-	p.BlockData.Level = utils.BinToDec(utils.BytesShift(&p.BinaryData, 1))
-	signSize := utils.DecodeLength(&p.BinaryData)
-	p.BlockData.Sign = utils.BytesShift(&p.BinaryData, signSize)
 	p.CurrentBlockId = p.BlockData.BlockId
 	fmt.Println(p.BlockData)
-	fmt.Println(signSize)
 
 	return nil
 }
 
 
+
 func (p *Parser) CheckBlockHeader() error {
+	var err error
 	// инфа о предыдущем блоке (т.е. последнем занесенном)
-
-/*// инфа о предыдущем блоке (т.е. последнем занесенном)
-		if (!$this->prev_block) // инфа может быть передана прямо в массиве
-			$this->get_prev_block($this->block_data['block_id']-1);
-		//$this->get_info_block(); убрано, т.к. CheckBlockHeader используется и при сборе новых блоков при вилке
-
-		// для локальных тестов
-		if ($this->prev_block['block_id']==1) {
-			$ini_array = parse_ini_file(ABSPATH . "config.ini", true);
-			if (isset($ini_array['local']['start_block_id'])) {
-				$this->prev_block['block_id'] = $ini_array['local']['start_block_id'];
-			}
+	if p.PrevBlock == nil {
+		p.PrevBlock, err = p.DCDB.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
+		fmt.Println("PrevBlock 0",p.PrevBlock)
+		if err != nil {
+			return utils.ErrInfo(err)
 		}
-
-		debug_print("this->prev_block: ".print_r_hex($this->prev_block), __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
-		debug_print("this->block_data: ".print_r_hex($this->block_data), __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
-
-		// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
-		if ($this->block_data['block_id']==1) {
-			$this->global_variables['max_tx_size'] = 1024*1024;
-			$first = true;
+	}
+	fmt.Println("PrevBlock",p.PrevBlock)
+	fmt.Println("p.PrevBlock.BlockId",p.PrevBlock.BlockId)
+	// для локальных тестов
+	if p.PrevBlock.BlockId == 1 {
+		if p.GetConfigIni("start_block_id") != "" {
+				p.PrevBlock.BlockId = utils.StrToInt64(p.GetConfigIni("start_block_id"))
 		}
-		else
-			$first = false;
+	}
 
-		$this->mrkl_root = self::getMrklroot($this->binary_data, $this->global_variables, $first);
+	var first bool
+	if p.BlockData.BlockId == 1 {
+		p.Variables["max_tx_size"] = "1048576"
+		first = true
+	} else {
+		first = false
+	}
+	fmt.Println(first)
 
-		// проверим время
-		if ( !check_input_data ($this->block_data['time'], 'int') )
-			return 'error time';
+	// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
+	mrklRoot := utils.GetMrklroot(p.BinaryData, p.Variables, first)
+	fmt.Println(mrklRoot)
 
-		// проверим уровень
-		if ( !check_input_data ($this->block_data['level'], 'level') )
-			return 'error level';
+	// проверим время
+	if !utils.CheckInputData(p.BlockData.Time, "int") {
+		fmt.Println("p.BlockData.Time",p.BlockData.Time)
+		return utils.ErrInfo(fmt.Errorf("incorrect time"))
+	}
+	// проверим уровень
+	if !utils.CheckInputData(p.BlockData.Level, "level") {
+		return utils.ErrInfo(fmt.Errorf("incorrect level"))
+	}
 
-		// получим значения для сна
-		$sleep_data = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-					SELECT `value`
-					FROM `".DB_PREFIX."variables`
-					WHERE `name` = 'sleep'
-					", 'fetch_one' );
-		$sleep_data = json_decode($sleep_data, true);
-		debug_print("sleep_data:", __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
-		//print_R($sleep_data);
+	// получим значения для сна
+	sleepData, err:=p.DCDB.GetSleepData()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
 
-		// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
-		$is_ready_sleep = testblock::get_is_ready_sleep($this->prev_block['level'], $sleep_data['is_ready']);
-		// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
-		$generator_sleep = testblock::get_generator_sleep($this->block_data['level'] , $sleep_data['generator']);
-		// сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
-		$is_ready_sleep2 = testblock::get_is_ready_sleep_sum($this->block_data['level'] , $sleep_data['is_ready']);
+	// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
+	isReadySleep := p.DCDB.GetIsReadySleep(p.PrevBlock.Level, sleepData["is_ready"])
+	fmt.Println("isReadySleep", isReadySleep)
 
-		debug_print("is_ready_sleep={$is_ready_sleep}\ngenerator_sleep={$generator_sleep}\nis_ready_sleep2={$is_ready_sleep2}", __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
+	// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
+	generatorSleep := utils.GetGeneratorSleep(p.BlockData.Level, sleepData["generator"])
+	fmt.Println("generatorSleep", generatorSleep)
 
-		debug_print('prev_block:'.print_r_hex($this->prev_block), __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
-		debug_print('block_data:'.print_r_hex($this->block_data), __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
+	// сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
+	isReadySleep2 := utils.GetIsReadySleepSum(p.BlockData.Level , sleepData["is_ready"])
+	fmt.Println("isReadySleep2", isReadySleep2)
 
-		// не слишком ли рано прислан этот блок. допустима погрешность = error_time
-		if (!$first)
-		if ( $this->prev_block['time'] + $is_ready_sleep + $generator_sleep + $is_ready_sleep2 - $this->block_data['time'] > $this->global_variables['error_time'] )
-			return "error block time {$this->prev_block['time']} + {$is_ready_sleep} + {$generator_sleep} + {$is_ready_sleep2} - {$this->block_data['time']} > {$this->global_variables['error_time']}\n";
-		// исключим тех, кто сгенерил блок с бегущими часами
-		if ( $this->block_data['time'] > time() )
-			return "error block time";
+	// не слишком ли рано прислан этот блок. допустима погрешность = error_time
+	if !first {
+		if p.PrevBlock.Time + isReadySleep + generatorSleep + isReadySleep2 - p.BlockData.Time > utils.StrToInt64(p.Variables["error_time"]) {
+			return utils.ErrInfo(fmt.Errorf("incorrect block time %d + %d + %d+ %d - %d > %d", p.PrevBlock.Time, isReadySleep, generatorSleep, isReadySleep2, p.BlockData.Time, p.Variables["error_time"]))
+		}
+	}
 
-		// проверим ID блока
-		if ( !check_input_data ($this->block_data['block_id'], 'int') )
-			return 'block_id';
+	// исключим тех, кто сгенерил блок с бегущими часами
+	if p.BlockData.Time > time.Now().Unix() {
+		utils.ErrInfo(fmt.Errorf("incorrect block time"))
+	}
 
-		// проверим, верный ли ID блока
-		if (!$first)
-			if ( $this->block_data['block_id'] != $this->prev_block['block_id']+1 )
-				return "error block_id ({$this->block_data['block_id'] }!=".($this->prev_block['block_id']+1).")";
+	// проверим ID блока
+	if !utils.CheckInputData(p.BlockData.BlockId, "int") {
+		return utils.ErrInfo(fmt.Errorf("incorrect block_id"))
+	}
 
-		// проверим, есть ли такой майнер и заодно получим public_key
-		// ================================== my_table заменить ===============================================
-		$this->node_public_key = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-					SELECT `node_public_key`
-					FROM `".DB_PREFIX."miners_data`
-					WHERE `user_id` = {$this->block_data['user_id']}
-					LIMIT 1
-					", 'fetch_one' );
+	// проверим, верный ли ID блока
+	if !first {
+		if p.BlockData.BlockId != p.PrevBlock.BlockId+1 {
+			return utils.ErrInfo(fmt.Errorf("incorrect block_id %d != %d +1", p.BlockData.BlockId, p.PrevBlock.BlockId))
+		}
+	}
 
-		if (!$first)
-			if  ( !$this->node_public_key )
-				return 'user_id';
+	// проверим, есть ли такой майнер и заодно получим public_key
+	nodePublicKey, err := p.DCDB.GetNodePublicKey(p.BlockData.UserId)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
 
+	if !first {
+		if len(nodePublicKey)==0 {
+			return utils.ErrInfo(fmt.Errorf("empty nodePublicKey"))
+		}
 		// SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-		$for_sign = "0,{$this->block_data['block_id']},{$this->prev_block['hash']},{$this->block_data['time']},{$this->block_data['user_id']},{$this->block_data['level']},{$this->mrkl_root}";
-		debug_print("checkSign", __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
-		// проверяем подпись
-		if (!$first) {
-			$error = self::checkSign ($this->node_public_key, $for_sign, $this->block_data['sign'], true);
-			if ($error)
-				return $error;
+		forSign := fmt.Sprintf("0,%d,%s,%d,%d,%d,%s", p.BlockData.BlockId, p.PrevBlock.Hash, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level, mrklRoot)
+		fmt.Println(forSign)
+		// проверим подпись
+		resultCheckSign, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.BlockData.Sign, true);
+		if err != nil {
+			return utils.ErrInfo(err)
 		}
-*/
+		if !resultCheckSign {
+			return utils.ErrInfo(fmt.Errorf("incorrect signature"))
+		}
+	}
+	return nil
 }
 
+// Это защита от dos, когда одну транзакцию можно было бы послать миллион раз,
+// и она каждый раз успешно проходила бы фронтальную проверку
+func (p *Parser) CheckLogTx(tx_binary []byte) error {
+	hash, err := p.DCDB.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary))
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	if len(hash) > 0 {
+		return utils.ErrInfo(fmt.Errorf("double log_transactions"))
+	}
+	return nil
+}
+
+//  если в ходе проверки тр-ий возникает ошибка, то вызываем откатчик всех занесенных тр-ий
+func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool) error {
+	var err error
+	if len(binaryData) > 0 {
+		// вначале нужно получить размеры всех тр-ий, чтобы пройтись по ним в обратном порядке
+		binForSize := binaryData
+		var sizesSlice []int64
+		for {
+			txSize := utils.DecodeLength(&binForSize)
+			if (txSize == 0) {
+				break
+			}
+			sizesSlice = append(sizesSlice, txSize)
+			// удалим тр-ию
+			utils.BytesShift(&binForSize, txSize)
+			if len(binForSize) == 0 {
+				break
+			}
+		}
+		sizesSlice = utils.SliceReverse(sizesSlice)
+		for i:=0; i<len(sizesSlice); i++ {
+			// обработка тр-ий может занять много времени, нужно отметиться
+			p.DCDB.UpdDaemonTime(p.GoroutineName)
+			// отчекрыжим одну транзакцию
+			transactionBinaryData := utils.BytesShiftReverse(&binaryData, sizesSlice[i])
+			transactionBinaryData_ := transactionBinaryData
+			// узнаем кол-во байт, которое занимает размер
+			size_ := len(utils.EncodeLength(sizesSlice[i]))
+			// удалим размер
+			utils.BytesShiftReverse(&binaryData, size_)
+			p.TxHash = utils.Md5(transactionBinaryData)
+			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			MethodName := consts.TxTypes[utils.ByteToInt(p.TxSlice[1])]
+			p.TxSlice = [][]byte{}
+			err_ := utils.CallMethod(p, MethodName+"_init")
+			if _, ok := err_.(error); ok {
+				return utils.ErrInfo(err_.(error))
+			}
+
+			// если дошли до тр-ии, которая вызвала ошибку, то откатываем только фронтальную проверку
+			if i == 0 {
+				if skipCurrent { // тр-ия, которая вызвала ошибку закончилась еще до фронт. проверки, т.е. откатывать по ней вообще нечего
+					continue
+				}
+				// если успели дойти только до половины фронтальной функции
+				MethodNameRollbackFront := ""
+				if p.halfRollback {
+					MethodNameRollbackFront = MethodName+"_rollback_front_0"
+				} else {
+					MethodNameRollbackFront = MethodName+"_rollback_front"
+				}
+				// откатываем только фронтальную проверку
+				err_ = utils.CallMethod(p, MethodNameRollbackFront)
+				if _, ok := err_.(error); ok {
+					return utils.ErrInfo(err_.(error))
+				}
+			} else if onlyFront {
+				err_ = utils.CallMethod(p, MethodName+"_rollback_front")
+				if _, ok := err_.(error); ok {
+					return utils.ErrInfo(err_.(error))
+				}
+			} else {
+				err_ = utils.CallMethod(p, MethodName+"_rollback_front")
+				if _, ok := err_.(error); ok {
+					return utils.ErrInfo(err_.(error))
+				}
+				err_ = utils.CallMethod(p, MethodName+"_rollback")
+				if _, ok := err_.(error); ok {
+					return utils.ErrInfo(err_.(error))
+				}
+			}
+			p.DCDB.DelLogTx(transactionBinaryData_)
+
+			// =================== ради эксперимента =========
+			if onlyFront {
+				_, err = p.DCDB.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+			} else { // ====================================
+				_, err = p.DCDB.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+			}
+		}
+	}
+	return err
+}
+
+func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, error) {
+
+	var returnSlice [][]byte
+	var txData [][]byte
+	var merkleSlice [][]byte
+
+	if transactionBinaryData !=nil {
+
+		// хэш транзакции
+		txData = append(txData, utils.DSha256(*transactionBinaryData))
+
+		// первый байт - тип транзакции
+		txData = append(txData, utils.BinToDecBytesShift(transactionBinaryData, 1))
+		if len(transactionBinaryData) == 0 {
+			return txData, utils.ErrInfo(fmt.Errorf("incorrect tx"))
+		}
+
+		// следующие 4 байта - время транзакции
+		txData = append(txData, utils.BinToDecBytesShift(&transactionBinaryData, 4))
+		if len(transactionBinaryData) == 0 {
+			return txData, utils.ErrInfo(fmt.Errorf("incorrect tx"))
+		}
+
+		// преобразуем бинарные данные транзакции в массив
+		i:=0
+		for {
+			length := utils.DecodeLength(&transactionBinaryData)
+			if length > 0 && length < utils.StrToInt64(p.Variables["max_tx_size"]) {
+				data := utils.BytesShift(&transactionBinaryData, length)
+				returnSlice = append(returnSlice, data)
+				merkleSlice = append(merkleSlice, utils.DSha256(data))
+			}
+			i++
+			if length == 0 || i >= 20 { // у нас нет тр-ий с более чем 20 элементами
+				break
+			}
+		}
+		if len(transactionBinaryData) > 0 {
+			return txData, utils.ErrInfo(fmt.Errorf("incorrect transactionBinaryData"))
+		}
+	} else {
+		merkleSlice = append(merkleSlice, []byte("0"))
+	}
+	p.MerkleRoot = utils.MerkleTreeRoot(merkleSlice)
+	return append(txData, returnSlice), nil
+}
+
+/**
+	фронт. проверка + занесение данных из блока в таблицы и info_block
+*/
 func (p *Parser) ParseDataFull() error {
+
 	p.dataPre()
 	if p.dataType != 0  { // парсим только блоки
-		return fmt.Errorf("incorrect dataType")
+		return utils.ErrInfo(fmt.Errorf("incorrect dataType"))
 	}
 	var err error
-	p.variables, err = p.DCDB.GetAllVariables()
+
+	p.Variables, err = p.DCDB.GetAllVariables()
 	if err != nil {
-		return err
+		return utils.ErrInfo(err)
 	}
 	err = p.ParseBlock()
 	if err != nil {
-		return err
+		return utils.ErrInfo(err)
 	}
 
 	// проверим данные, указанные в заголовке блока
 	err = p.CheckBlockHeader()
 	if err != nil {
-		return err
+		return utils.ErrInfo(err)
 	}
 
 
+	p.DCDB.Single("DELETE FROM transactions WHERE used = 1")
+
+	txCounter := make(map[int64]int64)
+	p.fullTxBinaryData = p.BinaryData
+	i := 0
+	var txForRollbackTo []byte
+	if len(p.BinaryData) > 0 {
+		for {
+			// обработка тр-ий может занять много времени, нужно отметиться
+			p.DCDB.UpdDaemonTime(p.GoroutineName)
+			p.halfRollback = false
+			fmt.Println("&p.BinaryData", p.BinaryData)
+			transactionSize := utils.DecodeLength(&p.BinaryData)
+			if len(p.BinaryData) == 0 {
+				return utils.ErrInfo(fmt.Errorf("empty BinaryData"))
+			}
+
+			// отчекрыжим одну транзакцию от списка транзакций
+			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
+			transactionBinaryDataFull := transactionBinaryData
+
+			// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
+			txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
+
+			err = p.CheckLogTx(transactionBinaryDataFull)
+			if err != nil {
+				p.RollbackTo(txForRollbackTo, true, false);
+				return err
+			}
+			p.DCDB.Single("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			p.TxHash = utils.Md5(transactionBinaryData)
+			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+			if err !=nil {
+				p.RollbackTo (txForRollbackTo, true, false)
+				return err
+			}
+
+			if p.BlockData.BlockId > 1 {
+				var userId int64
+				// txSlice[3] могут подсунуть пустой
+				if len(p.TxSlice) > 3 {
+					if !utils.CheckInputData(p.TxSlice[3], "int64") {
+						return utils.ErrInfo(fmt.Errorf("empty user_id"))
+					} else {
+						userId = utils.StrToInt64(p.TxSlice[3])
+					}
+				} else {
+					return utils.ErrInfo(fmt.Errorf("empty user_id"))
+				}
+
+				// считаем по каждому юзеру, сколько в блоке от него транзакций
+				txCounter[userId]++
+
+				// чтобы 1 юзер не смог прислать дос-блок размером в 10гб, который заполнит своими же транзакциями
+				if txCounter[userId] > utils.StrToInt(p.Variables["max_block_user_transactions"])  {
+					p.RollbackTo(txForRollbackTo, true, false)
+					return utils.ErrInfo(fmt.Errorf("max_block_user_transactions"))
+				}
+			}
+
+			// время в транзакции не может быть больше, чем на MAX_TX_FORW сек времени блока
+			// и  время в транзакции не может быть меньше времени блока -24ч.
+			if p.TxSlice[2] - consts.MAX_TX_FORW > p.BlockData.Time || p.TxSlice[2] < p.BlockData.Time - consts.MAX_TX_BACK {
+				p.RollbackTo(txForRollbackTo, true, false)
+				return utils.ErrInfo(fmt.Errorf("incorrect transaction time"))
+			}
+
+			// проверим, есть ли такой тип тр-ий
+			_, ok := consts.TxTypes[p.TxSlice[1]]
+			if (!ok) {
+				return utils.ErrInfo(fmt.Errorf("nonexistent type"))
+			}
+
+			MethodName := consts.TxTypes[p.TxSlice[1]]
+
+			err = utils.CallMethod(p,MethodName+"_init")
+			if _, ok := err.(error); ok {
+				return utils.ErrInfo(err.(error))
+			}
+
+			err = utils.CallMethod(p,MethodName+"_front")
+			if _, ok := err.(error); ok {
+				p.RollbackTo(txForRollbackTo, true, false);
+				return utils.ErrInfo(err.(error))
+			}
+
+			err = utils.CallMethod(p,MethodName)
+			if _, ok := err.(error); ok {
+				return utils.ErrInfo(err.(error))
+			}
+
+			// даем юзеру понять, что его тр-ия попала в блок
+			p.DCDB.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
+
+			// Тут было time(). А значит если бы в цепочке блоков были блоки в которых были бы одинаковые хэши тр-ий, то ParseDataFull вернул бы error
+			err = p.DCDB.InsertInLogTx(transactionBinaryDataFull, p.TxData["time"])
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+
+			if len(p.BinaryData) == 0 {
+				break
+			}
+		}
+	}
+
 	return nil
 }
+
 
 func (p *Parser) GetTxMap(fields []string) (map[string]string, error) {
 	//fmt.Println("p.TxSlice", p.TxSlice)

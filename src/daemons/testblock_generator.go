@@ -24,9 +24,12 @@ import (
 )
 
 
+
 var err error
 
 func Testblock_generator(configIni map[string]string) {
+
+    const mainName = "blocks_collection"
 
     db := utils.DbConnect(configIni)
 
@@ -41,7 +44,7 @@ func Testblock_generator(configIni map[string]string) {
     BEGIN:
 	for {
 
-        db.DbLock()
+        db.DbLock(mainName)
 
         blockId, err := db.GetBlockId()
 		if err != nil {
@@ -93,7 +96,13 @@ func Testblock_generator(configIni map[string]string) {
 			continue
 		}
 
-		sleep := db.GetGenSleep(prevBlock, level)
+		sleep, err := db.GetGenSleep(prevBlock, level)
+        if err!=nil {
+            log.Print(err)
+            db.DbUnlock(mainName)
+            utils.Sleep(1)
+            continue
+        }
         fmt.Println("sleep", sleep)
 
         blockId = prevBlock.BlockId;
@@ -116,7 +125,7 @@ func Testblock_generator(configIni map[string]string) {
         db.DbUnlock(mainName)
 
         for i := 0; i < int(sleep); i++ {
-            db.DbLock();
+            db.DbLock(mainName);
             fmt.Println("i", i)
             fmt.Println("sleep", sleep)
 			var newHeadHash string
@@ -140,7 +149,7 @@ func Testblock_generator(configIni map[string]string) {
 		 *  Закончили спать, теперь генерим блок
 		 * Но, всё, что было до main_unlock может стать недействительным, т.е. надо обновить данные
 		 * */
-        db.DbLock();
+        db.DbLock(mainName);
 
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
 		if err != nil {
@@ -215,9 +224,9 @@ func Testblock_generator(configIni map[string]string) {
         // переведем тр-ии в `verified` = 1
         utils.AllTxParser();
 
-        var mrklArray  []string
+        var mrklArray  [][]byte
 		var usedTransactions string
-		var mrklRoot string
+		var mrklRoot []byte
         // берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
         rows, err := db.Query("SELECT data, LOWER(encode(hash, 'hex')),type,user_id,third_var FROM transactions WHERE used=0 AND verified = 1")
         utils.CheckErr(err)

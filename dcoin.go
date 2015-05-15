@@ -42,10 +42,15 @@ import (
 //	"schema"
 	//"utils"
 	//"time"
+	"math/rand"
+	"time"
+
 )
 
 var configIni map[string]string
 func main() {
+
+	rand.Seed( time.Now().UTC().UnixNano())
 
 	if _, err := os.Stat("public"); os.IsNotExist(err) {
 		os.Mkdir("public", 0755)
