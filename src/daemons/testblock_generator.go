@@ -11,13 +11,14 @@ import (
     "crypto"
     "crypto/rand"
     "crypto/rsa"
-    math_rand "math/rand"
+//    math_rand "math/rand"
     "crypto/md5"
 	"bufio"
 	"os"
 	"errors"
 	"utils"
 	"log"
+	"sync"
    // "github.com/alyu/configparser"
 	//"io/ioutil"
     //"github.com/astaxie/beego/config"
@@ -28,6 +29,8 @@ import (
 var err error
 
 func Testblock_generator(configIni map[string]string) {
+
+    var mutex = &sync.Mutex{}
 
     const mainName = "blocks_collection"
 
@@ -319,11 +322,7 @@ func Testblock_generator(configIni map[string]string) {
         // хэш шапки блока. нужен для сравнивания с другими и у кого будет меньше - у того блок круче
         headerHash := utils.DSha256([]byte(fmt.Sprintf("%s,%s,%s", myUserId, newBlockId, prevHeadHash)));
 
-        data := fmt.Sprintf("%d|%d|%d|%d|\\x%s|\\x%s|\\x%s", newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
-        /*file, err := ioutil.TempFile(os.TempDir(), "prefix")
-		file.WriteString(data)
-        file.Close()
-        defer os.Remove(file.Name())*/
+        /*data := fmt.Sprintf("%d|%d|%d|%d|\\x%s|\\x%s|\\x%s", newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
 		name := os.TempDir()+"/Dcoin."+strconv.Itoa(math_rand.Intn(999999999))
         fmt.Println(name)
         file, _ := os.Create(name)
@@ -331,18 +330,20 @@ func Testblock_generator(configIni map[string]string) {
         writer := bufio.NewWriter(file)
         writer.WriteString(data)
         writer.Flush()
-        defer os.Remove(name)
+        defer os.Remove(name)*/
 
-        res, err := db.Exec("DELETE FROM testblock WHERE block_id = $1", newBlockId)
+        mutex.Lock()
+        _, err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
         utils.CheckErr(err)
-        affect, err := res.RowsAffected()
+//        affect, err := res.RowsAffected()
+//        utils.CheckErr(err)
+        _, err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex]`,
+            newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
         utils.CheckErr(err)
-        res, err = db.Exec(`COPY testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root)
-			                               FROM '`+name+`' with (FORMAT csv, DELIMITER '|')`)
-        utils.CheckErr(err)
-        affect, err = res.RowsAffected()
-        utils.CheckErr(err)
-        fmt.Println(affect, "rows changed")
+  //      affect, err = res.RowsAffected()
+//        utils.CheckErr(err)
+//        fmt.Println(affect, "rows changed")
+        mutex.Unlock()
 
         /// #######################################
         // Отмечаем транзакции, которые попали в transactions_testblock

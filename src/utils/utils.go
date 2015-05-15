@@ -133,7 +133,7 @@ func CheckInputData(data_ interface{}, dataType string) bool {
 			return true
 		}
 	case "int":
-		if ok, _ := regexp.MatchString("^[0-9]{1,7}$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9]{1,10}$", data); ok{
 			return true
 		}
 	case "int64":
@@ -160,6 +160,10 @@ func StrToInt64(s string) int64 {
 	int64, _ := strconv.ParseInt(s, 10, 64)
 	return int64
 }
+func BytesToInt64(s []byte) int64 {
+	int64, _ := strconv.ParseInt(string(s), 10, 64)
+	return int64
+}
 func StrToUint64(s string) uint64 {
 	int64, _ := strconv.ParseInt(s, 10, 64)
 	return uint64(int64)
@@ -169,7 +173,7 @@ func StrToInt(s string) int {
 	return int_
 }
 
-func ByteToInt(s []byte) int {
+func BytesToInt(s []byte) int {
 	int_, _ := strconv.Atoi(string(s))
 	return int_
 }
@@ -523,6 +527,9 @@ func DecToHexBig(hex string) string {
 func Int64ToStr(num int64) string {
 	return strconv.FormatInt(num, 10)
 }
+func Int64ToByte(num int64) []byte {
+	return []byte(strconv.FormatInt(num, 10))
+}
 
 func IntToStr(num int) string {
 	return strconv.Itoa(num)
@@ -561,11 +568,9 @@ func BytesShift(str *[]byte, index int64) []byte {
 	var str_ []byte
 	substr = *str
 	substr = substr[0:index]
-	//fmt.Println(substr)
 	str_ = *str
 	str_ = str_[index:]
 	*str = str_
-	//fmt.Println(utils.BinToHex(str_))
 	return substr
 }
 
@@ -594,7 +599,9 @@ func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
 func DecodeLength(str *[]byte) int64 {
 	var str_ []byte
 	str_ = *str
-	fmt.Println("str_", str_)
+	if len(str_)== 0 {
+		return 0
+	}
 	length_ := []byte(BytesShift(&str_, 1))
 	*str = str_
 	length := int64(length_[0])
@@ -717,7 +724,14 @@ func Md5(msg_ interface {}) []byte {
 	return BinToHex(hash)
 }
 
-func DSha256(data []byte) []byte {
+func DSha256(data_ interface{}) []byte {
+	var data []byte
+	switch data_.(type) {
+	case string:
+		data = []byte(data_.(string))
+	case []byte:
+		data = data_.([]byte)
+	}
 	sha256_ := sha256.New()
 	sha256_.Write(data)
 	hashSha256:=fmt.Sprintf("%x", sha256_.Sum(nil))

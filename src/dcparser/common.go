@@ -7,11 +7,12 @@ import (
 	"os"
 	"time"
 	"consts"
+	"sync"
 )
 
 type Parser struct {
 	*utils.DCDB
-	TxMap map[string]string
+	TxMap map[string][]byte
 	BlockData *utils.BlockData
 	PrevBlock *utils.BlockData
 	BinaryData []byte
@@ -26,6 +27,7 @@ type Parser struct {
 	TxSlice [][]byte
 	MerkleRoot []byte
 	GoroutineName string
+	CurrentVersion string
 }
 /*
 func TypeArray (txType string) int32 {
@@ -205,6 +207,8 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 			}
 			sizesSlice = append(sizesSlice, txSize)
 			// удалим тр-ию
+			fmt.Println("txSize", txSize)
+			//fmt.Println("binForSize", binForSize)
 			utils.BytesShift(&binForSize, txSize)
 			if len(binForSize) == 0 {
 				break
@@ -226,8 +230,8 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
-			MethodName := consts.TxTypes[utils.ByteToInt(p.TxSlice[1])]
-			p.TxSlice = [][]byte{}
+			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+			p.TxMap = map[string][]byte{}
 			err_ := utils.CallMethod(p, MethodName+"_init")
 			if _, ok := err_.(error); ok {
 				return utils.ErrInfo(err_.(error))
@@ -287,32 +291,32 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, error) {
 
 	var returnSlice [][]byte
-	var txData [][]byte
+	var transSlice [][]byte
 	var merkleSlice [][]byte
 
-	if transactionBinaryData !=nil {
+	if  len(*transactionBinaryData) > 0 {
 
 		// хэш транзакции
-		txData = append(txData, utils.DSha256(*transactionBinaryData))
+		transSlice = append(transSlice, utils.DSha256(*transactionBinaryData))
 
 		// первый байт - тип транзакции
-		txData = append(txData, utils.BinToDecBytesShift(transactionBinaryData, 1))
-		if len(transactionBinaryData) == 0 {
-			return txData, utils.ErrInfo(fmt.Errorf("incorrect tx"))
+		transSlice = append(transSlice, utils.Int64ToByte(utils.BinToDecBytesShift(transactionBinaryData, 1)))
+		if len(*transactionBinaryData) == 0 {
+			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect tx"))
 		}
 
 		// следующие 4 байта - время транзакции
-		txData = append(txData, utils.BinToDecBytesShift(&transactionBinaryData, 4))
-		if len(transactionBinaryData) == 0 {
-			return txData, utils.ErrInfo(fmt.Errorf("incorrect tx"))
+		transSlice = append(transSlice, utils.Int64ToByte(utils.BinToDecBytesShift(transactionBinaryData, 4)))
+		if len(*transactionBinaryData) == 0 {
+			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect tx"))
 		}
 
 		// преобразуем бинарные данные транзакции в массив
 		i:=0
 		for {
-			length := utils.DecodeLength(&transactionBinaryData)
+			length := utils.DecodeLength(transactionBinaryData)
 			if length > 0 && length < utils.StrToInt64(p.Variables["max_tx_size"]) {
-				data := utils.BytesShift(&transactionBinaryData, length)
+				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
 				merkleSlice = append(merkleSlice, utils.DSha256(data))
 			}
@@ -321,15 +325,61 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 				break
 			}
 		}
-		if len(transactionBinaryData) > 0 {
-			return txData, utils.ErrInfo(fmt.Errorf("incorrect transactionBinaryData"))
+		if len(*transactionBinaryData) > 0 {
+			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect transactionBinaryData"))
 		}
 	} else {
 		merkleSlice = append(merkleSlice, []byte("0"))
 	}
 	p.MerkleRoot = utils.MerkleTreeRoot(merkleSlice)
-	return append(txData, returnSlice), nil
+	return append(transSlice, returnSlice...), nil
 }
+
+func (p *Parser) InsertIntoBlockchain() {
+	var mutex = &sync.Mutex{}
+	// для локальных тестов
+	if p.BlockData.BlockId == 1 {
+		if p.GetConfigIni("start_block_id") != "" {
+			p.BlockData.BlockId = utils.StrToInt64(p.GetConfigIni("start_block_id"))
+		}
+	}
+	mutex.Lock()
+	// пишем в цепочку блоков
+	p.DCDB.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
+	p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data) VALUES (?, [hex],[hex],[hex])",
+		p.BlockData.BlockId, p.BlockData.Hash, p.BlockData.HeadHash, p.blockHex)
+	mutex.Unlock()
+}
+/*public function insert_into_blockchain()
+	{
+		if ($AffectedRows<1) {
+
+			debug_print(">>>>>>>>>>> BUG LOAD DATA LOCAL INFILE  '{$file}' IGNORE INTO TABLE block_chain", __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
+
+			$row = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+							SELECT *
+							FROM `".DB_PREFIX."block_chain`
+							WHERE `id` = {$this->block_data['block_id']}
+							", 'fetch_array');
+
+			print_r_hex($row);
+
+			// ========================= временно для поиска бага: ====================================
+
+			$this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+			LOAD DATA LOCAL INFILE  '{$file}' REPLACE INTO TABLE `".DB_PREFIX."block_chain`
+			FIELDS TERMINATED BY '\t'
+			(`id`, @hash, @head_hash, @data)
+			SET `hash` = UNHEX(@hash),
+				   `head_hash` = UNHEX(@head_hash),
+				   `data` = UNHEX(@data)
+			");
+
+			//print 'getAffectedRows='.$this->db->getAffectedRows()."\n";
+			// =================================================================================
+		}
+		unlink($file);
+	}*/
 
 /**
 	фронт. проверка + занесение данных из блока в таблицы и info_block
@@ -362,7 +412,6 @@ func (p *Parser) ParseDataFull() error {
 
 	txCounter := make(map[int64]int64)
 	p.fullTxBinaryData = p.BinaryData
-	i := 0
 	var txForRollbackTo []byte
 	if len(p.BinaryData) > 0 {
 		for {
@@ -375,7 +424,10 @@ func (p *Parser) ParseDataFull() error {
 				return utils.ErrInfo(fmt.Errorf("empty BinaryData"))
 			}
 
+
 			// отчекрыжим одну транзакцию от списка транзакций
+			fmt.Printf("++p.BinaryData=%x\n", p.BinaryData)
+			fmt.Println("transactionSize", transactionSize)
 			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
 			transactionBinaryDataFull := transactionBinaryData
 
@@ -384,13 +436,21 @@ func (p *Parser) ParseDataFull() error {
 
 			err = p.CheckLogTx(transactionBinaryDataFull)
 			if err != nil {
+				fmt.Println("err", err)
+				fmt.Println("RollbackTo")
 				p.RollbackTo(txForRollbackTo, true, false);
 				return err
 			}
-			p.DCDB.Single("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+
+			p.DCDB.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			//fmt.Println("transactionBinaryData", transactionBinaryData)
 			p.TxHash = utils.Md5(transactionBinaryData)
+			fmt.Println("p.TxHash", p.TxHash)
 			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+			fmt.Println("p.TxSlice", p.TxSlice)
 			if err !=nil {
+				fmt.Println("err", err)
+				fmt.Println("RollbackTo")
 				p.RollbackTo (txForRollbackTo, true, false)
 				return err
 			}
@@ -402,7 +462,7 @@ func (p *Parser) ParseDataFull() error {
 					if !utils.CheckInputData(p.TxSlice[3], "int64") {
 						return utils.ErrInfo(fmt.Errorf("empty user_id"))
 					} else {
-						userId = utils.StrToInt64(p.TxSlice[3])
+						userId = utils.BytesToInt64(p.TxSlice[3])
 					}
 				} else {
 					return utils.ErrInfo(fmt.Errorf("empty user_id"))
@@ -412,7 +472,7 @@ func (p *Parser) ParseDataFull() error {
 				txCounter[userId]++
 
 				// чтобы 1 юзер не смог прислать дос-блок размером в 10гб, который заполнит своими же транзакциями
-				if txCounter[userId] > utils.StrToInt(p.Variables["max_block_user_transactions"])  {
+				if txCounter[userId] > utils.StrToInt64(p.Variables["max_block_user_transactions"])  {
 					p.RollbackTo(txForRollbackTo, true, false)
 					return utils.ErrInfo(fmt.Errorf("max_block_user_transactions"))
 				}
@@ -420,40 +480,42 @@ func (p *Parser) ParseDataFull() error {
 
 			// время в транзакции не может быть больше, чем на MAX_TX_FORW сек времени блока
 			// и  время в транзакции не может быть меньше времени блока -24ч.
-			if p.TxSlice[2] - consts.MAX_TX_FORW > p.BlockData.Time || p.TxSlice[2] < p.BlockData.Time - consts.MAX_TX_BACK {
+			if utils.BytesToInt64(p.TxSlice[2]) - consts.MAX_TX_FORW > p.BlockData.Time || utils.BytesToInt64(p.TxSlice[2]) < p.BlockData.Time - consts.MAX_TX_BACK {
 				p.RollbackTo(txForRollbackTo, true, false)
 				return utils.ErrInfo(fmt.Errorf("incorrect transaction time"))
 			}
 
 			// проверим, есть ли такой тип тр-ий
-			_, ok := consts.TxTypes[p.TxSlice[1]]
+			_, ok := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
 			if (!ok) {
 				return utils.ErrInfo(fmt.Errorf("nonexistent type"))
 			}
 
-			MethodName := consts.TxTypes[p.TxSlice[1]]
+			p.TxMap = map[string][]byte{}
 
-			err = utils.CallMethod(p,MethodName+"_init")
-			if _, ok := err.(error); ok {
-				return utils.ErrInfo(err.(error))
+			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+
+			err_ := utils.CallMethod(p,MethodName+"_init")
+			if _, ok := err_.(error); ok {
+				return utils.ErrInfo(err_.(error))
 			}
 
-			err = utils.CallMethod(p,MethodName+"_front")
-			if _, ok := err.(error); ok {
+			err_ = utils.CallMethod(p,MethodName+"_front")
+			if _, ok := err_.(error); ok {
 				p.RollbackTo(txForRollbackTo, true, false);
-				return utils.ErrInfo(err.(error))
+				return utils.ErrInfo(err_.(error))
 			}
 
-			err = utils.CallMethod(p,MethodName)
-			if _, ok := err.(error); ok {
-				return utils.ErrInfo(err.(error))
+			err_ = utils.CallMethod(p,MethodName)
+			if _, ok := err_.(error); ok {
+				return utils.ErrInfo(err_.(error))
 			}
 
 			// даем юзеру понять, что его тр-ия попала в блок
 			p.DCDB.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
 
 			// Тут было time(). А значит если бы в цепочке блоков были блоки в которых были бы одинаковые хэши тр-ий, то ParseDataFull вернул бы error
-			err = p.DCDB.InsertInLogTx(transactionBinaryDataFull, p.TxData["time"])
+			err = p.DCDB.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
@@ -464,17 +526,41 @@ func (p *Parser) ParseDataFull() error {
 		}
 	}
 
+	p.UpdBlockInfo()
+
 	return nil
 }
 
+func (p *Parser) UpdBlockInfo() {
+	blockId := p.BlockData.BlockId
+	// для локальных тестов
+	if p.BlockData.BlockId == 1 {
+		if p.GetConfigIni("start_block_id") != "" {
+			blockId = utils.StrToInt64(p.GetConfigIni("start_block_id"))
+		}
+	}
+	headHashData := fmt.Sprintf("%d,%d,%s", p.BlockData.UserId, blockId, p.PrevBlock.HeadHash)
+	p.BlockData.HeadHash = utils.DSha256(headHashData)
+	forSha := fmt.Sprintf("%d,%s,%s,%d,%d,%d", blockId, p.PrevBlock.Hash, p.MerkleRoot, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level)
+	p.BlockData.Hash = utils.DSha256(forSha)
 
-func (p *Parser) GetTxMap(fields []string) (map[string]string, error) {
+	if p.BlockData.BlockId == 1 {
+		p.DCDB.ExecSql("INSERT INTO info_block (hash, head_hash, block_id, time, level, current_version) VALUES ([hex], [hex], ?, ?, ?, ?)",
+			p.BlockData.Hash, p.BlockData.HeadHash, blockId, p.BlockData.Time, p.BlockData.Level, p.CurrentVersion)
+	} else {
+		p.DCDB.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id = ?, time = ?, level = ?, sent = 0",
+			p.BlockData.Hash, p.BlockData.HeadHash, blockId, p.BlockData.Time, p.BlockData.Level)
+		p.DCDB.ExecSql("UPDATE config SET my_block_id = ? WHERE my_block_id < ?", blockId, blockId)
+	}
+}
+
+func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	//fmt.Println("p.TxSlice", p.TxSlice)
 	//fmt.Println("fields", fields)
 	if len(p.TxSlice) != len(fields)+4 {
 		return nil, fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
-	TxMap := make(map[string]string)
+	TxMap := make(map[string][]byte)
 	TxMap["hash"] = p.TxSlice[0]
 	TxMap["type"] = p.TxSlice[1]
 	TxMap["time"] = p.TxSlice[2]

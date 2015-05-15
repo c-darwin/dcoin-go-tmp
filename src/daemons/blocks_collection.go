@@ -31,6 +31,8 @@ import (
 	"os"
 	"dcparser"
 //	"bufio"
+//    "io/ioutil"
+	"static"
 )
 
 
@@ -90,7 +92,9 @@ func BlocksCollection(configIni map[string]string) {
             continue BEGIN
         }
         if currentBlockId==0 {
+
 			if config["first_load_blockchain"]=="file" {
+
                 blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain")
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
@@ -102,103 +106,121 @@ func BlocksCollection(configIni map[string]string) {
                     db.DbUnlock(GoroutineName);
                     continue BEGIN
                 }
-			}
 
-			// блокчейн мог быть загружен ранее. проверим его размер
-            file, err := os.Open("public/blockchain")
-            if err != nil {
-                log.Print(utils.ErrInfo(err))
-                utils.Sleep(1)
-                db.DbUnlock(GoroutineName);
-                continue BEGIN
-            }
-
-            stat, err := file.Stat()
-            if err != nil {
-                log.Print(utils.ErrInfo(err))
-                utils.Sleep(1)
-                db.DbUnlock(GoroutineName);
-                file.Close()
-                continue BEGIN
-            }
-			if stat.Size() < consts.BLOCKCHAIN_SIZE {
-                log.Print(fmt.Sprintf("%v < %v", stat.Size(), consts.BLOCKCHAIN_SIZE))
-                utils.Sleep(1)
-                db.DbUnlock(GoroutineName);
-                file.Close()
-                continue BEGIN
-			}
-
-			for {
-                b1 := make([]byte, 5)
-                file.Read(b1)
-                dataSize := utils.BinToDec(b1)
-                fmt.Println("dataSize", dataSize)
-                if dataSize > 0 {
-
-                    data := make([]byte, dataSize)
-                    file.Read(data)
-                    fmt.Printf("data %x\n", data)
-                    blockId := utils.BinToDec(data[0:5])
-                    fmt.Println("blockId", blockId)
-					data2:=data[5:]
-                    length := utils.DecodeLength(&data2)
-                    fmt.Println("length", length)
-                    fmt.Printf("data2 %x\n", data2)
-					blockBin := utils.BytesShift(&data2, length)
-                    fmt.Printf("blockDin %x\n", blockBin)
-
-					// парсинг блока
-                    parser := new(dcparser.Parser)
-                    parser.DCDB = db
-                    parser.BinaryData = blockBin;
-					parser.GoroutineName = GoroutineName
-
-                    err = parser.ParseDataFull()
-                    if err != nil {
-                        log.Print(utils.ErrInfo(err))
-                        utils.Sleep(1)
-                        db.DbUnlock(GoroutineName);
-                        file.Close()
-                        continue BEGIN
-					}
-                    // ненужный тут размер в конце блока данных
-                    data = make([]byte, 5)
-                    file.Read(data)
-                }
-				/*
-                // читаем побайтно
-                buf := bufio.NewReader(file)
-                b5, err := buf.Peek(5)
+                first := true
+                // блокчейн мог быть загружен ранее. проверим его размер
+                file, err := os.Open("public/blockchain")
                 if err != nil {
                     log.Print(utils.ErrInfo(err))
                     utils.Sleep(1)
                     db.DbUnlock(GoroutineName);
                     continue BEGIN
                 }
-                //file.Close()
-                dataSize := utils.BinToDec(b5)
-                fmt.Println(dataSize)
-                if dataSize > 0 {
-                    //buf := bufio.NewReader(file)
-                    data, err := buf.Peek(int(dataSize))
-                    if err != nil {
-                        log.Print(utils.ErrInfo(err))
-                        utils.Sleep(1)
-                        db.DbUnlock(GoroutineName);
-                        continue BEGIN
-                    }
-                    file.Close()
-					fmt.Printf("%x", data)
-				} else {
-                    file.Close()
-					break
-				}*/
-                utils.Sleep(1)
-            }
-            file.Close()
 
-	    }
+                stat, err := file.Stat()
+                if err != nil {
+                    log.Print(utils.ErrInfo(err))
+                    utils.Sleep(1)
+                    db.DbUnlock(GoroutineName);
+                    file.Close()
+                    continue BEGIN
+                }
+                if stat.Size() < consts.BLOCKCHAIN_SIZE {
+                    log.Print(fmt.Sprintf("%v < %v", stat.Size(), consts.BLOCKCHAIN_SIZE))
+                    utils.Sleep(1)
+                    db.DbUnlock(GoroutineName);
+                    file.Close()
+                    continue BEGIN
+                }
+
+                for {
+                    b1 := make([]byte, 5)
+                    file.Read(b1)
+                    dataSize := utils.BinToDec(b1)
+                    fmt.Println("dataSize", dataSize)
+                    if dataSize > 0 {
+
+                        data := make([]byte, dataSize)
+                        file.Read(data)
+                        fmt.Printf("data %x\n", data)
+                        blockId := utils.BinToDec(data[0:5])
+                        fmt.Println("blockId", blockId)
+                        data2:=data[5:]
+                        length := utils.DecodeLength(&data2)
+                        fmt.Println("length", length)
+                        fmt.Printf("data2 %x\n", data2)
+                        blockBin := utils.BytesShift(&data2, length)
+                        fmt.Printf("blockDin %x\n", blockBin)
+
+                        // парсинг блока
+                        parser := new(dcparser.Parser)
+                        parser.DCDB = db
+                        parser.BinaryData = blockBin;
+                        parser.GoroutineName = GoroutineName
+
+                        if first {
+                            parser.CurrentVersion = consts.VERSION
+                            first = false
+                        }
+                        err = parser.ParseDataFull()
+                        if err != nil {
+                            log.Print(utils.ErrInfo(err))
+                            utils.Sleep(1)
+                            db.DbUnlock(GoroutineName);
+                            file.Close()
+                            break
+                        }
+                        parser.InsertIntoBlockchain()
+
+                        // отметимся в БД, что мы живы.
+                        parser.DCDB.UpdDaemonTime(GoroutineName)
+                        // отметимся, чтобы не спровоцировать очистку таблиц
+                       err =  parser.DCDB.UpdMainLock()
+                        if err != nil {
+                            log.Print(utils.ErrInfo(err))
+                            utils.Sleep(1)
+                            db.DbUnlock(GoroutineName);
+                            file.Close()
+                            break
+                        }
+                        if utils.CheckDaemonRestart(GoroutineName) {
+                            log.Print(utils.ErrInfo(err))
+                            utils.Sleep(1)
+                            db.DbUnlock(GoroutineName);
+                            file.Close()
+                            break BEGIN
+                        }
+                        // ненужный тут размер в конце блока данных
+                        data = make([]byte, 5)
+                        file.Read(data)
+                    }
+                    utils.Sleep(1)
+                }
+                file.Close()
+	        } else {
+                newBlock, err := static.Asset("static/1block.bin")
+                parser := new(dcparser.Parser)
+                parser.DCDB = db
+                parser.GoroutineName = GoroutineName
+                parser.BinaryData = newBlock
+                if err != nil {
+                    log.Print(utils.ErrInfo(err))
+                    utils.Sleep(1)
+                    db.DbUnlock(GoroutineName);
+                    break
+                }
+                parser.CurrentVersion = consts.VERSION
+
+                err = parser.ParseDataFull()
+                if err != nil {
+                    log.Print(utils.ErrInfo(err))
+                    utils.Sleep(1)
+                    db.DbUnlock(GoroutineName);
+                    break
+                }
+                parser.InsertIntoBlockchain()
+			}
+		}
 
 		db.DbUnlock(GoroutineName);
 

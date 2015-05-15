@@ -270,7 +270,7 @@ func (db *DCDB) OneRow(query string, args ...interface{}) (map[string]string, er
 
 func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 	txMD5 := Md5(binaryTx)
-	_, err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?})", txMD5, time)
+	_, err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?)", txMD5, time)
 	if err != nil {
 		return ErrInfo(err)
 	}
@@ -933,6 +933,11 @@ func (db *DCDB) GetNodePublicKey(userId int64) ([]byte, error) {
 		return []byte(""), err
 	}
 	return []byte(result), nil
+}
+
+func (db *DCDB) UpdMainLock() error {
+	_, err := db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
+	return err
 }
 
 func (db *DCDB) DbLock(name string) error {
