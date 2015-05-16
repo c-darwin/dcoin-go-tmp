@@ -33,14 +33,14 @@ var ReductionDC = []int {0,10,25,50,90}
 
 var TxTypes = map[int]string {
 	// новый юзер
-	1 : "new_user",
+	1 : "NewUser",
 	// новый майнер
-	2 : "new_miner",
+	2 : "NewMiner",
 	// Добавление новой обещанной суммы
-	3 : "new_promised_amount",
-	4 : "change_promised_amount",
+	3 : "NewPromisedAmount",
+	4 : "ChangePromisedAmount",
 	// голос за претендента на майнера
-	5 : "votes_miner",
+	5 : "VotesMiner",
 	6 : "new_forex_order",
 	7 : "del_forex_order",
 	//  новый набор max_other_currencies от нода-генератора блока
@@ -61,7 +61,7 @@ var TxTypes = map[int]string {
 	17 : "change_node_key",
 	18 : "for_repaid_fix",
 	// занесение в БД данных из первого блока
-	19 : "admin_1block",
+	19 : "Admin1Block",
 	// админ разжаловал майнеров в юзеры
 	20 : "admin_ban_miners",
 	// админ изменил variables

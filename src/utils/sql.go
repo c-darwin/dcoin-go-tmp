@@ -286,8 +286,8 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	return nil
 }
 
-func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
-	switch db.ConfigIni["db_type"] {
+func formatQuery(query, dbType string) string {
+	switch dbType {
 	case "sqlite":
 		query = strings.Replace(query, "[hex]", "?", -1)
 	case "postgresql":
@@ -296,6 +296,25 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
 	case "mysql":
 		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
 	}
+	return query
+}
+
+func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64, error) {
+	query = formatQuery(query, db.ConfigIni["db_type"])
+	res, err := db.Exec(query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
+	}
+	affect, err := res.RowsAffected()
+	lastId, err := res.LastInsertId()
+	if db.ConfigIni["log"]=="1" {
+		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+	}
+	return lastId, nil
+}
+
+func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
+	query = formatQuery(query, db.ConfigIni["db_type"])
 	res, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s in query %s %s", err, query, args)

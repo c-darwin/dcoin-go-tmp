@@ -28,17 +28,125 @@ type Parser struct {
 	MerkleRoot []byte
 	GoroutineName string
 	CurrentVersion string
+	MrklRoot []byte
+	PublicKeys [][]byte
+	AdminUserId int64
 }
-/*
-func TypeArray (txType string) int32 {
-	for k, v := range x {
-		if v == txType {
-			return int32(k)
+
+/*function limit_requests ($limit, $type, $period=86400) {
+
+		//$time = $this->block_data['time']?$this->block_data['time']:$this->tx_data['time'];
+		$time = $this->tx_data['time'];
+
+		debug_print($time , __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
+
+		$num = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+				SELECT count(`time`)
+				FROM `".DB_PREFIX."log_time_{$type}`
+				WHERE `user_id` = '{$this->tx_data['user_id']}' AND
+							 `time` > ".($time - $period)."
+				LIMIT 1
+				", 'fetch_one' );
+		if ( $num >=$limit ) {
+			return "[limit_requests] log_time_{$type} {$num} >={$limit}\n";
+		}
+		else {
+
+			$this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+					INSERT INTO
+						`".DB_PREFIX."log_time_{$type}` (
+							`user_id`,
+							`time`
+						)
+						VALUES (
+							{$this->tx_data['user_id']},
+							{$time}
+						)");
+
+
+		}
+	}*/
+
+
+func (p *Parser) getAdminUserId() error {
+	AdminUserId, err := p.DCDB.Single("SELECT user_id FROM admin")
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	p.AdminUserId = utils.StrToInt64(AdminUserId)
+	return nil
+}
+func (p *Parser) checkMinerNewbie() error {
+	var time int64
+	if p.BlockData != nil {
+		time = p.BlockData.Time
+	} else {
+		time = p.TxMap["time"]
+	}
+	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxMap["user_id"])
+	err := p.GetAdminUserId()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	if (p.BlockData==nil) || (p.BlockData!=nil && p.BlockData.BlockId > 29047) {
+		if regTime > (time - p.Variables["miner_newbie_time"]) && p.TxMap["user_id"] != p.AdminUserId {
+			return utils.ErrInfo(fmt.Errorf("error miner_newbie (%v > %v - %v)", regTime, time, p.Variables["miner_newbie_time"]))
 		}
 	}
-	return 0
-}*/
+}
 
+
+func (p *Parser) checkMiner(userId int64) error {
+	// в cash_request_out передается to_user_id
+	var blockId int64
+	addSql := ""
+	// если разжаловали в этом блоке, то считаем всё еще майнером
+	if p.BlockData!=nil {
+		blockId = p.BlockData.BlockId
+		addSql = " OR `ban_block_id`= "+utils.Int64ToStr(blockId)
+	}
+
+	// когда админ разжаловывает майнера, у него пропадет miner_id
+	minerId_, err := p.DCDB.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId)
+	minerId := utils.StrToInt64(minerId_)
+	// если есть бан в этом же блоке, то будет miner_id = 0, но условно считаем, что проверка пройдена
+	if (minerId > 0) || (minerId == 0 && blockId > 0) {
+		return nil
+	} else {
+		return utils.ErrInfoFmt("incorrect miner id")
+	}
+}
+
+// общая проверка для всех _front
+func (p *Parser) generalCheck() error {
+	if !utils.CheckInputData(p.TxMap["user_id"], "int64") {
+		return utils.ErrInfoFmt("incorrect user_id")
+	}
+	if !utils.CheckInputData(p.TxMap["time"], "int") {
+		return utils.ErrInfoFmt("incorrect time")
+	}
+	// проверим, есть ли такой юзер и заодно получим public_key
+	data, err := p.DCDB.OneRow("SELECT public_key_0,public_key_1,public_key_2	FROM users WHERE user_id = ?", p.TxMap["user_id"])
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	if len(data["public_key_0"])==0 && len(data["public_key_1"])==0 && len(data["public_key_2"])==0 {
+		return utils.ErrInfoFmt("incorrect user_id")
+	}
+	p.PublicKeys = append(p.PublicKeys, data["public_key_0"])
+	if len(data["public_key_1"]) > 0 {
+		p.PublicKeys = append(p.PublicKeys, data["public_key_1"])
+	}
+	if len(data["public_key_2"]) > 0 {
+		p.PublicKeys = append(p.PublicKeys, data["public_key_2"])
+	}
+	// чтобы не записали слишком длинную подпись
+	// 128 - это нод-ключ
+	if len(p.TxMap["sign"]) < 128 || len(p.TxMap["sign"]) > 5000  {
+		return utils.ErrInfoFmt("incorrect sign size")
+	}
+	return nil
+}
 
 func (p *Parser) dataPre() {
 	p.blockHashHex = utils.DSha256(p.BinaryData)
@@ -100,8 +208,8 @@ func (p *Parser) CheckBlockHeader() error {
 	fmt.Println(first)
 
 	// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
-	mrklRoot := utils.GetMrklroot(p.BinaryData, p.Variables, first)
-	fmt.Println(mrklRoot)
+	p.MrklRoot = utils.GetMrklroot(p.BinaryData, p.Variables, first)
+	fmt.Println(p.MrklRoot)
 
 	// проверим время
 	if !utils.CheckInputData(p.BlockData.Time, "int") {
@@ -166,7 +274,7 @@ func (p *Parser) CheckBlockHeader() error {
 			return utils.ErrInfo(fmt.Errorf("empty nodePublicKey"))
 		}
 		// SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-		forSign := fmt.Sprintf("0,%d,%s,%d,%d,%d,%s", p.BlockData.BlockId, p.PrevBlock.Hash, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level, mrklRoot)
+		forSign := fmt.Sprintf("0,%d,%s,%d,%d,%d,%s", p.BlockData.BlockId, p.PrevBlock.Hash, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level, p.MrklRoot)
 		fmt.Println(forSign)
 		// проверим подпись
 		resultCheckSign, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.BlockData.Sign, true);
@@ -315,10 +423,12 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		i:=0
 		for {
 			length := utils.DecodeLength(transactionBinaryData)
+			fmt.Printf("length%d\n", length)
 			if length > 0 && length < utils.StrToInt64(p.Variables["max_tx_size"]) {
 				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
 				merkleSlice = append(merkleSlice, utils.DSha256(data))
+				fmt.Printf("utils.DSha256(data) %s\n", utils.DSha256(data))
 			}
 			i++
 			if length == 0 || i >= 20 { // у нас нет тр-ий с более чем 20 элементами
@@ -331,7 +441,9 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 	} else {
 		merkleSlice = append(merkleSlice, []byte("0"))
 	}
+	fmt.Println("merkleSlice", merkleSlice)
 	p.MerkleRoot = utils.MerkleTreeRoot(merkleSlice)
+	fmt.Printf("MerkleRoot %s\n", p.MerkleRoot)
 	return append(transSlice, returnSlice...), nil
 }
 
@@ -426,18 +538,20 @@ func (p *Parser) ParseDataFull() error {
 
 
 			// отчекрыжим одну транзакцию от списка транзакций
-			fmt.Printf("++p.BinaryData=%x\n", p.BinaryData)
-			fmt.Println("transactionSize", transactionSize)
+			//fmt.Printf("++p.BinaryData=%x\n", p.BinaryData)
+			//fmt.Println("transactionSize", transactionSize)
 			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
 			transactionBinaryDataFull := transactionBinaryData
 
 			// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
 			txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
+			//fmt.Printf("transactionBinaryData: %x\n", transactionBinaryData)
+			//fmt.Printf("txForRollbackTo: %x\n", txForRollbackTo)
 
 			err = p.CheckLogTx(transactionBinaryDataFull)
 			if err != nil {
-				fmt.Println("err", err)
-				fmt.Println("RollbackTo")
+				//fmt.Println("err", err)
+				//fmt.Println("RollbackTo")
 				p.RollbackTo(txForRollbackTo, true, false);
 				return err
 			}
@@ -494,20 +608,23 @@ func (p *Parser) ParseDataFull() error {
 			p.TxMap = map[string][]byte{}
 
 			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
-
-			err_ := utils.CallMethod(p,MethodName+"_init")
+			fmt.Println("MethodName", MethodName)
+			err_ := utils.CallMethod(p,MethodName+"Init")
 			if _, ok := err_.(error); ok {
+				fmt.Println(err)
 				return utils.ErrInfo(err_.(error))
 			}
 
-			err_ = utils.CallMethod(p,MethodName+"_front")
+			err_ = utils.CallMethod(p,MethodName+"Front")
 			if _, ok := err_.(error); ok {
+				fmt.Println(err)
 				p.RollbackTo(txForRollbackTo, true, false);
 				return utils.ErrInfo(err_.(error))
 			}
 
 			err_ = utils.CallMethod(p,MethodName)
 			if _, ok := err_.(error); ok {
+				fmt.Println(err)
 				return utils.ErrInfo(err_.(error))
 			}
 
@@ -541,7 +658,8 @@ func (p *Parser) UpdBlockInfo() {
 	}
 	headHashData := fmt.Sprintf("%d,%d,%s", p.BlockData.UserId, blockId, p.PrevBlock.HeadHash)
 	p.BlockData.HeadHash = utils.DSha256(headHashData)
-	forSha := fmt.Sprintf("%d,%s,%s,%d,%d,%d", blockId, p.PrevBlock.Hash, p.MerkleRoot, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level)
+	forSha := fmt.Sprintf("%d,%s,%s,%d,%d,%d", blockId, p.PrevBlock.Hash, p.MrklRoot, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level)
+	fmt.Println("forSha", forSha)
 	p.BlockData.Hash = utils.DSha256(forSha)
 
 	if p.BlockData.BlockId == 1 {

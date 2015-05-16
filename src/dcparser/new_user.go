@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"utils"
 	"encoding/json"
+	"regexp"
 )
 
 
-func (p *Parser) Admin1BlockInit() (error) {
-	fields := []string {"data", "sign"}
+func (p *Parser) NewUser() (error) {
+	fields := []string {"public_key", "sign"}
 	TxMap := make(map[string][]byte)
 	TxMap, err := p.GetTxMap(fields);
 	p.TxMap = TxMap;
@@ -19,10 +20,65 @@ func (p *Parser) Admin1BlockInit() (error) {
 	return nil
 }
 
-func (p *Parser) Admin1BlockFront() (error) {
-	// public_key админа еще нет, он в этом блоке
+func (p *Parser) NewUserFront() (error) {
+	err := p.generalCheck()
+	if err != nil {
+		return err
+	}
+
+	// является ли данный юзер майнером
+	err = p.checkMiner(p.TxMap["user_id"])
+	if err != nil {
+		return err
+	}
+
+	// прошло ли 30 дней с момента регистрации майнера
+	err = p.checkMinerNewbie()
+	if err != nil {
+		return err
+	}
+
+	// чтобы не записали слишком мелкий или слишком крупный ключ
+	if !utils.CheckInputData(p.TxMap["public_key_hex"], "public_key") {
+		return utils.ErrInfoFmt("incorrect public_key")
+	}
+
+	// публичный ключ должен быть без паролей
+	if ok, _ := regexp.MatchString("DEK-Info: (.+),(.+)", string(p.TxMap["public_key"])); ok{
+		return utils.ErrInfoFmt("incorrect public_key")
+	}
+
+	forSign := fmt.Sprintf("%v,%v,%v,%v", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["public_key_hex"])
+	err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	if err != nil {
+		return err
+	}
+
+	// один ключ не может быть у двух юзеров
+	num_, err = p.DCDB.Single("SELECT count(user_id) FROM users WHERE public_key_0 = [hex] OR public_key_1 = [hex] OR public_key_2 = [hex]",
+		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"])
+	num := utils.StrToInt64(num_)
+	if num > 0 {
+		return utils.ErrInfoFmt("exists public_ke")
+	}
+	err = p.getAdminUserId()
+	if err != nil {
+		return err
+	}
+	if utils.StrToInt64(p.TxMap["user_id"]) == p.AdminUserId {
+		err =
+	}
+	/*
+		if ($this->tx_data['user_id'] == $this->admin_user_id)
+			$error = $this -> limit_requests( 1000, 'new_user', 86400 );
+		else
+			$error = $this -> limit_requests( $this->variables['limit_new_user'], 'new_user', $this->variables['limit_new_user_period'] );
+		if ($error)
+			return $error;
+*/
 	return nil
 }
+
 
 
 type firstBlock struct {
@@ -33,7 +89,7 @@ type firstBlock struct {
 	Variables map[string]interface{} `json:"variables"`
 	SpotsCompatibility map[string]string `json:"spots_compatibility"`
 }
-func (p *Parser) Admin1Block() (error) {
+func (p *Parser) NewUser() (error) {
 	var firstBlock firstBlock
 	err := json.Unmarshal(p.TxMap["data"], &firstBlock)
 	if err != nil {
@@ -93,6 +149,6 @@ func (p *Parser) Admin1Block() (error) {
 	return nil
 }
 
-func (p *Parser) Admin1BlockRollback() (error) {
+func (p *Parser) NewUserRollback() (error) {
 	return nil
 }

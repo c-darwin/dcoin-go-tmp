@@ -37,6 +37,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"math/rand"
+	"encoding/pem"
 )
 
 type BlockData struct {
@@ -136,7 +137,7 @@ func CheckInputData(data_ interface{}, dataType string) bool {
 		if ok, _ := regexp.MatchString("^[0-9]{1,10}$", data); ok{
 			return true
 		}
-	case "int64":
+	case "int64", "bigint":
 		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok{
 			return true
 		}
@@ -202,6 +203,12 @@ func CheckErr(err error) {
 		panic(fmt.Sprintf("%s", err))
 	}
 }
+
+
+func ErrInfoFmt(err string) error {
+	return ErrInfo(fmt.Errorf(err))
+}
+
 func ErrInfo(err error, additionally...string) error {
 	if err != nil {
 		if len(additionally) > 0 {
@@ -247,7 +254,7 @@ func CallMethod(i interface{}, methodName string) interface{} {
 	}
 
 	// return or panic, method not found of either type
-	return " method not found"
+	return fmt.Errorf("method not found")
 }
 
 func Caller(steps int) string {
@@ -477,6 +484,8 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 }
 
 func EncodeLengthPlusData(data []byte) []byte  {
+	fmt.Println("len(data)", len(data))
+	fmt.Printf("EncodeLength(int64(len(data)) %s\n", EncodeLength(int64(len(data))))
 	return append(EncodeLength(int64(len(data))) , data...)
 }
 
@@ -496,7 +505,10 @@ func EncodeLength(len0 int64) []byte  {
 	t1 := (0x80 | len(temp))
 	t1hex:= fmt.Sprintf("%x", t1)
 	len_and_t1 := t1hex+temphex
-	return []byte(len_and_t1)
+	len_and_t1_bin, _ := hex.DecodeString(len_and_t1)
+	//fmt.Println("len_and_t1_bin", len_and_t1_bin)
+	//fmt.Printf("len_and_t1_bin %x\n", len_and_t1_bin)
+	return len_and_t1_bin
 }
 
 func DecToHex(dec int64) string {
@@ -689,15 +701,30 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 
 	for i:=0; i<len(publicKeys); i++ {
 		fmt.Println("publicKeys[i]", publicKeys[i])
-		key, _ := base64.StdEncoding.DecodeString(string(publicKeys[i]))
-		re, err := x509.ParsePKIXPublicKey(key)
+		key := base64.StdEncoding.EncodeToString(publicKeys[i])
+		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
+		fmt.Printf("%x\n", publicKeys[i])
+		fmt.Println("key", key)
+		block, _ := pem.Decode([]byte(key))
+		if block == nil {
+			return false, ErrInfo(fmt.Errorf("incorrect key"))
+		}
+		re, err := x509.ParsePKIXPublicKey(block.Bytes)
+		if err != nil {
+			return false, ErrInfo(err)
+		}
 		pub := re.(*rsa.PublicKey)
 		if err != nil {
-			return false, err
+			return false,  ErrInfo(err)
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
-			return false, fmt.Errorf("incorrect sign")
+			fmt.Println("pub", pub)
+			fmt.Println("crypto.SHA1", crypto.SHA1)
+			fmt.Println("HashSha1(forSign)", HashSha1(forSign))
+			fmt.Println("forSign", forSign)
+			fmt.Println("signsSlice[i]", signsSlice[i])
+			return false, ErrInfo(fmt.Errorf("incorrect sign"))
 		}
 	}
 	return true, nil
