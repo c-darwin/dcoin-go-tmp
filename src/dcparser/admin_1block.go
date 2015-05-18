@@ -46,12 +46,12 @@ func (p *Parser) Admin1Block() (error) {
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-		_, err = p.DCDB.ExecSql("INSERT INTO pct (time, currency_id, miner, user, block_id) VALUES (0,?,0,0,1)",
+		err = p.DCDB.ExecSql("INSERT INTO pct (time, currency_id, miner, user, block_id) VALUES (0,?,0,0,1)",
 			currencyId)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-		_, err = p.DCDB.ExecSql("INSERT INTO max_promised_amounts (time, currency_id, amount, block_id) VALUES (0,?,?,1)",
+		err = p.DCDB.ExecSql("INSERT INTO max_promised_amounts (time, currency_id, amount, block_id) VALUES (0,?,?,1)",
 			currencyId, currencyData[2])
 		if err != nil {
 			return utils.ErrInfo(err)
@@ -59,32 +59,32 @@ func (p *Parser) Admin1Block() (error) {
 	}
 
 	for name, value := range firstBlock.Variables {
-		_, err := p.DCDB.ExecSql("INSERT INTO variables (name, value) VALUES (?,?)",
+		err := p.DCDB.ExecSql("INSERT INTO variables (name, value) VALUES (?,?)",
 			name, value)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 	}
 
-	_, err = p.DCDB.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, host, photo_block_id, photo_max_miner_id, miners_keepers)
+	err = p.DCDB.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, host, photo_block_id, photo_max_miner_id, miners_keepers)
 		VALUES (1,1,'miner',[hex],?,1,1,1)`,
 		firstBlock.NodePublicKey, firstBlock.Host)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 
-	_, err = p.DCDB.ExecSql(`INSERT INTO users (public_key_0) VALUES ([hex])`,
+	err = p.DCDB.ExecSql(`INSERT INTO users (public_key_0) VALUES ([hex])`,
 		firstBlock.Publickey)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 
-	_, err = p.DCDB.ExecSql(`INSERT INTO miners (miner_id, active) VALUES (1,1)`)
+	err = p.DCDB.ExecSql(`INSERT INTO miners (miner_id, active) VALUES (1,1)`)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 
-	_, err = p.DCDB.ExecSql(`INSERT INTO spots_compatibility (version, example_spots, compatibility, segments, tolerances) VALUES (?,?,?,?,?)`,
+	err = p.DCDB.ExecSql(`INSERT INTO spots_compatibility (version, example_spots, compatibility, segments, tolerances) VALUES (?,?,?,?,?)`,
 		firstBlock.SpotsCompatibility["version"], firstBlock.SpotsCompatibility["example_spots"], firstBlock.SpotsCompatibility["compatibility"], firstBlock.SpotsCompatibility["segments"], firstBlock.SpotsCompatibility["tolerances"])
 	if err != nil {
 		return utils.ErrInfo(err)

@@ -33,40 +33,39 @@ type Parser struct {
 	AdminUserId int64
 }
 
-/*function limit_requests ($limit, $type, $period=86400) {
+func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interface{}) error {
 
-		//$time = $this->block_data['time']?$this->block_data['time']:$this->tx_data['time'];
-		$time = $this->tx_data['time'];
+	var limit int
+	switch limit_.(type) {
+	case string:
+		limit = utils.StrToInt(limit_.(string))
+	case int:
+		limit = limit_.(int)
+	}
 
-		debug_print($time , __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__);
+	var period int
+	switch period_.(type) {
+	case string:
+		period = utils.StrToInt(period_.(string))
+	case int:
+		period = period_.(int)
+	}
 
-		$num = $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-				SELECT count(`time`)
-				FROM `".DB_PREFIX."log_time_{$type}`
-				WHERE `user_id` = '{$this->tx_data['user_id']}' AND
-							 `time` > ".($time - $period)."
-				LIMIT 1
-				", 'fetch_one' );
-		if ( $num >=$limit ) {
-			return "[limit_requests] log_time_{$type} {$num} >={$limit}\n";
+	time := utils.BytesToInt(p.TxMap["time"])
+	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxMap["user_id"], (time-period))
+	if err != nil {
+		return err
+	}
+	if utils.StrToInt(num) >= limit {
+		return utils.ErrInfo(fmt.Errorf("[limit_requests] log_time_%v %v >= %v", txType, num, limit))
+	} else {
+		err := p.DCDB.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxMap["user_id"], time)
+		if err != nil {
+			return err
 		}
-		else {
-
-			$this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-					INSERT INTO
-						`".DB_PREFIX."log_time_{$type}` (
-							`user_id`,
-							`time`
-						)
-						VALUES (
-							{$this->tx_data['user_id']},
-							{$time}
-						)");
-
-
-		}
-	}*/
-
+	}
+	return nil
+}
 
 func (p *Parser) getAdminUserId() error {
 	AdminUserId, err := p.DCDB.Single("SELECT user_id FROM admin")
@@ -81,22 +80,23 @@ func (p *Parser) checkMinerNewbie() error {
 	if p.BlockData != nil {
 		time = p.BlockData.Time
 	} else {
-		time = p.TxMap["time"]
+		time = utils.BytesToInt64(p.TxMap["time"])
 	}
 	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxMap["user_id"])
-	err := p.GetAdminUserId()
+	err = p.getAdminUserId()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	if (p.BlockData==nil) || (p.BlockData!=nil && p.BlockData.BlockId > 29047) {
-		if regTime > (time - p.Variables["miner_newbie_time"]) && p.TxMap["user_id"] != p.AdminUserId {
+		if utils.StrToInt64(regTime) > (time - utils.StrToInt64(p.Variables["miner_newbie_time"])) && utils.BytesToInt64(p.TxMap["user_id"]) != p.AdminUserId {
 			return utils.ErrInfo(fmt.Errorf("error miner_newbie (%v > %v - %v)", regTime, time, p.Variables["miner_newbie_time"]))
 		}
 	}
+	return nil
 }
 
 
-func (p *Parser) checkMiner(userId int64) error {
+func (p *Parser) checkMiner(userId []byte) error {
 	// в cash_request_out передается to_user_id
 	var blockId int64
 	addSql := ""
@@ -108,6 +108,9 @@ func (p *Parser) checkMiner(userId int64) error {
 
 	// когда админ разжаловывает майнера, у него пропадет miner_id
 	minerId_, err := p.DCDB.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId)
+	if err != nil {
+		return err
+	}
 	minerId := utils.StrToInt64(minerId_)
 	// если есть бан в этом же блоке, то будет miner_id = 0, но условно считаем, что проверка пройдена
 	if (minerId > 0) || (minerId == 0 && blockId > 0) {
@@ -130,15 +133,15 @@ func (p *Parser) generalCheck() error {
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	if len(data["public_key_0"])==0 && len(data["public_key_1"])==0 && len(data["public_key_2"])==0 {
+	if len(data["public_key_0"])==0 {
 		return utils.ErrInfoFmt("incorrect user_id")
 	}
-	p.PublicKeys = append(p.PublicKeys, data["public_key_0"])
+	p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_0"]))
 	if len(data["public_key_1"]) > 0 {
-		p.PublicKeys = append(p.PublicKeys, data["public_key_1"])
+		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_1"]))
 	}
 	if len(data["public_key_2"]) > 0 {
-		p.PublicKeys = append(p.PublicKeys, data["public_key_2"])
+		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_2"]))
 	}
 	// чтобы не записали слишком длинную подпись
 	// 128 - это нод-ключ
@@ -208,8 +211,12 @@ func (p *Parser) CheckBlockHeader() error {
 	fmt.Println(first)
 
 	// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
-	p.MrklRoot = utils.GetMrklroot(p.BinaryData, p.Variables, first)
+	fmt.Println(p.Variables)
+	p.MrklRoot, err = utils.GetMrklroot(p.BinaryData, p.Variables, first)
 	fmt.Println(p.MrklRoot)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
 
 	// проверим время
 	if !utils.CheckInputData(p.BlockData.Time, "int") {
@@ -381,12 +388,12 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 
 			// =================== ради эксперимента =========
 			if onlyFront {
-				_, err = p.DCDB.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.DCDB.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
 			} else { // ====================================
-				_, err = p.DCDB.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.DCDB.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -505,6 +512,7 @@ func (p *Parser) ParseDataFull() error {
 	var err error
 
 	p.Variables, err = p.DCDB.GetAllVariables()
+	fmt.Println("p.Variables", p.Variables)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -790,22 +798,86 @@ func MakeTest(parser *Parser, txType string, hashesStart map[string]string) erro
 	return nil
 }
 
+func (p *Parser) limitRequestsRollback(txType string) error {
+	time := p.TxMap["time"]
+	return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ?", p.TxMap["user_id"], time)
+}
+
+func (p *Parser) countMinerAttempt(userId, vType string) (int64, error) {
+	count, err := p.DCDB.Single("SELECT count(user_id) FROM votes_miners WHERE user_id = ? AND type = ?", userId, vType)
+	if err != nil {
+		return 0, utils.ErrInfo(err)
+	}
+	return utils.StrToInt64(count), nil
+}
 // откатываем ID на кол-во затронутых строк
 func (p *Parser) rollbackAI(table string, num int64) (error) {
-	//fmt.Println("table", table)
-	current, err := p.Single("SELECT id FROM "+table+" ORDER BY id DESC LIMIT 1", )
-	if err != nil {
-		return utils.ErrInfo(err)
+
+	if num == 0 {
+		return nil
 	}
 
-	pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', 'id')")
+	current_, err := p.Single("SELECT id FROM "+table+" ORDER BY id DESC LIMIT 1", )
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
+	NewAi := utils.StrToInt64(current_) + num
 
-	_, err = p.ExecSql("ALTER SEQUENCE "+pg_get_serial_sequence+" RESTART WITH "+utils.Int64ToStr(utils.StrToInt64(current)+num))
+	if p.ConfigIni["db_type"] == "postgresql" {
+		pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', 'id')")
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err = p.ExecSql("ALTER SEQUENCE "+pg_get_serial_sequence+" RESTART WITH "+utils.Int64ToStr(NewAi))
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	} else if p.ConfigIni["db_type"] == "mysql" {
+		err := p.DCDB.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = ?", NewAi)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	} else if p.ConfigIni["db_type"] == "sqlite" {
+		err := p.DCDB.ExecSql("UPDATE SQLITE_SEQUENCE SET seq = ? WHERE name = ?", NewAi, table)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) generalCheckAdmin() error {
+	if !utils.CheckInputData(p.TxMap["user_id"], "int") {
+		return utils.ErrInfoFmt("user_id")
+	}
+	// точно ли это текущий админ
+	err := p.getAdminUserId()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	return err
+	// точно ли это текущий админ
+	if p.AdminUserId != utils.BytesToInt64(p.TxMap["user_id"]) {
+		return utils.ErrInfoFmt("user_id (%d!=%d)", p.AdminUserId, p.TxMap["user_id"])
+	}
+	// проверим, есть ли такой юзер и заодно получим public_key
+	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", p.TxMap["user_id"])
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	if len(data["public_key_0"])==0 {
+		return utils.ErrInfoFmt("incorrect user_id")
+	}
+	p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_0"]))
+	if len(data["public_key_1"]) > 0 {
+		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_1"]))
+	}
+	if len(data["public_key_2"]) > 0 {
+		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_2"]))
+	}
+	// чтобы не записали слишком длинную подпись
+	// 128 - это нод-ключ
+	if len(p.TxMap["sign"]) < 128 || len(p.TxMap["sign"]) > 5000  {
+		return utils.ErrInfoFmt("incorrect sign size")
+	}
+	return nil
 }

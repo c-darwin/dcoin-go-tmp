@@ -2580,8 +2580,10 @@ func (schema *SchemaStruct) GetSchema() {
 func  (schema *SchemaStruct) typeMysql() {
 	var result string
 	for table_name, v := range schema.s {
+		AI := ""
+		AI_START := "1"
 		schema.replMy(&table_name)
-		_, err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS "+table_name)
+		err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS "+table_name)
 		if err != nil {
 			fmt.Println("1", err, table_name)
 		}
@@ -2616,6 +2618,10 @@ func  (schema *SchemaStruct) typeMysql() {
 				primaryKey = fmt.Sprintf("PRIMARY KEY (`%s`)", strings.Join(v1.([]string), "`,`"))
 			} else if k=="UNIQ" {
 				uniqKey = fmt.Sprintf("UNIQUE KEY (`%v`)", strings.Join(v1.([]string), "`,`"))
+			} else if k == "AI" {
+				AI = v1.(string)
+			} else if k == "AI_START" {
+				AI_START = v1.(string)
 			}
 		}
 		if len(uniqKey) > 0 {
@@ -2634,8 +2640,12 @@ func  (schema *SchemaStruct) typeMysql() {
 				result+=fmt.Sprintf("%s,\n", line)
 			}
 		}
-		result+=fmt.Sprintf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='%s';\n\n", tableComment)
-		_, err = schema.DCDB.ExecSql(result)
+		if len(AI) > 0 {
+			result+=fmt.Sprintf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=%s COMMENT='%s';\n\n", AI_START, tableComment)
+		} else {
+			result+=fmt.Sprintf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='%s';\n\n", tableComment)
+		}
+		err = schema.DCDB.ExecSql(result)
 		if err != nil {
 			log.Println(err)
 		}
@@ -2736,7 +2746,7 @@ func  (schema *SchemaStruct)  typePostgresql() {
 		}
 
 		result+=fmt.Sprintln("\n\n")
-		_, err := schema.DCDB.ExecSql(result)
+		err := schema.DCDB.ExecSql(result)
 		if err != nil {
 			log.Println(err)
 		}
@@ -2807,7 +2817,7 @@ func  (schema *SchemaStruct) typeSqlite() {
 			}
 		}
 		result+=fmt.Sprintln(");\n\n")
-		_, err := schema.DCDB.ExecSql(result)
+		err := schema.DCDB.ExecSql(result)
 		if err != nil {
 			log.Println(err)
 		}

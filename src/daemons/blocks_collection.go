@@ -95,6 +95,8 @@ func BlocksCollection(configIni map[string]string) {
 
 			if config["first_load_blockchain"]=="file" {
 
+                /*
+                На время тестов не какчаем
                 blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain")
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
@@ -105,7 +107,7 @@ func BlocksCollection(configIni map[string]string) {
                     utils.Sleep(1)
                     db.DbUnlock(GoroutineName);
                     continue BEGIN
-                }
+                }*/
 
                 first := true
                 // блокчейн мог быть загружен ранее. проверим его размер
@@ -194,7 +196,7 @@ func BlocksCollection(configIni map[string]string) {
                         data = make([]byte, 5)
                         file.Read(data)
                     }
-                    utils.Sleep(1)
+                   // utils.Sleep(1)
                 }
                 file.Close()
 	        } else {

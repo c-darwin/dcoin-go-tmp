@@ -107,8 +107,11 @@ func RandInt(min int, max int) int {
 	return min + rand.Intn(max-min)
 }
 
-// функция проверки входящих данных
 func CheckInputData(data_ interface{}, dataType string) bool {
+	return CheckInputData_(data_, dataType, "")
+}
+// функция проверки входящих данных
+func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	var data string
 	switch data_.(type) {
 	case int:
@@ -137,6 +140,14 @@ func CheckInputData(data_ interface{}, dataType string) bool {
 		if ok, _ := regexp.MatchString("^[0-9]{1,10}$", data); ok{
 			return true
 		}
+	case "float":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,5}(\.[0-9]{1,5})?$`, data); ok{
+			return true
+		}
+	case "sleep_var":
+		if ok, _ := regexp.MatchString(`^\{\"is_ready\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\],\"generator\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\]\}$`, data); ok{
+			return true
+		}
 	case "int64", "bigint":
 		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok{
 			return true
@@ -145,7 +156,7 @@ func CheckInputData(data_ interface{}, dataType string) bool {
 		if StrToInt(data) >= 0 && StrToInt(data) <= 34 {
 			return true
 		}
-	case "hex_sign", "hex":
+	case "hex_sign", "hex", "public_key":
 		if ok, _ := regexp.MatchString("^[0-9a-z]+$", data); ok{
 			if len(data) < 2048 {
 				return true
@@ -198,15 +209,16 @@ func DownloadToFile(url, file string) (int64, error) {
 	}
 	return countBytes, nil
 }
+
 func CheckErr(err error) {
 	if err != nil {
 		panic(fmt.Sprintf("%s", err))
 	}
 }
 
-
-func ErrInfoFmt(err string) error {
-	return ErrInfo(fmt.Errorf(err))
+func ErrInfoFmt(err string, a ...interface{}) error {
+	err_ := fmt.Sprintf(err, a...)
+	return fmt.Errorf("%s (%s)", err_, Caller(1))
 }
 
 func ErrInfo(err error, additionally...string) error {
@@ -254,7 +266,7 @@ func CallMethod(i interface{}, methodName string) interface{} {
 	}
 
 	// return or panic, method not found of either type
-	return fmt.Errorf("method not found")
+	return fmt.Errorf("method %s not found", methodName)
 }
 
 func Caller(steps int) string {
@@ -722,9 +734,10 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			fmt.Println("pub", pub)
 			fmt.Println("crypto.SHA1", crypto.SHA1)
 			fmt.Println("HashSha1(forSign)", HashSha1(forSign))
+			fmt.Println("HashSha1(forSign)", HashSha1(forSign))
 			fmt.Println("forSign", forSign)
 			fmt.Println("signsSlice[i]", signsSlice[i])
-			return false, ErrInfo(fmt.Errorf("incorrect sign"))
+			return false, ErrInfoFmt("incorrect sign: key = %s ; hash = %x; forSign = %v", key, HashSha1(forSign), forSign)
 		}
 	}
 	return true, nil
@@ -767,7 +780,8 @@ func DSha256(data_ interface{}) []byte {
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
 }
 
-func GetMrklroot(binaryData []byte, variables map[string]string, first bool) []byte {
+func GetMrklroot(binaryData []byte, variables map[string]string, first bool) ([]byte, error) {
+	fmt.Println(variables)
 	var mrklSlice [][]byte
 	var txSize int64
 	// [error] парсим после вызова функции
@@ -776,7 +790,7 @@ func GetMrklroot(binaryData []byte, variables map[string]string, first bool) []b
 			// чтобы исключить атаку на переполнение памяти
 			if !first {
 				if txSize > StrToInt64(variables["max_tx_size"]) {
-					return []byte("[error] MAX_TX_SIZE")
+					return nil, ErrInfoFmt("[error] MAX_TX_SIZE")
 				}
 			}
 			txSize = DecodeLength(&binaryData)
@@ -790,7 +804,7 @@ func GetMrklroot(binaryData []byte, variables map[string]string, first bool) []b
 			// чтобы исключить атаку на переполнение памяти
 			if !first {
 				if len(mrklSlice) > StrToInt(variables["max_tx_count"]) {
-					return []byte("[error] MAX_TX_COUNT")
+					return nil, ErrInfo(fmt.Errorf("[error] MAX_TX_COUNT (%v > %v)", len(mrklSlice), variables["max_tx_count"]))
 				}
 			}
 			if len(binaryData) == 0 {
@@ -800,7 +814,7 @@ func GetMrklroot(binaryData []byte, variables map[string]string, first bool) []b
 	} else {
 		mrklSlice = append(mrklSlice, []byte("0"))
 	}
-	return MerkleTreeRoot(mrklSlice)
+	return MerkleTreeRoot(mrklSlice), nil
 }
 
 func SliceReverse(s []int64) []int64 {

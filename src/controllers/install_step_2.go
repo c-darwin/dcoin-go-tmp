@@ -97,20 +97,20 @@ func (c *Controller) Install_step_2() (string, error) {
 	schema_.GetSchema()
 
 	if len(userId)>0 {
-		_, err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
+		err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
 		if err != nil {
 			return "", err
 		}
 	}
-	_, err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password) VALUES (?,?,?)", firstLoad, url, setupPassword)
+	err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password) VALUES (?,?,?)", firstLoad, url, setupPassword)
 	if err != nil {
 		return "", err
 	}
-	_, err = c.DCDB.ExecSql("INSERT INTO payment_systems (name)VALUES ('Adyen'),('Alipay'),('Amazon Payments'),('AsiaPay'),('Atos'),('Authorize.Net'),('BIPS'),('BPAY'),('Braintree'),('CentUp'),('Chargify'),('Citibank'),('ClickandBuy'),('Creditcall'),('CyberSource'),('DataCash'),('DigiCash'),('Digital River'),('Dwolla'),('ecoPayz'),('Edy'),('Elavon'),('Euronet Worldwide'),('eWAY'),('Flooz'),('Fortumo'),('Google'),('GoCardless'),('Heartland Payment Systems'),('HSBC'),('iKobo'),('iZettle'),('IP Payments'),('Klarna'),('Live Gamer'),('Mobilpenge'),('ModusLink'),('MPP Global Solutions'),('Neteller'),('Nochex'),('Ogone'),('Paymate'),('PayPal'),('Payoneer'),('PayPoint'),('Paysafecard'),('PayXpert'),('Payza'),('Peppercoin'),('Playspan'),('Popmoney'),('Realex Payments'),('Recurly'),('RBK Money'),('Sage Group'),('Serve'),('Skrill (Moneybookers)'),('Stripe'),('Square, Inc.'),('TFI Markets'),('TIMWE'),('Use My Services (UMS)'),('Ukash'),('V.me by Visa'),('VeriFone'),('Vindicia'),('WebMoney'),('WePay'),('Wirecard'),('Western Union'),('WorldPay'),('Yandex money'),('Qiwi'),('OK Pay'),('Bitcoin'),('Perfect Money')")
+	err = c.DCDB.ExecSql("INSERT INTO payment_systems (name)VALUES ('Adyen'),('Alipay'),('Amazon Payments'),('AsiaPay'),('Atos'),('Authorize.Net'),('BIPS'),('BPAY'),('Braintree'),('CentUp'),('Chargify'),('Citibank'),('ClickandBuy'),('Creditcall'),('CyberSource'),('DataCash'),('DigiCash'),('Digital River'),('Dwolla'),('ecoPayz'),('Edy'),('Elavon'),('Euronet Worldwide'),('eWAY'),('Flooz'),('Fortumo'),('Google'),('GoCardless'),('Heartland Payment Systems'),('HSBC'),('iKobo'),('iZettle'),('IP Payments'),('Klarna'),('Live Gamer'),('Mobilpenge'),('ModusLink'),('MPP Global Solutions'),('Neteller'),('Nochex'),('Ogone'),('Paymate'),('PayPal'),('Payoneer'),('PayPoint'),('Paysafecard'),('PayXpert'),('Payza'),('Peppercoin'),('Playspan'),('Popmoney'),('Realex Payments'),('Recurly'),('RBK Money'),('Sage Group'),('Serve'),('Skrill (Moneybookers)'),('Stripe'),('Square, Inc.'),('TFI Markets'),('TIMWE'),('Use My Services (UMS)'),('Ukash'),('V.me by Visa'),('VeriFone'),('Vindicia'),('WebMoney'),('WePay'),('Wirecard'),('Western Union'),('WorldPay'),('Yandex money'),('Qiwi'),('OK Pay'),('Bitcoin'),('Perfect Money')")
 	if err != nil {
 		return "", err
 	}
-	_, err = c.DCDB.ExecSql(`INSERT INTO cf_lang (id, name) VALUES
+	err = c.DCDB.ExecSql(`INSERT INTO cf_lang (id, name) VALUES
 	(1, 'English (US)'),
 	(2, 'Afrikaans'),
 	(3, 'Kiswahili'),
@@ -181,11 +181,11 @@ func (c *Controller) Install_step_2() (string, error) {
 		return "", err
 	}
 
-	_, err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
+	err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
 	if err != nil {
 		return "", err
 	}
-	_, err = c.DCDB.ExecSql(`INSERT INTO install (progress) VALUES ('complete')`)
+	err = c.DCDB.ExecSql(`INSERT INTO install (progress) VALUES ('complete')`)
 	if err != nil {
 		return "", err
 	}

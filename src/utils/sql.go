@@ -133,13 +133,12 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 func (db *DCDB) GetAllVariables() (map[string]string, error) {
 	result := make(map[string]string)
 	all, err := db.GetAll("SELECT * FROM variables", -1)
+	fmt.Println(all)
 	if err != nil {
 		return result, err
 	}
 	for _, v := range all {
-		for k2, v2 := range v {
-			result[k2] = v2
-		}
+		result[v["name"]] = v["value"]
 	}
 	return result, err
 }
@@ -176,6 +175,19 @@ func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	return string(result), nil
 }
 
+func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (map[string]string, error) {
+	result := make(map[string]string)
+	all, err := db.GetAll(query, -1, args ...)
+	fmt.Println(all)
+	if err != nil {
+		return result, err
+	}
+	for _, v := range all {
+		result[v[name]] = v[value]
+	}
+	return result, err
+}
+
 func (db *DCDB) GetList(query string, args ...interface{}) ([]string, error) {
 	var result []string
 	all, err := db.GetAll(query, -1, args...)
@@ -201,6 +213,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[in
 	if err != nil {
 		return result, fmt.Errorf("%s in query %s %s", err, query, args)
 	}
+	defer rows.Close()
 
 	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / %v", query, args)
@@ -270,7 +283,7 @@ func (db *DCDB) OneRow(query string, args ...interface{}) (map[string]string, er
 
 func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 	txMD5 := Md5(binaryTx)
-	_, err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?)", txMD5, time)
+	err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?)", txMD5, time)
 	if err != nil {
 		return ErrInfo(err)
 	}
@@ -279,7 +292,7 @@ func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 
 func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	txMD5 := Md5(binaryTx)
-	_, err := db.ExecSql("DELETE FROM log_transactions WHERE hash=[hex]", txMD5)
+	err := db.ExecSql("DELETE FROM log_transactions WHERE hash=[hex]", txMD5)
 	if err != nil {
 		return ErrInfo(err)
 	}
@@ -313,18 +326,18 @@ func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64
 	return lastId, nil
 }
 
-func (db *DCDB) ExecSql(query string, args ...interface{}) (int64, error) {
+func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	query = formatQuery(query, db.ConfigIni["db_type"])
 	res, err := db.Exec(query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
+		return fmt.Errorf("%s in query %s %s", err, query, args)
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
 	}
-	return affect, nil
+	return nil
 }
 
 
@@ -882,7 +895,7 @@ func (db *DCDB) InsertIntoMyKey(userId string, publicKey []byte, curBlockId stri
 	case "mysql":
 		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES (0x$1,'approved', $2)`
 	}
-	_, err := db.ExecSql(sql, publicKey, curBlockId )
+	err := db.ExecSql(sql, publicKey, curBlockId )
 	if err != nil {
 		return err
 	}
@@ -955,7 +968,7 @@ func (db *DCDB) GetNodePublicKey(userId int64) ([]byte, error) {
 }
 
 func (db *DCDB) UpdMainLock() error {
-	_, err := db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
+	err := db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 	return err
 }
 
@@ -969,13 +982,13 @@ func (db *DCDB) DbLock(name string) error {
 			return ErrInfo(err)
 		}
 		if exists["script_name"] == name {
-			_, err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
+			err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 			if err != nil {
 				return ErrInfo(err)
 			}
 			ok = true
 		} else if len(exists["script_name"])==0 {
-			_, err := db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), name)
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), name)
 			if err != nil {
 				return ErrInfo(err)
 			}
@@ -993,7 +1006,7 @@ func (db *DCDB) DbLock(name string) error {
 }
 
 func (db *DCDB) DbUnlock(name string) error {
-	_, err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
+	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
 	if err != nil {
 		return err
 	}

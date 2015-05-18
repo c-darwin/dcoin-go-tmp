@@ -33,37 +33,38 @@ func (c *Controller) Sign_login() (string, error) {
 	var sql string
 	switch configIni["db_type"] {
 	case "sqlite":
+
 		sql = `DELETE FROM "authorization" WHERE "hash" = $1`
-		_, err := c.DCDB.ExecSql(sql, hash)
+		err := c.DCDB.ExecSql(sql, hash)
 		if err != nil {
 			return "", err
 		}
 		sql =`INSERT INTO "authorization" ("hash", data) VALUES ($1, $2)`
-		_, err = c.DCDB.ExecSql(sql, hash, loginCode)
+		err = c.DCDB.ExecSql(sql, hash, loginCode)
 		if err != nil {
 			return "", err
 		}
 	case "postgresql":
 
 		sql = `DELETE FROM "authorization" WHERE "hash" = $1`
-		_, err := c.DCDB.ExecSql(sql, hash)
+		err := c.DCDB.ExecSql(sql, hash)
 		if err != nil {
 			return "", err
 		}
 		sql =`INSERT INTO  "authorization" (hash, data) VALUES (decode($1,'HEX'), $2)`
-		_, err = c.DCDB.ExecSql(sql, hash, loginCode)
+		err = c.DCDB.ExecSql(sql, hash, loginCode)
 		if err != nil {
 			return "", err
 		}
 	case "mysql":
 
 		sql = `DELETE FROM "authorization" WHERE "hash" = $1`
-		_, err := c.DCDB.ExecSql(sql, hash)
+		err := c.DCDB.ExecSql(sql, hash)
 		if err != nil {
 			return "", err
 		}
 		sql =`INSERT INTO authorization (hash, data) VALUES (0x$1, $2)`
-		_, err = c.DCDB.ExecSql(sql, hash, loginCode)
+		err = c.DCDB.ExecSql(sql, hash, loginCode)
 		if err != nil {
 			return "", err
 		}

@@ -65,7 +65,7 @@ var TxTypes = map[int]string {
 	// админ разжаловал майнеров в юзеры
 	20 : "admin_ban_miners",
 	// админ изменил variables
-	21 : "admin_variables",
+	21 : "AdminVariables",
 	// админ обновил набор точек для проверки лиц
 	22 : "admin_spots",
 	// юзер создал кредит

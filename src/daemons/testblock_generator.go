@@ -333,11 +333,11 @@ func Testblock_generator(configIni map[string]string) {
         defer os.Remove(name)*/
 
         mutex.Lock()
-        _, err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
+        err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
         utils.CheckErr(err)
 //        affect, err := res.RowsAffected()
 //        utils.CheckErr(err)
-        _, err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex]`,
+        err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex]`,
             newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
         utils.CheckErr(err)
   //      affect, err = res.RowsAffected()
