@@ -105,7 +105,7 @@ func (db *DCDB) GetConfigIni(name string) string {
 }
 
 func (db *DCDB) GetMainLockName() (string, error) {
-	name, err := db.Single("SELECT script_name FROM main_lock")
+	name, err := db.Single("SELECT script_name FROM main_lock").String()
 	if err != nil {
 		return "", err
 	}
@@ -130,19 +130,34 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 	return result, nil
 }
 
-func (db *DCDB) GetAllVariables() (map[string]string, error) {
-	result := make(map[string]string)
+type Variables struct {
+	Int64 map[string]int64
+	String map[string]string
+	Float64 map[string]float64
+}
+func (db *DCDB) GetAllVariables() (*Variables, error) {
+	result := new(Variables)
+	result.Int64 = make(map[string]int64)
+	result.String = make(map[string]string)
+	result.Float64 = make(map[string]float64)
 	all, err := db.GetAll("SELECT * FROM variables", -1)
 	fmt.Println(all)
 	if err != nil {
 		return result, err
 	}
 	for _, v := range all {
-		result[v["name"]] = v["value"]
+		switch v["name"] {
+		case "alert_error_time", "error_time", "promised_amount_points", "promised_amount_votes_0", "promised_amount_votes_1", "promised_amount_votes_period", "holidays_max", "limit_abuses", "limit_abuses_period", "limit_promised_amount", "limit_promised_amount_period", "limit_cash_requests_out", "limit_cash_requests_out_period", "limit_change_geolocation", "limit_change_geolocation_period", "limit_holidays", "limit_holidays_period", "limit_message_to_admin", "limit_message_to_admin_period", "limit_mining", "limit_mining_period", "limit_node_key", "limit_node_key_period", "limit_primary_key", "limit_primary_key_period", "limit_votes_miners", "limit_votes_miners_period", "limit_votes_complex", "limit_votes_complex_period", "limit_commission", "limit_commission_period", "limit_new_miner", "limit_new_miner_period", "limit_new_user", "limit_new_user_period", "max_block_size", "max_block_user_transactions", "max_day_votes", "max_tx_count", "max_tx_size", "max_user_transactions", "miners_keepers", "miner_points", "miner_votes_0", "miner_votes_1", "miner_votes_attempt", "miner_votes_period", "mining_votes_0", "mining_votes_1", "mining_votes_period", "min_miners_keepers", "node_voting", "node_voting_period", "rollback_blocks_1", "rollback_blocks_2", "limit_change_host", "limit_change_host_period", "min_miners_of_voting", "min_hold_time_promise_amount", "min_promised_amount", "points_update_time", "reduction_period", "new_pct_period", "new_max_promised_amount", "new_max_other_currencies", "cash_request_time", "limit_for_repaid_fix", "limit_for_repaid_fix_period", "miner_newbie_time", "system_commission":
+			result.Int64[v["name"]] = StrToInt64(v["value"])
+		case "points_factor" :
+			result.Float64[v["name"]] = StrToFloat64(v["value"])
+		case "sleep" :
+			result.String[v["name"]] = v["value"]
+		}
 	}
 	return result, err
 }
-
+/*
 func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
 	result, err := db.Single(query, args...)
 	if err != nil {
@@ -150,8 +165,77 @@ func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
 	}
 	return StrToInt64(result), nil
 }
+*/
 
-func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
+type singleResult struct {
+	result []byte
+	err error
+}
+
+type listResult struct {
+	result []string
+	err error
+}
+
+func (r *listResult) Int64() ([]int64, error) {
+	var result []int64
+	if r.err != nil {
+		return result, r.err
+	}
+	for _, v := range r.result {
+		result = append(result, v)
+	}
+	return result, nil
+}
+
+func (r *listResult) MapInt() (map[int]int, error) {
+	result := make(map[int]int)
+	if r.err != nil {
+		return result, r.err
+	}
+	i := 0
+	for _, v := range r.result {
+		result[i] = v
+		i++
+	}
+	return result, nil
+}
+
+func (r *listResult) String() ([]string, error) {
+	if r.err != nil {
+		return r.result, r.err
+	}
+	return r.result, nil
+}
+
+func (r *singleResult) Int64() (int64, error) {
+	if r.err!=nil {
+		return 0, r.err
+	}
+	return BytesToInt64(r.result), nil
+}
+func (r *singleResult) Int() (int, error) {
+	if r.err!=nil {
+		return 0, r.err
+	}
+	return BytesToInt(r.result), nil
+}
+
+func (r *singleResult) String() (string, error) {
+	if r.err!=nil {
+		return "", r.err
+	}
+	return string(r.result), nil
+}
+
+func (r *singleResult) Bytes() ([]byte, error) {
+	if r.err!=nil {
+		return []byte(""), r.err
+	}
+	return r.result, nil
+}
+
+func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
 		query = strings.Replace(query, "[hex]", "?", -1)
@@ -165,14 +249,14 @@ func (db *DCDB) Single(query string, args ...interface{}) (string, error) {
 	err := db.QueryRow(query, args...).Scan(&result)
 	switch {
 	case err == sql.ErrNoRows:
-		return "", nil
+		return &singleResult{[]byte(""), nil}
 	case err != nil:
-		return "", fmt.Errorf("%s in query %s %s", err, query, args)
+		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, query, args)}
 	}
 	if db.ConfigIni["log"]=="1" {
 		log.Printf("SQL: %s / %v", query, args)
 	}
-	return string(result), nil
+	return &singleResult{result, nil}
 }
 
 func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (map[string]string, error) {
@@ -188,18 +272,18 @@ func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (m
 	return result, err
 }
 
-func (db *DCDB) GetList(query string, args ...interface{}) ([]string, error) {
+func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 	var result []string
 	all, err := db.GetAll(query, -1, args...)
 	if err != nil {
-		return result, err
+		return &listResult{"", err}
 	}
 	for _, v := range all {
 		for _, v2 := range v {
 			result = append(result, v2)
 		}
 	}
-	return result, nil
+	return &listResult{result, nil}
 }
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[int]map[string]string, error) {
@@ -379,7 +463,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		columns = strings.Replace(columns, "cron_checked_time,", "", -1)
 		q="SELECT md5(CAST((array_agg("+columns+" "+orderBy+")) AS text)) FROM \""+table+"\" "+where
 	}*/
-	hash, err := db.Single(q)
+	hash, err := db.Single(q).String()
 	if err != nil {
 		return "", ErrInfo(err, q)
 	}
@@ -460,14 +544,14 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	}
 	log.Print("confirmedBlockId", confirmedBlockId)
 	// получим время из последнего подвержденного блока
-	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId)
+	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId).Bytes()
 	if err != nil || len(lastBlockBin)==0 {
 		return result, ErrInfo(err)
 	}
 	// ID блока
-	result["blockId"] = int64(BinToDec([]byte(lastBlockBin[1:5])))
+	result["blockId"] = int64(BinToDec(lastBlockBin[1:5]))
 	// Время последнего блока
-	result["lastBlockTime"] = int64(BinToDec([]byte(lastBlockBin[5:9])))
+	result["lastBlockTime"] = int64(BinToDec(lastBlockBin[5:9]))
 	return result, nil
 }
 
@@ -490,7 +574,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 	} else {
 		// user_id уже есть, т.к. мы смогли зайти в урезанном режиме по паблик-кею
 		// проверим, может есть что-то в miners_data
-		status, err := db.Single("SELECT status FROM miners_data WHERE user_id = $1", sessUserId)
+		status, err := db.Single("SELECT status FROM miners_data WHERE user_id = $1", sessUserId).String()
 		if err != nil {
 			return result, ErrInfo(err)
 		}
@@ -512,7 +596,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 	result["time_last_block"] = t.Format("2006-01-02 15:04:05")
 	result["time_last_block_int"] = Int64ToStr(blockData["lastBlockTime"])
 
-	result["connections"], err = db.Single("SELECT count(*) FROM nodes_connection")
+	result["connections"], err = db.Single("SELECT count(*) FROM nodes_connection").String()
 	if err != nil {
 		return result, ErrInfo(err)
 	}
@@ -529,19 +613,19 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 }
 
 func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
-	result, err := db.Single("SELECT pool_admin_user_id FROM config")
+	result, err := db.Single("SELECT pool_admin_user_id FROM config").Int64()
 	if err != nil {
 		return 0, ErrInfo(err)
 	}
-	return StrToInt64(result), nil
+	return result, nil
 }
 
 func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
-	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)")
+	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").Bytes()
 	if err != nil {
 		return []byte(""), ErrInfo(err)
 	}
-	return []byte(result), nil
+	return result, nil
 }
 
 func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
@@ -555,7 +639,7 @@ func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	case "mysql":
 		sql = `SELECT data FROM authorization WHERE hash = 0x$1`
 	}
-	data, err := db.Single(sql, hash)
+	data, err := db.Single(sql, hash).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -563,15 +647,15 @@ func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 }
 
 func (db *DCDB) GetAdminUserId() (int64, error) {
-	result, err := db.Single("SELECT user_id FROM admin")
+	result, err := db.Single("SELECT user_id FROM admin").Int64()
 	if err != nil {
 		return 0, ErrInfo(err)
 	}
-	return StrToInt64(result), nil
+	return result, nil
 }
 
 func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
-	result, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = $1", userId)
+	result, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = $1", userId).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -624,11 +708,10 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	//fmt.Println("prevBlock", prevBlock)
 
 	// общее кол-во майнеров
-	row, err := db.Single("SELECT max(miner_id) FROM miners")
+	maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners").Int64()
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 	}
-	maxMinerId := StrToInt64(row)
 
 	for currentUserId == 0 {
 		// если майнера заморозили то у него исчезает miner_id, чтобы не попасть на такой пустой miner_id
@@ -658,11 +741,10 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy);
 
 		// получим ID юзера по его miner_id
-		row, err = db.Single("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10))
+		currentUserId, err = db.Single("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10)).Int64()
 		if err != nil {
 			return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 		}
-		currentUserId = StrToInt64(row)
 		i++;
 	}
 
@@ -702,8 +784,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 	sleepDataMap := make(map[string][]int64)
 	var sleepDataJson []byte
-	data_, err := db.Single("SELECT value FROM variables WHERE name = 'sleep'")
-	sleepDataJson = []byte(data_)
+	sleepDataJson, err := db.Single("SELECT value FROM variables WHERE name = 'sleep'").Bytes()
 	if err != nil {
 		return sleepDataMap, ErrInfo(err)
 	}
@@ -736,7 +817,7 @@ func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 }
 
 func (db *DCDB) GetConfirmedBlockId() (int64, error) {
-	localGateIp, err := db.Single("SELECT local_gate_ip FROM config")
+	localGateIp, err := db.Single("SELECT local_gate_ip FROM config").String()
 	if err != nil {
 		return 0, err
 	}
@@ -747,12 +828,12 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 		}
 		return blockId, nil
 	} else {
-		result, err := db.Single("SELECT max(block_id) FROM confirmations WHERE good >= ?", consts.MIN_CONFIRMED_NODES)
+		result, err := db.Single("SELECT max(block_id) FROM confirmations WHERE good >= ?", consts.MIN_CONFIRMED_NODES).Int64()
 		if err != nil {
 			return 0, err
 		}
 		//log.Print("result int64",StrToInt64(result))
-		return StrToInt64(result), nil
+		return result, nil
 	}
 }
 
@@ -776,11 +857,11 @@ func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 }
 
 func (db *DCDB) GetMyUserId(myPrefix string) (int64, error) {
-	userId, err := db.Single("SELECT user_id FROM "+myPrefix+"my_table")
+	userId, err := db.Single("SELECT user_id FROM "+myPrefix+"my_table").Int64()
 	if err != nil {
 		return 0, err
 	}
-	return StrToInt64(userId), nil
+	return userId, nil
 }
 
 func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
@@ -861,11 +942,11 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 }
 
 func (db *DCDB) GetBlockId() (int64, error) {
-	blockId, err := db.Single("SELECT block_id FROM info_block")
+	blockId, err := db.Single("SELECT block_id FROM info_block").Int64()
 	if err != nil {
 		return 0, err
 	}
-	return StrToInt64(blockId), nil
+	return blockId, nil
 }
 
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
@@ -878,7 +959,7 @@ func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 	case "mysql":
 		sql = `SELECT user_id FROM users WHERE public_key_0 = 0x$1`
 	}
-	userId, err := db.Single(sql, publicKey)
+	userId, err := db.Single(sql, publicKey).String()
 	if err != nil{
 		return "", ErrInfo(err)
 	}
@@ -953,18 +1034,18 @@ func (db *DCDB) GetMyPrefix() (string, error) {
 
 
 func (db *DCDB) GetMyLocalGateIp() (string, error) {
-	result, err := db.Single("SELECT local_gate_ip FROM config")
+	result, err := db.Single("SELECT local_gate_ip FROM config").String()
 	if err != nil {
 		return "", err
 	}
 	return result, nil
 }
 func (db *DCDB) GetNodePublicKey(userId int64) ([]byte, error) {
-	result, err := db.Single("SELECT node_public_key FROM miners_data WHERE user_id = ?", userId)
+	result, err := db.Single("SELECT node_public_key FROM miners_data WHERE user_id = ?", userId).Bytes()
 	if err != nil {
 		return []byte(""), err
 	}
-	return []byte(result), nil
+	return result, nil
 }
 
 func (db *DCDB) UpdMainLock() error {

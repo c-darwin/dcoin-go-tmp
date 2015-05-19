@@ -44,7 +44,7 @@ func BlocksCollection(configIni map[string]string) {
 
     // Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
     INSTALL:
-    progress, err := db.Single("SELECT progress FROM install")
+    progress, err := db.Single("SELECT progress FROM install").String()
     if err != nil || progress != "complete" {
         utils.Sleep(1)
         goto INSTALL

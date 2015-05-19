@@ -19,7 +19,7 @@ type Parser struct {
 	blockHashHex []byte
 	dataType int64
 	blockHex []byte
-	Variables map[string]string
+	Variables *utils.Variables
 	CurrentBlockId int64
 	fullTxBinaryData []byte
 	halfRollback bool // уже не актуально, т.к. нет ни одной половинной фронт-проверки
@@ -31,6 +31,9 @@ type Parser struct {
 	MrklRoot []byte
 	PublicKeys [][]byte
 	AdminUserId int64
+	TxUserID int64
+	TxTime int64
+	nodePublicKey []byte
 }
 
 func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interface{}) error {
@@ -41,6 +44,8 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 		limit = utils.StrToInt(limit_.(string))
 	case int:
 		limit = limit_.(int)
+	case int64:
+		limit = int(limit_.(int64))
 	}
 
 	var period int
@@ -52,11 +57,11 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 	}
 
 	time := utils.BytesToInt(p.TxMap["time"])
-	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxMap["user_id"], (time-period))
+	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxMap["user_id"], (time-period)).Int()
 	if err != nil {
 		return err
 	}
-	if utils.StrToInt(num) >= limit {
+	if num >= limit {
 		return utils.ErrInfo(fmt.Errorf("[limit_requests] log_time_%v %v >= %v", txType, num, limit))
 	} else {
 		err := p.DCDB.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxMap["user_id"], time)
@@ -68,11 +73,11 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 }
 
 func (p *Parser) getAdminUserId() error {
-	AdminUserId, err := p.DCDB.Single("SELECT user_id FROM admin")
+	AdminUserId, err := p.DCDB.Single("SELECT user_id FROM admin").Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	p.AdminUserId = utils.StrToInt64(AdminUserId)
+	p.AdminUserId = AdminUserId
 	return nil
 }
 func (p *Parser) checkMinerNewbie() error {
@@ -82,14 +87,14 @@ func (p *Parser) checkMinerNewbie() error {
 	} else {
 		time = utils.BytesToInt64(p.TxMap["time"])
 	}
-	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxMap["user_id"])
+	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxMap["user_id"]).Int64()
 	err = p.getAdminUserId()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	if (p.BlockData==nil) || (p.BlockData!=nil && p.BlockData.BlockId > 29047) {
-		if utils.StrToInt64(regTime) > (time - utils.StrToInt64(p.Variables["miner_newbie_time"])) && utils.BytesToInt64(p.TxMap["user_id"]) != p.AdminUserId {
-			return utils.ErrInfo(fmt.Errorf("error miner_newbie (%v > %v - %v)", regTime, time, p.Variables["miner_newbie_time"]))
+		if regTime > (time - p.Variables.Int64["miner_newbie_time"]) && utils.BytesToInt64(p.TxMap["user_id"]) != p.AdminUserId {
+			return utils.ErrInfo(fmt.Errorf("error miner_newbie (%v > %v - %v)", regTime, time, p.Variables.Int64["miner_newbie_time"]))
 		}
 	}
 	return nil
@@ -107,11 +112,10 @@ func (p *Parser) checkMiner(userId []byte) error {
 	}
 
 	// когда админ разжаловывает майнера, у него пропадет miner_id
-	minerId_, err := p.DCDB.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId)
+	minerId, err := p.DCDB.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId).Int64()
 	if err != nil {
 		return err
 	}
-	minerId := utils.StrToInt64(minerId_)
 	// если есть бан в этом же блоке, то будет miner_id = 0, но условно считаем, что проверка пройдена
 	if (minerId > 0) || (minerId == 0 && blockId > 0) {
 		return nil
@@ -203,7 +207,7 @@ func (p *Parser) CheckBlockHeader() error {
 
 	var first bool
 	if p.BlockData.BlockId == 1 {
-		p.Variables["max_tx_size"] = "1048576"
+		p.Variables.Int64["max_tx_size"] = 1048576
 		first = true
 	} else {
 		first = false
@@ -248,8 +252,8 @@ func (p *Parser) CheckBlockHeader() error {
 
 	// не слишком ли рано прислан этот блок. допустима погрешность = error_time
 	if !first {
-		if p.PrevBlock.Time + isReadySleep + generatorSleep + isReadySleep2 - p.BlockData.Time > utils.StrToInt64(p.Variables["error_time"]) {
-			return utils.ErrInfo(fmt.Errorf("incorrect block time %d + %d + %d+ %d - %d > %d", p.PrevBlock.Time, isReadySleep, generatorSleep, isReadySleep2, p.BlockData.Time, p.Variables["error_time"]))
+		if p.PrevBlock.Time + isReadySleep + generatorSleep + isReadySleep2 - p.BlockData.Time > p.Variables.Int64["error_time"] {
+			return utils.ErrInfo(fmt.Errorf("incorrect block time %d + %d + %d+ %d - %d > %d", p.PrevBlock.Time, isReadySleep, generatorSleep, isReadySleep2, p.BlockData.Time, p.Variables.Int64["error_time"]))
 		}
 	}
 
@@ -298,7 +302,7 @@ func (p *Parser) CheckBlockHeader() error {
 // Это защита от dos, когда одну транзакцию можно было бы послать миллион раз,
 // и она каждый раз успешно проходила бы фронтальную проверку
 func (p *Parser) CheckLogTx(tx_binary []byte) error {
-	hash, err := p.DCDB.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary))
+	hash, err := p.DCDB.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary)).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -431,7 +435,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		for {
 			length := utils.DecodeLength(transactionBinaryData)
 			fmt.Printf("length%d\n", length)
-			if length > 0 && length < utils.StrToInt64(p.Variables["max_tx_size"]) {
+			if length > 0 && length < p.Variables.Int64["max_tx_size"] {
 				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
 				merkleSlice = append(merkleSlice, utils.DSha256(data))
@@ -594,7 +598,7 @@ func (p *Parser) ParseDataFull() error {
 				txCounter[userId]++
 
 				// чтобы 1 юзер не смог прислать дос-блок размером в 10гб, который заполнит своими же транзакциями
-				if txCounter[userId] > utils.StrToInt64(p.Variables["max_block_user_transactions"])  {
+				if txCounter[userId] > p.Variables.Int64["max_block_user_transactions"]  {
 					p.RollbackTo(txForRollbackTo, true, false)
 					return utils.ErrInfo(fmt.Errorf("max_block_user_transactions"))
 				}
@@ -694,6 +698,8 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	for i, field := range fields {
 		TxMap[field] = p.TxSlice[i+4]
 	}
+	p.TxUserID = utils.BytesToInt64(TxMap["user_id"])
+	p.Time = utils.BytesToInt64(TxMap["time"])
 	//fmt.Println("TxMap", TxMap)
 	//fmt.Println("TxMap[hash]", TxMap["hash"])
 	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
@@ -714,19 +720,19 @@ func (p *Parser) GetMyUserId(userId int64) (int64, int64, string, []int64, error
 			// чтобы не было проблем с change_primary_key нужно получить user_id только тогда, когда он был реально выдан
 			// в будущем можно будет переделать, чтобы user_id можно было указывать всем и всегда заранее.
 			// тогда при сбросе будут собираться более полные таблы my_, а не только те, что заполнятся в change_primary_key
-			myUserId, err = p.SingleInt64("SELECT user_id FROM "+myPrefix+"my_table")
+			myUserId, err = p.Single("SELECT user_id FROM "+myPrefix+"my_table").Int64()
 			if err != nil {
 				return myUserId, myBlockId, myPrefix, myUserIds, err
 			}
 		}
 	} else {
-		myUserId, err = p.SingleInt64("SELECT user_id FROM my_table")
+		myUserId, err = p.Single("SELECT user_id FROM my_table").Int64()
 		if err != nil {
 			return myUserId, myBlockId, myPrefix, myUserIds, err
 		}
 		myUserIds = append(myUserIds, myUserId)
 	}
-	myBlockId, err = p.SingleInt64("SELECT my_block_id FROM config")
+	myBlockId, err = p.Single("SELECT my_block_id FROM config").Int64()
 	if err != nil {
 		return myUserId, myBlockId, myPrefix, myUserIds, err
 	}
@@ -804,11 +810,11 @@ func (p *Parser) limitRequestsRollback(txType string) error {
 }
 
 func (p *Parser) countMinerAttempt(userId, vType string) (int64, error) {
-	count, err := p.DCDB.Single("SELECT count(user_id) FROM votes_miners WHERE user_id = ? AND type = ?", userId, vType)
+	count, err := p.DCDB.Single("SELECT count(user_id) FROM votes_miners WHERE user_id = ? AND type = ?", userId, vType).Int64()
 	if err != nil {
 		return 0, utils.ErrInfo(err)
 	}
-	return utils.StrToInt64(count), nil
+	return count, nil
 }
 // откатываем ID на кол-во затронутых строк
 func (p *Parser) rollbackAI(table string, num int64) (error) {
@@ -817,14 +823,14 @@ func (p *Parser) rollbackAI(table string, num int64) (error) {
 		return nil
 	}
 
-	current_, err := p.Single("SELECT id FROM "+table+" ORDER BY id DESC LIMIT 1", )
+	current, err := p.Single("SELECT id FROM "+table+" ORDER BY id DESC LIMIT 1", ).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	NewAi := utils.StrToInt64(current_) + num
+	NewAi := current + num
 
 	if p.ConfigIni["db_type"] == "postgresql" {
-		pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', 'id')")
+		pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', 'id')").String()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -880,4 +886,140 @@ func (p *Parser) generalCheckAdmin() error {
 		return utils.ErrInfoFmt("incorrect sign size")
 	}
 	return nil
+}
+
+func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhere string, AI bool) error {
+	var whereUserId string
+	switch whereUserId_.(type) {
+	case string:
+		whereUserId = whereUserId_.(string)
+	case []byte:
+		whereUserId = string(whereUserId_.([]byte))
+	}
+
+	where := ""
+	if len(whereUserId) > 0 {
+		where = fmt.Sprintf("WHERE user_id = %d", whereUserId)
+	}
+	// получим log_id, по которому можно найти данные, которые были до этого
+	logId, err := p.Single("SELECT log_id FROM ? "+where+addWhere, table).Int64()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	// если $log_id = 0, значит восстанавливать нечего и нужно просто удалить запись
+	if logId == 0 {
+		err = p.ExecSql("DELETE FROM ? "+where+addWhere, table)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	} else {
+		// данные, которые восстановим
+		data, err := p.OneRow("SELECT * FROM log_"+table+" WHERE log_id = ?", logId)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		addSql := ""
+		for k, v := range data {
+			// block_id т.к. в log_ он нужен для удаления старых данных, а в обычной табле не нужен
+			if k == "log_id" || k == "prev_log_id"  || k == "block_id" {
+				continue
+			}
+			if k == "node_public_key" {
+				switch p.ConfigIni["db_type"] {
+				case "sqlite":
+					addSql += fmt.Sprintf("%v='%x',", k, v)
+				case "postgresql":
+					addSql += fmt.Sprintf("%v=decode(%x,'HEX'),", k, v)
+				case "mysql":
+					addSql += fmt.Sprintf("%v=UNHEX(%x),", k, v)
+				}
+			} else {
+				addSql += fmt.Sprintf("%v = '%v',", k, v)
+			}
+		}
+		// всегда пишем предыдущий log_id
+		addSql += fmt.Sprintf("log_id = %d,", data["prev_log_id"])
+		addSql = addSql[0:len(addSql)-1]
+		err = p.ExecSql("UPDATE ? SET "+addSql+where+addWhere, table)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM ? WHERE log_id= ?", table, logId)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err = p.rollbackAI("log_"+table, 1)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func arrayIntersect(arr1, arr2 map[int]int) bool {
+	for _, v := range arr1 {
+		for _, v2 := range arr2 {
+			if v == v2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
+	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (data.votes0 > data.minMinersKeepers || data.votes0 == len(data.minersIds)) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func  (p *Parser) minersCheckVotes1(data *MinerData) bool {
+	if data.votes1 >= data.minMinersKeepers || data.votes1 == len(data.minersIds) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func getMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[int]int {
+	ctx:=utils.StrToInt(ctx0)
+	maxMinerId:=utils.StrToInt(maxMinerId0)
+	minersKeepers:=utils.StrToInt(minersKeepers0)
+	result := make(map[int]int)
+	newResult := make(map[int]int)
+	var ctx_ float64
+	ctx_ = float64(ctx)
+	for i:=0; i<minersKeepers; i++ {
+		//fmt.Println("ctx", ctx)
+		//var hi float34
+		hi := ctx_ / float64(127773)
+		//fmt.Println("hi", hi)
+		lo := int(ctx_) % 127773
+		//fmt.Println("lo", lo)
+		x := (float64(16807) * float64(lo)) - (float64(2836) * hi)
+		//fmt.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
+		if x <= 0 {
+			x += 0x7fffffff
+		}
+		ctx_ = x
+		rez := int(ctx_) % (maxMinerId+1)
+		//fmt.Println("rez", rez)
+		if rez == 0 {
+			rez = 1
+		}
+		result[rez] = 1
+	}
+	if arr0 {
+		i:=0
+		for k, _ := range result {
+			newResult[i] = k
+			i++
+		}
+	} else {
+		newResult = result
+	}
+	return newResult
 }

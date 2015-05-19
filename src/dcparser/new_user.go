@@ -63,8 +63,8 @@ func (p *Parser) NewUserFront() (error) {
 
 	// один ключ не может быть у двух юзеров
 	num, err := p.DCDB.Single("SELECT count(user_id) FROM users WHERE public_key_0 = [hex] OR public_key_1 = [hex] OR public_key_2 = [hex]",
-		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"])
-	if utils.StrToInt(num) > 0 {
+		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"]).Int()
+	if num > 0 {
 		return utils.ErrInfoFmt("exists public_ke")
 	}
 	err = p.getAdminUserId()
@@ -74,7 +74,7 @@ func (p *Parser) NewUserFront() (error) {
 	if utils.BytesToInt64(p.TxMap["user_id"]) == p.AdminUserId {
 		err = p.limitRequest(1000, "new_user", 86400)
 	} else {
-		err = p.limitRequest(p.Variables["limit_new_user"], "new_user", p.Variables["limit_new_user_period"])
+		err = p.limitRequest(p.Variables.Int64["limit_new_user"], "new_user", p.Variables.Int64["limit_new_user_period"])
 	}
 	if err != nil {
 		return err
@@ -98,13 +98,13 @@ func (p *Parser) NewUser() (error) {
 	if len(community) > 0 {
 		for _, userId := range community {
 			myPrefix := utils.Int64ToStr(userId)+"_"
-			myUserId, err := p.DCDB.Single("SELECT user_id FROM "+myPrefix+"my_table")
+			myUserId, err := p.DCDB.Single("SELECT user_id FROM "+myPrefix+"my_table").Int64()
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
-			if myUserId == "" {
+			if myUserId == 0 {
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"])
+				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -122,14 +122,14 @@ func (p *Parser) NewUser() (error) {
 			}
 		}
 	} else {
-		myUserId, err := p.DCDB.Single("SELECT user_id FROM my_table")
+		myUserId, err := p.DCDB.Single("SELECT user_id FROM my_table").Int64()
 		if err != nil {
 			return err
 		}
-		if myUserId == "" {
+		if myUserId == 0 {
 
 			// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"])
+			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
@@ -167,7 +167,7 @@ func (p *Parser) NewUserRollback() (error) {
 		for _, userId := range community {
 				myPrefix := utils.Int64ToStr(userId)+"_"
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"])
+				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -185,7 +185,7 @@ func (p *Parser) NewUserRollback() (error) {
 		}
 	} else {
 			// проверим, не наш ли это public_key
-			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"])
+			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 			if err != nil {
 				return utils.ErrInfo(err)
 			}

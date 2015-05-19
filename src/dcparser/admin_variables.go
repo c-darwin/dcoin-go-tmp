@@ -125,7 +125,7 @@ func (p *Parser) AdminVariables() (error) {
 		return utils.ErrInfo(err)
 	}
 	for name, value := range Variables {
-		exists, err := p.DCDB.Single("SELECT name FROM variables WHERE name = ?", name)
+		exists, err := p.DCDB.Single("SELECT name FROM variables WHERE name = ?", name).String()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}

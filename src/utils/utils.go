@@ -107,6 +107,10 @@ func RandInt(min int, max int) int {
 	return min + rand.Intn(max-min)
 }
 
+func PpLenght(p1, p2 [2]int) float64 {
+	return math.Sqrt(math.Pow(float64(p1[0]-p2[0]), 2) + math.Pow(float64(p1[1]-p2[1]), 2))
+}
+
 func CheckInputData(data_ interface{}, dataType string) bool {
 	return CheckInputData_(data_, dataType, "")
 }
@@ -128,8 +132,48 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok{
 			return true
 		}
+	case "race":
+		if ok, _ := regexp.MatchString("^[1-3]$", data); ok{
+			return true
+		}
+	case "country":
+		if ok, _ := regexp.MatchString("^[0-9]{1,3}$", data); ok{
+			return true
+		}
+	case "vote", "boolean":
+		if ok, _ := regexp.MatchString(`^0|1$`, data); ok{
+			return true
+		}
+	case "coordinate":
+		if ok, _ := regexp.MatchString(`^\-?[0-9]{1,3}(\.[0-9]{1,5})?$`, data); ok{
+			return true
+		}
+	case "host":
+		if ok, _ := regexp.MatchString(`^https?:\/\/[0-9a-z\_\.\-\/:]{1,100}[\/]$`, data); ok{
+			return true
+		}
+	case "coords":
+		xy := `\[\d{1,3}\,\d{1,3}\]`;
+		r := `^\[(`+xy+`\,){`+info+`}`+xy+`\]$`;
+		if ok, _ := regexp.MatchString(r, data); ok{
+			return true
+		}
+		fmt.Println(r)
+		fmt.Println(data)
 	case "lang":
 		if ok, _ := regexp.MatchString("^(en|ru)$", data); ok{
+			return true
+		}
+	case "video_type":
+		if ok, _ := regexp.MatchString("^(youtube|vimeo|youku|null)$", data); ok{
+			return true
+		}
+	case "video_url_id":
+		if ok, _ := regexp.MatchString("^(?i)([0-9a-z_-]{5,32}|null)$", data); ok{
+			return true
+		}
+	case "photo_hash", "sha256":
+		if ok, _ := regexp.MatchString("^[0-9a-z]{64}$", data); ok{
 			return true
 		}
 	case "alert":
@@ -184,7 +228,10 @@ func StrToInt(s string) int {
 	int_, _ := strconv.Atoi(s)
 	return int_
 }
-
+func StrToFloat64(s string) float64 {
+	Float64, _ := strconv.ParseFloat(s, 64)
+	return Float64
+}
 func BytesToInt(s []byte) int {
 	int_, _ := strconv.Atoi(string(s))
 	return int_
@@ -780,7 +827,7 @@ func DSha256(data_ interface{}) []byte {
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
 }
 
-func GetMrklroot(binaryData []byte, variables map[string]string, first bool) ([]byte, error) {
+func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, error) {
 	fmt.Println(variables)
 	var mrklSlice [][]byte
 	var txSize int64
@@ -789,7 +836,7 @@ func GetMrklroot(binaryData []byte, variables map[string]string, first bool) ([]
 		for {
 			// чтобы исключить атаку на переполнение памяти
 			if !first {
-				if txSize > StrToInt64(variables["max_tx_size"]) {
+				if txSize > variables.Int64["max_tx_size"] {
 					return nil, ErrInfoFmt("[error] MAX_TX_SIZE")
 				}
 			}
@@ -803,8 +850,8 @@ func GetMrklroot(binaryData []byte, variables map[string]string, first bool) ([]
 
 			// чтобы исключить атаку на переполнение памяти
 			if !first {
-				if len(mrklSlice) > StrToInt(variables["max_tx_count"]) {
-					return nil, ErrInfo(fmt.Errorf("[error] MAX_TX_COUNT (%v > %v)", len(mrklSlice), variables["max_tx_count"]))
+				if len(mrklSlice) > int(variables.Int64["max_tx_count"]) {
+					return nil, ErrInfo(fmt.Errorf("[error] MAX_TX_COUNT (%v > %v)", len(mrklSlice), variables.Int64["max_tx_count"]))
 				}
 			}
 			if len(binaryData) == 0 {

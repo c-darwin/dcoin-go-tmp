@@ -322,7 +322,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			//defer c.DCDB.Close()
 		}
 		// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
-		_, err = c.DCDB.Single("SELECT progress FROM install")
+		_, err = c.DCDB.Single("SELECT progress FROM install").String()
 		if err != nil {
 			fmt.Println(err)
 			dbInit = false
@@ -331,11 +331,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	if dbInit {
 		var err error
-		installProgress, err = c.DCDB.Single("SELECT progress FROM install")
+		installProgress, err = c.DCDB.Single("SELECT progress FROM install").String()
 		if err != nil {
 			log.Print(err)
 		}
-		configExists, err = c.DCDB.Single("SELECT first_load_blockchain_url FROM config")
+		configExists, err = c.DCDB.Single("SELECT first_load_blockchain_url FROM config").String()
 		if err != nil {
 			log.Print(err)
 		}
@@ -397,7 +397,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*2) && len(configExists)>0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
-			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config")
+			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config").String()
 			if err != nil {
 				log.Print(err)
 			}
@@ -473,7 +473,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			// Только если он сам не захочет, указав это в my_table
 			showSignData := false
 			if sessRestricted == 0 { // у незареганных в пуле юзеров нет MyPrefix, поэтому сохранять значение show_sign_data им негде
-				showSignData_, err := c.DCDB.Single("SELECT show_sign_data FROM "+c.MyPrefix+"my_table")
+				showSignData_, err := c.DCDB.Single("SELECT show_sign_data FROM "+c.MyPrefix+"my_table").String()
 				if err != nil {
 					log.Print(err)
 				}
