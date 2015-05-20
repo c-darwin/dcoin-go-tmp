@@ -419,7 +419,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		userId = sessUserId
 		myUserId = sessUserId
 		countSign = 1
-		pk, err := c.DCDB.OneRow("SELECT public_key_1, public_key_2 FROM users WHERE user_id=$1", userId)
+		pk, err := c.DCDB.OneRow("SELECT public_key_1, public_key_2 FROM users WHERE user_id=?", userId).String()
 		if err != nil {
 			log.Print(err)
 		}
@@ -457,7 +457,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		if dbInit {
 			// проверим, не идут ли тех. работы на пуле
-			config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config")
+			config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
 			if err != nil {
 				log.Print(err)
 			}

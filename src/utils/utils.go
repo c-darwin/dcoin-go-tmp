@@ -132,6 +132,32 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok{
 			return true
 		}
+	case "example_spots":
+		r1 := `"\d{1,2}":\["\d{1,3}","\d{1,3}",(\[("[a-z_]{1,30}",?){0,20}\]|""),"\d{1,2}","\d{1,2}"\]`
+		reg := `^\{(\"(face|profile)\":\{(`+r1+`,?){1,20}\},?){2}}$`
+		if ok, _ := regexp.MatchString(reg, data); ok{
+			return true
+		}
+	case "segments":
+		r1 := `"\d{1,2}":\["\d{1,2}","\d{1,2}"\]`
+		face := `"face":\{(`+r1+`\,){1,20}`+r1+`\}`
+		profile := `"profile":\{(`+r1+`\,){1,20}`+r1+`\}`
+		reg := `^\{`+face+`,`+profile+`\}$`
+		if ok, _ := regexp.MatchString(reg, data); ok{
+			return true
+		}
+	case "tolerances":
+		r1 := `"\d{1,2}":"0\.\d{1,2}"`
+		face := `"face":\{(`+r1+`\,){1,50}`+r1+`\}`
+		profile := `"profile":\{(`+r1+`\,){1,50}`+r1+`\}`
+		reg := `^\{`+face+`,`+profile+`\}$`
+		if ok, _ := regexp.MatchString(reg, data); ok{
+			return true
+		}
+	case "compatibility":
+		if ok, _ := regexp.MatchString(`^\[(\d{1,5},)*\d{1,5}\]$`, data); ok{
+			return true
+		}
 	case "race":
 		if ok, _ := regexp.MatchString("^[1-3]$", data); ok{
 			return true
@@ -712,6 +738,28 @@ func RollbackTransactionsTestBlock(truncate bool){
 func AllTxParser() {
 
 }
+func CopyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
+}
 
 func RandSeq(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -751,6 +799,8 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 				break
 			}
 			length := DecodeLength(&signs)
+			fmt.Println("length", length)
+			fmt.Printf("signs %x", signs)
 			signsSlice = append(signsSlice, BytesShift(&signs, length))
 		}
 		if len(publicKeys) != len(signsSlice) {

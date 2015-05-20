@@ -1654,7 +1654,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[2] = map[string]string{"name":"type", "mysql":"enum('votes_miners','promised_amount') NOT NULL", "sqlite":"varchar(100)  NOT NULL","postgresql":"enum('votes_miners','promised_amount') NOT NULL", "comment": "Нужно для voting_id"}
 	s2[3] = map[string]string{"name":"del_block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "В каком блоке было удаление. Нужно для чистки по крону старых данных и для откатов."}
 	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"user_id","type"}
+	s1["PRIMARY"] = []string{"user_id","voting_id","type"}
 	s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 	s["log_votes"] = s1
 	schema.s = s

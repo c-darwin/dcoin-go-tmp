@@ -123,7 +123,7 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 	case "mysql" :
 		sql = "SHOW TABLES"
 	}
-	result, err := db.GetList(sql)
+	result, err := db.GetList(sql).String()
 	if err != nil {
 		return result, err
 	}
@@ -177,13 +177,18 @@ type listResult struct {
 	err error
 }
 
+type oneRow struct {
+	result map[string]string
+	err error
+}
+
 func (r *listResult) Int64() ([]int64, error) {
 	var result []int64
 	if r.err != nil {
 		return result, r.err
 	}
 	for _, v := range r.result {
-		result = append(result, v)
+		result = append(result, StrToInt64(v))
 	}
 	return result, nil
 }
@@ -195,7 +200,7 @@ func (r *listResult) MapInt() (map[int]int, error) {
 	}
 	i := 0
 	for _, v := range r.result {
-		result[i] = v
+		result[i] = StrToInt(v)
 		i++
 	}
 	return result, nil
@@ -206,6 +211,36 @@ func (r *listResult) String() ([]string, error) {
 		return r.result, r.err
 	}
 	return r.result, nil
+}
+
+
+func (r *oneRow) String() (map[string]string, error) {
+	if r.err != nil {
+		return r.result, r.err
+	}
+	return r.result, nil
+}
+
+func (r *oneRow) Int64() (map[string]int64, error) {
+	result := make(map[string]int64)
+	if r.err != nil {
+		return result, r.err
+	}
+	for k, v := range r.result {
+		result[k] = StrToInt64(v)
+	}
+	return result, nil
+}
+
+func (r *oneRow) Int() (map[string]int, error) {
+	result := make(map[string]int)
+	if r.err != nil {
+		return result, r.err
+	}
+	for k, v := range r.result {
+		result[k] = StrToInt(v)
+	}
+	return result, nil
 }
 
 func (r *singleResult) Int64() (int64, error) {
@@ -219,6 +254,13 @@ func (r *singleResult) Int() (int, error) {
 		return 0, r.err
 	}
 	return BytesToInt(r.result), nil
+}
+
+func (r *singleResult) Float64() (float64, error) {
+	if r.err!=nil {
+		return 0, r.err
+	}
+	return StrToFloat64(string(r.result)), nil
 }
 
 func (r *singleResult) String() (string, error) {
@@ -276,7 +318,7 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 	var result []string
 	all, err := db.GetAll(query, -1, args...)
 	if err != nil {
-		return &listResult{"", err}
+		return &listResult{result, err}
 	}
 	for _, v := range all {
 		for _, v2 := range v {
@@ -356,13 +398,13 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[in
 	return result, nil
 }
 
-func (db *DCDB) OneRow(query string, args ...interface{}) (map[string]string, error) {
+func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	result := make(map[string]string)
 	all, err := db.GetAll(query, 1, args ...)
 	if err != nil {
-		return result, fmt.Errorf("%s in query %s %s", err, query, args)
+		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
 	}
-	return all[0], nil
+	return &oneRow{all[0], nil}
 }
 
 func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
@@ -558,7 +600,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix string, lang map[string]string) (map[string]string, error) {
 	result := make(map[string]string)
 	if sessRestricted == 0 {
-		my_table, err := db.OneRow("SELECT user_id, miner_id, status FROM "+myPrefix+"my_table")
+		my_table, err := db.OneRow("SELECT user_id, miner_id, status FROM "+myPrefix+"my_table").String()
 		if err != nil {
 			return result, ErrInfo(err)
 		}
@@ -675,7 +717,7 @@ func (db *DCDB) GetNodePrivateKey(myPrefix string) string {
 
 func (db *DCDB) GetNodeConfig() (map[string]string, error) {
 	var result map[string]string
-	result, err := db.OneRow("SELECT * FROM config")
+	result, err := db.OneRow("SELECT * FROM config").String()
 	if err != nil{
 		return result, ErrInfo(err)
 	}
@@ -985,7 +1027,7 @@ func (db *DCDB) InsertIntoMyKey(userId string, publicKey []byte, curBlockId stri
 
 func (db *DCDB) GetInfoBlock() (map[string]string, error) {
 	var result map[string]string
-	result, err := db.OneRow("SELECT * FROM info_block")
+	result, err := db.OneRow("SELECT * FROM info_block").String()
 	if err != nil{
 		return result, ErrInfo(err)
 	}
@@ -1058,7 +1100,7 @@ func (db *DCDB) DbLock(name string) error {
 	var ok bool
 	for {
 		mutex.Lock()
-		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock")
+		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
 			return ErrInfo(err)
 		}
@@ -1129,7 +1171,7 @@ func (db *DCDB) UpdDaemonTime(name string) {
 
 func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	BlockData := new(BlockData)
-	data, err := db.OneRow("SELECT * FROM block_chain WHERE id = ?", blockId)
+	data, err := db.OneRow("SELECT * FROM block_chain WHERE id = ?", blockId).String()
 	if err!=nil {
 		return BlockData, err
 	}

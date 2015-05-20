@@ -146,7 +146,7 @@ func (p *Parser) AdminVariables() (error) {
 
 func (p *Parser) AdminVariablesRollback() (error) {
 	// данные, которые восстановим
-	logData, err := p.DCDB.OneRow("SELECT data, log_id FROM log_variables ORDER BY `log_id` DESC")
+	logData, err := p.DCDB.OneRow("SELECT data, log_id FROM log_variables ORDER BY `log_id` DESC").String()
 
 	var Variables map[string]interface{}
 	err = json.Unmarshal([]byte(logData["data"]), &Variables)

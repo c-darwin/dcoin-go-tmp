@@ -53,7 +53,7 @@ func (c *Controller) Login() (string, error) {
 	b := new(bytes.Buffer)
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле
-	config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config")
+	config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
 	if err != nil {
 		return "", err
 	}

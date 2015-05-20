@@ -8,6 +8,8 @@ import (
 	"time"
 	"consts"
 	"sync"
+	"reflect"
+	"math"
 )
 
 type Parser struct {
@@ -133,7 +135,7 @@ func (p *Parser) generalCheck() error {
 		return utils.ErrInfoFmt("incorrect time")
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.DCDB.OneRow("SELECT public_key_0,public_key_1,public_key_2	FROM users WHERE user_id = ?", p.TxMap["user_id"])
+	data, err := p.DCDB.OneRow("SELECT public_key_0,public_key_1,public_key_2	FROM users WHERE user_id = ?", p.TxMap["user_id"]).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -699,7 +701,8 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 		TxMap[field] = p.TxSlice[i+4]
 	}
 	p.TxUserID = utils.BytesToInt64(TxMap["user_id"])
-	p.Time = utils.BytesToInt64(TxMap["time"])
+	p.TxTime = utils.BytesToInt64(TxMap["time"])
+	p.PublicKeys =nil
 	//fmt.Println("TxMap", TxMap)
 	//fmt.Println("TxMap[hash]", TxMap["hash"])
 	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
@@ -866,7 +869,7 @@ func (p *Parser) generalCheckAdmin() error {
 		return utils.ErrInfoFmt("user_id (%d!=%d)", p.AdminUserId, p.TxMap["user_id"])
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", p.TxMap["user_id"])
+	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", p.TxMap["user_id"]).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -914,7 +917,7 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 		}
 	} else {
 		// данные, которые восстановим
-		data, err := p.OneRow("SELECT * FROM log_"+table+" WHERE log_id = ?", logId)
+		data, err := p.OneRow("SELECT * FROM log_"+table+" WHERE log_id = ?", logId).String()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -969,7 +972,7 @@ func arrayIntersect(arr1, arr2 map[int]int) bool {
 }
 
 func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
-	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (data.votes0 > data.minMinersKeepers || data.votes0 == len(data.minersIds)) {
+	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (int64(data.votes0) > data.minMinersKeepers || data.votes0 == len(data.minersIds)) {
 		return true
 	} else {
 		return false
@@ -977,7 +980,10 @@ func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
 }
 
 func  (p *Parser) minersCheckVotes1(data *MinerData) bool {
-	if data.votes1 >= data.minMinersKeepers || data.votes1 == len(data.minersIds) {
+	fmt.Println("data.votes1",data.votes1)
+	fmt.Println("data.minMinersKeepers",data.minMinersKeepers)
+	fmt.Println("data.minersIds",data.minersIds)
+	if int64(data.votes1) >= data.minMinersKeepers || data.votes1 == len(data.minersIds) /*|| data.adminUiserId == p.TxUserID Админская нода не решающая*/ {
 		return true
 	} else {
 		return false
@@ -1022,4 +1028,367 @@ func getMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 		newResult = result
 	}
 	return newResult
+}
+
+func (p *Parser) FormatBlockData() string {
+	result := ""
+	v := reflect.ValueOf(*p.BlockData)
+	typeOfT := v.Type()
+	if typeOfT.Kind() == reflect.Ptr {
+		typeOfT = typeOfT.Elem()
+	}
+	for i := 0; i < v.NumField(); i++ {
+		name := typeOfT.Field(i).Name
+		switch name {
+		case "BlockId", "Time", "UserId", "Level":
+			result += "["+name+"] = "+fmt.Sprintf("%d\n", v.Field(i).Interface())
+		case "Sign", "Hash", "HeadHash":
+			result += "["+name+"] = "+fmt.Sprintf("%x\n", v.Field(i).Interface())
+		default :
+			result += "["+name+"] = "+fmt.Sprintf("%s\n", v.Field(i).Interface())
+		}
+	}
+	return result
+}
+
+func (p *Parser) FormatTxMap() string {
+	result := ""
+	for k, v := range p.TxMap {
+		switch k {
+		case "sign":
+			result += "["+k+"] = "+fmt.Sprintf("%x\n", v)
+		default :
+			result += "["+k+"] = "+fmt.Sprintf("%s\n", v)
+		}
+	}
+	return result
+}
+
+func (p *Parser) ErrInfo(err_ interface{}) error {
+	var err error
+	switch err_.(type) {
+	case error:
+		err = err_.(error)
+	case string:
+		err = fmt.Errorf(err_.(string))
+	}
+	return fmt.Errorf("[ERROR] %s (%s)\n%s\n%s", err, utils.Caller(1), p.FormatBlockData(), p.FormatTxMap())
+}
+
+func (p *Parser) maxDayVotesRollback() (error) {
+	err := p.ExecSql("DELETE FROM log_time_votes WHERE user_id = ? AND time = ?", p.TxMap["user_id"], p.TxTime)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
+func (p *Parser) maxDayVotes() (error) {
+	// нельзя за сутки голосовать более max_day_votes раз
+	num, err := p.Single("SELECT count(time) FROM log_time_votes WHERE user_id = ?", p.TxMap["user_id"]).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if num >= p.Variables.Int64["max_day_votes"] {
+		return p.ErrInfo(fmt.Sprintf("[limit_requests] max_day_votes log_time_votes limits %d >=%d", num, p.Variables.Int64["max_day_votes"]))
+	} else {
+		err = p.ExecSql("INSERT INTO log_time_votes ( user_id, time ) VALUES ( ?, ? )", p.TxMap["user_id"], p.TxTime)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+
+// начисление баллов
+func (p *Parser) points(points int64) (error) {
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id = ?", p.TxMap["user_id"]).String()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	pointsStatusTimeStart, err := p.Single("SELECT time_start FROM points_status WHERE user_id = ? ORDER BY time_start DESC", p.TxMap["user_id"]).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	timeStart := data["time_start"]
+	prevLogId := data["log_id"]
+
+	// если $time_start = 0, значит это первый голос юзера
+	if len(timeStart) == 0 {
+		err = p.ExecSql("INSERT INTO points ( user_id, time_start, points ) VALUES ( ?, ?, ? )", p.TxMap["user_id"], p.BlockData.Time, points)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// первый месяц в любом случае будет юзером
+		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", p.TxMap["user_id"], p.BlockData.Time, p.BlockData.BlockId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else if p.BlockData.Time - pointsStatusTimeStart > p.Variables.Int64["points_update_time"] { // если прошел месяц
+		err = p.pointsUpdate(utils.StrToInt64(data["points"]), prevLogId, timeStart, pointsStatusTimeStart, p.TxUserID, points)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else { // прошло меньше месяца
+		// прибавляем баллы
+		err = p.ExecSql("UPDATE points SET points = points+1 WHERE user_id = ?", points, p.TxMap["user_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		/*// просто для вывода в лог
+		err = p.ExecSql("SELECT * FROM points WHERE user_id = ?", p.TxMap["user_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}*/
+	}
+	return nil
+}
+
+
+
+// добавляем новые points_status
+// $points - текущие points юзера из таблы points
+// $new_points - новые баллы, если это вызов из тр-ии, где идет головование
+func (p *Parser) pointsUpdate(points int64, prevLogId string, timeStart string, pointsStatusTimeStart int64, userId int64, newPoints int64) (error) {
+
+	// среднее значение баллов
+	mean, err := p.Single("SELECT sum(points)/count(points) FROM points WHERE points > 0").Float64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	// есть ли тр-ия с голосованием votes_complex за последние 4 недели
+	count, err := p.Single("SELECT count(user_id) FROM votes_miner_pct WHERE user_id = ? AND time > ?", userId, (p.BlockData.Time - p.Variables.Int64["limit_votes_complex_period"]*2)).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	// и хватает ли наших баллов для получения статуса майнера
+	if count > 0 && float64(points+newPoints) >= mean * float64(p.Variables.Int64["points_factor"]) {
+		// от $time_start до текущего времени могло пройти несколько месяцев. 1-й месяц будет майнер, остальные - юзер
+		minerStartTime := pointsStatusTimeStart + p.Variables.Int64["points_update_time"]
+		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'miner', ? )", userId, minerStartTime, p.BlockData.BlockId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// сколько прошло месяцев после $miner_start_time
+		remainingTime := p.BlockData.Time - minerStartTime
+		if remainingTime > 0 {
+			remainingMonths := math.Floor(float64(remainingTime / p.Variables.Int64["points_update_time"]))
+			if remainingMonths > 0 {
+				// следующая запись должна быть ровно через 1 месяц после $miner_start_time
+				userStartTime := minerStartTime + p.Variables.Int64["points_update_time"]
+				err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", userId, userStartTime, p.BlockData.BlockId)
+				if err != nil {
+					return p.ErrInfo(err)
+				}
+				// и если что-то осталось
+				if remainingMonths > 1 {
+					userStartTime = minerStartTime + int64(remainingMonths) * p.Variables.Int64["points_update_time"]
+					err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", userId, userStartTime, p.BlockData.BlockId)
+					if err != nil {
+						return p.ErrInfo(err)
+					}
+				}
+			}
+		}
+	} else {
+		// следующая запись должна быть ровно через 1 месяц после предыдущего статуса
+		userStartTime := pointsStatusTimeStart + p.Variables.Int64["points_update_time"]
+		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", userId, userStartTime, p.BlockData.BlockId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// сколько прошло месяцев после $miner_start_time
+		remainingTime :=  p.BlockData.Time - userStartTime
+
+		if remainingTime > 0 {
+
+			remainingMonths := math.Floor(float64(remainingTime / p.Variables.Int64["points_update_time"]))
+			if remainingMonths > 0 {
+				userStartTime = userStartTime + int64(remainingMonths) * p.Variables.Int64["points_update_time"]
+				err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", userId, userStartTime, p.BlockData.BlockId)
+				if err != nil {
+					return p.ErrInfo(err)
+				}
+			}
+		}
+	}
+
+	// перед тем, как обновить time_start, нужно его залогировать
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_points ( time_start, points, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", timeStart, points, p.BlockData.BlockId, prevLogId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	// начисляем баллы с чистого листа и обновляем время
+	err = p.ExecSql("UPDATE points SET points = 0, time_start = ?, log_id = ? WHERE user_id = ?", p.BlockData.Time, logId, userId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
+func (p *Parser) checkTrueVotes(data map[string]int64) bool {
+	if 	data["votes_1"] >= data["votes_1_min"] ||
+			(p.TxUserID == p.AdminUserId && string(p.TxMap["result"]) == "1" && data["count_miners"] < 1000)	|| data["votes_1"] == data["count_miners"] {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (p *Parser) insOrUpdMiners(userId int64) (int64, error) {
+	miners, err := p.OneRow("SELECT miner_id, log_id FROM miners WHERE active = 0").Int64()
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+	minerId := miners["miner_id"]
+	if minerId == 0 {
+		minerId, err = p.ExecSqlGetLastInsertId("INSERT INTO miners (active) VALUES (1)")
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+	} else {
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners ( block_id, prev_log_id ) VALUES ( ?, ?)", p.BlockData.BlockId, miners["log_id"])
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+		err = p.ExecSql("UPDATE miners SET active = 1, log_id = ? WHERE miner_id = ?", logId, minerId)
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+	}
+	err = p.ExecSql("UPDATE miners_data SET status = 'miner', miner_id = ?, reg_time = ? WHERE user_id = ?", minerId, p.BlockData.Time, userId)
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+	return minerId, nil
+}
+
+func (p *Parser) check24hOrAdminVote(data map[string]int64) bool {
+
+	if (/*прошло > 24h от начала голосования ?*/(p.BlockData.Time - data["votes_period"]) > data["votes_start_time"] &&
+			// преодолен ли один из лимитов, либо проголосовали все майнеры
+			(data["votes_0"] >= data["votes_0_min"] ||
+				data["votes_1"] >= data["votes_1_min"] ||
+				data["votes_0"] == data["count_miners"] ||
+				data["votes_1"] == data["count_miners"])) ||
+			/*голос админа решающий в любое время, если <1000 майнеров в системе*/
+			(p.TxUserID == p.AdminUserId && data["count_miners"] < 1000) {
+		return true
+	} else {
+		return false
+	}
+}
+
+
+func (p *Parser) insOrUpdMinersRollback(minerId int64) error {
+
+	// нужно проверить, был ли получен наш miner_id в результате замены забаненного майнера
+	logId, err := p.Single("SELECT log_id FROM miners WHERE miner_id  =  ?", minerId).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if logId > 0 {
+
+		// данные, которые восстановим
+		prevLogId, err := p.Single("SELECT prev_log_id FROM log_miners WHERE log_id  =  ?", logId).Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// $log_data['prev_log_id'] может быть = 0
+		err = p.ExecSql("UPDATE miners SET active = 0, log_id = ? WHERE miner_id = ?", prevLogId, minerId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM log_miners WHERE log_id = ?", logId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.rollbackAI("log_miners", 1)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else {
+		err = p.ExecSql("DELETE FROM miners WHERE miner_id = ?", minerId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.rollbackAI("miners", 1)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+
+	return nil
+}
+
+
+// $points - баллы, которые были начислены за голос
+func (p *Parser) pointsRollback(points int64) error {
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id  =  ?", p.TxMap["user_id"]).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	// если time_start=времени в блоке, points=$points и log_id=0, значит это самая первая запись
+	if data["time_start"] == p.BlockData.Time && data["points"] == points && data["log_id"] == 0 {
+		err = p.ExecSql("DELETE FROM points WHERE user_id = ?", p.TxMap["user_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.ExecSql("DELETE FROM points_status WHERE user_id = ?", p.TxMap["user_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else if data["time_start"] == p.BlockData.Time { // если прошел месяц и запись в табле points была обновлена в этой тр-ии, т.е. time_start = block_data['time']
+		err = p.pointsUpdateRollback(data["log_id"], p.TxUserID)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else { // прошло меньше месяца
+		// отнимаем баллы
+		err = p.ExecSql("UPDATE points SET points = points - "+utils.Int64ToStr(points)+" WHERE user_id = ?", points, p.TxMap["user_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) pointsUpdateRollback(logId, userId int64) error {
+	err := p.ExecSql("DELETE FROM points_status WHERE block_id = ?", p.BlockData.BlockId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if logId > 0 {
+		// данные, которые восстановим
+		logData, err := p.OneRow("SELECT time_start, prev_log_id, points FROM log_points WHERE log_id  =  ?", logId).Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.ExecSql("UPDATE points SET time_start = ?, points = ?, log_id = ? WHERE user_id = ?", logData["time_start"], logData["points"], logData["prev_log_id"], userId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM log_points WHERE log_id = ?", logId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		p.rollbackAI("log_points", 1)
+	} else {
+		err = p.ExecSql("DELETE FROM points WHERE user_id = ?", userId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
 }

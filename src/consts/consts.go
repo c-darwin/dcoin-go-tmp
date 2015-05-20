@@ -67,7 +67,7 @@ var TxTypes = map[int]string {
 	// админ изменил variables
 	21 : "AdminVariables",
 	// админ обновил набор точек для проверки лиц
-	22 : "admin_spots",
+	22 : "AdminSpots",
 	// юзер создал кредит
 	23 : "new_credit",
 	// админ вернул майнерам звание "майнер"
@@ -81,7 +81,7 @@ var TxTypes = map[int]string {
 	28 : "actualization_promised_amounts",
 	29 : "mining",
 	// Голосование нода за фото нового майнера
-	30 : "votes_node_new_miner",
+	30 : "VotesNodeNewMiner",
 	// Юзер исправил проблему с отдачей фото и шлет повторный запрос на получение статуса "майнер"
 	31 : "new_miner_update",
 	//  новый набор max_promised_amount от нода-генератора блока
