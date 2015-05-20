@@ -622,13 +622,14 @@ func (p *Parser) ParseDataFull() error {
 			p.TxMap = map[string][]byte{}
 
 			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
-			fmt.Println("MethodName", MethodName)
+			fmt.Println("MethodName", MethodName+"Init")
 			err_ := utils.CallMethod(p,MethodName+"Init")
 			if _, ok := err_.(error); ok {
 				fmt.Println(err)
 				return utils.ErrInfo(err_.(error))
 			}
 
+			fmt.Println("MethodName", MethodName+"Front")
 			err_ = utils.CallMethod(p,MethodName+"Front")
 			if _, ok := err_.(error); ok {
 				fmt.Println(err)
@@ -636,6 +637,7 @@ func (p *Parser) ParseDataFull() error {
 				return utils.ErrInfo(err_.(error))
 			}
 
+			fmt.Println("MethodName", MethodName)
 			err_ = utils.CallMethod(p,MethodName)
 			if _, ok := err_.(error); ok {
 				fmt.Println(err)
@@ -802,6 +804,15 @@ func MakeTest(parser *Parser, txType string, hashesStart map[string]string) erro
 		if i, ok := err.(error); ok {
 			fmt.Println(err.(error), i)
 			return err.(error)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) CheckInputData(data map[string]string) (error) {
+	for k, v := range data {
+		if !utils.CheckInputData(p.TxMap[k], v) {
+			return fmt.Errorf("incorrect "+k)
 		}
 	}
 	return nil

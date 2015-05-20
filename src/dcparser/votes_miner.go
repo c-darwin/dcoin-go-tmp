@@ -31,13 +31,13 @@ func (p *Parser) VotesMinerFront() (error) {
 	}
 
 	if !utils.CheckInputData(p.TxMap["vote_id"], "bigint") {
-		return utils.ErrInfoFmt("incorrect vote_id")
+		return p.ErrInfo("incorrect vote_id")
 	}
 	if !utils.CheckInputData(p.TxMap["result"], "vote") {
-		return utils.ErrInfoFmt("incorrect vote_id")
+		return p.ErrInfo("incorrect vote_id")
 	}
 	if !utils.CheckInputData(p.TxMap["comment"], "votes_comment") {
-		return utils.ErrInfoFmt("incorrect comment")
+		return p.ErrInfo("incorrect comment")
 	}
 
 	// является ли данный юзер майнером
@@ -65,12 +65,12 @@ func (p *Parser) VotesMinerFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["vote_id"], p.TxMap["result"], p.TxMap["comment"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if !CheckSignResult {
-		return utils.ErrInfoFmt("incorrect sign")
+		return p.ErrInfo("incorrect sign")
 	}
 
 	// защита от доса

@@ -128,6 +128,20 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		data = string(data_.([]byte))
 	}
 	switch dataType {
+	case "votes_comment", "cf_comment":
+		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
+			return true
+		}
+	case "referral":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,2}$`, data); ok{
+			if StrToInt(data) <= 30 {
+				return true
+			}
+		}
+	case "amount":
+		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, data); ok{
+			return true
+		}
 	case "tpl_name":
 		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok{
 			return true
@@ -188,6 +202,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		fmt.Println(data)
 	case "lang":
 		if ok, _ := regexp.MatchString("^(en|ru)$", data); ok{
+			return true
+		}
+	case "payment_systems_ids":
+		if ok, _ := regexp.MatchString("^([0-9]{1,4},){0,4}[0-9]{1,4}$", data); ok{
 			return true
 		}
 	case "video_type":
@@ -256,6 +274,10 @@ func StrToInt(s string) int {
 }
 func StrToFloat64(s string) float64 {
 	Float64, _ := strconv.ParseFloat(s, 64)
+	return Float64
+}
+func BytesToFloat64(s []byte) float64 {
+	Float64, _ := strconv.ParseFloat(string(s), 64)
 	return Float64
 }
 func BytesToInt(s []byte) int {

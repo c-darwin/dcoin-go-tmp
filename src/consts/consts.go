@@ -48,7 +48,7 @@ var TxTypes = map[int]string {
 	// geolocation. Майнер изменил свои координаты
 	9 : "change_geolocation",
 	// votes_promised_amount.
-	10 : "votes_promised_amount",
+	10 : "VotesPromisedAmount",
 	// del_promised_amount. Удаление обещанной суммы
 	11 : "del_promised_amount",
 	// send_dc

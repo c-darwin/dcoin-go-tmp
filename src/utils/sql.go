@@ -990,6 +990,63 @@ func (db *DCDB) GetBlockId() (int64, error) {
 	}
 	return blockId, nil
 }
+// наличие cash_requests с pending означает, что у юзера все обещанные суммы в for_repaid. Возможно, временно, если это свежий запрос и юзер еще не успел послать cash_requests_in
+func (db *DCDB) CheckCashRequests(userId int64) (error) {
+	cashRequestStatus, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id  =  ? AND del_block_id  =  0 AND for_repaid_del_block_id  =  0 AND status  =  'pending'", userId).String()
+	if err != nil {
+		return err
+	}
+	if len(cashRequestStatus) > 0 {
+		return fmt.Errorf("cashRequestStatus")
+	}
+	return nil
+}
+/*
+	static function check_cash_requests ($user_id, $db)
+	{
+		$cash_request_status = $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+				SELECT `status`
+				FROM `".DB_PREFIX."cash_requests`
+				WHERE `to_user_id` = {$user_id} AND
+							 `del_block_id` = 0 AND
+							 `for_repaid_del_block_id` = 0 AND
+							 `status` = 'pending'
+				LIMIT 1
+				", 'fetch_one' );
+		if ($cash_request_status)
+			return 'error $cash_request_status';
+	}
+*/
+func (db *DCDB) GetRepaidAmount(currencyId, userId int64) (float64, error) {
+	amount, err := db.Single("SELECT amount FROM promised_amount WHERE status = 'repaid' AND currency_id = ? AND user_id = ? AND del_block_id = 0 AND del_mining_block_id = 0", currencyId, userId).Float64()
+	if err != nil {
+		return 0, err
+	}
+	return amount, nil
+}
+/*	function get_repaid_amount($currency_id, $user_id)
+	{
+		return $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
+				SELECT `amount`
+				FROM `".DB_PREFIX."promised_amount`
+				WHERE `status` = 'repaid' AND
+							 `currency_id` = {$currency_id} AND
+							 `user_id` = {$user_id} AND
+							 `del_block_id` = 0 AND
+							 `del_mining_block_id` = 0
+				", 'fetch_one');
+	}*/
+func (db *DCDB) CheckCurrency(currency_id int64) (bool, error) {
+	id, err := db.Single("SELECT id FROM currency WHERE id = ?", currency_id).Int()
+	if err != nil {
+		return false, err
+	}
+	if id == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
 
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 	var sql string
