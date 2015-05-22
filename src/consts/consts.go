@@ -29,7 +29,7 @@ var LangMap = map[string]int{"en":1, "ru":42}
 
 var MyTables = []string {"my_admin_messages","my_cash_requests","my_comments","my_commission","my_complex_votes","my_dc_transactions","my_holidays","my_keys","my_new_users","my_node_keys","my_notifications","my_promised_amount","my_table","my_tasks","my_cf_funding"}
 
-var ReductionDC = []int {0,10,25,50,90}
+var ReductionDC = []int64 {0,10,25,50,90}
 
 var TxTypes = map[int]string {
 	// новый юзер
@@ -56,7 +56,7 @@ var TxTypes = map[int]string {
 	13 : "cash_request_out",
 	14 : "cash_request_in",
 	// набор голосов по разным валютам
-	15 : "votes_complex",
+	15 : "VotesComplex",
 	16 : "change_primary_key",
 	17 : "change_node_key",
 	18 : "for_repaid_fix",

@@ -289,6 +289,9 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	}
 	var result []byte
 	err := db.QueryRow(query, args...).Scan(&result)
+	if err!=nil {
+		fmt.Println("[error] single", fmt.Sprintf("%s in query %s %s\n", err, query, args))
+	}
 	switch {
 	case err == sql.ErrNoRows:
 		return &singleResult{[]byte(""), nil}
@@ -1143,6 +1146,13 @@ func (db *DCDB) GetNodePublicKey(userId int64) ([]byte, error) {
 	result, err := db.Single("SELECT node_public_key FROM miners_data WHERE user_id = ?", userId).Bytes()
 	if err != nil {
 		return []byte(""), err
+	}
+	return result, nil
+}
+func (db *DCDB) GetCountCurrencies() (int64, error) {
+	result, err := db.Single("SELECT count(id) FROM currency").Int64()
+	if err != nil {
+		return 0, err
 	}
 	return result, nil
 }

@@ -110,6 +110,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 		return p.ErrInfo(err)
 	}
 
+	data["user_id"] = utils.StrToInt64(promisedAmountData["user_id"])
 	data["votes_0"] = utils.StrToInt64(promisedAmountData["votes_0"])
 	data["votes_1"] =  utils.StrToInt64(promisedAmountData["votes_1"])
 	data["votes_start_time"] =  utils.StrToInt64(promisedAmountData["votes_start_time"])

@@ -122,6 +122,8 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		data = IntToStr(data_.(int))
 	case int64:
 		data = Int64ToStr(data_.(int64))
+	case float64:
+		data = Float64ToStr(data_.(float64))
 	case string:
 		data = data_.(string)
 	case []byte:
@@ -271,6 +273,9 @@ func StrToUint64(s string) uint64 {
 func StrToInt(s string) int {
 	int_, _ := strconv.Atoi(s)
 	return int_
+}
+func Float64ToStr(f float64) string {
+	return strconv.FormatFloat(f,'f', 13, 64)
 }
 func StrToFloat64(s string) float64 {
 	Float64, _ := strconv.ParseFloat(s, 64)
@@ -668,6 +673,50 @@ func HexToBin(hex_ []byte) []byte {
 	return str
 }
 
+
+
+func FillPct() map[interface{}]string {
+	pctb64 := `AAAAAAE9AAJ6AAO2AATyAAYuAAdpAAikAAnfAAsZAAxTAA2NAA7HABAAABE5ABJxABOpABThABYZABdQABiHABm+ABr1ABwrAB1gAB6WAB/LACEAACI1ACNpACSdACXRACcEACg3AClqACqdACvPAC0BAC4yAC9kADCVADHGADL2ADQmADVWADaGADe1ADjkADoTADtBADxvAD2dAD7LAD/4AEElAEJSAEN+AESqAEXWAEcCAEgtAElYAEqDAEutAEzXAE4BAE8rAFBUAFF9AFKmAFPOAFT3AFYfAFdGAFhuAFmVAFq8AFviAF0IAF4uAF9UAGB6AGGfAGLEAGPoAGUNAGYxAGdVAGh4AGmcAGq/AGviAG0EAG4mAG9IAHBqAHGLAHKtAHPOAHTuAHYPAHcvAHhPAHluAHqOAHutAHzMAH3qAH8IAIAnAIFEAIJiAIN/AIScAIW5AIbWAIfyAIkOAIoqAItFAIxgAI17AI6WAI+xAJDLAJHlAJL+AJQYAJUxAJZKAJdjAJh7AJmUAJqsAJvDAJzbAJ3yAJ8JAKAgAKE3AKJNAKNjAKR5AKWOAKajAKe5AKjNAKniAKr2AKwKAK0eAK4yAK9FALBYALFrALJ+ALOQALSjALW0ALbGALfYALjpALn6ALsLALwbAL0sAL48AL9LAMBbAMFqAMJ6AMOIAMSXAMWmAMa0AMfCAMjQAMndAMrqAMv3AM0EAM4RAM8dANApANE1ANJBANNNANRYANVjANZuANd4ANiDANmNANqXANugANyqAN2zAN68AN/FAODNAOHWAOwdAPZPAQBsAQpzARRmAR5FASgQATHHATtrAUT7AU55AVfkAWE+AWqFAXO7AXzfAYXyAY70AZfmAaDHAamYAbJZAbsKAcOsAcw+AdTBAd02AeWcAe3zAfY8Af53AgakAg7EAhbVAh7aAibRAi67AjaYAj5pAkYtAk3lAlWQAl0wAmTDAmxLAnPHAns3AoKcAon2ApFFApiJAp/CAqbwAq4UArUtArw8AsNAAso7AtErAtgSAt7vAuXCAuyLAvNLAvoCAwCwAwdUAw3vAxSBAxsLAyGLAygDAy5yAzTZAzs3A0GNA0fbA04hA1ReA1qUA3kqA5cDA7QoA9CiA+x4BAeyBCJVBDxpBFX0BG76BIeBBJ+PBLcnBM5OBOUJBPtaBRFHBSbSBTv+BVDQBWVJBXltBY0/BaDBBbP1BcbeBdl/BevZBf3uBg/BBiFSBjKlBkO7BlSWBmU2BnWeBoXPBpXLBqWSBrUnBtO9BvGWBw68Bys2B0cMB2JFB3zpB5b9B7CHB8mNB+IVB/oiCBG6CCjiCD+cCFXuCGvaCIFlCJaSCKtjCL/dCNQBCOfSCPtUCQ6JCSFyCTQSCUZsCViBCWpUCXvmCY05CZ5PCa8pCb/KCdAyCeBjCfBeCgAmCg+7Ch8eCi5RCj1UCkwqClrTCmlPCnehCoXJCpPICqGfCq9PCrzZCso9Ctd8CuSYCvGQCv5mCwsbCxeuCyQhCzB0CzyoC0i+C1S2C2CQC2xOC3fvC4N1C47gC5ow`
+	b64, _ := base64.StdEncoding.DecodeString(pctb64)
+	data1 := BinToHex(b64)
+	arr := make(map[interface{}]string)
+	for i:=0.0; i<20; i=i+0.1 {
+		arr[i] = pct_(&data1)
+	}
+	for i:=20; i<100; i=i+1 {
+		arr[i] = pct_(&data1)
+	}
+	for i:=100; i<300; i=i+5 {
+		arr[i] = pct_(&data1)
+	}
+	for i:=300; i<=1000; i=i+10 {
+		arr[i] = pct_(&data1)
+	}
+	return arr
+}
+
+func CheckPct(pct float64) bool {
+	arr := FillPct()
+	for _, pctSec := range arr {
+		if pctSec == Float64ToStr(pct) {
+			return true
+		}
+	}
+	return false
+}
+
+func pct_(data *[]byte) string {
+	data_ := *data
+	//fmt.Printf("data_=%s\n", data_)
+	pct0 := fmt.Sprintf("0.000000%07d", HexToDec(string(data_[0:6])))
+	//fmt.Println("pct0", pct0)
+	//pct:="0.000000"+str_pad(hexdec(substr($data, 0, 6)), 7, "0", STR_PAD_LEFT);
+	if len(data_) >=6 {
+		*data = data_[6:]
+	}
+	return pct0;
+}
+
 func BinToDec(bin []byte) int64 {
 	var a uint64
 	l := len(bin)
@@ -986,4 +1035,105 @@ func DbClose(c *DCDB) {
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func GetAllMaxPromisedAmount() []int64 {
+	var arr []int64
+	var iEnd int
+	for i := 1; i < 1000000000; i=i*10 {
+		if i == 10 {
+			continue
+		}
+		if i < 100 {
+			iEnd = 100
+		} else {
+			iEnd = 90
+		}
+		for j:=0; j<iEnd; j++ {
+			if i<100 {
+				arr = append(arr, int64(i + j))
+			} else {
+				arr = append(arr, int64(i + j*i/10))
+			}
+		}
+	}
+	return arr
+}
+
+
+func MaxInMap(m map[int64]int64) (int64, int64) {
+	var max int64
+	var maxK int64
+	for k, v := range(m) {
+		if max == 0 {
+			max = v
+			maxK = k
+		} else if v > max {
+			max = v
+			maxK = k
+		}
+	}
+	return max, maxK
+}
+
+// время выполнения - 0,01сек на 1000. т.е. на 100 валют майнеру и юзеру уйдет 2 сек.
+func getMaxVote(array map[int64]int64, min, max, step int64) int64 {
+
+	// если <=10 то тупо берем максимальное кол-во голосов
+	var maxPct int64
+	if len(array)<=10 {
+		if len(array)>0 {
+			_, maxPct = MaxInMap(array)
+			//fmt.Println("0maxPct", maxPct)
+		} else {
+			maxPct = 0
+			//fmt.Println("0maxPct", maxPct)
+		}
+		return maxPct
+	}
+
+	// делим набор данных от $min до $max на секции кратные $step
+	// таких секций будет 100 при $max=1000
+	// цель такого деления - найти ту секцию, где больше всего голосов
+
+	sums := make(map[int64]int64)
+	dataBank := make(map[int64]map[int64]int64)
+	for i:=min; i<max; i=i+step/10 {
+		dataBank[i] = make(map[int64]int64)
+		min0 := i
+		max0 := i + step
+		//fmt.Println("min0", min0)
+		//fmt.Println("max0", max0)
+		// берем из массива те данные, которые попадают в данную секцию
+		for number, votes := range array {
+			if number>=min0 && number<max0 {
+				dataBank[i][number] = votes
+				//fmt.Println("i", i, "number", number, "votes", votes)
+			}
+		}
+		if len(dataBank[i])>0 {
+			sums[i] = arraySum(dataBank[i])
+			//fmt.Println("i", i, dataBank[i])
+		}
+	}
+
+	// ищем id секции, где больше всего голосов
+	_, maxI := MaxInMap(sums)
+
+	// если в этой секции <= 10-и элементов, то просто выбираем максимальное кол-во голосов
+	if len(dataBank[maxI]) <= 10 {
+		_, maxPct := MaxInMap(dataBank[maxI])
+		return maxPct
+	} else { // без рекурсии, просто один раз вызываем свою функцию
+		return getMaxVote(dataBank[maxI], maxI, maxI+step, step/10)
+	}
+	return 0
+}
+
+func arraySum(m map[int64]int64) int64 {
+	var sum int64
+	for _, v :=range m {
+		sum+=v
+	}
+	return sum
 }

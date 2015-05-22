@@ -10,7 +10,9 @@ import (
 //	"os"
 	//"time"
 	//"strings"
+	"sort"
 	"time"
+	"consts"
 )
 
 
@@ -26,8 +28,8 @@ func (p *Parser) VotesComplexInit() (error) {
 }
 type vComplex struct {
 	Currency map[string][]float64 `json:"currency"`
-	Referral map[string]uint `json:"referral"`
-	Admin uint64 `json:"admin"`
+	Referral map[string]int64 `json:"referral"`
+	Admin int64 `json:"admin"`
 }
 func (p *Parser) VotesComplexFront() (error) {
 
@@ -63,7 +65,6 @@ func (p *Parser) VotesComplexFront() (error) {
 	if !CheckSignResult {
 		return p.ErrInfo("incorrect sign")
 	}
-
 
 	currencyVotes := make(map[string][]float64)
 	var doubleCheck []int64
@@ -111,23 +112,21 @@ func (p *Parser) VotesComplexFront() (error) {
 		}
 
 		// проверим, что нет дублей
-		if (utils.InSliceInt64(int64(currencyId), doubleCheck)) {
+		if (utils.InSliceInt64(utils.StrToInt64(currencyId), doubleCheck)) {
 			return p.ErrInfo("double currencyId")
 		}
-		doubleCheck = append(doubleCheck, int64(currencyId))
+		doubleCheck = append(doubleCheck, utils.StrToInt64(currencyId))
 
 		// есть ли такая валюта
-		currencyId, err = p.Single("SELECT id FROM currency WHERE id  =  ?", currencyId).Int64()
+		currencyId_, err := p.Single("SELECT id FROM currency WHERE id  =  ?", currencyId).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if currencyId == 0 {
+		if currencyId_ == 0 {
 			return p.ErrInfo("incorrect currencyId")
 		}
 		// у юзера по данной валюте должна быть обещанная сумма, которая имеет статус mining/repaid и находится с таким статусом >90 дней
-		id, err := p.Single(`
-			SELECT id FROM promised_amount
-			WHERE currency_id  =  ? AND user_id  =  ? AND status IN ('mining', 'repaid') AND start_time < ? AND start_time > 0 AND del_block_id  =  0 AND del_mining_block_id  =  0`, currencyId, p.TxMap["user_id"], (txTime - p.Variables.Int64["min_hold_time_promise_amount"])).Int64()
+		id, err := p.Single("SELECT id FROM promised_amount	WHERE currency_id  =  ? AND user_id  =  ? AND status IN ('mining', 'repaid') AND start_time < ? AND start_time > 0 AND del_block_id  =  0 AND del_mining_block_id  =  0", currencyId, p.TxMap["user_id"], (txTime - p.Variables.Int64["min_hold_time_promise_amount"])).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -137,17 +136,58 @@ func (p *Parser) VotesComplexFront() (error) {
 
 		// если по данной валюте еще не набралось >1000 майнеров, то за неё голосовать нельзя.
 		countMiners, err := p.Single(`
-			SELECT count (*) FROM
+			SELECT count(*) FROM
 			(SELECT user_id
 			FROM promised_amount
 			WHERE start_time < ? AND del_block_id  =  0 AND status IN ('mining', 'repaid') AND currency_id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0
-			GROUP BY user_id) as t1`, currencyId, (txTime - p.Variables.Int64["min_hold_time_promise_amount"])).Int64()
+			GROUP BY user_id) as t1`, (txTime - p.Variables.Int64["min_hold_time_promise_amount"]), currencyId).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		if countMiners < p.Variables.Int64["min_miners_of_voting"] {
 			return p.ErrInfo("countMiners")
 		}
+		if len(data) !=5 {
+			return p.ErrInfo("incorrect data")
+		}
+		if !utils.CheckPct(data[0]) {
+			return p.ErrInfo("incorrect miner_pct")
+		}
+		if !utils.CheckPct(data[1]) {
+			return p.ErrInfo("incorrect user_pct")
+		}
+
+		// max promise amount
+		if (!utils.InSliceInt64(int64(data[2]), utils.GetAllMaxPromisedAmount())) {
+			return p.ErrInfo("incorrect max promised amount")
+		}
+
+		totalCountCurrencies, err := p.Single("SELECT count(id) FROM currency").Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// max other currency 0/1/2/3/.../76
+		if !utils.CheckInputData(int(data[3]), "int") || int64(data[3]) > totalCountCurrencies  {
+			return p.ErrInfo(fmt.Sprintf("incorrect max other currency %d > %d", data[3], totalCountCurrencies))
+		}
+
+		currencyCount, err := p.Single("SELECT count(id) FROM currency").Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		if int64(data[3]) > (currencyCount - 1) {
+			return p.ErrInfo("incorrect max other currency")
+		}
+		// reduction 10/25/50/90
+		if !utils.InSliceInt64(int64(data[4]), consts.ReductionDC) {
+			return p.ErrInfo("incorrect reduction")
+		}
+	}
+
+	err = p.limitRequest(p.Variables.Int64["limit_votes_complex"], "votes_complex", p.Variables.Int64["limit_votes_complex_period"])
+	if err != nil {
+		return p.ErrInfo(err)
 	}
 
 	return nil
@@ -155,95 +195,85 @@ func (p *Parser) VotesComplexFront() (error) {
 
 func (p *Parser) VotesComplex() (error) {
 
-	// начисляем баллы
-	p.points(p.Variables.Int64["promised_amount_points"])
+	currencyVotes := make(map[string][]float64)
 
-	// логируем, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err := p.ExecSql("INSERT INTO log_votes ( user_id, voting_id, type ) VALUES ( ?, ?, 'promised_amount' )", p.TxMap["user_id"], p.TxMap["promised_amount_id"])
-	if err != nil {
-		return p.ErrInfo(err)
+	if p.BlockData.BlockId > 77951 {
+		vComplex := new(vComplex)
+		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		currencyVotes = vComplex.Currency
+		// голоса за реф. %
+		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{utils.Int64ToStr(vComplex.Referral["first"]), utils.Int64ToStr(vComplex.Referral["second"]), utils.Int64ToStr(vComplex.Referral["third"])}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+
+		// раньше не было выборов админа
+		if p.BlockData.BlockId >= 153750 && vComplex.Admin>0 {
+			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []string{utils.Int64ToStr(vComplex.Admin), string(p.TxMap["time"])}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+		}
+
+
+	} else { // раньше не было рефских и выбора админа
+		vComplex := make(map[string][]float64)
+		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		currencyVotes = vComplex
 	}
 
-	// обновляем голоса
-	err = p.ExecSql("UPDATE promised_amount SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+" + 1 WHERE id = ?", p.TxMap["promised_amount_id"])
-	if err != nil {
-		return p.ErrInfo(err)
+	var currencyIds []int
+	for k := range currencyVotes {
+		currencyIds = append(currencyIds, utils.StrToInt(k))
 	}
+	sort.Ints(currencyIds)
+	//sort.Sort(sort.Reverse(sort.IntSlice(keys)))
 
-	promisedAmountData, err := p.OneRow("SELECT log_id, status, start_time, tdc_amount_update, user_id, votes_start_time, votes_0, votes_1 FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).String()
-	if err != nil {
-		return p.ErrInfo(err)
-	}
+	for _, currencyId := range currencyIds {
 
-	data := make(map[string]int64)
-	data["count_miners"], err = p.Single("SELECT count(miner_id) FROM miners").Int64()
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	data["votes_0"] = utils.StrToInt64(promisedAmountData["votes_0"])
-	data["votes_1"] =  utils.StrToInt64(promisedAmountData["votes_1"])
-	data["votes_start_time"] =  utils.StrToInt64(promisedAmountData["votes_start_time"])
-	data["votes_0_min"] = p.Variables.Int64["promised_amount_votes_0"]
-	data["votes_1_min"] = p.Variables.Int64["promised_amount_votes_1"]
-	data["votes_period"] = p.Variables.Int64["promised_amount_votes_period"]
-
-	// -----------------------------------------------------------------------------
-	// если голос решающий или голос админа
-	// голос админа - решающий только при <1000 майнеров.
-	// -----------------------------------------------------------------------------
-	err = p.getAdminUserId()
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	if p.check24hOrAdminVote(data) {
-
-		// нужно залогировать, т.к. не известно, какие были status и tdc_amount_update
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, start_time, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", data["status"], data["start_time"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])
+		data:=currencyVotes[utils.IntToStr(currencyId)]
+		currencyIdStr := utils.IntToStr(currencyId)
+		UserIdStr := string(p.TxMap["user_id"])
+		// miner_pct
+		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []string{utils.Float64ToStr(data[0]), string(p.TxMap["time"])}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
-		// перевесили голоса "за" или 1 голос от админа
-		if p.checkTrueVotes(data) {
-			err = p.ExecSql("UPDATE promised_amount SET status = 'mining', start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, p.BlockData.Time, logId, p.TxMap["promised_amount_id"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-			// есть ли у данного юзера woc
-			woc, err := p.Single("SELECT id FROM promised_amount WHERE currency_id  =  1 AND user_id  =  ?", data["user_id"]).Int64()
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-			if woc == 0 {
-				wocAmount, err := p.Single("SELECT amount FROM max_promised_amounts WHERE id  =  1 ORDER BY time DESC").String()
-				if err != nil {
-					return p.ErrInfo(err)
-				}
-				// добавляем WOC
-				err = p.ExecSql("INSERT INTO promised_amount ( user_id, amount, currency_id, start_time, status, tdc_amount_update, woc_block_id ) VALUES ( ?, ?, 1, ?, 'mining', ?, ? )", data["user_id"], wocAmount, p.BlockData.Time, p.BlockData.Time, p.BlockData.BlockId)
-				if err != nil {
-					return p.ErrInfo(err)
-				}
-			}
-		} else { // перевесили голоса "против"
-			err = p.ExecSql("UPDATE promised_amount SET status = 'rejected', start_time = 0, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, logId, p.TxMap["promised_amount_id"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-		}
-	}
-
-	// возможно с голосом пришел коммент
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
-	if err != nil {
-		return err
-	}
-	if p.TxUserID == myUserId {
-		err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment ) VALUES ( 'promised_amount', ?, ? )", p.TxMap["promised_amount_id"], p.TxMap["comment"])
+		// user_pct
+		err = p.selectiveLoggingAndUpd([]string{"pct"}, []string{utils.Float64ToStr(data[1])}, "votes_user_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
+		}
+
+		// max_promised_amount
+		err = p.selectiveLoggingAndUpd([]string{"amount"}, []string{utils.Float64ToStr(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// max_other_currencies
+		err = p.selectiveLoggingAndUpd([]string{"count"}, []string{utils.Float64ToStr(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// reduction
+		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []string{ utils.Float64ToStr(data[4]), string(p.TxMap["time"])}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// проверим, не наш ли это user_id
+		myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
+			// отметимся, что голосовали, чтобы не пришло уведомление о необходимости голосовать раз в 2 недели
+			// может быть дубль, поэтому ошибки не проверяем
+			p.ExecSql("INSERT INTO "+myPrefix+"my_complex_votes ( last_voting ) VALUES ( ? )", p.BlockData.Time)
 		}
 	}
 
@@ -252,63 +282,91 @@ func (p *Parser) VotesComplex() (error) {
 
 func (p *Parser) VotesComplexRollback() (error) {
 
-	// вычитаем баллы
-	p.pointsRollback(p.Variables.Int64["promised_amount_points"])
+	currencyVotes := make(map[string][]float64)
 
-	// удаляем логирование, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err := p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'promised_amount'", p.TxMap["user_id"], p.TxMap["promised_amount_id"])
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	// обновляем голоса
-	err = p.ExecSql("UPDATE promised_amount SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+" - 1 WHERE id = ?", p.TxMap["promised_amount_id"])
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	data, err := p.OneRow("SELECT status, user_id, log_id FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).String()
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	// если статус mining или rejected, значит голос был решающим
-	if data["status"] == "mining" || data["status"] == "rejected" {
-
-		// восстановим из лога
-		logData, err := p.OneRow("SELECT status, start_time, tdc_amount_update, prev_log_id FROM log_promised_amount WHERE log_id  =  ?", data["log_id"]).String()
+	if p.BlockData.BlockId > 77951 {
+		vComplex:= new(vComplex)
+		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.ExecSql("UPDATE promised_amount SET status = ?, start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["status"], logData["start_time"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMap["promised_amount_id"])
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-		// подчищаем _log
-		err = p.ExecSql("DELETE FROM log_promised_amount WHERE log_id = ?", data["log_id"])
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-		p.rollbackAI("log_promised_amount", 1)
-
-		// был ли добавлен woc
-		woc, err := p.Single("SELECT id FROM promised_amount WHERE currency_id  =  1 AND woc_block_id  =  ? AND user_id  =  ?", p.BlockData.BlockId, data["user_id"]).Int64()
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-		if woc > 0 {
-			err = p.ExecSql("DELETE FROM promised_amount WHERE id = ?", woc)
+		if p.BlockData.BlockId > 153750  && vComplex.Admin != 0  {
+			err := p.selectiveRollback([]string{"admin_user_id", "time"}, "votes_admin", "user_id="+string(p.TxMap["user_id"]), false)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			p.rollbackAI("promised_amount", 1)
 		}
+		// голоса за реф. %
+		err = p.selectiveRollback([]string{"first", "second", "third"}, "votes_referral", "user_id="+string(p.TxMap["user_id"]), false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		currencyVotes = vComplex.Currency
+
+	} else { // раньше не было рефских и выбора админа
+		vComplex := make(map[string][]float64)
+		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		currencyVotes = vComplex
 	}
 
+	// сортируем по $currency_id в обратном порядке
+	var currencyIds []int
+	for k := range currencyVotes {
+		currencyIds = append(currencyIds, utils.StrToInt(k))
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(currencyIds)))
+
+	for _, currencyId := range currencyIds {
+		currencyIdStr := utils.IntToStr(currencyId)
+		// miner_pct
+		err := p.selectiveRollback([]string{"pct", "time"}, "votes_miner_pct", "user_id="+string(p.TxMap["user_id"])+" AND currency_id = "+currencyIdStr, false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// user_pct
+		err = p.selectiveRollback([]string{"pct"}, "votes_user_pct", "user_id="+string(p.TxMap["user_id"])+" AND currency_id = "+currencyIdStr, false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// reduction
+		err = p.selectiveRollback([]string{"pct", "time"}, "votes_reduction", "user_id="+string(p.TxMap["user_id"])+" AND currency_id = "+currencyIdStr, false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// max_promised_amount
+		err = p.selectiveRollback([]string{"amount"}, "votes_max_promised_amount", "user_id="+string(p.TxMap["user_id"])+" AND currency_id = "+currencyIdStr, false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// max_other_currencies
+		err = p.selectiveRollback([]string{"count"}, "votes_max_other_currencies", "user_id="+string(p.TxMap["user_id"])+" AND currency_id = "+currencyIdStr, false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// проверим, не наш ли это user_id
+		myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		if p.TxUserID == myUserId {
+			// отметимся, что голосовали, чтобы не пришло уведомление о необходимости голосовать раз в 2 недели
+			err = p.ExecSql("DELETE FROM "+myPrefix+"my_complex_votes WHERE last_voting =?", p.BlockData.Time)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+	}
 
 
 	return nil
 }
 
 func (p *Parser) VotesComplexRollbackFront() error {
-	return p.maxDayVotesRollback()
+	return p.limitRequestsRollback("votes_complex")
 }

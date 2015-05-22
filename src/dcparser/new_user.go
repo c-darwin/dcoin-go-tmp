@@ -48,24 +48,24 @@ func (p *Parser) NewUserFront() (error) {
 
 	// публичный ключ должен быть без паролей
 	if ok, _ := regexp.MatchString("DEK-Info: (.+),(.+)", string(p.TxMap["public_key"])); ok{
-		return utils.ErrInfoFmt("incorrect public_key")
+		return p.ErrInfo("incorrect public_key")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["public_key_hex"])
 	fmt.Println("forSign", forSign)
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	if !CheckSignResult {
-		return utils.ErrInfoFmt("incorrect sign")
+		return p.ErrInfo("incorrect sign")
 	}
 
 	// один ключ не может быть у двух юзеров
 	num, err := p.DCDB.Single("SELECT count(user_id) FROM users WHERE public_key_0 = [hex] OR public_key_1 = [hex] OR public_key_2 = [hex]",
 		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"]).Int()
 	if num > 0 {
-		return utils.ErrInfoFmt("exists public_ke")
+		return p.ErrInfo("exists public_ke")
 	}
 	err = p.getAdminUserId()
 	if err != nil {
@@ -87,36 +87,36 @@ func (p *Parser) NewUser() (error) {
 	// пишем в БД нового юзера
 	newUserId, err := p.DCDB.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", p.TxMap["public_key_hex"], p.TxMap["user_id"])
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 
 	// если работаем в режиме пула, то ищем тех, у кого еще нет user_id
 	community, err := p.DCDB.GetCommunityUsers()
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	if len(community) > 0 {
 		for _, userId := range community {
 			myPrefix := utils.Int64ToStr(userId)+"_"
 			myUserId, err := p.DCDB.Single("SELECT user_id FROM "+myPrefix+"my_table").Int64()
 			if err != nil {
-				return utils.ErrInfo(err)
+				return p.ErrInfo(err)
 			}
 			if myUserId == 0 {
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
 				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 				if myPublicKey != "" {
 					// теперь у нас полноценный юзерский акк, и его можно апргрейдить до майнерского
 					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_table SET user_id = ?, status = 'user', notification_status = 0", newUserId)
 					if err != nil {
-						return utils.ErrInfo(err)
+						return p.ErrInfo(err)
 					}
 					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["public_key_hex"])
 					if err != nil {
-						return utils.ErrInfo(err)
+						return p.ErrInfo(err)
 					}
 				}
 			}
@@ -131,17 +131,17 @@ func (p *Parser) NewUser() (error) {
 			// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
 			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 			if err != nil {
-				return utils.ErrInfo(err)
+				return p.ErrInfo(err)
 			}
 			if myPublicKey != "" {
 				// теперь у нас полноценный юзерский акк, и его можно апргрейдить до майнерского
 				err = p.DCDB.ExecSql("UPDATE my_table SET user_id = ?, status = 'user', notification_status = 0", newUserId)
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 				err = p.DCDB.ExecSql("UPDATE my_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["public_key_hex"])
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 			}
 		}
@@ -161,7 +161,7 @@ func (p *Parser) NewUserRollback() (error) {
 	// если работаем в режиме пула, то ищем тех, у кого записан такой ключ
 	community, err := p.DCDB.GetCommunityUsers()
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	if len(community) > 0 {
 		for _, userId := range community {
@@ -169,17 +169,17 @@ func (p *Parser) NewUserRollback() (error) {
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
 				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 				if myPublicKey != "" {
 					// теперь у нас полноценный юзерский акк, и его можно апргрейдить до майнерского
 					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_table SET user_id = 0, status = 'my_pending', notification_status = 0")
 					if err != nil {
-						return utils.ErrInfo(err)
+						return p.ErrInfo(err)
 					}
 					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_keys SET block_id = 0 WHERE block_id = ?", p.BlockData.BlockId)
 					if err != nil {
-						return utils.ErrInfo(err)
+						return p.ErrInfo(err)
 					}
 				}
 		}
@@ -187,26 +187,26 @@ func (p *Parser) NewUserRollback() (error) {
 			// проверим, не наш ли это public_key
 			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
 			if err != nil {
-				return utils.ErrInfo(err)
+				return p.ErrInfo(err)
 			}
 			if myPublicKey != "" {
 				err = p.DCDB.ExecSql("UPDATE my_table SET user_id = 0, status = 'my_pending', notification_status = 0")
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 				err = p.DCDB.ExecSql("UPDATE my_keys SET block_id = 0 WHERE block_id = ?", p.BlockData.BlockId)
 				if err != nil {
-					return utils.ErrInfo(err)
+					return p.ErrInfo(err)
 				}
 			}
 	}
 	err = p.DCDB.ExecSql("DELETE FROM users WHERE public_key_0 = [hex]", p.TxMap["public_key_hex"])
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	err = p.rollbackAI("users", 1)
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	return nil
 }

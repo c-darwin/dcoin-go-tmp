@@ -1403,3 +1403,163 @@ func (p *Parser) pointsUpdateRollback(logId, userId int64) error {
 	}
 	return nil
 }
+
+// не использовать для комментов
+func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, whereFields, whereValues []string) error {
+
+	addSqlFields := ""
+	for _, field := range fields {
+		addSqlFields += field+",";
+	}
+
+	addSqlWhere := ""
+	for i:=0; i < len(whereFields); i++ {
+		addSqlWhere += whereFields[i]+"="+whereValues[i]+" AND "
+	}
+	if len(addSqlWhere) > 0 {
+		addSqlWhere = " WHERE "+addSqlWhere[0:len(addSqlWhere)-5]
+	}
+	// если есть, что логировать
+	logData, err := p.OneRow("SELECT "+addSqlFields+" log_id FROM "+table+" "+addSqlWhere).String()
+	if err != nil {
+		return err
+	}
+	if len(logData) > 0 {
+		addSqlValues := ""
+		for k, v := range logData {
+			if utils.InSliceString(k, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && v!="" {
+				query:=""
+				switch p.ConfigIni["dbType"] {
+				case "sqlite":
+					query = `'`+v+`',`
+				case "postgresql":
+					query = `decode(`+v+`,'HEX'),`
+				case "mysql":
+					query = `UNHEX("`+v+`"),`
+				}
+				addSqlValues+=query
+			} else {
+				addSqlValues+=`'`+v+`',`
+			}
+		}
+		addSqlValues = addSqlValues[0:len(addSqlValues)-1]
+
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+", prev_log_id, block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
+		if err != nil {
+			return err
+		}
+		addSqlUpdate := ""
+		for i:=0; i < len(fields); i++ {
+			if utils.InSliceString(fields[i], []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(values[i])!=0 {
+				query:=""
+				switch p.ConfigIni["dbType"] {
+				case "sqlite":
+					query = fields[i]+`='`+values[i]+`',`
+				case "postgresql":
+					query = fields[i]+`=decode(`+values[i]+`,'HEX'),`
+				case "mysql":
+					query = fields[i]+`=UNHEX("`+values[i]+`"),`
+				}
+				addSqlUpdate+=query
+			} else {
+				addSqlUpdate+= fields[i]+`='`+values[i]+`',`
+			}
+		}
+		err = p.ExecSql("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere, logId)
+		if err != nil {
+			return err
+		}
+	} else {
+		addSqlIns0 := "";
+		addSqlIns1 := "";
+		for i:=0; i < len(fields); i++ {
+			addSqlIns0 += ``+fields[i]+`,`
+			if utils.InSliceString(fields[i], []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(values[i])!=0 {
+				query:=""
+				switch p.ConfigIni["dbType"] {
+				case "sqlite":
+					query = `'`+values[i]+`',`
+				case "postgresql":
+					query = `decode(`+values[i]+`,'HEX'),`
+				case "mysql":
+					query = `UNHEX("`+values[i]+`"),`
+				}
+				addSqlIns1+=query
+			} else {
+				addSqlIns1+=`'`+values[i]+`',`
+			}
+		}
+		for i:=0; i< len(whereFields); i++ {
+			addSqlIns0+=``+whereFields[i]+`,`
+			addSqlIns1+=`'`+whereValues[i]+`',`
+		}
+		addSqlIns0 = addSqlIns0[0:len(addSqlIns0)-1]
+		addSqlIns1 = addSqlIns1[0:len(addSqlIns1)-1]
+		err = p.ExecSql("INSERT INTO "+table+" ("+addSqlIns0+") VALUES ("+addSqlIns1+")")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+
+// откат не всех полей, а только указанных, либо 1 строку, если нет where
+func (p *Parser) selectiveRollback(fields []string, table string, where string, rollback bool) error {
+	if len(where) > 0 {
+		where = " WHERE "+where
+	}
+	addSqlFields := ""
+	for _, field := range fields {
+		addSqlFields+=field+","
+	}
+	// получим log_id, по которому можно найти данные, которые были до этого
+	logId, err := p.Single("SELECT log_id FROM ? "+where, table).Int64()
+	if err != nil {
+		return err
+	}
+	if logId > 0 {
+		// данные, которые восстановим
+		logData, err := p.OneRow("SELECT "+addSqlFields+" prev_log_id FROM log_"+table+" WHERE log_id  =  ?", logId).String()
+		if err != nil {
+			return err
+		}
+		addSqlUpdate:=""
+		for _, field := range fields {
+			if utils.InSliceString(field, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(logData[field])!=0 {
+				query:=""
+				switch p.ConfigIni["dbType"] {
+				case "sqlite":
+					query = field+`='`+logData[field]+`',`
+				case "postgresql":
+					query = field+`=decode(`+logData[field]+`,'HEX'),`
+				case "mysql":
+					query = field+`=UNHEX("`+logData[field]+`"),`
+				}
+				addSqlUpdate+=query
+			} else {
+				addSqlUpdate+= field+`='`+logData[field]+`',`
+			}
+		}
+		err = p.ExecSql("UPDATE ? SET "+addSqlUpdate+" log_id = ? "+where, table, logData["prev_log_id"])
+		if err != nil {
+			return err
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM log_"+table+" WHERE log_id = ?", logId)
+		if err != nil {
+			return err
+		}
+		p.rollbackAI("log_"+table, 1)
+	} else {
+		err = p.ExecSql("DELETE FROM ? "+where, table)
+		if err != nil {
+			return err
+		}
+		if rollback {
+			p.rollbackAI(table, 1)
+		}
+	}
+
+	return nil
+}
