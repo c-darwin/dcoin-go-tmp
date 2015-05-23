@@ -26,11 +26,7 @@ func (p *Parser) VotesComplexInit() (error) {
 	}
 	return nil
 }
-type vComplex struct {
-	Currency map[string][]float64 `json:"currency"`
-	Referral map[string]int64 `json:"referral"`
-	Admin int64 `json:"admin"`
-}
+
 func (p *Parser) VotesComplexFront() (error) {
 
 	err := p.generalCheck()

@@ -187,12 +187,18 @@ func Testblock_generator(configIni map[string]string) {
         newBlockId = blockId + 1;
 		var myPrefix string
         CommunityUser, err := db.GetCommunityUsers()
+        if err != nil {
+            log.Print(err)
+            db.DbUnlock(mainName)
+            utils.Sleep(1)
+            continue
+        }
         if len(CommunityUser)>0 {
             myPrefix = strconv.FormatInt(myUserId, 10)+"_"
 		} else {
             myPrefix = ""
 	    }
-        nodePrivateKey := db.GetNodePrivateKey(myPrefix)
+        nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
 		if len(nodePrivateKey) < 1 {
             fmt.Println("continue")
             db.DbUnlock(mainName)
@@ -306,13 +312,8 @@ func Testblock_generator(configIni map[string]string) {
         if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
             utils.CheckErr(errors.New("unknown key type "+got+", want "+want));
         }
-        //fmt.Println("block", block, "end")
-
-        // Decode the RSA private key
         privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
         utils.CheckErr(err);
-        //fmt.Println(privateKey)
-
 		var forSign string
         forSign = fmt.Sprintf("0,%s,%s,%s,%s,%s,%s", newBlockId, prevBlock.Hash, Time, myUserId, level, mrklRoot)
         bytes, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))

@@ -11,8 +11,8 @@ import (
 	//"time"
 	//"strings"
 	"sort"
-	"time"
-	"consts"
+//	"time"
+	//"consts"
 )
 
 
@@ -44,13 +44,6 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	var txTime int64
-	if p.BlockData!=nil {
-		txTime = p.BlockData.Time
-	} else {
-		txTime = time.Now().Unix() - 30
-	}
-
 	nodePublicKey, err := p.GetNodePublicKey(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -59,7 +52,10 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 		return p.ErrInfo("incorrect user_id")
 	}
 
-	totalCountCurrencies := p.GetCountCurrencies()
+	totalCountCurrencies, err := p.GetCountCurrencies()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
 
 	// проверим, верно ли указаны ID валют
 	currencyList := make(map[string]int64)
@@ -79,7 +75,7 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 			return p.ErrInfo("count > totalCountCurrencies")
 		}
 	}
-	currencyIdsSql := currencyIdsSql[0:len(currencyIdsSql)-1]
+	currencyIdsSql = currencyIdsSql[0:len(currencyIdsSql)-1]
 	if countCurrency == 0 {
 		return p.ErrInfo("countCurrency")
 	}
@@ -92,7 +88,7 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_max_other_currencies"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -110,33 +106,34 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	}
 
 	// берем все голоса
-	maxOtherCurrenciesVotes := make(map[int64]map[int64]int64)
+	maxOtherCurrenciesVotes := make(map[int64][]map[int64]int64)
 	rows, err := p.Query("SELECT currency_id, count, count(user_id) as votes FROM votes_max_other_currencies GROUP BY currency_id, count")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	defer rows.Close()
-	if  ok := rows.Next(); ok {
+	for rows.Next() {
 		var currency_id, count, votes int64
 		err = rows.Scan(&currency_id, &count, &votes)
 		if err!= nil {
 			return p.ErrInfo(err)
 		}
-		maxOtherCurrenciesVotes[currency_id] = make(map[int64]int64)
-		maxOtherCurrenciesVotes[currency_id][count] = votes
+		maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count:votes})
+		fmt.Println("currency_id", currency_id)
 	}
+	fmt.Println("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
 
-	newMaxOtherCurrenciesVotes := make(map[int64]int64)
+	newMaxOtherCurrenciesVotes := make(map[string]int64)
 	for currencyId, countAndVotes := range maxOtherCurrenciesVotes {
-		newMaxOtherCurrenciesVotes[currencyId] = p.getMaxVote(countAndVotes, 0, totalCountCurrencies, 10)
+		newMaxOtherCurrenciesVotes[utils.Int64ToStr(currencyId)] = utils.GetMaxVote(countAndVotes, 0, totalCountCurrencies, 10)
 	}
 
 	jsonData, err := json.Marshal(newMaxOtherCurrenciesVotes)
 	if err!= nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxMap["new_max_other_currencies"] != jsonData {
-		return p.ErrInfo("p.TxMap[new_max_other_currencies] != jsonData")
+	if string(p.TxMap["new_max_other_currencies"]) != string(jsonData) {
+		return p.ErrInfo("p.TxMap[new_max_other_currencies] != jsonData "+string(p.TxMap["new_max_other_currencies"])+"!="+string(jsonData))
 	}
 
 	return nil
@@ -160,11 +157,11 @@ func (p *Parser) NewMaxOtherCurrencies() (error) {
 	for _, currencyId := range currencyIds {
 		count:=currencyList[utils.IntToStr(currencyId)]
 
-		logData, err := p.Single("SELECT max_other_currencies, log_id FROM currency WHERE id  =  ?", currencyId).Int64()
+		logData, err := p.OneRow("SELECT max_other_currencies, log_id FROM currency WHERE id  =  ?", currencyId).String()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err = p.ExecSqlGetLastInsertId("INSERT INTO log_currency ( max_other_currencies, prev_log_id ) VALUES ( ?, ? )", logData["max_other_currencies"], logData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_currency ( max_other_currencies, prev_log_id ) VALUES ( ?, ? )", logData["max_other_currencies"], logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -195,7 +192,7 @@ func (p *Parser) NewMaxOtherCurrenciesRollback() (error) {
 
 	for _, currencyId := range currencyIds {
 
-		count := currencyList[utils.IntToStr(currencyId)]
+		//count := currencyList[utils.IntToStr(currencyId)]
 		logId, err := p.Single("SELECT log_id FROM currency WHERE id  =  ?", currencyId).Int64()
 		if err != nil {
 			return p.ErrInfo(err)

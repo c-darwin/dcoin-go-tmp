@@ -4,7 +4,7 @@ import (
 	_ "github.com/lib/pq"
 	"fmt"
 	"utils"
-	"os"
+	//"os"
 	"time"
 	"consts"
 	"sync"
@@ -705,7 +705,7 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	p.TxUserID = utils.BytesToInt64(TxMap["user_id"])
 	p.TxTime = utils.BytesToInt64(TxMap["time"])
 	p.PublicKeys =nil
-	//fmt.Println("TxMap", TxMap)
+	fmt.Println("TxMap", TxMap)
 	//fmt.Println("TxMap[hash]", TxMap["hash"])
 	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
 	return TxMap, nil
@@ -744,70 +744,6 @@ func (p *Parser) GetMyUserId(userId int64) (int64, int64, string, []int64, error
 	return myUserId, myBlockId, myPrefix, myUserIds, nil
 }
 
-func MakeTest(parser *Parser, txType string, hashesStart map[string]string) error {
-	//fmt.Println("dcparser."+txType+"Init")
-	err := utils.CallMethod(parser, txType+"Init")
-	//fmt.Println(err)
-
-	if i, ok := err.(error); ok {
-		fmt.Println(err.(error), i)
-		return err.(error)
-	}
-
-	if len(os.Args)==1 {
-		err = utils.CallMethod(parser, txType)
-		if i, ok := err.(error); ok {
-			fmt.Println(err.(error), i)
-			return err.(error)
-		}
-
-		//fmt.Println("-------------------")
-		// узнаем, какие таблицы были затронуты в результате выполнения основного метода
-		hashesMiddle, err := parser.AllHashes()
-		if err != nil {
-			return utils.ErrInfo(err)
-		}
-		var tables []string
-		for table, hash := range hashesMiddle {
-			if hash!=hashesStart[table] {
-				tables = append(tables, table)
-			}
-		}
-		fmt.Println(tables)
-
-		// rollback
-		err0 := utils.CallMethod(parser, txType+"Rollback")
-		if i, ok := err0.(error); ok {
-			fmt.Println(err0.(error), i)
-			return err0.(error)
-		}
-
-		// сраниим хэши, которые были до начала и те, что получились после роллбэка
-		hashesEnd, err := parser.AllHashes()
-		if err != nil {
-			return utils.ErrInfo(err)
-		}
-		for table, hash := range hashesEnd {
-			if hash!=hashesStart[table] {
-				fmt.Println("ERROR in table ", table)
-			}
-		}
-
-	} else if os.Args[1] == "w" {
-		err = utils.CallMethod(parser, txType)
-		if i, ok := err.(error); ok {
-			fmt.Println(err.(error), i)
-			return err.(error)
-		}
-	} else if os.Args[1] == "r" {
-		err = utils.CallMethod(parser, txType+"Rollback")
-		if i, ok := err.(error); ok {
-			fmt.Println(err.(error), i)
-			return err.(error)
-		}
-	}
-	return nil
-}
 
 func (p *Parser) CheckInputData(data map[string]string) (error) {
 	for k, v := range data {

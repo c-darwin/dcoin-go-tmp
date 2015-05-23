@@ -44,7 +44,7 @@ var TxTypes = map[int]string {
 	6 : "new_forex_order",
 	7 : "del_forex_order",
 	//  новый набор max_other_currencies от нода-генератора блока
-	8 : "new_max_other_currencies",
+	8 : "NewMaxOtherCurrencies",
 	// geolocation. Майнер изменил свои координаты
 	9 : "change_geolocation",
 	// votes_promised_amount.
@@ -87,7 +87,7 @@ var TxTypes = map[int]string {
 	//  новый набор max_promised_amount от нода-генератора блока
 	32 : "new_max_promised_amounts",
 	//  новый набор % от нода-генератора блока
-	33 : "new_pct",
+	33 : "NewPct",
 	// добавление новой валюты
 	34 : "admin_add_currency",
 	35 : "new_cf_project",

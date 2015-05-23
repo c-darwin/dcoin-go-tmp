@@ -5,7 +5,7 @@ import (
      _ "github.com/go-sql-driver/mysql"
 	 "database/sql"
 	"strings"
-	"regexp"
+	//"regexp"
 	//"errors"
 	"log"
 	"time"
@@ -515,68 +515,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	return hash, nil
 }
 
-// для юнит-тестов. снимок всех данных в БД
-func (db *DCDB) AllHashes() (map[string]string, error) {
-	//var orderBy string
-	result:=make(map[string]string)
-	//var columns string;
-	rows, err := db.Query(`
-		SELECT table_name
-		FROM
-		information_schema.tables
-		WHERE
-		table_type = 'BASE TABLE'
-		AND
-		table_schema NOT IN ('pg_catalog', 'information_schema');`)
-	if err != nil {
-		//fmt.Println(err)
-		return result, err
-	}
-	for rows.Next() {
-		var table string
-		err = rows.Scan(&table)
-		if err != nil {
-			return result, err
-		}
-		//fmt.Println(table)
 
-		orderByFns := func(table string) string {
-			// ошибки не проверяются т.к. некритичны
-			match, _ := regexp.MatchString("^(log_forex_orders|log_forex_orders_main|cf_comments|cf_currency|cf_funding|cf_lang|cf_projects|cf_projects_data)$", table)
-			if match {
-				return "id"
-			}
-			match, _ = regexp.MatchString("^log_time_(.*)$", table)
-			if match && table!="log_time_money_orders" {
-				return "user_id, time"
-			}
-			match, _ = regexp.MatchString("^log_transactions$", table)
-			if match {
-				return "time"
-			}
-			match, _ = regexp.MatchString("^log_votes$", table)
-			if match {
-				return "user_id, voting_id"
-			}
-			match, _ = regexp.MatchString("^log_(.*)$", table)
-			if match && table!="log_time_money_orders" && table!="log_minute" {
-				return "log_id"
-			}
-			match, _ = regexp.MatchString("^wallets$", table)
-			if match {
-				return "last_update"
-			}
-			return ""
-		}
-		orderBy := orderByFns(table)
-		hash, err := db.HashTableData(table, "", orderBy)
-		if err != nil {
-			return result, ErrInfo(err)
-		}
-		result[table] = hash
-	}
-	return result, nil
-}
 
 func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	result := make(map[string]int64)
@@ -707,15 +646,23 @@ func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
 	return result, nil
 }
 
-func (db *DCDB) GetNodePrivateKey(myPrefix string) string {
-	var key string;
-	rows, err := db.Query("SELECT private_key FROM "+myPrefix+"my_node_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_node_keys)")
-	CheckErr(err)
-	if  ok := rows.Next(); ok {
-		err = rows.Scan(&key)
-		CheckErr(err)
+func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
+	var key string
+	key, err := db.Single("SELECT private_key FROM "+myPrefix+"my_node_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_node_keys)").String()
+	if err != nil {
+		return "", ErrInfo(err)
 	}
-	return key
+	return key, nil
+}
+
+
+func (db *DCDB) GetPrivateKey(myPrefix string) (string, error) {
+	var key string
+	key, err := db.Single("SELECT private_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").String()
+	if err != nil {
+		return "", ErrInfo(err)
+	}
+	return key, nil
 }
 
 func (db *DCDB) GetNodeConfig() (map[string]string, error) {

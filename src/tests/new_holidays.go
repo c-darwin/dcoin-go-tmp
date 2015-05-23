@@ -244,8 +244,6 @@ func main() {
 	}*/
 	fmt.Println()
 
-	// делаем снимок БД в виде хэшей до начала тестов
-	hashesStart, err := parser.AllHashes()
 
 	err = dcparser.MakeTest(parser, txType, hashesStart);
 	if err != nil {
