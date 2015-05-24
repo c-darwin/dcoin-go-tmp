@@ -668,20 +668,21 @@ func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
 }
 
 
-func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]int64, error) {
-	var result map[int64][]map[int64]int64
+func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]string, error) {
+	var result map[int64][]map[int64]string
 	rows, err := db.Query("SELECT currency_id, time, amount  FROM max_promised_amounts ORDER BY time ASC")
 	if err != nil {
 		return result, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var currency_id, time, amount int64
+		var currency_id, time int64
+		var amount string
 		err = rows.Scan(&currency_id, &time, &amount)
 		if err!= nil {
 			return result, err
 		}
-		result[currency_id] = append(result[currency_id], map[int64]int64{time:amount})
+		result[currency_id] = append(result[currency_id], map[int64]string{time:amount})
 	}
 	return result, nil
 }

@@ -13,7 +13,7 @@ type calcProfitTest struct {
 	pct_array []map[int64]map[string]float64
 	points_status_array []map[int64]string
 	holidays_array [][]int64
-	max_promised_amount_array []map[int64]int64
+	max_promised_amount_array []map[int64]string
 	currency_id int64
 }
 
@@ -46,11 +46,11 @@ func main() {
 		{66, 99},
 		{233, 1999},
 	}
-	test_data[20].max_promised_amount_array = []map[int64]int64 {
-		{0:1000},
-		{63:1525},
-		{64:1550},
-		{139:500},
+	test_data[20].max_promised_amount_array = []map[int64]string {
+		{0:"1000"},
+		{63:"1525"},
+		{64:"1550"},
+		{139:"500"},
 	}
 	test_data[20].currency_id = 10
 

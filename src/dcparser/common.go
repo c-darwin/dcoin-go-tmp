@@ -10,6 +10,7 @@ import (
 	"sync"
 	"reflect"
 	"math"
+	"log"
 )
 
 type Parser struct {
@@ -1094,7 +1095,7 @@ func (p *Parser) points(points int64) (error) {
 }
 
 
-func (p *Parser) calcProfit_(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]int64, currencyId int64, repaidAmount float64) (float64, error) {
+func (p *Parser) calcProfit_(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 	return  p.CalcProfit(amount, timeStart, timeFinish, pctArray, pointsStatusArray, holidaysArray, maxPromisedAmountArray, currencyId, repaidAmount)
 }
 
@@ -1600,7 +1601,16 @@ $pct_array = array(
  * $repaid_amount нужен чтобы узнать, не будет ли превышения макс. допустимой суммы. считаем amount mining+repaid
  * $currency_id - для иднетификации WOC
  * */
-func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]int64, currencyId int64, repaidAmount float64) (float64, error) {
+type pctAmount struct {
+	pct float64
+	amount float64
+}
+type resultArrType struct {
+	num_sec int64
+	pct float64
+	amount float64
+}
+func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 	if timeStart >= timeFinish {
 		return 0, nil
 	}
@@ -1614,19 +1624,302 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 	 * $pct_array имеет дефолтные значения 0% для user/miner от времени = 0
 	 * в $points_status_array крайний элемент массива всегда будет относиться к текущим 30-и дням т.к. перед calc_profit всегда идет вызов points_update
 	 * */
-/*
-	var lastStatus bool
-	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
-	for time, statusPctArray := range {
 
+	var lastStatus string = ""
+	var findMinArray []map[string]string
+	var newArr []map[int64]float64
+	var statusPctArray_ map[string]float64
+	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
+
+	log.Println("pctArray", pctArray)
+	for i:=0; i < len(pctArray); i++ {
+		for time, statusPctArray := range pctArray[i] {
+			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
+			//log.Println("i", i)
+			log.Println("time", time)
+			log.Println("findMinArray", findMinArray)
+			log.Println("pointsStatusArray", pointsStatusArray)
+			for j := 0; j < len(findMinArray); j++ {
+				if utils.StrToInt64(findMinArray[j]["time"]) <= time {
+					findMinPct := findMinPct(utils.StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
+					newArr = append(newArr, map[int64]float64{utils.StrToInt64(findMinArray[j]["time"]) : findMinPct})
+					lastStatus = findMinArray[j]["status"];
+				}
+			}
+			if len(findMinArray) == 0 && len(lastStatus) == 0 {
+				findMinArray = append(findMinArray, map[string]string{"status": "user"})
+			} else if len(findMinArray) == 0 && len(lastStatus) != 0 { // есть проценты, но кончились points_status
+				findMinArray = append(findMinArray, map[string]string{"status": lastStatus})
+			}
+			newArr = append(newArr, map[int64]float64{time : statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
+			statusPctArray_ = statusPctArray;
+		}
 	}
-*/
-	return 0, nil
+
+	log.Println("newArr", newArr)
+
+	// если в points больше чем в pct
+	if len(pointsStatusArray)>0 {
+		for i:=0; i < len(pointsStatusArray); i++ {
+			for time, status := range pointsStatusArray[i] {
+				newArr = append(newArr, map[int64]float64{time : statusPctArray_[status]})
+			}
+		}
+	}
+
+
+	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
+
+	// $max_promised_amount_array + $pct_array
+	/*
+	 * в $pct_array сейчас
+			[1394308000] =>  0,05
+			[1394308100] =>  0,1
+
+		после обработки станет
+
+			[1394308000] => Array
+				(
+					[pct] => 0,05
+					[amount] => 1000
+				)
+			[1394308005] => Array
+				(
+					[pct] => 0,05
+					[amount] => 100
+				)
+			[1394308100] => Array
+				(
+					[pct] => 0,1
+					[amount] => 100
+				)
+
+	 * */
+
+	var newArr2 []map[int64]*pctAmount
+	var lastAmount float64
+	var amount_ float64
+	var pct_ float64
+	if len(maxPromisedAmountArray)==0{
+		lastAmount = amount
+	}
+
+	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
+	for i:=0; i < len(newArr); i++ {
+		log.Println("i ", i)
+		for time, pct := range newArr[i] {
+			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
+			for j:=0; j < len(findMinArray); j++ {
+				amount_ = getMaxPromisedAmountCalcProfit(amount, repaidAmount, utils.StrToFloat64(findMinArray[j]["amount"]), currencyId)
+				if utils.StrToInt64(findMinArray[j]["time"]) <= time {
+					minPct := findMinPct1(utils.StrToInt64(findMinArray[j]["time"]), newArr);
+					newArr2 = append(newArr2, map[int64]*pctAmount{utils.StrToInt64(findMinArray[j]["time"]):{pct:minPct, amount:amount_}})
+					lastAmount = amount_;
+
+				}
+			}
+			newArr2 = append(newArr2, map[int64]*pctAmount{time:{pct:pct, amount:lastAmount}})
+			pct_ = pct;
+		}
+	}
+
+	fmt.Println("2")
+	// если в max_promised_amount больше чем в pct
+	if len(maxPromisedAmountArray) > 0 {
+		for i:=0; i<len(maxPromisedAmountArray); i++ {
+			for time, maxPromisedAmount := range maxPromisedAmountArray[i] {
+				MaxPromisedAmountCalcProfit := getMaxPromisedAmountCalcProfit(amount, repaidAmount, utils.StrToFloat64(maxPromisedAmount), currencyId);
+				amount_ = MaxPromisedAmountCalcProfit
+				newArr2 = append(newArr2, map[int64]*pctAmount{time:{pct:pct_, amount:MaxPromisedAmountCalcProfit}})
+			}
+		}
+	}
+
+	/*maxTimeInNewArr2 = func(newArr2 []map[int64]interface {}) int64 {
+		var max int64
+		for i:=0; i < len(newArr2); i++ {
+			for time, _ := range newArr2[i] {
+				if time > max {
+					max = time
+				}
+			}
+		}
+		return max
+	}
+
+	if maxTimeInNewArr2(newArr2) < timeFinish {
+		newArr2[timeFinish] = pct; // добавим сразу время окончания
+	}*/
+
+	fmt.Println("3")
+	var workTime, oldTime int64
+	var resultArr []resultArrType
+	var oldPctAndAmount *pctAmount
+	var startHolidays bool
+	var finishHolidaysElement int64
+	START:
+	for i:=0; i < len(newArr2); i++ {
+		for time, pctAndAmount := range newArr2[i] {
+			if (time > timeFinish) {
+				continue START
+			}
+			if (time > timeStart) {
+				workTime = time
+				for j := 0; j < len(holidaysArray); j++ {
+					if holidaysArray[j][1] <= oldTime {
+						continue
+					}
+
+					// полные каникулы в промежутке между time и old_time
+					if holidaysArray[j][0]!=-1 && oldTime <= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						time = holidaysArray[j][0];
+						holidaysArray[j][0] = -1
+						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+						oldTime = holidaysArray[j][1];
+						holidaysArray[j][1] = -1
+					}
+					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] {
+						startHolidays = true; // есть начало каникул, но есть ли конец?
+						finishHolidaysElement = holidaysArray[j][1]; // для записи в лог
+						time = holidaysArray[j][0];
+						if time < timeStart {
+							time = timeStart
+						}
+						holidaysArray[j][0] = -1
+					} else if holidaysArray[j][1]!=-1 && workTime < holidaysArray[j][1] && holidaysArray[j][0]==-1 {
+						// конец каникул заканчивается после $work_time
+						time = oldTime
+						continue
+					} else if holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						oldTime = holidaysArray[j][1]
+						holidaysArray[j][1] = -1
+						startHolidays = false; // конец каникул есть
+					} else if j == len(holidaysArray)-1 && !startHolidays {
+						// если это последний полный внутрений холидей, то time должен быть равен текущему workTime
+						time = workTime
+					}
+				}
+				if (time > timeFinish) {
+					time = timeFinish
+				}
+				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+				oldTime = time
+			} else {
+				oldTime = timeStart
+			}
+			oldPctAndAmount = pctAndAmount
+		}
+	}
+
+	fmt.Println("4")
+	if (startHolidays && finishHolidaysElement>0) {
+		log.Println("finishHolidaysElement:", finishHolidaysElement)
+	}
+
+	// время в процентах меньше, чем нужное нам конечное время
+	if (oldTime < timeFinish && !startHolidays) {
+		// просто берем последний процент и добиваем его до нужного $time_finish
+		sec := timeFinish - oldTime;
+		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+	}
+
+
+	var profit, amountAndProfit float64
+	for i:=0; i < len(resultArr); i++ {
+		pct := 1+resultArr[i].pct
+		num := resultArr[i].num_sec
+		amountAndProfit = profit +resultArr[i].amount
+		//$profit = ( floor( round( $amount_and_profit*pow($pct, $num), 3)*100 ) / 100 ) - $new[$i]['amount'];
+		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
+		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
+	}
+
+	return profit, nil
+}
+
+
+func  getMaxPromisedAmountCalcProfit(amount, repaidAmount, maxPromisedAmount float64, currencyId int64) float64 {
+	// для WOC $repaid_amount всегда = 0, т.к. cash_request на WOC послать невозможно
+	// если наша сумма больше, чем максимально допустимая ($find_min_array[$i]['amount'])
+	var result float64
+	if (amount+repaidAmount > maxPromisedAmount) {
+		result = maxPromisedAmount-repaidAmount;
+	} else if (amount < maxPromisedAmount && currencyId==1) { // для WOC разрешено брать maxPromisedAmount вместо promisedAmount, если promisedAmount < maxPromisedAmount
+		result = maxPromisedAmount
+	} else {
+		result = amount;
+	}
+	return result
 }
 
 
 // ищем ближайшее время в $points_status_array или $max_promised_amount_array
 // $type - status для $points_status_array / amount - для $max_promised_amount_array
-func (p *Parser) findMinPointsStatus(needTime int64, pType string) {
+func  findMinPointsStatus(needTime int64, pointsStatusArray []map[int64]string, pType string) ([]map[string]string, []map[int64]string) {
+	var findTime []int64
+	newPointsStatusArray := pointsStatusArray
+	var timeStatusArr []map[string]string
+	BR:
+	for i:=0; i<len(pointsStatusArray); i++ {
+		for time, _ := range pointsStatusArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = append(findTime, time)
+			start:=i+1
+			if i+1 > len(pointsStatusArray) {
+				start=len(pointsStatusArray)
+			}
+			newPointsStatusArray = pointsStatusArray[start:]
+		}
+	}
+	if len(findTime) > 0 {
+		for i:=0; i<len(findTime); i++ {
+			for _, status := range pointsStatusArray[i] {
+				timeStatusArr = append(timeStatusArr, map[string]string{"time" : utils.Int64ToStr(findTime[i]), pType : status})
+			}
+		}
+	}
+	return timeStatusArr, newPointsStatusArray
+}
 
+func findMinPct (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
+	var findTime int64 = -1
+	var pct float64 = 0
+	BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	if findTime >=0 {
+		for _, arr := range pctArray[findTime] {
+			pct = arr[status]
+		}
+	}
+	return pct
+}
+
+
+func findMinPct1 (needTime int64, pctArray []map[int64]float64) float64 {
+	var findTime int64 = -1
+	var pct float64 = 0
+	BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	if findTime >=0 {
+		for _, pct0 := range pctArray[findTime] {
+			pct = pct0
+		}
+	}
+	return pct
 }
