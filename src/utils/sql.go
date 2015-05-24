@@ -277,6 +277,7 @@ func (r *singleResult) Bytes() ([]byte, error) {
 	return r.result, nil
 }
 
+
 func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
@@ -331,11 +332,11 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 	return &listResult{result, nil}
 }
 
-func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[int]map[string]string, error) {
+func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[string]string, error) {
 	if db.ConfigIni["db_type"] == "postgresql" {
 		query = replQ(query)
 	}
-	result := make(map[int]map[string]string)
+	var result []map[string]string
 	// Execute the query
 	//fmt.Println("query", query)
 	rows, err := db.Query(query, args...)
@@ -368,7 +369,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[in
 	r := 0
 	// Fetch rows
 	for rows.Next() {
-		result[r] = make(map[string]string)
+		//result[r] = make(map[string]string)
 
 		// get RawBytes from data
 		err = rows.Scan(scanArgs...)
@@ -387,7 +388,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) (map[in
 				value = string(col)
 			}
 			//fmt.Println(columns[i], ": ", value)
-			result[r][columns[i]] = value
+			result = append(result, map[string]string{columns[i]:value})
 		}
 		r++
 		if countRows!=-1 && r >= countRows {
@@ -406,6 +407,9 @@ func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	all, err := db.GetAll(query, 1, args ...)
 	if err != nil {
 		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
+	}
+	if len(all) == 0 {
+		return &oneRow{result, nil}
 	}
 	return &oneRow{all[0], nil}
 }
@@ -654,6 +658,35 @@ func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
 	}
 	return key, nil
 }
+
+func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
+	result, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currencyId = ? ORDER BY time DESC", currencyId).Float64()
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
+}
+
+
+func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]int64, error) {
+	var result map[int64][]map[int64]int64
+	rows, err := db.Query("SELECT currency_id, time, amount  FROM max_promised_amounts ORDER BY time ASC")
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currency_id, time, amount int64
+		err = rows.Scan(&currency_id, &time, &amount)
+		if err!= nil {
+			return result, err
+		}
+		result[currency_id] = append(result[currency_id], map[int64]int64{time:amount})
+	}
+	return result, nil
+}
+
+
 
 
 func (db *DCDB) GetPrivateKey(myPrefix string) (string, error) {
@@ -951,22 +984,46 @@ func (db *DCDB) CheckCashRequests(userId int64) (error) {
 	}
 	return nil
 }
-/*
-	static function check_cash_requests ($user_id, $db)
-	{
-		$cash_request_status = $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-				SELECT `status`
-				FROM `".DB_PREFIX."cash_requests`
-				WHERE `to_user_id` = {$user_id} AND
-							 `del_block_id` = 0 AND
-							 `for_repaid_del_block_id` = 0 AND
-							 `status` = 'pending'
-				LIMIT 1
-				", 'fetch_one' );
-		if ($cash_request_status)
-			return 'error $cash_request_status';
+
+func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
+	result := make(map[int64][]map[int64]map[string]float64)
+	rows, err := db.Query("SELECT currency_id, time, user, miner FROM pct GROUP BY time ASC")
+	if err != nil {
+		return result, err
 	}
-*/
+	defer rows.Close()
+	for rows.Next() {
+		var currency_id, time int64
+		var user, miner float64
+		err = rows.Scan(&currency_id, &time, &user, &miner)
+		if err!= nil {
+			return result, err
+		}
+		result[currency_id] = append(result[currency_id], map[int64]map[string]float64{time:{"miner":miner, "user":user}})
+	}
+	return result, nil
+}
+
+
+func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
+	var result [][]int64
+	rows, err := db.Query("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0", userId)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var start_time, end_time int64
+		err = rows.Scan(&start_time, &end_time)
+		if err!= nil {
+			return result, err
+		}
+		result = append(result, []int64{start_time, end_time})
+	}
+	return result, nil
+}
+
+
 func (db *DCDB) GetRepaidAmount(currencyId, userId int64) (float64, error) {
 	amount, err := db.Single("SELECT amount FROM promised_amount WHERE status = 'repaid' AND currency_id = ? AND user_id = ? AND del_block_id = 0 AND del_mining_block_id = 0", currencyId, userId).Float64()
 	if err != nil {

@@ -1050,7 +1050,7 @@ func (p *Parser) maxDayVotes() (error) {
 
 // начисление баллов
 func (p *Parser) points(points int64) (error) {
-	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id = ?", p.TxMap["user_id"]).String()
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id = ?", p.TxMap["user_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1063,7 +1063,7 @@ func (p *Parser) points(points int64) (error) {
 	prevLogId := data["log_id"]
 
 	// если $time_start = 0, значит это первый голос юзера
-	if len(timeStart) == 0 {
+	if timeStart == 0 {
 		err = p.ExecSql("INSERT INTO points ( user_id, time_start, points ) VALUES ( ?, ?, ? )", p.TxMap["user_id"], p.BlockData.Time, points)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -1074,7 +1074,7 @@ func (p *Parser) points(points int64) (error) {
 			return p.ErrInfo(err)
 		}
 	} else if p.BlockData.Time - pointsStatusTimeStart > p.Variables.Int64["points_update_time"] { // если прошел месяц
-		err = p.pointsUpdate(utils.StrToInt64(data["points"]), prevLogId, timeStart, pointsStatusTimeStart, p.TxUserID, points)
+		err = p.pointsUpdate(data["points"], prevLogId, timeStart, pointsStatusTimeStart, p.TxUserID, points)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1094,11 +1094,85 @@ func (p *Parser) points(points int64) (error) {
 }
 
 
+func (p *Parser) calcProfit_(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]int64, currencyId int64, repaidAmount float64) (float64, error) {
+	return  p.CalcProfit(amount, timeStart, timeFinish, pctArray, pointsStatusArray, holidaysArray, maxPromisedAmountArray, currencyId, repaidAmount)
+}
+
+// обновление points_status на основе points
+// вызов данного метода безопасен для rollback методов, т.к. при rollback данные кошельков восстаналиваются из log_wallets не трогая points
+func (p *Parser) pointsUpdateMain(userId int64) error {
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id  =  ?", userId).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	pointsStatusTimeStart, err := p.Single("SELECT time_start FROM points_status WHERE user_id  =  ? ORDER BY time_start DESC", userId).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if len(data) > 0 && p.BlockData.Time - pointsStatusTimeStart > p.Variables.Int64["points_update_time"] {
+		err = p.pointsUpdate(data["points"], data["log_id"], data["time_start"], pointsStatusTimeStart, userId, 0)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) getPointsStatus(userId int64) ([]map[int64]string, error) {
+
+	// т.к. перед вызовом этой функции всегда идет обновление points_status, значит при данном запросе у нас
+	// всегда будут свежие данные, т.е. крайний элемент массива всегда будет относиться к текущим 30-и дням
+	var result []map[int64]string
+	rows, err := p.Query("SELECT time_start, status FROM points_status WHERE user_id= ? ORDER BY time_start ASC", userId)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var time_start int64
+		var status string
+		err = rows.Scan(&time_start, &status)
+		if err!= nil {
+			return result, err
+		}
+		result = append(result, map[int64]string{time_start:status})
+	}
+
+	// НО! При фронтальной проверке может получиться, что последний элемент miner и прошло более 30-и дней.
+	// поэтому нужно добавлять последний элемент = user, если вызов происходит не в блоке
+	pointsUpdateTime := p.Variables.Int64["points_update_time"]
+	if p.BlockData!=nil && len(result)>0 {
+		for time_start, _ := range result[len(result)-1] {
+			if time_start < time.Now().Unix() - pointsUpdateTime {
+				result = append(result, map[int64]string{time_start+pointsUpdateTime:"user"})
+			}
+		}
+	}
+	// для майнеров, которые не получили ни одного балла, а уже шлют кому-то DC, или для всех юзеров
+	if len(result) == 0 {
+		result = append(result, map[int64]string{0:"user"})
+	}
+	return result, nil
+}
+
+func (p *Parser) pointsUpdateRollbackMain(userId int64) error {
+	data, err := p.OneRow("SELECT time_start, log_id FROM points WHERE user_id  =  ?", userId).Int64()
+	if err != nil {
+		return err
+	}
+	if p.BlockData.Time == data["time_start"] {
+		err = p.pointsUpdateRollback(data["log_id"], userId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // добавляем новые points_status
 // $points - текущие points юзера из таблы points
 // $new_points - новые баллы, если это вызов из тр-ии, где идет головование
-func (p *Parser) pointsUpdate(points int64, prevLogId string, timeStart string, pointsStatusTimeStart int64, userId int64, newPoints int64) (error) {
+func (p *Parser) pointsUpdate(points, prevLogId, timeStart, pointsStatusTimeStart, userId, newPoints int64) (error) {
 
 	// среднее значение баллов
 	mean, err := p.Single("SELECT sum(points)/count(points) FROM points WHERE points > 0").Float64()
@@ -1498,4 +1572,61 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 	}
 
 	return nil
+}
+
+/**
+ *
+Вычисляем, какой получится профит от суммы $amount
+$pct_array = array(
+	1394308460=>array('user'=>0.05, 'miner'=>0.10),
+	1394308470=>array('user'=>0.06, 'miner'=>0.11),
+	1394308480=>array('user'=>0.07, 'miner'=>0.12),
+	1394308490=>array('user'=>0.08, 'miner'=>0.13)
+	);
+ * $holidays_array = array ($start, $end)
+ * $points_status_array = array(
+	1=>'user',
+	9=>'miner',
+	10=>'user',
+	12=>'miner'
+ * );
+ * $max_promised_amount_array = array(
+	1394308460=>7500,
+	1394308471=>2500,
+	1394308482=>7500,
+	1394308490=>5000
+	);
+ * $repaid_amount, $holidays_array, $points_status_array, $max_promised_amount_array нужны только для обещанных сумм. у погашенных нет $repaid_amount, $holidays_array, $max_promised_amount_array
+ * $repaid_amount нужен чтобы узнать, не будет ли превышения макс. допустимой суммы. считаем amount mining+repaid
+ * $currency_id - для иднетификации WOC
+ * */
+func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]int64, currencyId int64, repaidAmount float64) (float64, error) {
+	if timeStart >= timeFinish {
+		return 0, nil
+	}
+
+	// для WOC майнинг останавливается только если майнера забанил админ, каникулы на WOC не действуют
+	if currencyId == 1 {
+		holidaysArray = nil
+	}
+
+	/* $max_promised_amount_array имеет дефолтные значения от времени = 0
+	 * $pct_array имеет дефолтные значения 0% для user/miner от времени = 0
+	 * в $points_status_array крайний элемент массива всегда будет относиться к текущим 30-и дням т.к. перед calc_profit всегда идет вызов points_update
+	 * */
+/*
+	var lastStatus bool
+	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
+	for time, statusPctArray := range {
+
+	}
+*/
+	return 0, nil
+}
+
+
+// ищем ближайшее время в $points_status_array или $max_promised_amount_array
+// $type - status для $points_status_array / amount - для $max_promised_amount_array
+func (p *Parser) findMinPointsStatus(needTime int64, pType string) {
+
 }
