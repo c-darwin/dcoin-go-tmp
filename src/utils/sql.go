@@ -380,6 +380,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 		// Now do something with the data.
 		// Here we just print each column as a string.
 		var value string
+		rez:=make(map[string]string)
 		for i, col := range values {
 			// Here we can check if the value is nil (NULL value)
 			if col == nil {
@@ -388,8 +389,9 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 				value = string(col)
 			}
 			//fmt.Println(columns[i], ": ", value)
-			result = append(result, map[string]string{columns[i]:value})
+			rez[columns[i]] = value
 		}
+		result = append(result, rez)
 		r++
 		if countRows!=-1 && r >= countRows {
 			break
@@ -471,6 +473,22 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
 	}
 	return nil
+}
+
+
+
+func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
+	query = formatQuery(query, db.ConfigIni["db_type"])
+	res, err := db.Exec(query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
+	}
+	affect, err := res.RowsAffected()
+	lastId, err := res.LastInsertId()
+	if db.ConfigIni["log"]=="1" {
+		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+	}
+	return affect, nil
 }
 
 
@@ -660,7 +678,7 @@ func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
 }
 
 func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
-	result, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currencyId = ? ORDER BY time DESC", currencyId).Float64()
+	result, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currency_id = ? ORDER BY time DESC", currencyId).Float64()
 	if err != nil {
 		return 0, err
 	}
@@ -669,7 +687,7 @@ func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
 
 
 func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]string, error) {
-	var result map[int64][]map[int64]string
+	result:=make(map[int64][]map[int64]string)
 	rows, err := db.Query("SELECT currency_id, time, amount  FROM max_promised_amounts ORDER BY time ASC")
 	if err != nil {
 		return result, err
@@ -1005,10 +1023,19 @@ func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 	return result, nil
 }
 
+func (db *DCDB) CheckCurrencyId(id int64) (int64, error) {
+	return db.Single("SELECT id FROM currency WHERE id = ?", id).Int64()
+}
 
 func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
-	rows, err := db.Query("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0", userId)
+	sql:=""
+	if db.ConfigIni["db_type"]=="mysql" {
+		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0";
+	} else {
+		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0";
+	}
+	rows, err := db.Query(sql, userId)
 	if err != nil {
 		return result, err
 	}

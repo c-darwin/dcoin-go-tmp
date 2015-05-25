@@ -2,7 +2,7 @@ package dcparser
 
 import (
 	"fmt"
-	"utils"
+	//"utils"
 	"encoding/json"
 )
 
@@ -44,17 +44,17 @@ func (p *Parser) Admin1Block() (error) {
 		currencyId, err := p.DCDB.ExecSqlGetLastInsertId("INSERT INTO currency (name, full_name, max_other_currencies) VALUES (?,?,?)",
 			currencyData[0], currencyData[1], currencyData[3])
 		if err != nil {
-			return utils.ErrInfo(err)
+			return p.ErrInfo(err)
 		}
 		err = p.DCDB.ExecSql("INSERT INTO pct (time, currency_id, miner, user, block_id) VALUES (0,?,0,0,1)",
 			currencyId)
 		if err != nil {
-			return utils.ErrInfo(err)
+			return p.ErrInfo(err)
 		}
 		err = p.DCDB.ExecSql("INSERT INTO max_promised_amounts (time, currency_id, amount, block_id) VALUES (0,?,?,1)",
 			currencyId, currencyData[2])
 		if err != nil {
-			return utils.ErrInfo(err)
+			return p.ErrInfo(err)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (p *Parser) Admin1Block() (error) {
 		err := p.DCDB.ExecSql("INSERT INTO variables (name, value) VALUES (?,?)",
 			name, value)
 		if err != nil {
-			return utils.ErrInfo(err)
+			return p.ErrInfo(err)
 		}
 	}
 
@@ -70,24 +70,24 @@ func (p *Parser) Admin1Block() (error) {
 		VALUES (1,1,'miner',[hex],?,1,1,1)`,
 		firstBlock.NodePublicKey, firstBlock.Host)
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 
 	err = p.DCDB.ExecSql(`INSERT INTO users (public_key_0) VALUES ([hex])`,
 		firstBlock.Publickey)
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 
 	err = p.DCDB.ExecSql(`INSERT INTO miners (miner_id, active) VALUES (1,1)`)
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 
 	err = p.DCDB.ExecSql(`INSERT INTO spots_compatibility (version, example_spots, compatibility, segments, tolerances) VALUES (?,?,?,?,?)`,
 		firstBlock.SpotsCompatibility["version"], firstBlock.SpotsCompatibility["example_spots"], firstBlock.SpotsCompatibility["compatibility"], firstBlock.SpotsCompatibility["segments"], firstBlock.SpotsCompatibility["tolerances"])
 	if err != nil {
-		return utils.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 
 	return nil

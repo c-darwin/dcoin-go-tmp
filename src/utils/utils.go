@@ -142,6 +142,12 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "reduction_type":
+		if ok, _ := regexp.MatchString(`^(manual|promised_amount)$`, data); ok{
+			if StrToInt(data) <= 30 {
+				return true
+			}
+		}
 	case "amount":
 		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, data); ok{
 			return true

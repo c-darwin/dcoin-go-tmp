@@ -3,6 +3,9 @@ import (
 	//"fmt"
 )
 
+const DAY = 3600*24
+const DAY2 = 3600*24*2
+
 // У скольких нодов должен быть такой же блок как и у нас, чтобы считать, что блок у большей части DC-сети. для get_confirmed_block_id()
 const MIN_CONFIRMED_NODES = 3
 
@@ -22,8 +25,19 @@ const BLOCKCHAIN_URL = "http://localhost/blockchain"
 const MAX_TX_FORW = 0
 
 // тр-ия может блуждать по сети сутки и потом попасть в блок
-const MAX_TX_BACK = 3600*24
+const MAX_TX_BACK = DAY
 
+
+//  есть ли хотябы X юзеров, у которых на кошелках есть от 0.01 данной валюты
+const AUTO_REDUCTION_PROMISED_AMOUNT_MIN = 10
+
+// сколько должно быть процентов PROMISED_AMOUNT от кол-ва DC на кошельках, чтобы запустилось урезание
+const AUTO_REDUCTION_PROMISED_AMOUNT_PCT = 1 // X*100%
+
+// через сколько можно делать следующее урезание.
+// важно учитывать то, что не должно быть роллбеков дальше чем на 1 урезание
+// т.к. при урезании используется backup в этой же табле вместо отдельной таблы log_
+const AUTO_REDUCTION_PERIOD = DAY2
 
 var LangMap = map[string]int{"en":1, "ru":42}
 
@@ -57,7 +71,7 @@ var TxTypes = map[int]string {
 	14 : "cash_request_in",
 	// набор голосов по разным валютам
 	15 : "VotesComplex",
-	16 : "change_primary_key",
+	16 : "ChangePrimaryKey",
 	17 : "change_node_key",
 	18 : "for_repaid_fix",
 	// занесение в БД данных из первого блока
@@ -85,7 +99,7 @@ var TxTypes = map[int]string {
 	// Юзер исправил проблему с отдачей фото и шлет повторный запрос на получение статуса "майнер"
 	31 : "new_miner_update",
 	//  новый набор max_promised_amount от нода-генератора блока
-	32 : "new_max_promised_amounts",
+	32 : "NewMaxPromisedAmounts",
 	//  новый набор % от нода-генератора блока
 	33 : "NewPct",
 	// добавление новой валюты
@@ -108,7 +122,7 @@ var TxTypes = map[int]string {
 	43 : "change_commission",
 	44 : "del_cf_funding",
 	// запуск урезания на основе голосования. генерит нод-генератор блока
-	45 : "new_reduction",
+	45 : "NewReduction",
 	46 : "del_cf_project",
 	47 : "cf_comment",
 	48 : "cf_send_dc",

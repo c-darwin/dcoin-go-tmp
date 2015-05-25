@@ -74,7 +74,7 @@ func BlocksCollection(configIni map[string]string) {
             utils.Sleep(1)
             continue BEGIN
         }
-		fmt.Println(myPrefix)
+		fmt.Println("myPrefix",myPrefix)
 
        err = db.DbLock(GoroutineName);
         if err != nil {
@@ -91,10 +91,15 @@ func BlocksCollection(configIni map[string]string) {
             db.DbUnlock(GoroutineName);
             continue BEGIN
         }
+
+        fmt.Println("config", config)
+        fmt.Println("currentBlockId", currentBlockId)
+
         if currentBlockId==0 {
 
 			if config["first_load_blockchain"]=="file" {
 
+                fmt.Println("first_load_blockchain=file")
                 /*
                 На время тестов не какчаем
                 blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain")
@@ -135,6 +140,7 @@ func BlocksCollection(configIni map[string]string) {
                     continue BEGIN
                 }
 
+                fmt.Println("GO!")
                 for {
                     b1 := make([]byte, 5)
                     file.Read(b1)

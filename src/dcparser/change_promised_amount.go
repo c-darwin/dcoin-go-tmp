@@ -51,13 +51,13 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 		return p.ErrInfo("incorrect promised_amount_id")
 	}
 
-	maxPromisedAmount, err := p.GetMaxPromisedAmount(promisedAmountData["currencyId"])
+	maxPromisedAmount, err := p.GetMaxPromisedAmount(promisedAmountData["currency_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	// т.к. можно перевести из mining в repaid, где нет лимитов, и так проделать много раз, то
 	// нужно жестко лимитировать ОБЩУЮ сумму по всем promised_amount данной валюты
-	repaidAmount, err := p.GetRepaidAmount(promisedAmountData["currencyId"], p.TxUserID);
+	repaidAmount, err := p.GetRepaidAmount(promisedAmountData["currency_id"], p.TxUserID);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -107,7 +107,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	// логируем предыдущее
 	var prevLogId, currencyId, tdcAmountUpdate int64
 	var amount, tdcAmount float64
-	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).Scan(&prevLogId, &currencyId, &tdcAmountUpdate, &amount, &tdcAmount)
+	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -13,9 +13,17 @@ import (
 	"log"
 )
 
+type txMapsType struct {
+	Int64 map[string]int64
+	String map[string]string
+	Bytes map[string][]byte
+	Float64 map[string]float64
+}
 type Parser struct {
 	*utils.DCDB
+	TxMaps *txMapsType
 	TxMap map[string][]byte
+	TxMapS map[string]string
 	BlockData *utils.BlockData
 	PrevBlock *utils.BlockData
 	BinaryData []byte
@@ -37,6 +45,7 @@ type Parser struct {
 	TxUserID int64
 	TxTime int64
 	nodePublicKey []byte
+	newPublicKeysHex [3][]byte
 }
 
 func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interface{}) error {
@@ -689,9 +698,41 @@ func (p *Parser) UpdBlockInfo() {
 	}
 }
 
+
+func (p *Parser) GetTxMaps(fields map[string]string) (error) {
+	if len(p.TxSlice) != len(fields)+4 {
+		return fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
+	}
+	p.TxMap = nil
+	p.TxMaps = nil
+	p.TxMaps.Bytes["hash"] = p.TxSlice[0]
+	p.TxMaps.Int64["type"] = utils.BytesToInt64( p.TxSlice[1])
+	p.TxMaps.Int64["time"] = utils.BytesToInt64(p.TxSlice[2])
+	p.TxMaps.Int64["user_id"] = utils.BytesToInt64(p.TxSlice[3])
+	i:=0
+	for field, fType := range fields {
+		switch fType {
+		case "int64":
+			p.TxMaps.Int64[field] =  utils.BytesToInt64(p.TxSlice[i+4])
+		case "float64":
+			p.TxMaps.Float64[field] =  utils.BytesToFloat64(p.TxSlice[i+4])
+		case "bytes":
+			p.TxMaps.Bytes[field] =  p.TxSlice[i+4]
+		case "string":
+			p.TxMaps.String[field] =  string(p.TxSlice[i+4])
+		}
+		p.TxMap[field] = p.TxSlice[i+4]
+		i++
+	}
+	p.TxUserID = p.TxMaps.Int64["user_id"]
+	p.TxTime = p.TxMaps.Int64["time"]
+	p.PublicKeys = nil
+	return nil
+}
+
+
+// старое
 func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
-	//fmt.Println("p.TxSlice", p.TxSlice)
-	//fmt.Println("fields", fields)
 	if len(p.TxSlice) != len(fields)+4 {
 		return nil, fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
@@ -710,6 +751,30 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	//fmt.Println("TxMap[hash]", TxMap["hash"])
 	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
 	return TxMap, nil
+}
+
+// старое
+func (p *Parser) GetTxMapStr(fields []string) (map[string]string, error) {
+	//fmt.Println("p.TxSlice", p.TxSlice)
+	//fmt.Println("fields", fields)
+	if len(p.TxSlice) != len(fields)+4 {
+		return nil, fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
+	}
+	TxMapS := make(map[string]string)
+	TxMapS["hash"] = string(p.TxSlice[0])
+	TxMapS["type"] =string( p.TxSlice[1])
+	TxMapS["time"] = string(p.TxSlice[2])
+	TxMapS["user_id"] = string(p.TxSlice[3])
+	for i, field := range fields {
+		TxMapS[field] = string(p.TxSlice[i+4])
+	}
+	p.TxUserID = utils.StrToInt64(TxMapS["user_id"])
+	p.TxTime = utils.StrToInt64(TxMapS["time"])
+	p.PublicKeys =nil
+	fmt.Println("TxMapS", TxMapS)
+	//fmt.Println("TxMap[hash]", TxMap["hash"])
+	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
+	return TxMapS, nil
 }
 
 func (p *Parser) GetMyUserId(userId int64) (int64, int64, string, []int64, error) {
@@ -846,6 +911,8 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 		whereUserId = whereUserId_.(string)
 	case []byte:
 		whereUserId = string(whereUserId_.([]byte))
+	case int64:
+		whereUserId = utils.Int64ToStr(whereUserId_.(int64))
 	}
 
 	where := ""
@@ -1096,7 +1163,11 @@ func (p *Parser) points(points int64) (error) {
 
 
 func (p *Parser) calcProfit_(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
-	return  p.CalcProfit(amount, timeStart, timeFinish, pctArray, pointsStatusArray, holidaysArray, maxPromisedAmountArray, currencyId, repaidAmount)
+	if p.BlockData!=nil && p.BlockData.BlockId<=24946 {
+		return p.CalcProfit_24946(amount, timeStart, timeFinish, pctArray, pointsStatusArray, holidaysArray, maxPromisedAmountArray, currencyId, repaidAmount)
+	} else {
+		return p.CalcProfit(amount, timeStart, timeFinish, pctArray, pointsStatusArray, holidaysArray, maxPromisedAmountArray, currencyId, repaidAmount)
+	}
 }
 
 // обновление points_status на основе points
@@ -1455,7 +1526,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, 
 		}
 		addSqlValues = addSqlValues[0:len(addSqlValues)-1]
 
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+", prev_log_id, block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+" prev_log_id, block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
 		if err != nil {
 			return err
 		}
@@ -1514,6 +1585,319 @@ func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, 
 	return nil
 }
 
+func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64) (float64, error) {
+	amountForCredit := amount;
+
+	// нужно узнать, какую часть от суммы заещик хочет оставить себе
+	creditPart, err := p.Single("SELECT credit_part FROM users WHERE user_id  =  ?", toUserId).Float64()
+	if err != nil {
+		return 0, err
+	}
+	if creditPart > 0 {
+		save := math.Floor( utils.Round( amount*(creditPart/100), 3) *100 ) / 100
+		if save < 0.01 {
+			save = 0
+		}
+		amountForCredit-=save
+	}
+	amountForCreditSave := amountForCredit;
+
+	rows, err := p.Query("SELECT pct, amount, id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND amount > 0 AND del_block_id = 0 ORDER BY time", toUserId, currencyId)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pct, amount float64
+		var id, to_user_id int64
+		err = rows.Scan(&pct, &amount, &id, &to_user_id)
+		if err!= nil {
+			return 0, err
+		}
+		var sum float64
+		var take float64
+		if p.BlockData.BlockId > 169525 {
+			sum = utils.Round(pct/100 * amountForCreditSave, 2);
+		} else {
+			sum = utils.Round(pct/100 * amount, 2);
+		}
+		if sum < 0.01 {
+			sum = 0.01
+		}
+		if (sum > amountForCredit) {
+			sum = amountForCredit;
+		}
+		if (sum - amount > 0) {
+			take = amount;
+		} else {
+			take = sum
+		}
+		amountForCredit -= take;
+		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{amount-take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{id})
+		if err!= nil {
+			return 0, err
+		}
+		err :=p.updateRecipientWallet(toUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
+		if err!= nil {
+			return 0, err
+		}
+	}
+	return amount - (amountForCreditSave - amountForCredit);
+}
+
+
+/*
+ * Начисляем новые DC юзеру, пересчитав ему % от того, что уже было на кошельке
+ * */
+func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float64, from string, fromId int64, comment, commentStatus string, credits bool) error {
+
+	walletWhere := "userId = "+utils.Int64ToStr(toUserId)+" AND currencyId = "+utils.Int64ToStr(currencyId);
+	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	// если кошелек получателя создан, то
+	// начисляем DC на кошелек получателя.
+	if len(walletData) > 0 {
+
+		// возможно у юзера есть долги и по ним нужно рассчитаться.
+		if credits != false && currencyId < 1000 {
+			amount = p.loan_payments(toUserId, amount, currencyId);
+		}
+
+		// нужно залогировать текущие значения для to_user_id
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		pointsStatus := []map[int64]string {{0:"user"}}
+		// holidays не нужны, т.к. это не TDC, а DC
+		// то, что выросло на кошельке
+		var newDCSum float64
+		if (currencyId>=1000)  {// >=1000 - это CF-валюты, которые не растут
+			newDCSum = utils.StrToFloat64(walletData["amount"])
+		} else {
+			pct, err := p.GetPct()
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			newDCSum = utils.StrToFloat64(walletData["amount"])+p.calcProfit_(utils.StrToFloat64(walletData["amount"]), utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus)
+		}
+		// итоговая сумма DC
+		newDCSumEnd := newDCSum + amount;
+
+		// Плюсуем на кошелек с соответствующей валютой.
+		err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSumEnd, p.BlockData.Time, logId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	} else {
+
+		// возможно у юзера есть долги и по ним нужно рассчитаться.
+		if credits != false && currencyId < 1000 {
+			amount = p.loan_payments(toUserId, amount, currencyId);
+		}
+
+		// если кошелек получателя не создан, то создадим и запишем на него сумму перевода.
+		err = p.ExecSql("INSERT INTO wallets ( user_id, currency_id, amount, last_update ) VALUES ( ?, ?, ?, ? )", toUserId, currencyId, amount, p.BlockData.Time)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if toUserId == myUserId && myBlockId <= p.BlockData.BlockId {
+		if from == "from_user" && len(comment)>0 && commentStatus!="decrypted" { // Перевод между юзерами
+			commentStatus = "encrypted"
+			comment = utils.BinToHex(comment)
+		} else { // системные комменты (комиссия, майнинг и пр.)
+			commentStatus = "decrypted"
+		}
+		// для отчетов и api пишем транзакцию
+		err = p.ExecSql("INSERT INTO "+myPrefix+"my_dc_transactions ( type, type_id, to_user_id, amount, time, block_id, currency_id, comment, comment_status ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )", from, fromId, toUserId, amount, p.BlockData.Time, p.BlockData.BlockId, currencyId, comment, commentStatus)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+
+func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount float64, commission, from string, fromId, toUserId int64, comment, commentStatus string) error {
+	// получим инфу о текущих значениях таблицы wallets для юзера from_user_id
+	walletWhere := "user_id = "+fromUserId+" AND currencyId = "+currencyId
+	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	// перед тем, как менять значения на кошельках юзеров, нужно залогировать текущие значения для юзера from_user_id
+
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	pointsStatus := []map[int64]string {{0:"user"}}
+
+	pct, err := p.GetPct()
+	// пересчитаем DC на кошельке отправителя
+	// обновим сумму и дату на кошельке отправителя.
+	// holidays не нужны, т.к. это не TDC, а DC.
+	var newDCSum float64
+	walletDataAmountFloat64 := utils.StrToFloat64(walletData["amount"])
+	if currencyId >= 1000 {// >=1000 - это CF-валюты, которые не растут
+		newDCSum = walletDataAmountFloat64
+	} else {
+		profit, err := p.calcProfit(walletDataAmountFloat64, utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		newDCSum = walletDataAmountFloat64 + profit - amount - commission;
+	}
+	err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSum, p.BlockData.Time, logId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	if fromUserId == myUserId && myBlockId <= p.BlockData.BlockId {
+		var where0, set0 string
+		if (from == "cfProject") {
+			where0 = "";
+			set0 = " toUserId = "+utils.Int64ToStr(toUserId)+", ";
+		} else {
+			where0 = " toUserId = "+utils.Int64ToStr(toUserId)+" AND ";
+			set0 = "";
+		}
+		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_dc_transactions WHERE status  =  'pending' AND type  =  '"+from+"' AND type_id  =  "+utils.Int64ToStr(fromUserId)+" AND "+where0+" amount  =  "+utils.Float64ToStr(amount)+" AND commission  =  "+commission+" AND currency_id  =  "+utils.Int64ToStr(currencyId)).Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		if myId > 0 {
+			err = p.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET status = 'approved', "+set0+" time = "+utils.Int64ToStr(p.BlockData.Time)+", block_id = "+utils.Int64ToStr(p.BlockData.BlockId)+" WHERE id = "+utils.Int64ToStr(myId))
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		} else {
+			err = p.ExecSql("INSERT INTO "+myPrefix+"my_dc_transactions ( status, type, type_id, to_user_id, amount, commission, currency_id, comment, comment_status, time, block_id ) VALUES ( 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", from, fromUserId, toUserId, amount, commission, currencyId, comment, commentStatus, p.BlockData.Time, p.BlockData.BlockId)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+	}
+	return nil
+}
+
+func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
+	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
+	var result []map[int64]string
+	rows, err := p.Query("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", userId, currencyId, p.BlockData.BlockId, p.TxHash)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var to_user_id int64
+		err = rows.Scan(&id, &to_user_id)
+		if err!= nil {
+			return result, err
+		}
+		err := p.selectiveRollback([]string{"amount", "tx_hash", "tx_block_id"}, "credits", "id="+id, false)
+		if err != nil {
+			return result, err
+		}
+		err := p.generalRollback("wallets", to_user_id, "AND currency_id = "+utils.Int64ToStr(currencyId), false)
+		if err != nil {
+			return result, err
+		}
+	}
+	return nil
+}
+
+func (p*Parser) getRefs(userId int64) ([3]int64, error) {
+	var result [3]int64
+	// получим рефов
+	result[0], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", userId).Int64()
+	if err != nil {
+		return result, p.ErrInfo(err)
+	}
+	if result[0] > 0 {
+		result[1], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[0]).Int64()
+		if err != nil {
+			return result, p.ErrInfo(err)
+		}
+		if result[1] > 0 {
+			result[2], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[1]).Int64()
+			if err != nil {
+				return result, p.ErrInfo(err)
+			}
+		}
+	}
+	return result, nil
+}
+
+func (p *Parser) getTdc(promisedAmountId, userId int64) (float64, error) {
+	// используем $this->tx_data['time'], оно всегда меньше времени блока, а значит TDC будет тут чуть меньше. В блоке (не фронт. проверке) уже будет использоваться time из блока
+	var time int64
+	if p.BlockData!=nil {
+		time = p.BlockData.Time
+	} else {
+		time = p.TxTime
+	}
+	pct, err := p.GetPct()
+	if err != nil {
+		return 0, err
+	}
+	maxPromisedAmounts, err := p.GetMaxPromisedAmounts()
+	if err != nil {
+		return 0, err
+	}
+
+	var status string
+	var amount, tdc_amount float64
+	var currency_id, tdc_amount_update int64
+	err = p.QueryRow("SELECT status, amount, currency_id, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", promisedAmountId).Scan(&status, &amount, &currency_id, &tdc_amount, &tdc_amount_update)
+	if err != nil {
+		return 0, err
+	}
+	pointsStatus, err := p.getPointsStatus(userId);
+	if err != nil {
+		return 0, err
+	}
+	userHolidays, err := p.GetHolidays(userId);
+	if err != nil {
+		return 0, err
+	}
+	existsCashRequests := p.CheckCashRequests(userId)
+	var newTdc float64
+	// для WOC майнинг не зависит от неудовлетворенных cash_requests, т.к. WOC юзер никому не обещал отдавать. Также, WOC не бывает repaid
+	if status == "mining" && (existsCashRequests==nil || currency_id==1) {
+		repeadAmount, err:=p.GetRepaidAmount(currency_id, userId)
+		if err != nil {
+			return 0, err
+		}
+		profit, err := p.calcProfit_ ( amount+tdc_amount, tdc_amount_update, time, pct[currency_id], pointsStatus, userHolidays, maxPromisedAmounts[currency_id], currency_id, repeadAmount );
+		if err != nil {
+			return 0, err
+		}
+		newTdc = tdc_amount + profit
+	} else if status == "repaid" && existsCashRequests==nil {
+		profit, err := p.calcProfit_ ( tdc_amount, tdc_amount_update, time, pct[currency_id], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0 )
+		if err != nil {
+			return 0, err
+		}
+		newTdc = tdc_amount + profit
+	} else { // rejected/change_geo/suspended
+		newTdc = tdc_amount
+	}
+	return newTdc, nil
+}
 
 // откат не всех полей, а только указанных, либо 1 строку, если нет where
 func (p *Parser) selectiveRollback(fields []string, table string, where string, rollback bool) error {
