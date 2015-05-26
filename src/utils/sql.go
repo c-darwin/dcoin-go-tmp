@@ -819,7 +819,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		}
 	}
 	err = db.QueryRow("SELECT user_id FROM miners_data WHERE miner_id = $1", 1).Scan(&userId)
-	if err != nil {
+	if err != nil  && err!=sql.ErrNoRows {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 	}
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
@@ -1004,9 +1004,26 @@ func (db *DCDB) CheckCashRequests(userId int64) (error) {
 	return nil
 }
 
+
+func(db *DCDB) CheckUser(userId int64) (error) {
+	user_id, err := db.Single("SELECT user_id FROM users WHERE user_id = ?", userId).Int64()
+	if err != nil {
+		return err
+	}
+	if user_id > 0 {
+		return  nil
+	} else {
+		return  fmt.Errorf("user_id is null")
+	}
+}
+
+func(db *DCDB) GetLastBlockId() (int64, error) {
+	return db.Single("SELECT block_id FROM info_block").Int64()
+}
+
 func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 	result := make(map[int64][]map[int64]map[string]float64)
-	rows, err := db.Query("SELECT currency_id, time, user, miner FROM pct GROUP BY time ASC")
+	rows, err := db.Query("SELECT currency_id, time, user, miner FROM pct ORDER BY time ASC")
 	if err != nil {
 		return result, err
 	}
@@ -1059,18 +1076,7 @@ func (db *DCDB) GetRepaidAmount(currencyId, userId int64) (float64, error) {
 	}
 	return amount, nil
 }
-/*	function get_repaid_amount($currency_id, $user_id)
-	{
-		return $this->db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
-				SELECT `amount`
-				FROM `".DB_PREFIX."promised_amount`
-				WHERE `status` = 'repaid' AND
-							 `currency_id` = {$currency_id} AND
-							 `user_id` = {$user_id} AND
-							 `del_block_id` = 0 AND
-							 `del_mining_block_id` = 0
-				", 'fetch_one');
-	}*/
+
 func (db *DCDB) CheckCurrency(currency_id int64) (bool, error) {
 	id, err := db.Single("SELECT id FROM currency WHERE id = ?", currency_id).Int()
 	if err != nil {
@@ -1082,6 +1088,18 @@ func (db *DCDB) CheckCurrency(currency_id int64) (bool, error) {
 		return true, nil
 	}
 }
+func (db *DCDB) CheckCurrencyCF(currency_id int64) (bool, error) {
+	id, err := db.Single("SELECT id FROM cf_currency WHERE id = ?", currency_id).Int()
+	if err != nil {
+		return false, err
+	}
+	if id == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
 
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 	var sql string

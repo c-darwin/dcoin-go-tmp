@@ -10,6 +10,7 @@ import (
 //	"os"
 	//"time"
 	//"strings"
+	"database/sql"
 )
 
 func (p *Parser) ChangePromisedAmountInit() (error) {
@@ -108,7 +109,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	var prevLogId, currencyId, tdcAmountUpdate int64
 	var amount, tdcAmount float64
 	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
-	if err != nil {
+	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 

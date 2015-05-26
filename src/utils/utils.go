@@ -254,6 +254,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if StrToInt(data) >= 0 && StrToInt(data) <= 34 {
 			return true
 		}
+	case "comment":
+		if len(data) >= 1 && len(data) <= 512 {
+			return true
+		}
 	case "hex_sign", "hex", "public_key":
 		if ok, _ := regexp.MatchString("^[0-9a-z]+$", data); ok{
 			if len(data) < 2048 {

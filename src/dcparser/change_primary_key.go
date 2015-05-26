@@ -11,6 +11,7 @@ import (
 	//"time"
 	//"strings"
 	"bytes"
+	"database/sql"
 )
 
 func (p *Parser) ChangePrimaryKeyInit() (error) {
@@ -76,7 +77,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	var public_key_0, public_key_1, public_key_2 []byte
 	var log_id int64
 	err := p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?", p.TxMap["user_id"]).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
-	if err != nil {
+	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 	public_key_0 = utils.BinToHex(public_key_0)
@@ -213,7 +214,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	var public_key_0, public_key_1, public_key_2 []byte
 	var prev_log_id int64
 	err = p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, prev_log_id FROM log_users WHERE log_id  =  ?", logId).Scan(&public_key_0, &public_key_1, &public_key_2, &prev_log_id)
-	if err != nil {
+	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 	if len(public_key_0) > 0 {

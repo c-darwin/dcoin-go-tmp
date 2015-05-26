@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"math"
 	"log"
+	"encoding/json"
+	"database/sql"
 )
 
 type txMapsType struct {
@@ -699,34 +701,45 @@ func (p *Parser) UpdBlockInfo() {
 }
 
 
-func (p *Parser) GetTxMaps(fields map[string]string) (error) {
+func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
 	if len(p.TxSlice) != len(fields)+4 {
 		return fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
-	p.TxMap = nil
-	p.TxMaps = nil
+	//log.Println("p.TxSlice", p.TxSlice)
+	p.TxMap = make(map[string][]byte)
+	p.TxMaps = new(txMapsType)
+	p.TxMaps.Float64 = make(map[string]float64)
+	p.TxMaps.Int64 = make(map[string]int64)
+	p.TxMaps.Bytes = make(map[string][]byte)
+	p.TxMaps.String = make(map[string]string)
 	p.TxMaps.Bytes["hash"] = p.TxSlice[0]
 	p.TxMaps.Int64["type"] = utils.BytesToInt64( p.TxSlice[1])
 	p.TxMaps.Int64["time"] = utils.BytesToInt64(p.TxSlice[2])
 	p.TxMaps.Int64["user_id"] = utils.BytesToInt64(p.TxSlice[3])
-	i:=0
-	for field, fType := range fields {
-		switch fType {
-		case "int64":
-			p.TxMaps.Int64[field] =  utils.BytesToInt64(p.TxSlice[i+4])
-		case "float64":
-			p.TxMaps.Float64[field] =  utils.BytesToFloat64(p.TxSlice[i+4])
-		case "bytes":
-			p.TxMaps.Bytes[field] =  p.TxSlice[i+4]
-		case "string":
-			p.TxMaps.String[field] =  string(p.TxSlice[i+4])
+	p.TxMap["hash"] = p.TxSlice[0]
+	p.TxMap["type"] = p.TxSlice[1]
+	p.TxMap["time"] = p.TxSlice[2]
+	p.TxMap["user_id"] = p.TxSlice[3]
+	for i:=0; i<len(fields); i++ {
+		for field, fType := range fields[i] {
+			p.TxMap[field] = p.TxSlice[i+4]
+			switch fType {
+			case "int64":
+				p.TxMaps.Int64[field] =  utils.BytesToInt64(p.TxSlice[i+4])
+			case "float64":
+				p.TxMaps.Float64[field] =  utils.BytesToFloat64(p.TxSlice[i+4])
+			case "bytes":
+				p.TxMaps.Bytes[field] =  p.TxSlice[i+4]
+			case "string":
+				p.TxMaps.String[field] =  string(p.TxSlice[i+4])
+			}
 		}
-		p.TxMap[field] = p.TxSlice[i+4]
-		i++
 	}
 	p.TxUserID = p.TxMaps.Int64["user_id"]
 	p.TxTime = p.TxMaps.Int64["time"]
 	p.PublicKeys = nil
+	//log.Println("p.TxMaps", p.TxMaps)
+	//log.Println("p.TxMap", p.TxMap)
 	return nil
 }
 
@@ -1633,16 +1646,16 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 			take = sum
 		}
 		amountForCredit -= take;
-		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{amount-take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{id})
+		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{utils.Float64ToStr(amount-take), string(p.TxHash), utils.Int64ToStr(p.BlockData.BlockId)}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
 		if err!= nil {
 			return 0, err
 		}
-		err :=p.updateRecipientWallet(toUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
+		err = p.updateRecipientWallet(toUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
 		if err!= nil {
 			return 0, err
 		}
 	}
-	return amount - (amountForCreditSave - amountForCredit);
+	return amount - (amountForCreditSave - amountForCredit), nil
 }
 
 
@@ -1651,7 +1664,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
  * */
 func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float64, from string, fromId int64, comment, commentStatus string, credits bool) error {
 
-	walletWhere := "userId = "+utils.Int64ToStr(toUserId)+" AND currencyId = "+utils.Int64ToStr(currencyId);
+	walletWhere := "user_id = "+utils.Int64ToStr(toUserId)+" AND currency_id = "+utils.Int64ToStr(currencyId);
 	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -1662,7 +1675,10 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 
 		// возможно у юзера есть долги и по ним нужно рассчитаться.
 		if credits != false && currencyId < 1000 {
-			amount = p.loan_payments(toUserId, amount, currencyId);
+			amount, err = p.loan_payments(toUserId, amount, currencyId);
+			if err != nil {
+				return p.ErrInfo(err)
+			}
 		}
 
 		// нужно залогировать текущие значения для to_user_id
@@ -1681,7 +1697,8 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			newDCSum = utils.StrToFloat64(walletData["amount"])+p.calcProfit_(utils.StrToFloat64(walletData["amount"]), utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus)
+			profit, err := p.calcProfit_(utils.StrToFloat64(walletData["amount"]), utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0)
+			newDCSum = utils.StrToFloat64(walletData["amount"])+profit
 		}
 		// итоговая сумма DC
 		newDCSumEnd := newDCSum + amount;
@@ -1695,7 +1712,10 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 
 		// возможно у юзера есть долги и по ним нужно рассчитаться.
 		if credits != false && currencyId < 1000 {
-			amount = p.loan_payments(toUserId, amount, currencyId);
+			amount, err = p.loan_payments(toUserId, amount, currencyId);
+			if err != nil {
+				return p.ErrInfo(err)
+			}
 		}
 
 		// если кошелек получателя не создан, то создадим и запишем на него сумму перевода.
@@ -1711,7 +1731,7 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 	if toUserId == myUserId && myBlockId <= p.BlockData.BlockId {
 		if from == "from_user" && len(comment)>0 && commentStatus!="decrypted" { // Перевод между юзерами
 			commentStatus = "encrypted"
-			comment = utils.BinToHex(comment)
+			comment = string(utils.BinToHex([]byte(comment)))
 		} else { // системные комменты (комиссия, майнинг и пр.)
 			commentStatus = "decrypted"
 		}
@@ -1725,9 +1745,9 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 }
 
 
-func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount float64, commission, from string, fromId, toUserId int64, comment, commentStatus string) error {
+func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commission float64, from string, fromId, toUserId int64, comment, commentStatus string) error {
 	// получим инфу о текущих значениях таблицы wallets для юзера from_user_id
-	walletWhere := "user_id = "+fromUserId+" AND currencyId = "+currencyId
+	walletWhere := "user_id = "+utils.Int64ToStr(fromUserId)+" AND currency_id = "+utils.Int64ToStr(currencyId)
 	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -1750,7 +1770,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount float64
 	if currencyId >= 1000 {// >=1000 - это CF-валюты, которые не растут
 		newDCSum = walletDataAmountFloat64
 	} else {
-		profit, err := p.calcProfit(walletDataAmountFloat64, utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus)
+		profit, err := p.calcProfit_(walletDataAmountFloat64, utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus,[][]int64{}, []map[int64]string{}, 0, 0)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1774,7 +1794,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount float64
 			where0 = " toUserId = "+utils.Int64ToStr(toUserId)+" AND ";
 			set0 = "";
 		}
-		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_dc_transactions WHERE status  =  'pending' AND type  =  '"+from+"' AND type_id  =  "+utils.Int64ToStr(fromUserId)+" AND "+where0+" amount  =  "+utils.Float64ToStr(amount)+" AND commission  =  "+commission+" AND currency_id  =  "+utils.Int64ToStr(currencyId)).Int64()
+		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_dc_transactions WHERE status  =  'pending' AND type  =  '"+from+"' AND type_id  =  "+utils.Int64ToStr(fromUserId)+" AND "+where0+" amount  =  "+utils.Float64ToStr(amount)+" AND commission  =  "+utils.Float64ToStr(commission)+" AND currency_id  =  "+utils.Int64ToStr(currencyId)).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1793,12 +1813,53 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount float64
 	return nil
 }
 
+func (p*Parser) mydctxRollback () error {
+
+	// если работаем в режиме пула
+	community, err := p.GetCommunityUsers()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if len(community) > 0 {
+		for i:=0; i<len(community); i++ {
+			myPrefix := utils.Int64ToStr(community[i])+"_";
+			// может захватиться несколько транзакций, но это не страшно, т.к. всё равно надо откатывать
+			affect, err := p.ExecSqlGetAffect("DELETE FROM "+myPrefix+"my_dc_transactions WHERE block_id = ?", p.BlockData.BlockId)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			err = p.rollbackAI(myPrefix+"my_dc_transactions", affect)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+	} else {
+		// может захватиться несколько транзакций, но это не страшно, т.к. всё равно надо откатывать
+		affect, err := p.ExecSqlGetAffect("DELETE FROM my_dc_transactions WHERE block_id = ?", p.BlockData.BlockId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.rollbackAI("my_dc_transactions", affect)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p*Parser) limitRequestsMoneyOrdersRollback() error {
+	err := p.ExecSql("DELETE FROM log_time_money_orders WHERE tx_hash = [hex]", p.TxHash)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
 func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
-	var result []map[int64]string
 	rows, err := p.Query("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", userId, currencyId, p.BlockData.BlockId, p.TxHash)
 	if err != nil {
-		return result, err
+		return  err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -1806,15 +1867,15 @@ func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 		var to_user_id int64
 		err = rows.Scan(&id, &to_user_id)
 		if err!= nil {
-			return result, err
+			return err
 		}
 		err := p.selectiveRollback([]string{"amount", "tx_hash", "tx_block_id"}, "credits", "id="+id, false)
 		if err != nil {
-			return result, err
+			return err
 		}
-		err := p.generalRollback("wallets", to_user_id, "AND currency_id = "+utils.Int64ToStr(currencyId), false)
+		err = p.generalRollback("wallets", to_user_id, "AND currency_id = "+utils.Int64ToStr(currencyId), false)
 		if err != nil {
-			return result, err
+			return err
 		}
 	}
 	return nil
@@ -1823,17 +1884,20 @@ func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 func (p*Parser) getRefs(userId int64) ([3]int64, error) {
 	var result [3]int64
 	// получим рефов
-	result[0], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", userId).Int64()
+	rez, err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", userId).Int64()
+	result[0] = rez
 	if err != nil {
 		return result, p.ErrInfo(err)
 	}
 	if result[0] > 0 {
-		result[1], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[0]).Int64()
+		rez, err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[0]).Int64()
+		result[1] = rez
 		if err != nil {
 			return result, p.ErrInfo(err)
 		}
 		if result[1] > 0 {
-			result[2], err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[1]).Int64()
+			rez, err := p.Single("SELECT referral FROM users WHERE user_id  =  ?", result[1]).Int64()
+			result[2] = rez
 			if err != nil {
 				return result, p.ErrInfo(err)
 			}
@@ -1858,12 +1922,14 @@ func (p *Parser) getTdc(promisedAmountId, userId int64) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
+	log.Println("pct", pct)
+	log.Println("maxPromisedAmounts", maxPromisedAmounts)
 
 	var status string
 	var amount, tdc_amount float64
 	var currency_id, tdc_amount_update int64
 	err = p.QueryRow("SELECT status, amount, currency_id, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", promisedAmountId).Scan(&status, &amount, &currency_id, &tdc_amount, &tdc_amount_update)
-	if err != nil {
+	if err != nil  && err!=sql.ErrNoRows {
 		return 0, err
 	}
 	pointsStatus, err := p.getPointsStatus(userId);
@@ -2633,6 +2699,235 @@ func (p *Parser) CalcProfit_24946(amount float64, timeStart, timeFinish int64, p
 		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
 	}
+	log.Println("profit", profit)
+
 
 	return profit, nil
+}
+
+
+func (p *Parser) calcNodeCommission(amount float64, nodeCommission [3]float64) float64 {
+	pct := nodeCommission[0]
+	minCommission := nodeCommission[1];
+	maxCommission := nodeCommission[2];
+	nodeCommissionResult := utils.Round ( (amount / 100) * pct , 2 )
+	if (nodeCommissionResult < minCommission) {
+		nodeCommissionResult = minCommission
+	} else if (nodeCommissionResult > maxCommission) {
+		nodeCommissionResult = maxCommission
+	}
+	return nodeCommissionResult
+}
+
+func (p *Parser) getMyNodeCommission(currencyId, userId int64, amount float64) (float64, error) {
+	var nodeCommission float64
+	if currencyId >= 1000 {
+		currencyId = 1000
+	}
+	// если это тр-ия без блока, то комиссию нода берем у себя
+	if p.BlockData==nil {
+		_, _, _, myUserIds , err:= p.GetMyUserId(userId)
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+
+		var commissionJson []byte
+		// один элемент в  my_user_ids - это сингл мод
+		if len(myUserIds) == 1 {
+			commissionJson, err = p.Single("SELECT commission FROM commission WHERE user_id  =  ?", myUserIds[0]).Bytes()
+			if err != nil {
+				return 0, p.ErrInfo(err)
+			}
+		} else {
+			// если работаем в режиме пула, тогда комиссию берем из config, т.к. майнеры в пуле, у кого комиссиия больше не смогут генерить блоки
+			commissionJson, err = p.Single("SELECT commission FROM config").Bytes()
+			if err != nil {
+				return 0, p.ErrInfo(err)
+			}
+		}
+		commissionMap := make(map[string][3]float64)
+		err = json.Unmarshal(commissionJson, &commissionMap)
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+		var tmpNodeCommission float64
+		currencyIdStr:=utils.Int64ToStr(currencyId)
+		if len(commissionMap[currencyIdStr]) > 0 {
+			if len(commissionMap[currencyIdStr]) !=3 {
+				return 0, p.ErrInfo(err)
+			}
+			tmpNodeCommission = p.calcNodeCommission(amount, commissionMap[currencyIdStr])
+		} else {
+			tmpNodeCommission = 0
+		}
+		if tmpNodeCommission > nodeCommission {
+			nodeCommission = tmpNodeCommission
+		}
+	} else {	// если же тр-ия уже в блоке, то берем комиссию у юзера, который сгенерил этот блок
+		commissionJson, err := p.Single("SELECT commission FROM commission WHERE user_id  =  ?", p.BlockData.UserId).Bytes()
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+		if len(commissionJson) == 0 {
+			nodeCommission = 0
+		} else {
+			commissionMap := make(map[string][3]float64)
+			err = json.Unmarshal(commissionJson, &commissionMap)
+			if err != nil {
+				return 0, p.ErrInfo(err)
+			}
+			currencyIdStr:=utils.Int64ToStr(currencyId)
+			if len(commissionMap[currencyIdStr]) > 0 {
+				nodeCommission = p.calcNodeCommission(amount, commissionMap[currencyIdStr])
+			} else {
+				nodeCommission = 0
+			}
+		}
+	}
+	return nodeCommission, nil
+
+}
+
+func (p *Parser) limitRequestsMoneyOrders(limit int64) (error) {
+	num, err := p.Single("SELECT count(tx_hash) FROM log_time_money_orders WHERE user_id  =  ? AND del_block_id  =  0", p.TxUserID).Int64()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if num >= limit {
+		return p.ErrInfo("[limit_requests] log_time_money_orders")
+	} else {
+		err = p.ExecSql("INSERT INTO log_time_money_orders ( tx_hash, user_id ) VALUES ( [hex], ? )", p.TxHash, p.TxUserID)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) getWalletsBufferAmount(currencyId int64) (float64, error) {
+	return p.Single("SELECT sum(amount) FROM wallets_buffer WHERE user_id = ? AND currency_id = ? AND del_block_id = 0", p.TxUserID, currencyId).Float64()
+}
+
+
+func (p *Parser) getTotalAmount(currencyId int64) (float64, error) {
+	var amount float64
+	var last_update int64
+	err := p.QueryRow("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?", p.TxUserID, currencyId).Scan(&amount, &last_update)
+	if err != nil && err!=sql.ErrNoRows {
+		return 0, p.ErrInfo(err)
+	}
+	pointsStatus := []map[int64]string {{0:"user"}}
+	// getTotalAmount используется только на front, значит используем время из тр-ии - $this->tx_data['time']
+	if currencyId >= 1000 { // >=1000 - это CF-валюты, которые не растут
+		return amount, nil
+	} else {
+		pct, err := p.GetPct()
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+		profit, err := p.calcProfit_(amount, last_update, p.TxTime, pct[currencyId], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0)
+		if err != nil {
+			return 0, p.ErrInfo(err)
+		}
+		return (amount + profit), nil
+	}
+	return 0, nil
+}
+
+func (p *Parser) checkSenderMoney(currencyId, fromUserId int64, amount, commission, arbitrator0_commission, arbitrator1_commission, arbitrator2_commission, arbitrator3_commission, arbitrator4_commission float64) (float64, error) {
+
+	// получим все списания (табла wallets_buffer), которые еще не попали в блок и стоят в очереди
+	walletsBufferAmount, err := p.getWalletsBufferAmount(currencyId)
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+	// получим сумму на кошельке юзера + %
+	totalAmount, err := p.getTotalAmount(currencyId)
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+	var txTime int64
+	if p.BlockData!=nil {// тр-ия пришла в блоке
+		txTime = p.BlockData.Time
+	} else {
+		txTime = time.Now().Unix() - 30  // просто на всякий случай небольшой запас
+	}
+
+	// учтем все свежие cash_requests, которые висят со статусом pending
+	cashRequestsAmount, err := p.Single("SELECT sum(amount) FROM cash_requests WHERE from_user_id  =  ? AND currency_id  =  ? AND status  =  'pending' AND time > ?", fromUserId, currencyId, (txTime-p.Variables.Int64["cash_request_time"])).Float64()
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+
+	// учитываются все fx-ордеры
+	forexOrdersAmount, err := p.Single("SELECT sum(amount) FROM forex_orders WHERE user_id  =  ? AND sell_currency_id  =  ? AND del_block_id  =  0", fromUserId, currencyId).Float64()
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+
+	// учитываем все текущие суммы холдбека
+	holdBackAmount, err := p.Single(`
+		SELECT sum(sum1) FROM (
+			SELECT
+			CASE
+				WHEN (hold_back_amount - refund - voluntary_refund) < 0 THEN 0
+			ELSE (hold_back_amount - refund - voluntary_refund)
+			END as sum1
+			from orders
+			WHERE seller  =  ? AND currency_id  =  ? AND end_time > ?
+		) as t1`,
+		fromUserId, currencyId, txTime).Float64()
+	if err != nil {
+		return 0, p.ErrInfo(err)
+	}
+
+	amountAndCommission := amount + commission + arbitrator0_commission + arbitrator1_commission + arbitrator2_commission + arbitrator3_commission + arbitrator4_commission
+	all := totalAmount - walletsBufferAmount - cashRequestsAmount - forexOrdersAmount - holdBackAmount;
+	if all < amountAndCommission {
+		return 0, p.ErrInfo("all < amountAndCommission")
+	}
+	return amountAndCommission, nil
+}
+
+func (p *Parser) updateWalletsBuffer(amount float64, currencyId int64) (error) {
+	// добавим нашу сумму в буфер кошельков, чтобы юзер не смог послать запрос на вывод всех DC с кошелька.
+	hash, err := p.Single("SELECT hash FROM wallets_buffer WHERE hash = [hex]", p.TxHash).String()
+	if len(hash) > 0 {
+		err = p.ExecSql("UPDATE wallets_buffer SET user_id = ?, currency_id = ?, amount = ? WHERE hash = [hex]", p.TxUserID, currencyId, amount, p.TxHash)
+	} else {
+		err = p.ExecSql("INSERT INTO wallets_buffer ( hash, user_id, currency_id, amount ) VALUES ( [hex], ?, ?, ? )", p.TxHash, p.TxUserID, currencyId, amount)
+	}
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
+// нельзя отправить более 10-и ордеров от 1 юзера в 1 блоке с суммой менее эквивалента 0.1$ по текущему курсу этой валюты.
+func (p *Parser) checkSpamMoney(currencyId int64, amount float64) (error) {
+	if currencyId == consts.USD_CURRENCY_ID {
+		if p.TxMaps.Float64["amount"] < 0.1 {
+			err := p.limitRequestsMoneyOrders(10)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+	} else {
+		// если валюта не доллары, то нужно получить эквивалент на бирже
+		dollarEqRate, err := p.Single("SELECT sell_rate FROM forex_orders WHERE sell_currency_id  =  ? AND buy_currency_id  =  ?", currencyId, consts.USD_CURRENCY_ID).Float64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// эквивалент 0.1$
+		if dollarEqRate > 0 {
+			minAmount := 0.1/dollarEqRate
+			if amount < minAmount {
+				err = p.limitRequestsMoneyOrders(10)
+				if err != nil {
+					return p.ErrInfo(err)
+				}
+			}
+		}
+	}
+	return nil
 }

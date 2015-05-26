@@ -27,6 +27,9 @@ const MAX_TX_FORW = 0
 // тр-ия может блуждать по сети сутки и потом попасть в блок
 const MAX_TX_BACK = DAY
 
+const USD_CURRENCY_ID = 71
+
+const ARBITRATION_BLOCK_START = 189300
 
 //  есть ли хотябы X юзеров, у которых на кошелках есть от 0.01 данной валюты
 const AUTO_REDUCTION_PROMISED_AMOUNT_MIN = 10
@@ -55,7 +58,7 @@ var TxTypes = map[int]string {
 	4 : "ChangePromisedAmount",
 	// голос за претендента на майнера
 	5 : "VotesMiner",
-	6 : "new_forex_order",
+	6 : "NewForexOrder",
 	7 : "del_forex_order",
 	//  новый набор max_other_currencies от нода-генератора блока
 	8 : "NewMaxOtherCurrencies",
@@ -66,7 +69,7 @@ var TxTypes = map[int]string {
 	// del_promised_amount. Удаление обещанной суммы
 	11 : "del_promised_amount",
 	// send_dc
-	12 : "send_dc",
+	12 : "SendDc",
 	13 : "cash_request_out",
 	14 : "cash_request_in",
 	// набор голосов по разным валютам
@@ -93,7 +96,7 @@ var TxTypes = map[int]string {
 	// майнер хочет, чтобы в указанные дни ему не приходили запросы на обмен DC
 	27 : "new_holidays",
 	28 : "actualization_promised_amounts",
-	29 : "mining",
+	29 : "Mining",
 	// Голосование нода за фото нового майнера
 	30 : "VotesNodeNewMiner",
 	// Юзер исправил проблему с отдачей фото и шлет повторный запрос на получение статуса "майнер"
