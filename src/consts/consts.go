@@ -59,7 +59,7 @@ var TxTypes = map[int]string {
 	// голос за претендента на майнера
 	5 : "VotesMiner",
 	6 : "NewForexOrder",
-	7 : "del_forex_order",
+	7 : "DelForexOrder",
 	//  новый набор max_other_currencies от нода-генератора блока
 	8 : "NewMaxOtherCurrencies",
 	// geolocation. Майнер изменил свои координаты
@@ -70,12 +70,12 @@ var TxTypes = map[int]string {
 	11 : "del_promised_amount",
 	// send_dc
 	12 : "SendDc",
-	13 : "cash_request_out",
-	14 : "cash_request_in",
+	13 : "CashRequestOut",
+	14 : "CashRequestIn",
 	// набор голосов по разным валютам
 	15 : "VotesComplex",
 	16 : "ChangePrimaryKey",
-	17 : "change_node_key",
+	17 : "ChangeNodeKey",
 	18 : "for_repaid_fix",
 	// занесение в БД данных из первого блока
 	19 : "Admin1Block",
@@ -122,7 +122,7 @@ var TxTypes = map[int]string {
 	// майнер меняет свой хост
 	42 : "change_host",
 	// майнер меняет комиссию, которую он хочет получать с тр-ий
-	43 : "change_commission",
+	43 : "ChangeCommission",
 	44 : "del_cf_funding",
 	// запуск урезания на основе голосования. генерит нод-генератор блока
 	45 : "NewReduction",

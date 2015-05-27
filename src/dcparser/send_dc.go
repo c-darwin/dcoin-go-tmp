@@ -205,7 +205,7 @@ func (p *Parser) SendDcFront() (error) {
 	   защита от двойного списания на основе даннных из блока, полученного из сети заключается в постепенной обработке
 	   тр-ий путем проверки front_ и занесения данных в БД (ParseDataFull).
 	 */
-	amountAndCommission, err := p.checkSenderMoney(p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["from_user_id"], p.TxMaps.Float64["from_user_id"], p.TxMaps.Float64["commission"], p.TxMaps.Float64["arbitrator0_commission"], p.TxMaps.Float64["arbitrator1_commission"], p.TxMaps.Float64["arbitrator2_commission"], p.TxMaps.Float64["arbitrator3_commission"], p.TxMaps.Float64["arbitrator4_commission"])
+	amountAndCommission, err := p.checkSenderMoney(p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["from_user_id"], p.TxMaps.Float64["amount"], p.TxMaps.Float64["commission"], p.TxMaps.Float64["arbitrator0_commission"], p.TxMaps.Float64["arbitrator1_commission"], p.TxMaps.Float64["arbitrator2_commission"], p.TxMaps.Float64["arbitrator3_commission"], p.TxMaps.Float64["arbitrator4_commission"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

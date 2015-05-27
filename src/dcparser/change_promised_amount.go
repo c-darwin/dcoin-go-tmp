@@ -35,8 +35,9 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+
 	// юзер должен быть или miner, или passive_miner, т.е. иметь miner_id. не даем майнерам, которых забанил админ, добавлять новые обещанные суммы.
-	err = p.checkMiner(p.TxMap["user_id"])
+	err = p.checkMiner(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

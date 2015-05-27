@@ -2373,7 +2373,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s=make(recmap)
 	s1=make(recmap)
 	s2=make(recmapi)
-	s2[0] = map[string]string{"name":"hash", "mysql":"binary(32) NOT NULL", "sqlite":"binary(32) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш транзакции. Нужно для удаления данных из буфера, после того, как транзакция была обработана в блоке, либо анулирована из-за ошибок при повторной проверке"}
+	s2[0] = map[string]string{"name":"hash", "mysql":"binary(16) NOT NULL", "sqlite":"binary(16) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш транзакции. Нужно для удаления данных из буфера, после того, как транзакция была обработана в блоке, либо анулирована из-за ошибок при повторной проверке"}
 	s2[1] = map[string]string{"name":"del_block_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": "Т.к. удалять нельзя из-за возможного отката блока, приходится делать delete=1, а через сутки - чистить"}
 	s2[2] = map[string]string{"name":"user_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[3] = map[string]string{"name":"currency_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}

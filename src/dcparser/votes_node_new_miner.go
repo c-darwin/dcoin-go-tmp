@@ -31,7 +31,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 		return p.ErrInfo(err)
 	}
 	// является ли данный юзер майнером
-	err = p.checkMiner(p.TxMap["user_id"])
+	err = p.checkMiner(p.TxUserID)
 	if err != nil {
 		return err
 	}
@@ -350,7 +350,7 @@ func (p *Parser)  getMyMinersIds() (map[int]int, error) {
 		return myMinersIds, p.ErrInfo(err)
 	}
 	if len(collective) > 0 {
-		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN "+strings.Join(Int64SliceToStr(collective), ",")+" AND miner_id > 0").MapInt()
+		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(Int64SliceToStr(collective), ",")+") AND miner_id > 0").MapInt()
 		if err != nil {
 			return myMinersIds, p.ErrInfo(err)
 		}

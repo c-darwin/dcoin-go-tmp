@@ -111,7 +111,7 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	currencyId := utils.StrToInt64(data["currencyId"])
+	currencyId := utils.StrToInt64(data["currency_id"])
 
 	// логируем текущее значение по обещанным суммам
 	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", data["tdc_amount"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])

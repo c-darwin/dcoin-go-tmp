@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"utils"
 	//"log"
-	"encoding/json"
+	//"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
@@ -12,14 +12,14 @@ import (
 	//"time"
 	//"strings"
 	//"bytes"
-	"consts"
-	"math"
-	"database/sql"
+	//"consts"
+//	"math"
+//	"database/sql"
 )
 
-func (p *Parser) NewForexInit() (error) {
+func (p *Parser) NewForexOrderInit() (error) {
 
-	fields := []map[string]string {{"sell_currency_id":"int64"},{"sell_rate":"float64"}, {"amount":"float64"}, {"buy_currency_id":"int"}, {"commission":"string"}, {"sign":"bytes"}}
+	fields := []map[string]string {{"sell_currency_id":"int64"},{"sell_rate":"float64"}, {"amount":"money"}, {"buy_currency_id":"int64"}, {"commission":"money"}, {"sign":"bytes"}}
 	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -34,7 +34,7 @@ func (p *Parser) NewForexInit() (error) {
 	return nil
 }
 
-func (p *Parser) NewForexFront() (error) {
+func (p *Parser) NewForexOrderFront() (error) {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -53,10 +53,10 @@ func (p *Parser) NewForexFront() (error) {
 	if p.TxMaps.Float64["sell_rate"] == 0 {
 		return p.ErrInfo("sell_rate=0")
 	}
-	if p.TxMaps.Float64["amount"] == 0 {
+	if p.TxMaps.Money["amount"] == 0 {
 		return p.ErrInfo("amount=0")
 	}
-	if p.TxMaps.Float64["amount"] * p.TxMaps.Float64["sell_rate"] < 0.01 {
+	if p.TxMaps.Money["amount"] * p.TxMaps.Float64["sell_rate"] < 0.01 {
 		return p.ErrInfo("amount * sell_rate < 0.01")
 	}
 
@@ -70,18 +70,18 @@ func (p *Parser) NewForexFront() (error) {
 	}
 
 	p.TxMaps.Int64["currency_id"] = p.TxMaps.Int64["sell_currency_id"]
-	nodeCommission, err := p.getMyNodeCommission(p.TxMaps.Int64["currency_id"], p.TxUserID, p.TxMaps.Float64["amount"])
+	nodeCommission, err := p.getMyNodeCommission(p.TxMaps.Int64["currency_id"], p.TxUserID, p.TxMaps.Money["amount"])
 
 	// проверим, удовлетворяет ли нас комиссия, которую предлагает юзер
-	if p.TxMaps.Float64["commission"] < nodeCommission {
+	if p.TxMaps.Money["commission"] < nodeCommission {
 		return p.ErrInfo("commission")
 	}
 	// есть ли нужная сумма на кошельке
 	p.TxMaps.Int64["from_user_id"] = p.TxMaps.Int64["user_id"]
 	for i:=0; i<5; i++ {
-		p.TxMaps.Float["arbitrator"+utils.IntToStr(i)+"_commission"] = 0
+		p.TxMaps.Float64["arbitrator"+utils.IntToStr(i)+"_commission"] = 0
 	}
-	_, err = p.checkSenderMoney(p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["from_user_id"], p.TxMaps.Float64["amount"], p.TxMaps.Float64["commission"], p.TxMaps.Float64["arbitrator0_commission"], p.TxMaps.Float64["arbitrator1_commission"], p.TxMaps.Float64["arbitrator2_commission"], p.TxMaps.Float64["arbitrator3_commission"], p.TxMaps.Float64["arbitrator4_commission"])
+	_, err = p.checkSenderMoney(p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["from_user_id"], p.TxMaps.Money["amount"], p.TxMaps.Money["commission"], p.TxMaps.Float64["arbitrator0_commission"], p.TxMaps.Float64["arbitrator1_commission"], p.TxMaps.Float64["arbitrator2_commission"], p.TxMaps.Float64["arbitrator3_commission"], p.TxMaps.Float64["arbitrator4_commission"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -95,7 +95,7 @@ func (p *Parser) NewForexFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.checkSpamMoney(p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["amount"])
+	err = p.checkSpamMoney(p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Money["amount"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -103,7 +103,7 @@ func (p *Parser) NewForexFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewForex() (error) {
+func (p *Parser) NewForexOrder() (error) {
 
 	// нужно отметить в log_time_money_orders, что тр-ия прошла в блок
 	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE tx_hash = [hex]", p.BlockData.BlockId, p.TxHash )
@@ -121,17 +121,16 @@ func (p *Parser) NewForex() (error) {
 	reverseRate := 1 / p.TxMaps.Float64["sell_rate"]
 
 	// Сколько хотим потратить
-	totalSellAmount := p.TxMaps.Float64["amount"]
-
+	totalSellAmount := p.TxMaps.Money["amount"]
 
 	// прежде всего начислим комиссию ноду-генератору
-	if p.TxMaps.Float64["commission"] >= 0.01 {
+	if p.TxMaps.Money["commission"] >= 0.01 {
 		// возможно нужно обновить таблицу points_status
 		err = p.pointsUpdateMain(p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.updateSenderWallet(p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["commission"], 0, "from_user", p.TxUserID, p.BlockData.UserId, "node_commission", "decrypted")
+		err = p.updateSenderWallet(p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Money["commission"], 0, "from_user", p.TxUserID, p.BlockData.UserId, "node_commission", "decrypted")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -140,23 +139,24 @@ func (p *Parser) NewForex() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.updateRecipientWallet(p.BlockData.UserId, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["commission"], "node_commission", p.BlockData.BlockId, "", "encrypted", true)
+		err = p.updateRecipientWallet(p.BlockData.UserId, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Money["commission"], "node_commission", p.BlockData.BlockId, "", "encrypted", true)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
+
 	// берем из БД только те ордеры, которые удовлетворяют нашим требованиям
 	rows, err := p.Query("SELECT id, sell_rate, amount, user_id, sell_currency_id, buy_currency_id  FROM forex_orders WHERE buy_currency_id = ? AND sell_rate >= ? AND sell_currency_id = ? AND del_block_id = 0 AND empty_block_id = 0",  p.TxMap["sell_currency_id"], reverseRate, p.TxMap["buy_currency_id"])
 	if err != nil {
-		return  err
+		return p.ErrInfo(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var rowId, rowUserId, rowSellCurrencyId, rowBuyCurrencyId int64
 		var rowSellRate, rowAmount float64
-		err = rows.Scan(&rowId, &rowSellRate, &rowAmount, &rowUserId, rowSellCurrencyId, rowBuyCurrencyId)
+		err = rows.Scan(&rowId, &rowSellRate, &rowAmount, &rowUserId, &rowSellCurrencyId, &rowBuyCurrencyId)
 		if err!= nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		// сколько мы готовы купить по курсу владельца данного ордера
 		readyToBuy := totalSellAmount * rowSellRate
@@ -175,7 +175,7 @@ func (p *Parser) NewForex() (error) {
 			}
 		} else {
 			// вычитаем забранную сумму из ордера
-			err = p.ExecSql("UPDATE forex_orders SET amount = amount ? ? WHERE id = ?", sellerSellAmount, rowId)
+			err = p.ExecSql("UPDATE forex_orders SET amount = amount - ? WHERE id = ?", sellerSellAmount, rowId)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -254,7 +254,7 @@ func (p *Parser) NewForex() (error) {
 
 	// если после прохода по всем имеющимся ордерам мы не потратили все средства, то создаем свой ордер
 	if (totalSellAmount >= 0.01) {
-		orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO forex_orders ( user_id, sell_currency_id, sell_rate, amount, buy_currency_id, commission ) VALUES ( ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["sell_rate"], totalSellAmount, p.TxMaps.Int64["buy_currency_id"], p.TxMaps.Float64["commission"])
+		orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO forex_orders ( user_id, sell_currency_id, sell_rate, amount, buy_currency_id, commission ) VALUES ( ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["sell_rate"], totalSellAmount, p.TxMaps.Int64["buy_currency_id"], p.TxMaps.Money["commission"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -265,11 +265,10 @@ func (p *Parser) NewForex() (error) {
 			return p.ErrInfo(err)
 		}
 	}
-
 	return nil
 }
 
-func (p *Parser) NewForexRollback() (error) {
+func (p *Parser) NewForexOrderRollback() (error) {
 
 	// нужно отметить в log_time_money_orders, что тр-ия НЕ прошла в блок
 	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE tx_hash = [hex]", p.TxHash)
@@ -310,7 +309,7 @@ func (p *Parser) NewForexRollback() (error) {
 		var rowAmount, rowCommission, rowSellRate float64
 		err = rows.Scan(&rowAmount, &rowId, &rowEmptyBlockId, &rowOrderId, &rowUserId, &rowToUserId, &rowNew, &rowCommission, &rowBuyCurrencyId, &rowSellRate, &rowSellCurrencyId)
 		if err!= nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		err = p.ExecSql("DELETE FROM log_forex_orders WHERE id = ?", rowId)
 		if err != nil {
@@ -358,7 +357,7 @@ func (p *Parser) NewForexRollback() (error) {
 			}
 			err = p.generalRollback("wallets", rowToUserId, "AND currency_id ="+utils.Int64ToStr(rowBuyCurrencyId), false)
 			if err != nil {
-				return p
+				return p.ErrInfo(err)
 			}
 			// откатим продавца
 
@@ -369,7 +368,7 @@ func (p *Parser) NewForexRollback() (error) {
 			}
 			err = p.generalRollback("wallets", rowUserId, "AND currency_id ="+utils.Int64ToStr(rowBuyCurrencyId), false)
 			if err != nil {
-				return p
+				return p.ErrInfo(err)
 			}
 
 			// возможно были списания по кредиту
@@ -379,12 +378,12 @@ func (p *Parser) NewForexRollback() (error) {
 			}
 			err = p.generalRollback("wallets", rowUserId, "AND currency_id ="+utils.Int64ToStr(rowSellCurrencyId), false)
 			if err != nil {
-				return p
+				return p.ErrInfo(err)
 			}
 		}
 	}
 	// откатим комиссию ноду-генератору
-	if p.TxMaps.Float64["commission"] >= 0.01 {
+	if p.TxMaps.Money["commission"] >= 0.01 {
 
 		// возможно нужно обновить таблицу points_status
 		err = p.pointsUpdateRollbackMain(p.BlockData.UserId)
@@ -394,7 +393,7 @@ func (p *Parser) NewForexRollback() (error) {
 
 		err = p.generalRollback("wallets", p.BlockData.UserId, "AND currency_id ="+utils.Int64ToStr(p.TxMaps.Int64["sell_currency_id"]), false)
 		if err != nil {
-			return p
+			return p.ErrInfo(err)
 		}
 
 		// возможно были списания по кредиту
@@ -411,7 +410,7 @@ func (p *Parser) NewForexRollback() (error) {
 
 		err = p.generalRollback("wallets", p.TxUserID, "AND currency_id ="+utils.Int64ToStr(p.TxMaps.Int64["sell_currency_id"]), false)
 		if err != nil {
-			return p
+			return p.ErrInfo(err)
 		}
 	}
 
@@ -434,7 +433,7 @@ func (p *Parser) NewForexRollback() (error) {
 	return nil
 }
 
-func (p *Parser) NewForexRollbackFront() error {
+func (p *Parser) NewForexOrderRollbackFront() error {
 
 	err := p.limitRequestsMoneyOrdersRollback()
 	if err != nil {

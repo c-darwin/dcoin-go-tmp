@@ -13,6 +13,7 @@ import (
 	"log"
 	"encoding/json"
 	"database/sql"
+	"strings"
 )
 
 type txMapsType struct {
@@ -20,6 +21,7 @@ type txMapsType struct {
 	String map[string]string
 	Bytes map[string][]byte
 	Float64 map[string]float64
+	Money map[string]float64
 }
 type Parser struct {
 	*utils.DCDB
@@ -115,7 +117,7 @@ func (p *Parser) checkMinerNewbie() error {
 }
 
 
-func (p *Parser) checkMiner(userId []byte) error {
+func (p *Parser) checkMiner(userId int64) error {
 	// в cash_request_out передается to_user_id
 	var blockId int64
 	addSql := ""
@@ -709,6 +711,7 @@ func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
 	p.TxMap = make(map[string][]byte)
 	p.TxMaps = new(txMapsType)
 	p.TxMaps.Float64 = make(map[string]float64)
+	p.TxMaps.Money = make(map[string]float64)
 	p.TxMaps.Int64 = make(map[string]int64)
 	p.TxMaps.Bytes = make(map[string][]byte)
 	p.TxMaps.String = make(map[string]string)
@@ -728,6 +731,8 @@ func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
 				p.TxMaps.Int64[field] =  utils.BytesToInt64(p.TxSlice[i+4])
 			case "float64":
 				p.TxMaps.Float64[field] =  utils.BytesToFloat64(p.TxSlice[i+4])
+			case "money":
+				p.TxMaps.Money[field] = math.Floor(utils.BytesToFloat64(p.TxSlice[i+4])*100)/100
 			case "bytes":
 				p.TxMaps.Bytes[field] =  p.TxSlice[i+4]
 			case "string":
@@ -1658,12 +1663,22 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 	return amount - (amountForCreditSave - amountForCredit), nil
 }
 
+func (p *Parser) adaptQuery(query_ string) (string) {
+	query:=query_
+	if p.ConfigIni["db_type"]=="mysql" {
+		query = strings.Replace(query, "delete", "`delete`", -1)
+	}
+	return query
+}
 
 /*
  * Начисляем новые DC юзеру, пересчитав ему % от того, что уже было на кошельке
  * */
 func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float64, from string, fromId int64, comment, commentStatus string, credits bool) error {
 
+	if currencyId == 0 {
+		return p.ErrInfo("currencyId == 0")
+	}
 	walletWhere := "user_id = "+utils.Int64ToStr(toUserId)+" AND currency_id = "+utils.Int64ToStr(currencyId);
 	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
 	if err != nil {
@@ -2701,7 +2716,6 @@ func (p *Parser) CalcProfit_24946(amount float64, timeStart, timeFinish int64, p
 	}
 	log.Println("profit", profit)
 
-
 	return profit, nil
 }
 
@@ -2711,6 +2725,7 @@ func (p *Parser) calcNodeCommission(amount float64, nodeCommission [3]float64) f
 	minCommission := nodeCommission[1];
 	maxCommission := nodeCommission[2];
 	nodeCommissionResult := utils.Round ( (amount / 100) * pct , 2 )
+	log.Println("nodeCommissionResult", nodeCommissionResult, "amount", amount, "pct", pct)
 	if (nodeCommissionResult < minCommission) {
 		nodeCommissionResult = minCommission
 	} else if (nodeCommissionResult > maxCommission) {
@@ -2778,7 +2793,9 @@ func (p *Parser) getMyNodeCommission(currencyId, userId int64, amount float64) (
 			}
 			currencyIdStr:=utils.Int64ToStr(currencyId)
 			if len(commissionMap[currencyIdStr]) > 0 {
+				log.Println("commissionMap[currencyIdStr]", commissionMap[currencyIdStr])
 				nodeCommission = p.calcNodeCommission(amount, commissionMap[currencyIdStr])
+				log.Println("nodeCommission", nodeCommission)
 			} else {
 				nodeCommission = 0
 			}
@@ -2816,6 +2833,7 @@ func (p *Parser) getTotalAmount(currencyId int64) (float64, error) {
 	if err != nil && err!=sql.ErrNoRows {
 		return 0, p.ErrInfo(err)
 	}
+	log.Println("getTotalAmount amount", amount, "p.TxUserID=", p.TxUserID, "currencyId=", currencyId)
 	pointsStatus := []map[int64]string {{0:"user"}}
 	// getTotalAmount используется только на front, значит используем время из тр-ии - $this->tx_data['time']
 	if currencyId >= 1000 { // >=1000 - это CF-валюты, которые не растут
@@ -2832,6 +2850,199 @@ func (p *Parser) getTotalAmount(currencyId int64) (float64, error) {
 		return (amount + profit), nil
 	}
 	return 0, nil
+}
+
+func (p *Parser) updPromisedAmountsRollback(userId int64, cashRequestOutTime bool) error {
+
+	sqlNameCashRequestOutTime := ""
+	sqlUpdCashRequestOutTime := ""
+	if (cashRequestOutTime) {
+		sqlNameCashRequestOutTime = "cash_request_out_time, "
+	}
+
+	// идем в обратном порядке (DESC)
+	rows, err := p.Query("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 ORDER BY id DESC", userId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var log_id int64
+		err = rows.Scan(&log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// данные, которые восстановим
+		logData, err := p.OneRow("SELECT tdc_amount, tdc_amount_update, "+sqlNameCashRequestOutTime+" prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).String()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		if cashRequestOutTime {
+			sqlUpdCashRequestOutTime = "cashRequestOutTime = "+logData["cash_request_out_time"]+", ";
+		}
+		err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUpdCashRequestOutTime+" log_id = ? WHERE log_id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM log_promised_amount WHERE log_id = ?", log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.rollbackAI("log_promised_amount", 1)
+	}
+	return nil
+}
+
+func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool bool, cashRequestOutTime int64) error {
+	sqlNameCashRequestOutTime := ""
+	sqlValueCashRequestOutTime := ""
+	sqlUdpCashRequestOutTime := ""
+	if (cashRequestOutTimeBool) {
+		sqlNameCashRequestOutTime = "cash_request_out_time, "
+		sqlUdpCashRequestOutTime = "cash_request_out_time = "+utils.Int64ToStr(cashRequestOutTime)+", "
+	}
+	rows, err := p.Query(`
+				SELECT  id,
+							 currency_id,
+							 amount,
+							 tdc_amount,
+							 tdc_amount_update,
+							 `+sqlNameCashRequestOutTime+`
+							 log_id
+				FROM promised_amount
+				WHERE status IN ('mining', 'repaid') AND
+							 user_id = ? AND
+							 currency_id > 1 AND
+							 del_block_id = 0 AND
+							 del_mining_block_id = 0
+				ORDER BY id ASC
+	`, userId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currencyId, tdcAmountUpdate, cashRequestOutTime, amount, log_Id string
+		var tdcAmount float64
+		var id int64
+		if cashRequestOutTimeBool {
+			err = rows.Scan(&id, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate, &cashRequestOutTime, &log_Id)
+		} else {
+			err = rows.Scan(&id, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate, log_Id)
+		}
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		if cashRequestOutTimeBool {
+			sqlValueCashRequestOutTime = cashRequestOutTime+", "
+		}
+		logId, err := p.ExecSqlGetLastInsertId(`
+					INSERT INTO log_promised_amount (
+							tdc_amount,
+							tdc_amount_update,
+							`+sqlNameCashRequestOutTime+`
+							block_id,
+							prev_log_id
+					)
+					VALUES (
+							?,
+							?,
+							`+sqlValueCashRequestOutTime+`
+							?,
+							?
+					)
+		`, tdcAmount, tdcAmountUpdate, p.BlockData.BlockId, log_Id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// новая сумма TDC
+		var newTdc float64
+		if getTdc {
+			newTdc, err = p.getTdc(id, userId);
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		} else {
+			newTdc = tdcAmount
+		}
+		err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUdpCashRequestOutTime+" log_id = ? WHERE id = ?", newTdc, p.BlockData.Time, logId, id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+func (p *Parser) updPromisedAmountsCashRequestOutTime(userId int64) error {
+	rows, err := p.Query(`
+				SELECT id,
+							 cash_request_out_time,
+							 log_id
+				FROM promised_amount
+				WHERE status IN ('mining', 'repaid') AND
+							 user_id = ? AND
+							 currency_id > 1 AND
+							 del_block_id = 0 AND
+							 del_mining_block_id = 0 AND
+							 cash_request_out_time = 0
+				ORDER BY id ASC
+	`, userId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, cash_request_out_time, log_id string
+		err = rows.Scan(&id, &cash_request_out_time, &log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( cash_request_out_time, block_id, prev_log_id ) VALUES ( ?, ?, ? )", cash_request_out_time, p.BlockData.BlockId, log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.ExecSql("UPDATE promised_amount SET cash_request_out_time = ?, log_id = ? WHERE id = ?", p.BlockData.Time, logId, id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) updPromisedAmountsCashRequestOutTimeRollback(userId int64) error {
+
+	// идем в обратном порядке (DESC)
+	rows, err := p.Query("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND cash_request_out_time = ? ORDER BY id DESC", userId, p.BlockData.Time)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var log_id int64
+		err = rows.Scan(&log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// данные, которые восстановим
+		logData, err := p.OneRow("SELECT cash_request_out_time, prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).Int64()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.ExecSql("UPDATE promised_amount SET cash_request_out_time = ?, log_id = ? WHERE log_id = ?", logData["cash_request_out_time"], logData["prev_log_id"], log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// подчищаем _log
+		err = p.ExecSql("DELETE FROM log_promised_amount WHERE log_id = ?", log_id)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.rollbackAI("log_promised_amount", 1)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
 }
 
 func (p *Parser) checkSenderMoney(currencyId, fromUserId int64, amount, commission, arbitrator0_commission, arbitrator1_commission, arbitrator2_commission, arbitrator3_commission, arbitrator4_commission float64) (float64, error) {
@@ -2884,7 +3095,7 @@ func (p *Parser) checkSenderMoney(currencyId, fromUserId int64, amount, commissi
 	amountAndCommission := amount + commission + arbitrator0_commission + arbitrator1_commission + arbitrator2_commission + arbitrator3_commission + arbitrator4_commission
 	all := totalAmount - walletsBufferAmount - cashRequestsAmount - forexOrdersAmount - holdBackAmount;
 	if all < amountAndCommission {
-		return 0, p.ErrInfo("all < amountAndCommission")
+		return 0, p.ErrInfo(fmt.Sprintf("%f < %f (%f - %f - %f - %f - %f) <  (%f + %f + %f + %f + %f + %f + %f)", all, amountAndCommission, totalAmount, walletsBufferAmount, cashRequestsAmount, forexOrdersAmount, holdBackAmount, amount, commission, arbitrator0_commission, arbitrator1_commission, arbitrator2_commission, arbitrator3_commission, arbitrator4_commission))
 	}
 	return amountAndCommission, nil
 }

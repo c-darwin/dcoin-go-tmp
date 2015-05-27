@@ -41,7 +41,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	}
 
 	// является ли данный юзер майнером
-	err = p.checkMiner(p.TxMap["user_id"])
+	err = p.checkMiner(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

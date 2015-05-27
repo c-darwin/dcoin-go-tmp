@@ -142,11 +142,25 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "currency_id":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok{
+			if StrToInt(data) < 256 {
+				return true
+			}
+		}
 	case "reduction_type":
 		if ok, _ := regexp.MatchString(`^(manual|promised_amount)$`, data); ok{
 			if StrToInt(data) <= 30 {
 				return true
 			}
+		}
+	case "currency_commission":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,7}(\.[0-9]{1,2})?$`, data); ok{
+			return true
+		}
+	case "sell_rate":
+		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,10})?$`, data); ok{
+			return true
 		}
 	case "amount":
 		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, data); ok{
@@ -288,6 +302,9 @@ func StrToInt(s string) int {
 }
 func Float64ToStr(f float64) string {
 	return strconv.FormatFloat(f,'f', 13, 64)
+}
+func Float64ToStrPct(f float64) string {
+	return strconv.FormatFloat(f,'f', 2, 64)
 }
 func StrToFloat64(s string) float64 {
 	Float64, _ := strconv.ParseFloat(s, 64)

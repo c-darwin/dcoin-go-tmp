@@ -54,7 +54,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	}
 
 	// юзер должен быть или miner, или passive_miner, т.е. иметь miner_id. не даем майнерам, которых забанил админ, добавлять новые обещанные суммы.
-	err = p.checkMiner(p.TxMap["user_id"])
+	err = p.checkMiner(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -154,7 +154,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 
 	err = p.limitRequest(p.Variables.Int64["limit_promised_amount"], "promised_amount", p.Variables.Int64["limit_promised_amount_period"])
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 	return nil
 }
