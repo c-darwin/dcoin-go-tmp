@@ -9,14 +9,41 @@ import (
 	"crypto/rand"
 	"crypto"
 	"os"
+	"github.com/astaxie/beego/config"
+	"log"
+	"io"
+	"strings"
+//	"crypto/rand"
+//	"crypto/rsa"
+	"encoding/pem"
+	"crypto/x509"
+	"encoding/base64"
 )
+
+func genKeys() (string, string) {
+	privatekey, _ := rsa.GenerateKey(rand.Reader, 1024)
+	var pemkey = &pem.Block{Type : "RSA PRIVATE KEY", Bytes : x509.MarshalPKCS1PrivateKey(privatekey)}
+	PrivBytes0 := pem.EncodeToMemory(&pem.Block{Type:  "RSA PRIVATE KEY", Bytes: pemkey.Bytes})
+
+	PubASN1, _ := x509.MarshalPKIXPublicKey(&privatekey.PublicKey)
+	pubBytes := pem.EncodeToMemory(&pem.Block{Type:  "RSA PUBLIC KEY", Bytes: PubASN1})
+	s := strings.Replace(string(pubBytes),"-----BEGIN RSA PUBLIC KEY-----","",-1)
+	s = strings.Replace(s,"-----END RSA PUBLIC KEY-----","",-1)
+	sDec, _ := base64.StdEncoding.DecodeString(s)
+
+	return string(PrivBytes0), fmt.Sprintf("%x", sDec)
+}
 
 // для юнит-тестов. снимок всех данных в БД
 func AllHashes(db *utils.DCDB) (map[string]string, error) {
 	//var orderBy string
 	result:=make(map[string]string)
 	//var columns string;
-	rows, err := db.Query(`
+	tables, err:=db.GetAllTables()
+	if err != nil {
+		return result, err
+	}
+	/*rows, err := db.Query(`
 		SELECT table_name
 		FROM
 		information_schema.tables
@@ -35,7 +62,8 @@ func AllHashes(db *utils.DCDB) (map[string]string, error) {
 			return result, err
 		}
 		//fmt.Println(table)
-
+*/
+	for _, table :=range tables {
 		orderByFns := func(table string) string {
 			// ошибки не проверяются т.к. некритичны
 			match, _ := regexp.MatchString("^(log_forex_orders|log_forex_orders_main|cf_comments|cf_currency|cf_funding|cf_lang|cf_projects|cf_projects_data)$", table)
@@ -74,13 +102,44 @@ func AllHashes(db *utils.DCDB) (map[string]string, error) {
 	return result, nil
 }
 
+func dbConn() *utils.DCDB {
+	configIni_, err := config.NewConfig("ini", "config.ini")
+	if err != nil {
+		fmt.Println(err)
+	}
+	configIni, err := configIni_.GetSection("default")
+	db := utils.DbConnect(configIni)
+	return db
+}
 
-func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, txType string, userId int64, MY_PREFIX string, blockId int64, db *utils.DCDB) error {
-	//var err error
+
+func InitLog() {
+	f, _ := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	defer f.Close()
+	//log.SetOutput(f)
+	log.SetOutput(io.MultiWriter(f, os.Stdout))
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
+func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, txType string, userId int64, MY_PREFIX string, blockId int64) error {
+	db := dbConn()
+
+	priv, pub  := genKeys()
+	err:=db.ExecSql("UPDATE my_keys SET private_key = ?", priv)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	err=db.ExecSql("UPDATE users SET public_key_0 = [hex]", pub)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
 	nodeArr := []string{"new_admin", "votes_node_new_miner", "NewPct"}
 	var binSign []byte
 	if utils.InSliceString(txType, nodeArr) {
 		k, err := db.GetNodePrivateKey(MY_PREFIX)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
 		//fmt.Println("k", k)
 		privateKey, err := utils.MakePrivateKey(k)
 		if err != nil {
@@ -111,9 +170,9 @@ func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, tx
 		binSign = utils.EncodeLengthPlusData(binSign)
 	}
 
-	fmt.Println("HashSha1", utils.HashSha1(dataForSign))
-	fmt.Printf("binSign %x\n", binSign)
-	fmt.Println("dataForSign", dataForSign)
+	//fmt.Println("HashSha1", utils.HashSha1(dataForSign))
+	//fmt.Printf("binSign %x\n", binSign)
+	//fmt.Println("dataForSign", dataForSign)
 	transactionArray = append(transactionArray, binSign)
 
 	parser := new(dcparser.Parser)
@@ -143,10 +202,15 @@ func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, tx
 }
 
 
-func MakeTest(txType string, hashesStart map[string]string, db *utils.DCDB) error {
+func MakeTest(txSlice [][]byte, blockData *utils.BlockData, txType string, hashesStart map[string]string, db *utils.DCDB, testType string) error {
 
 	parser := new(dcparser.Parser)
 	parser.DCDB = db
+	parser.TxSlice = txSlice
+	parser.BlockData = blockData
+	parser.TxHash = []byte("111111111111111")
+	parser.Variables, _ = db.GetAllVariables()
+
 
 	// делаем снимок БД в виде хэшей до начала тестов
 	hashesStart, err := AllHashes(db)
@@ -161,7 +225,8 @@ func MakeTest(txType string, hashesStart map[string]string, db *utils.DCDB) erro
 		return err0.(error)
 	}
 
-	if len(os.Args)==1 {
+	if testType == "work_and_rollback" {
+
 		err0 = utils.CallMethod(parser, txType)
 		if i, ok := err0.(error); ok {
 			fmt.Println(err0.(error), i)
@@ -175,12 +240,14 @@ func MakeTest(txType string, hashesStart map[string]string, db *utils.DCDB) erro
 			return utils.ErrInfo(err)
 		}
 		var tables []string
+		//fmt.Println("hashesMiddle", hashesMiddle)
+		//fmt.Println("hashesStart", hashesStart)
 		for table, hash := range hashesMiddle {
 			if hash!=hashesStart[table] {
 				tables = append(tables, table)
 			}
 		}
-		fmt.Println(tables)
+		fmt.Println("tables", tables)
 
 		// rollback
 		err0 := utils.CallMethod(parser, txType+"Rollback")
@@ -200,13 +267,13 @@ func MakeTest(txType string, hashesStart map[string]string, db *utils.DCDB) erro
 			}
 		}
 
-	} else if os.Args[1] == "w" {
+	} else if (len(os.Args)>1 && os.Args[1] == "w") || testType == "work" {
 		err0 = utils.CallMethod(parser, txType)
 		if i, ok := err0.(error); ok {
 			fmt.Println(err0.(error), i)
 			return err0.(error)
 		}
-	} else if os.Args[1] == "r" {
+	} else if (len(os.Args)>1 && os.Args[1] == "r")  || testType == "rollback" {
 		err0 = utils.CallMethod(parser, txType+"Rollback")
 		if i, ok := err0.(error); ok {
 			fmt.Println(err0.(error), i)

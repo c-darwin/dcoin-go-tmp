@@ -7,7 +7,10 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"github.com/astaxie/beego/config"
 )
+
+
 
 func (db *DCDB) MakeFrontTest(transactionArray []string, time int64, dataForSign string, txType string, userId int64) error {
 	var err error

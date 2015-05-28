@@ -31,6 +31,10 @@ const USD_CURRENCY_ID = 71
 
 const ARBITRATION_BLOCK_START = 189300
 
+// через какое время админ имеет право изменить ключ юзера, если тот дал на это свое согласие. Это время дается юзеру на то, чтобы отменить запрос.
+const CHANGE_KEY_PERIOD_170770 = 3600
+const CHANGE_KEY_PERIOD = 3600*24*30
+
 //  есть ли хотябы X юзеров, у которых на кошелках есть от 0.01 данной валюты
 const AUTO_REDUCTION_PROMISED_AMOUNT_MIN = 10
 
@@ -63,11 +67,11 @@ var TxTypes = map[int]string {
 	//  новый набор max_other_currencies от нода-генератора блока
 	8 : "NewMaxOtherCurrencies",
 	// geolocation. Майнер изменил свои координаты
-	9 : "change_geolocation",
+	9 : "ChangeGeolocation",
 	// votes_promised_amount.
 	10 : "VotesPromisedAmount",
 	// del_promised_amount. Удаление обещанной суммы
-	11 : "del_promised_amount",
+	11 : "DelPromisedAmount",
 	// send_dc
 	12 : "SendDc",
 	13 : "CashRequestOut",
@@ -76,88 +80,88 @@ var TxTypes = map[int]string {
 	15 : "VotesComplex",
 	16 : "ChangePrimaryKey",
 	17 : "ChangeNodeKey",
-	18 : "for_repaid_fix",
+	18 : "ForRepaidFix",
 	// занесение в БД данных из первого блока
 	19 : "Admin1Block",
 	// админ разжаловал майнеров в юзеры
-	20 : "admin_ban_miners",
+	20 : "AdminBanMiners",
 	// админ изменил variables
 	21 : "AdminVariables",
 	// админ обновил набор точек для проверки лиц
 	22 : "AdminSpots",
 	// юзер создал кредит
-	23 : "new_credit",
+	23 : "NewCredit",
 	// админ вернул майнерам звание "майнер"
-	24 : "admin_unban_miners",
+	24 : "AdminUnbanMiners",
 	// админ отправил alert message
-	25 : "admin_message",
+	25 : "AdminMessage",
 	// майнер хочет, чтобы указаные им майнеры были разжалованы в юзеры
-	26 : "abuses",
+	26 : "Abuses",
 	// майнер хочет, чтобы в указанные дни ему не приходили запросы на обмен DC
-	27 : "new_holidays",
-	28 : "actualization_promised_amounts",
+	27 : "NewHolidays",
+	28 : "ActualizationPromisedAmounts",
 	29 : "Mining",
 	// Голосование нода за фото нового майнера
 	30 : "VotesNodeNewMiner",
 	// Юзер исправил проблему с отдачей фото и шлет повторный запрос на получение статуса "майнер"
-	31 : "new_miner_update",
+	31 : "NewMinerUpdate",
 	//  новый набор max_promised_amount от нода-генератора блока
 	32 : "NewMaxPromisedAmounts",
 	//  новый набор % от нода-генератора блока
 	33 : "NewPct",
 	// добавление новой валюты
-	34 : "admin_add_currency",
-	35 : "new_cf_project",
+	34 : "AdminAddCurrency",
+	35 : "NewCfProject",
 	// новая версия, которая кладется каждому в диру public
-	36 : "admin_new_version",
+	36 : "AdminNewVersion",
 	// после того, как новая версия протестируется, выдаем сообщение, что необходимо обновиться
-	37 : "admin_new_version_alert",
+	37 : "AdminNewVersionAlert",
 	// баг репорты
-	38 : "message_to_admin",
+	38 : "MessageToAdmin",
 	// админ может ответить юзеру
-	39 : "admin_answer",
-	40 : "cf_project_data",
+	39 : "AdminAnswer",
+	40 : "CfProjectData",
 	// блог админа
-	41 : "admin_blog",
+	41 : "AdminBlog",
 	// майнер меняет свой хост
-	42 : "change_host",
+	42 : "ChangeHost",
 	// майнер меняет комиссию, которую он хочет получать с тр-ий
 	43 : "ChangeCommission",
-	44 : "del_cf_funding",
+	44 : "DelCfFunding",
 	// запуск урезания на основе голосования. генерит нод-генератор блока
 	45 : "NewReduction",
-	46 : "del_cf_project",
-	47 : "cf_comment",
-	48 : "cf_send_dc",
-	49 : "user_avatar",
-	50 : "cf_project_change_category",
-	51 : "change_creditor",
-	52 : "del_credit",
-	53 : "repayment_credit",
-	54 : "change_credit_part",
-	55 : "new_admin",
+	46 : "DelCfProject",
+	47 : "CfComment",
+	48 : "CfSendDc",
+	49 : "UserAvatar",
+	50 : "CfProjectChangeCategory",
+	51 : "ChangeCreditor",
+	52 : "DelCredit",
+	53 : "RepaymentCredit",
+	54 : "ChangeCreditPpart",
+	55 : "NewAdmin",
 	// по истечении 30 дней после поступления запроса о восстановлении утерянного ключа, админ может изменить ключ юзера
-	56 : "admin_change_primary_key",
+	56 : "AdminChangePrimaryKey",
 	// юзер разрешает или отменяет разрешение на смену своего ключа админом
-	57 : "change_key_active",
+	57 : "ChangeKeyActive",
 	// юзер отменяет запрос на смену ключа
-	58 : "change_key_close",
+	58 : "ChangeKeyClose",
 	// юзер отправляет с другого акка запрос на получение доступа к акку, ключ к которому он потерял
-	59 : "change_key_request",
+	59 : "ChangeKeyRequest",
 	// юзер решил стать арбитром или же действующий арбитр меняет комиссии
-	60 : "change_arbitrator_conditions",
+	60 : "ChangeArbitratorConditions",
 	// продавец меняет % и кол-во дней для новых сделок.
-	61 : "change_seller_hold_back",
+	61 : "ChangeSellerHoldBack",
 	// покупатель или продавец указал список арбитров, кому доверяет
-	62 : "change_arbitrator_list",
+	62 : "ChangeArbitratorList",
 	// покупатель хочет манибэк
-	63 : "money_back_request",
+	63 : "MoneyBackRequest",
 	// магазин добровольно делает манибэк или же арбитр делает манибек
-	64 : "money_back",
+	64 : "MoneyBack",
 	// арбитр увеличивает время манибэка, чтобы успеть разобраться в ситуации
-	65 : "change_money_back_time",
+	65 : "ChangeMoneyBackTime",
 	// юзер меняет url центров сертификации, где хранятся его приватные ключи
-	66 : "change_ca",
+	66 : "ChangeCa",
 }
 
 func init() {

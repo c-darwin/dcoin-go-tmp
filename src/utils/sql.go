@@ -141,7 +141,7 @@ func (db *DCDB) GetAllVariables() (*Variables, error) {
 	result.String = make(map[string]string)
 	result.Float64 = make(map[string]float64)
 	all, err := db.GetAll("SELECT * FROM variables", -1)
-	fmt.Println(all)
+	//fmt.Println(all)
 	if err != nil {
 		return result, err
 	}
@@ -232,6 +232,19 @@ func (r *oneRow) Int64() (map[string]int64, error) {
 	return result, nil
 }
 
+
+func (r *oneRow) Float64() (map[string]float64, error) {
+	result := make(map[string]float64)
+	if r.err != nil {
+		return result, r.err
+	}
+	for k, v := range r.result {
+		result[k] = StrToFloat64(v)
+	}
+	return result, nil
+}
+
+
 func (r *oneRow) Int() (map[string]int, error) {
 	result := make(map[string]int)
 	if r.err != nil {
@@ -286,13 +299,12 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
 		query = replQ(query)
 	case "mysql":
+		query = strings.Replace(query, "delete", "`delete`", -1)
+		query = strings.Replace(query, "``delete``", "`delete`", -1)
 		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
 	}
 	var result []byte
 	err := db.QueryRow(query, args...).Scan(&result)
-	if err!=nil {
-		fmt.Println("[error] single", fmt.Sprintf("%s in query %s %s\n", err, query, args))
-	}
 	switch {
 	case err == sql.ErrNoRows:
 		return &singleResult{[]byte(""), nil}
@@ -434,7 +446,7 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	return nil
 }
 
-func formatQuery(query, dbType string) string {
+func FormatQuery(query, dbType string) string {
 	switch dbType {
 	case "sqlite":
 		query = strings.Replace(query, "[hex]", "?", -1)
@@ -448,7 +460,7 @@ func formatQuery(query, dbType string) string {
 }
 
 func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64, error) {
-	query = formatQuery(query, db.ConfigIni["db_type"])
+	query = FormatQuery(query, db.ConfigIni["db_type"])
 	res, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
@@ -462,7 +474,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64
 }
 
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
-	query = formatQuery(query, db.ConfigIni["db_type"])
+	query = FormatQuery(query, db.ConfigIni["db_type"])
 	res, err := db.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("%s in query %s %s", err, query, args)
@@ -470,7 +482,9 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+		log.Println(query)
+		log.Println(args)
+		log.Printf("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
 	}
 	return nil
 }
@@ -478,7 +492,7 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 
 
 func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
-	query = formatQuery(query, db.ConfigIni["db_type"])
+	query = FormatQuery(query, db.ConfigIni["db_type"])
 	res, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
@@ -518,8 +532,28 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	if len(orderBy) > 0 {
 		orderBy = " ORDER BY "+orderBy;
 	}
+
 	// это у всех разное, а значит и хэши будут разные, а это будет вызывать путаницу
-	q:="SELECT md5(CAST((array_agg(t.* "+orderBy+")) AS text)) FROM \""+table+"\" t "+where
+	q:=""
+	switch db.ConfigIni["db_type"] {
+	case "sqlite":
+		q="SELECT md5(CAST((array_agg(t.* "+orderBy+")) AS text)) FROM \""+table+"\" t "+where
+	case "postgresql":
+		q="SELECT md5(CAST((array_agg(t.* "+orderBy+")) AS text)) FROM \""+table+"\" t "+where
+	case "mysql":
+		err := db.ExecSql("SET GLOBAL group_concat_max_len=18446744073709551615")
+		if err != nil {
+			return "", ErrInfo(err)
+		}
+		columns, err := db.Single("SELECT GROUP_CONCAT( column_name SEPARATOR '`,`' ) FROM information_schema.columns WHERE table_schema = ? AND table_name = ?", db.ConfigIni["db_name"], table).String()
+		if err != nil {
+			return "", ErrInfo(err)
+		}
+		q="SELECT MD5(GROUP_CONCAT( CONCAT_WS( '#', `"+columns+"`)  "+orderBy+" )) FROM `"+table+"` "+where
+		//fmt.Println(q)
+	}
+	//fmt.Println(q)
+
 	/*if strings.Count(table, "my_table")>0 {
 		columns = strings.Replace(columns,",notification","",-1)
 		columns = strings.Replace(columns,"notification,","",-1)
@@ -1284,6 +1318,59 @@ func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) (int64, error
 
 func (db *DCDB) UpdDaemonTime(name string) {
 
+}
+
+func (db *DCDB) GetAiId(table string) (string, error) {
+	exists := ""
+	column := "id"
+	switch db.ConfigIni["db_type"] {
+	case "sqlite":
+		err := db.QueryRow("SELECT id FROM "+table).Scan(&exists)
+		if err != nil {
+			if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
+				err = db.QueryRow("SELECT log_id FROM "+table).Scan(&exists)
+				if err != nil {
+					return "", err
+				}
+				column = "log_id"
+			} else {
+				return "", err
+			}
+		}
+	case "postgresql":
+		exists = ""
+		err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "id").Scan(&exists)
+		if err != nil && err!=sql.ErrNoRows {
+			return "", err
+		}
+		if len(exists) == 0 {
+			err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "log_id").Scan(&exists)
+			if err != nil {
+				return "", err
+			}
+			if len(exists) == 0 {
+				return "", fmt.Errorf("no id, log_id")
+			}
+			column = "log_id"
+		}
+	case "mysql":
+		exists = ""
+		err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "id").Scan(&exists)
+		if err != nil && err!=sql.ErrNoRows {
+			return "", err
+		}
+		if len(exists) == 0 {
+			err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "log_id").Scan(&exists)
+			if err != nil {
+				return "", err
+			}
+			if len(exists) == 0 {
+				return "", fmt.Errorf("no id, log_id")
+			}
+			column = "log_id"
+		}
+	}
+	return column, nil
 }
 
 func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {

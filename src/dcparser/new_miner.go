@@ -280,98 +280,98 @@ func (p *Parser) NewMiner() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
+	}
 
-		// проверим, есть ли в БД запись, которую надо залогировать
-		logData, err := p.OneRow("SELECT * FROM miners_data WHERE user_id = ?", p.TxMap["user_id"]).String()
+	// проверим, есть ли в БД запись, которую надо залогировать
+	logData, err = p.OneRow("SELECT * FROM miners_data WHERE user_id = ?", p.TxMap["user_id"]).String()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	if len(logData) > 0 {
+		logData["node_public_key"] = string(utils.BinToHex([]byte(logData["node_public_key"])))
+		// для откатов
+		logId, err := p.ExecSqlGetLastInsertId(`
+				INSERT INTO log_miners_data (
+					user_id,
+					miner_id,
+					status,
+					node_public_key,
+					face_hash,
+					profile_hash,
+					photo_block_id,
+					photo_max_miner_id,
+					miners_keepers,
+					face_coords,
+					profile_coords,
+					video_type,
+					video_url_id,
+					host,
+					latitude,
+					longitude,
+					country,
+					block_id,
+					prev_log_id
+				) VALUES (
+					?, ?, ?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+				) `, logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if len(logData) > 0 {
-			logData["node_public_key"] = string(utils.BinToHex([]byte(logData["node_public_key"])))
-			// для откатов
-			logId, err := p.ExecSqlGetLastInsertId(`
-					INSERT INTO log_miners_data (
-						user_id,
-						miner_id,
-						status,
-						node_public_key,
-						face_hash,
-						profile_hash,
-						photo_block_id,
-						photo_max_miner_id,
-						miners_keepers,
-						face_coords,
-						profile_coords,
-						video_type,
-						video_url_id,
-						host,
-						latitude,
-						longitude,
-						country,
-						block_id,
-						prev_log_id
-					) VALUES (
-						?, ?, ?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-					) `, logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-			// обновляем таблу
-			err = p.ExecSql(`UPDATE miners_data
-					SET
-						node_public_key = [hex],
-						face_hash = ?,
-						profile_hash = ?,
-						photo_block_id = ?,
-						photo_max_miner_id = ?,
-						miners_keepers = ?,
-						face_coords = ?,
-						profile_coords = ?,
-						video_type = ?,
-						video_url_id = ?,
-						latitude = ?,
-						longitude = ?,
-						country = ?,
-						host = ?,
-						log_id = ?
-					WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"], logId, p.TxMap["user_id"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-		} else {
-			err = p.ExecSql(`
-					INSERT INTO miners_data (
-						user_id,
-						node_public_key,
-						face_hash,
-						profile_hash,
-						photo_block_id,
-						photo_max_miner_id,
-						miners_keepers,
-						face_coords,
-						profile_coords,
-						video_type,
-						video_url_id,
-						latitude,
-						longitude,
-						country,
-						host
-				) VALUES (?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				p.TxMap["user_id"], p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-		}
-		// проверим, не наш ли это user_id
-		myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+		// обновляем таблу
+		err = p.ExecSql(`UPDATE miners_data
+				SET
+					node_public_key = [hex],
+					face_hash = ?,
+					profile_hash = ?,
+					photo_block_id = ?,
+					photo_max_miner_id = ?,
+					miners_keepers = ?,
+					face_coords = ?,
+					profile_coords = ?,
+					video_type = ?,
+					video_url_id = ?,
+					latitude = ?,
+					longitude = ?,
+					country = ?,
+					host = ?,
+					log_id = ?
+				WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"], logId, p.TxMap["user_id"])
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
-		if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
-			err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_node_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["node_public_key"])
-			if err != nil {
-				return p.ErrInfo(err)
-			}
+	} else {
+		err = p.ExecSql(`
+				INSERT INTO miners_data (
+					user_id,
+					node_public_key,
+					face_hash,
+					profile_hash,
+					photo_block_id,
+					photo_max_miner_id,
+					miners_keepers,
+					face_coords,
+					profile_coords,
+					video_type,
+					video_url_id,
+					latitude,
+					longitude,
+					country,
+					host
+			) VALUES (?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.TxMap["user_id"], p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	// проверим, не наш ли это user_id
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	if err != nil {
+		return err
+	}
+	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
+		err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_node_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["node_public_key"])
+		if err != nil {
+			return p.ErrInfo(err)
 		}
 	}
 	return nil

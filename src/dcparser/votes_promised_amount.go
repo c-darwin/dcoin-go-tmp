@@ -32,9 +32,6 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	}
 
 	verifyData := map[string]string {"promised_amount_id":"bigint", "result":"vote", "comment":"votes_comment"}
-	if p.BlockData == nil || p.BlockData.BlockId >  27134 {
-		verifyData["payment_systems_ids"] = "payment_systems_ids"
-	}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)

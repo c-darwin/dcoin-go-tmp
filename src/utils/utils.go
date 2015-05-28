@@ -154,6 +154,30 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "admin_currency_list":
+		if ok, _ := regexp.MatchString(`^((\d{1,3}\,){0,9}\d{1,3}|ALL)$`, data); ok{
+			return true
+		}
+	case "users_ids":
+		if ok, _ := regexp.MatchString(`^([0-9]{1,12},){0,1000}[0-9]{1,12}$`, data); ok{
+			return true
+		}
+	case "version":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}([a-z]{1,2}[0-9]{1,2})?$`, data); ok{
+			return true
+		}
+	case "soft_type":
+		if ok, _ := regexp.MatchString(`^[a-z]{3,10}$`, data); ok{
+			return true
+		}
+	case "currency_name":
+		if ok, _ := regexp.MatchString(`^[A-Z]{3}$`, data); ok{
+			return true
+		}
+	case "currency_full_name":
+		if ok, _ := regexp.MatchString(`^[a-z\s]{3,50}$`, data); ok{
+			return true
+		}
 	case "currency_commission":
 		if ok, _ := regexp.MatchString(`^[0-9]{1,7}(\.[0-9]{1,2})?$`, data); ok{
 			return true
@@ -625,8 +649,8 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 }
 
 func EncodeLengthPlusData(data []byte) []byte  {
-	fmt.Println("len(data)", len(data))
-	fmt.Printf("EncodeLength(int64(len(data)) %s\n", EncodeLength(int64(len(data))))
+	//fmt.Println("len(data)", len(data))
+	//fmt.Printf("EncodeLength(int64(len(data)) %s\n", EncodeLength(int64(len(data))))
 	return append(EncodeLength(int64(len(data))) , data...)
 }
 
@@ -846,7 +870,7 @@ func MakeAsn1(hex_n, hex_e []byte) []byte {
 }
 
 func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
-	fmt.Println("publicKeys", publicKeys)
+	//fmt.Println("publicKeys", publicKeys)
 	var signsSlice [][]byte
 	// у нода всегда 1 подпись
 	if nodeKeyOrLogin {
@@ -858,8 +882,8 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 				break
 			}
 			length := DecodeLength(&signs)
-			fmt.Println("length", length)
-			fmt.Printf("signs %x", signs)
+			//fmt.Println("length", length)
+			//fmt.Printf("signs %x", signs)
 			signsSlice = append(signsSlice, BytesShift(&signs, length))
 		}
 		if len(publicKeys) != len(signsSlice) {
@@ -868,11 +892,11 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		fmt.Println("publicKeys[i]", publicKeys[i])
+		//fmt.Println("publicKeys[i]", publicKeys[i])
 		key := base64.StdEncoding.EncodeToString(publicKeys[i])
 		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
-		fmt.Printf("%x\n", publicKeys[i])
-		fmt.Println("key", key)
+		//fmt.Printf("%x\n", publicKeys[i])
+		//fmt.Println("key", key)
 		block, _ := pem.Decode([]byte(key))
 		if block == nil {
 			return false, ErrInfo(fmt.Errorf("incorrect key"))
@@ -887,12 +911,12 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
-			fmt.Println("pub", pub)
-			fmt.Println("crypto.SHA1", crypto.SHA1)
-			fmt.Println("HashSha1(forSign)", HashSha1(forSign))
-			fmt.Println("HashSha1(forSign)", HashSha1(forSign))
-			fmt.Println("forSign", forSign)
-			fmt.Printf("sign: %x\n", signsSlice[i])
+			//fmt.Println("pub", pub)
+			//fmt.Println("crypto.SHA1", crypto.SHA1)
+			//fmt.Println("HashSha1(forSign)", HashSha1(forSign))
+			//fmt.Println("HashSha1(forSign)", HashSha1(forSign))
+			//fmt.Println("forSign", forSign)
+			//fmt.Printf("sign: %x\n", signsSlice[i])
 			return false, ErrInfoFmt("incorrect sign: key = %s ; hash = %x; forSign = %v", key, HashSha1(forSign), forSign)
 		}
 	}
@@ -933,6 +957,18 @@ func DSha256(data_ interface{}) []byte {
 	hashSha256:=fmt.Sprintf("%x", sha256_.Sum(nil))
 	sha256_ = sha256.New()
 	sha256_.Write([]byte(hashSha256))
+	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
+}
+func Sha256(data_ interface{}) []byte {
+	var data []byte
+	switch data_.(type) {
+	case string:
+		data = []byte(data_.(string))
+	case []byte:
+		data = data_.([]byte)
+	}
+	sha256_ := sha256.New()
+	sha256_.Write(data)
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
 }
 

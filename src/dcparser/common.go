@@ -857,14 +857,19 @@ func (p *Parser) rollbackAI(table string, num int64) (error) {
 		return nil
 	}
 
-	current, err := p.Single("SELECT id FROM "+table+" ORDER BY id DESC LIMIT 1", ).Int64()
+	AiId, err := p.GetAiId(table)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+
+	current, err := p.Single("SELECT ? FROM "+table+" ORDER BY ? DESC LIMIT 1", AiId, AiId).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	NewAi := current + num
 
 	if p.ConfigIni["db_type"] == "postgresql" {
-		pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', 'id')").String()
+		pg_get_serial_sequence, err := p.Single("SELECT pg_get_serial_sequence('"+table+"', '"+AiId+"')").String()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -873,7 +878,7 @@ func (p *Parser) rollbackAI(table string, num int64) (error) {
 			return utils.ErrInfo(err)
 		}
 	} else if p.ConfigIni["db_type"] == "mysql" {
-		err := p.DCDB.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = ?", NewAi)
+		err := p.DCDB.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = "+utils.Int64ToStr(NewAi))
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -923,28 +928,30 @@ func (p *Parser) generalCheckAdmin() error {
 }
 
 func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhere string, AI bool) error {
-	var whereUserId string
+	var whereUserId int64
 	switch whereUserId_.(type) {
 	case string:
-		whereUserId = whereUserId_.(string)
+		whereUserId = utils.StrToInt64(whereUserId_.(string))
 	case []byte:
-		whereUserId = string(whereUserId_.([]byte))
+		whereUserId = utils.BytesToInt64(whereUserId_.([]byte))
+	case int:
+		whereUserId = int64(whereUserId_.(int))
 	case int64:
-		whereUserId = utils.Int64ToStr(whereUserId_.(int64))
+		whereUserId = whereUserId_.(int64)
 	}
 
 	where := ""
-	if len(whereUserId) > 0 {
-		where = fmt.Sprintf("WHERE user_id = %d", whereUserId)
+	if whereUserId > 0 {
+		where = fmt.Sprintf(" WHERE user_id = %d ", whereUserId)
 	}
 	// получим log_id, по которому можно найти данные, которые были до этого
-	logId, err := p.Single("SELECT log_id FROM ? "+where+addWhere, table).Int64()
+	logId, err := p.Single("SELECT log_id FROM "+table+" "+where+addWhere, ).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	// если $log_id = 0, значит восстанавливать нечего и нужно просто удалить запись
 	if logId == 0 {
-		err = p.ExecSql("DELETE FROM ? "+where+addWhere, table)
+		err = p.ExecSql("DELETE FROM "+table+" "+where+addWhere)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -974,14 +981,14 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 			}
 		}
 		// всегда пишем предыдущий log_id
-		addSql += fmt.Sprintf("log_id = %d,", data["prev_log_id"])
+		addSql += fmt.Sprintf("log_id = %v,", data["prev_log_id"])
 		addSql = addSql[0:len(addSql)-1]
-		err = p.ExecSql("UPDATE ? SET "+addSql+where+addWhere, table)
+		err = p.ExecSql("UPDATE "+table+" SET "+addSql+where+addWhere)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 		// подчищаем _log
-		err = p.ExecSql("DELETE FROM ? WHERE log_id= ?", table, logId)
+		err = p.ExecSql("DELETE FROM "+table+" WHERE log_id= ?", logId)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -1785,7 +1792,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commi
 	if currencyId >= 1000 {// >=1000 - это CF-валюты, которые не растут
 		newDCSum = walletDataAmountFloat64
 	} else {
-		profit, err := p.calcProfit_(walletDataAmountFloat64, utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus,[][]int64{}, []map[int64]string{}, 0, 0)
+		profit, err := p.calcProfit_(walletDataAmountFloat64, utils.StrToInt64(walletData["last_update"]), p.BlockData.Time, pct[currencyId], pointsStatus,[][]int64{}, []map[int64]string{}, 0, 0)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1802,11 +1809,11 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commi
 
 	if fromUserId == myUserId && myBlockId <= p.BlockData.BlockId {
 		var where0, set0 string
-		if (from == "cfProject") {
+		if (from == "cf_project") {
 			where0 = "";
-			set0 = " toUserId = "+utils.Int64ToStr(toUserId)+", ";
+			set0 = " to_user_id = "+utils.Int64ToStr(toUserId)+", ";
 		} else {
-			where0 = " toUserId = "+utils.Int64ToStr(toUserId)+" AND ";
+			where0 = " to_user_id = "+utils.Int64ToStr(toUserId)+" AND ";
 			set0 = "";
 		}
 		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_dc_transactions WHERE status  =  'pending' AND type  =  '"+from+"' AND type_id  =  "+utils.Int64ToStr(fromUserId)+" AND "+where0+" amount  =  "+utils.Float64ToStr(amount)+" AND commission  =  "+utils.Float64ToStr(commission)+" AND currency_id  =  "+utils.Int64ToStr(currencyId)).Int64()
@@ -1870,11 +1877,15 @@ func (p*Parser) limitRequestsMoneyOrdersRollback() error {
 	return nil
 }
 
+func (p *Parser) formatQuery (q string) string {
+	return utils.FormatQuery(q, p.ConfigIni["db_type"])
+}
+
 func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
-	rows, err := p.Query("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", userId, currencyId, p.BlockData.BlockId, p.TxHash)
+	rows, err := p.Query(p.formatQuery("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC"), userId, currencyId, p.BlockData.BlockId, p.TxHash)
 	if err != nil {
-		return  err
+		return  p.ErrInfo(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -1882,15 +1893,15 @@ func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 		var to_user_id int64
 		err = rows.Scan(&id, &to_user_id)
 		if err!= nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		err := p.selectiveRollback([]string{"amount", "tx_hash", "tx_block_id"}, "credits", "id="+id, false)
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		err = p.generalRollback("wallets", to_user_id, "AND currency_id = "+utils.Int64ToStr(currencyId), false)
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 	}
 	return nil
@@ -1990,7 +2001,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 		addSqlFields+=field+","
 	}
 	// получим log_id, по которому можно найти данные, которые были до этого
-	logId, err := p.Single("SELECT log_id FROM ? "+where, table).Int64()
+	logId, err := p.Single("SELECT log_id FROM "+table+" "+where).Int64()
 	if err != nil {
 		return err
 	}
@@ -2017,7 +2028,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 				addSqlUpdate+= field+`='`+logData[field]+`',`
 			}
 		}
-		err = p.ExecSql("UPDATE ? SET "+addSqlUpdate+" log_id = ? "+where, table, logData["prev_log_id"])
+		err = p.ExecSql("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+where, logData["prev_log_id"])
 		if err != nil {
 			return err
 		}
@@ -2028,7 +2039,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 		}
 		p.rollbackAI("log_"+table, 1)
 	} else {
-		err = p.ExecSql("DELETE FROM ? "+where, table)
+		err = p.ExecSql("DELETE FROM "+table+" "+where)
 		if err != nil {
 			return err
 		}

@@ -142,7 +142,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	if p.BlockData!=nil && p.BlockData.BlockId < 27134 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["video_type"], p.TxMap["video_url_id"])
 	} else {
-		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["payment_systems_ids"])
+		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["payment_systems_ids"])
 	}
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
@@ -166,7 +166,7 @@ func (p *Parser) NewPromisedAmount() (error) {
 		paymentSystemsIds := strings.Split(string(p.TxMap["payment_systems_ids"]), ",")
 		for i, v := range paymentSystemsIds {
 			addSqlNames += fmt.Sprintf("ps%d,", (i+1))
-			addSqlValues += fmt.Sprintf("%d,", v)
+			addSqlValues += fmt.Sprintf("%s,", v)
 		}
 	}
 

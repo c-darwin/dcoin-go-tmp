@@ -152,6 +152,9 @@ func BlocksCollection(configIni map[string]string) {
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
+						//if blockId == 5800 {
+						//	break BEGIN
+						//}
                         fmt.Println("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
