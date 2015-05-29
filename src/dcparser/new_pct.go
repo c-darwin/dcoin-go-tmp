@@ -31,8 +31,8 @@ func (p *Parser) NewPctInit() (error) {
 }
 
 type newPctType struct {
-	Currency map[string]map[string]string
-	Referral map[string]string
+	Currency map[string]map[string]string `json:"currency"`
+	Referral map[string]int64 `json:"referral"`
 }
 
 func (p *Parser) NewPctFront() (error) {
@@ -210,7 +210,7 @@ func (p *Parser) NewPctFront() (error) {
 		newPct_ := new(newPctType)
 		newPct_.Currency = make(map[string]map[string]string)
 		newPct_.Currency = newPct["currency"]
-		newPct_.Referral = make(map[string]string)
+		newPct_.Referral = make(map[string]int64)
 		refLevels := []string{"first", "second", "third"}
 		for i:=0; i<len(refLevels); i++ {
 			level := refLevels[i]
@@ -218,20 +218,21 @@ func (p *Parser) NewPctFront() (error) {
 
 			// берем все голоса
 			//pctVotes := make(map[int64]map[string]map[string]int64)
-			rows, err := p.Query("SELECT ?, count(user_id) as votes FROM votes_referral GROUP BY ?", level, level)
+			//fmt.Println("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY ")
+			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY ?",  level)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
 			defer rows.Close()
 			for rows.Next() {
-				var level, votes int64
-				err = rows.Scan(&level, &votes)
+				var level_, votes int64
+				err = rows.Scan(&level_, &votes)
 				if err!= nil {
 					return p.ErrInfo(err)
 				}
-				votesReferral = append(votesReferral, map[int64]int64{level:votes})
+				votesReferral = append(votesReferral, map[int64]int64{level_:votes})
 			}
-			newPct_.Referral[level] = utils.Int64ToStr(utils.GetMaxVote(votesReferral, 0, 30, 10))
+			newPct_.Referral[level] = (utils.GetMaxVote(votesReferral, 0, 30, 10))
 		}
 		jsonData, err = json.Marshal(newPct_)
 		if err!= nil {
@@ -275,7 +276,7 @@ func (p *Parser) NewPct() (error) {
 		}
 	}
 	if p.BlockData.BlockId > 77951 {
-		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{newPctTx.Referral["first"], newPctTx.Referral["second"], newPctTx.Referral["third"]}, "referral", []string{}, []string{})
+		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{utils.Int64ToStr(newPctTx.Referral["first"]), utils.Int64ToStr(newPctTx.Referral["second"]), utils.Int64ToStr(newPctTx.Referral["third"])}, "referral", []string{}, []string{})
 		if err != nil {
 			return p.ErrInfo(err)
 		}

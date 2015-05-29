@@ -16,6 +16,17 @@ import (
 	"strings"
 )
 
+type vComplex struct {
+	Currency map[string][]float64 `json:"currency"`
+	Referral map[string]string `json:"referral"`
+	Admin int64 `json:"admin"`
+}
+type vComplex_ struct {
+	Currency map[string][]float64 `json:"currency"`
+	Referral map[string]int64 `json:"referral"`
+	Admin int64 `json:"admin"`
+}
+
 type txMapsType struct {
 	Int64 map[string]int64
 	String map[string]string
@@ -765,7 +776,7 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	p.TxUserID = utils.BytesToInt64(TxMap["user_id"])
 	p.TxTime = utils.BytesToInt64(TxMap["time"])
 	p.PublicKeys =nil
-	fmt.Println("TxMap", TxMap)
+	//fmt.Println("TxMap", TxMap)
 	//fmt.Println("TxMap[hash]", TxMap["hash"])
 	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
 	return TxMap, nil
@@ -1533,6 +1544,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, 
 	}
 	if len(logData) > 0 {
 		addSqlValues := ""
+		addSqlFields := ""
 		for k, v := range logData {
 			if utils.InSliceString(k, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && v!="" {
 				query:=""
@@ -1548,10 +1560,15 @@ func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, 
 			} else {
 				addSqlValues+=`'`+v+`',`
 			}
+			if k == "log_id" {
+				k = "prev_log_id"
+			}
+			addSqlFields+=k+","
 		}
 		addSqlValues = addSqlValues[0:len(addSqlValues)-1]
+		addSqlFields = addSqlFields[0:len(addSqlFields)-1]
 
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+" prev_log_id, block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+", block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
 		if err != nil {
 			return err
 		}
@@ -1573,6 +1590,8 @@ func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, 
 			}
 		}
 		err = p.ExecSql("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere, logId)
+		//fmt.Println("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere)
+		//fmt.Println("logId", logId)
 		if err != nil {
 			return err
 		}
@@ -2011,6 +2030,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 		if err != nil {
 			return err
 		}
+		//fmt.Println("logData",logData)
 		addSqlUpdate:=""
 		for _, field := range fields {
 			if utils.InSliceString(field, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(logData[field])!=0 {

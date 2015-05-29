@@ -534,6 +534,11 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	}
 
 	// это у всех разное, а значит и хэши будут разные, а это будет вызывать путаницу
+	var logOff bool
+	if db.ConfigIni["log"] == "1" {
+		db.ConfigIni["log"] = "0"
+		logOff = true
+	}
 	q:=""
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
@@ -567,6 +572,9 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	hash, err := db.Single(q).String()
 	if err != nil {
 		return "", ErrInfo(err, q)
+	}
+	if logOff {
+		db.ConfigIni["log"] = "1"
 	}
 	return hash, nil
 }

@@ -46,6 +46,45 @@ const AUTO_REDUCTION_PROMISED_AMOUNT_PCT = 1 // X*100%
 // т.к. при урезании используется backup в этой же табле вместо отдельной таблы log_
 const AUTO_REDUCTION_PERIOD = DAY2
 
+
+const LIMIT_NEW_CF_PROJECT = 1
+const LIMIT_NEW_CF_PROJECT_PERIOD = 3600*24*7
+const LIMIT_CF_PROJECT_DATA = 10
+const LIMIT_CF_PROJECT_DATA_PERIOD = 3600*24
+const LIMIT_CF_SEND_DC = 10
+const LIMIT_CF_SEND_DC_PERIOD = 3600*24
+const LIMIT_CF_COMMENTS = 10
+const LIMIT_CF_COMMENTS_PERIOD = 3600*24
+
+// сколько можно делать комментов за сутки за 1 проект
+const LIMIT_TIME_COMMENTS_CF_PROJECT = 3600*24
+
+const LIMIT_USER_AVATAR = 5
+const LIMIT_USER_AVATAR_PERIOD = 3600*24
+
+const LIMIT_NEW_CREDIT = 10
+const NEW_CREDIT_PERIOD = 3600*24
+const LIMIT_CHANGE_CREDITOR = 10
+const CHANGE_CREDITOR_PERIOD = 3600*24
+const LIMIT_REPAYMENT_CREDIT = 5
+const REPAYMENT_CREDIT_PERIOD = 3600*24
+const LIMIT_CHANGE_CREDIT_PART = 10
+const LIMIT_CHANGE_CREDIT_PART_PERIOD = 3600*24
+const LIMIT_CHANGE_KEY_ACTIVE = 3
+const LIMIT_CHANGE_KEY_ACTIVE_PERIOD = 3600*24*7
+const LIMIT_CHANGE_KEY_REQUEST = 1
+const LIMIT_CHANGE_KEY_REQUEST_PERIOD = 3600*24*7
+const LIMIT_CHANGE_ARBITRATION_TRUST_LIST = 3
+const LIMIT_CHANGE_ARBITRATION_TRUST_LIST_PERIOD = 3600*24
+const LIMIT_CHANGE_ARBITRATOR_CONDITIONS = 3
+const LIMIT_CHANGE_ARBITRATOR_CONDITIONS_PERIOD = 3600*24
+const LIMIT_MONEY_BACK_REQUEST = 3
+const LIMIT_MONEY_BACK_REQUEST_PERIOD = 3600*24
+const LIMIT_CHANGE_SELLER_HOLD_BACK = 3
+const LIMIT_CHANGE_SELLER_HOLD_BACK_PERIOD = 3600*24
+const LIMIT_CHANGE_CA = 3
+const LIMIT_CHANGE_CA_PERIOD = 3600*24
+
 var LangMap = map[string]int{"en":1, "ru":42}
 
 var MyTables = []string {"my_admin_messages","my_cash_requests","my_comments","my_commission","my_complex_votes","my_dc_transactions","my_holidays","my_keys","my_new_users","my_node_keys","my_notifications","my_promised_amount","my_table","my_tasks","my_cf_funding"}

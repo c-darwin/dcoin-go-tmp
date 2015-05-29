@@ -8,7 +8,8 @@ import (
 
 func main() {
 
-	tests_utils.InitLog()
+	f:=tests_utils.InitLog()
+	defer f.Close()
 
 	txType := "ChangeHost";
 	txTime := "1399278817";

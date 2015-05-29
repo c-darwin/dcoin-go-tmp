@@ -135,7 +135,7 @@ func (p *Parser) AdminVariables() (error) {
 				return p.ErrInfo(err)
 			}
 		} else {
-			err :=p.DCDB.ExecSql("INSERT INTO variables (name, value) VALUES (?, ?)", value, name)
+			err :=p.DCDB.ExecSql("INSERT INTO variables (name, value) VALUES (?, ?)", name, value)
 			if err != nil {
 				return p.ErrInfo(err)
 			}

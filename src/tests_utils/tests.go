@@ -113,34 +113,42 @@ func dbConn() *utils.DCDB {
 }
 
 
-func InitLog() {
-	f, _ := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
-	defer f.Close()
+func InitLog() *os.File {
+	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	if err!=nil{
+		fmt.Println(err)
+	}
 	//log.SetOutput(f)
 	log.SetOutput(io.MultiWriter(f, os.Stdout))
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	return f
 }
 
 func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, txType string, userId int64, MY_PREFIX string, blockId int64) error {
+
 	db := dbConn()
 
 	priv, pub  := genKeys()
-	err:=db.ExecSql("UPDATE my_keys SET private_key = ?", priv)
-	if err != nil {
-		return utils.ErrInfo(err)
-	}
-	err=db.ExecSql("UPDATE users SET public_key_0 = [hex]", pub)
-	if err != nil {
-		return utils.ErrInfo(err)
-	}
+
 	nodeArr := []string{"new_admin", "votes_node_new_miner", "NewPct"}
 	var binSign []byte
 	if utils.InSliceString(txType, nodeArr) {
+
+		err:=db.ExecSql("UPDATE my_node_keys SET private_key = ?", priv)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err=db.ExecSql("UPDATE miners_data SET node_public_key = [hex] WHERE user_id = ?", pub, userId)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+
+
 		k, err := db.GetNodePrivateKey(MY_PREFIX)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-		//fmt.Println("k", k)
+		fmt.Println("k", k)
 		privateKey, err := utils.MakePrivateKey(k)
 		if err != nil {
 			return utils.ErrInfo(err)
@@ -161,6 +169,16 @@ func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, tx
 		//fmt.Println("CheckSignResult", CheckSignResult)
 
 	} else {
+
+		err:=db.ExecSql("UPDATE my_keys SET private_key = ?", priv)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err=db.ExecSql("UPDATE users SET public_key_0 = [hex]", pub)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+
 		k, err := db.GetPrivateKey(MY_PREFIX)
 		privateKey, err := utils.MakePrivateKey(k)
 		if err != nil {
@@ -202,7 +220,9 @@ func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, tx
 }
 
 
-func MakeTest(txSlice [][]byte, blockData *utils.BlockData, txType string, hashesStart map[string]string, db *utils.DCDB, testType string) error {
+func MakeTest(txSlice [][]byte, blockData *utils.BlockData, txType string, testType string) error {
+
+	db := dbConn()
 
 	parser := new(dcparser.Parser)
 	parser.DCDB = db

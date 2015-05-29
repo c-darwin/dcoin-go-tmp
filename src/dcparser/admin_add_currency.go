@@ -29,7 +29,7 @@ func (p *Parser) AdminAddCurrencyFront() (error) {
 	}
 
 	// проверим, нет ли уже такой валюты
-	name, err := p.Single("SELECT name FROM currency WHERE name  =  ?", p.TxMaps.String["currency_name"]).Int64()
+	name, err := p.Single("SELECT name FROM currency WHERE name  =  ?", p.TxMaps.String["currency_name"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -5,9 +5,9 @@ import (
 	"utils"
 )
 
-func (p *Parser) TmpInit() (error) {
+func (p *Parser) ChangeCaInit() (error) {
 
-	fields := []map[string]string {{"name":"int64"}, {"sign":"bytes"}}
+	fields := []map[string]string {{"ca1":"string"}, {"ca2":"string"}, {"ca3":"string"}, {"ca4":"string"}, {"sign":"bytes"}}
 	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -16,7 +16,7 @@ func (p *Parser) TmpInit() (error) {
 }
 
 
-func (p *Parser) TmpFront() (error) {
+func (p *Parser) ChangeCaFront() (error) {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -66,7 +66,7 @@ func (p *Parser) TmpFront() (error) {
 	return nil
 }
 
-func (p *Parser) Tmp() (error) {
+func (p *Parser) ChangeCa() (error) {
 
 	err := p.selectiveLoggingAndUpd([]string{"host"}, []string{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 
@@ -81,12 +81,12 @@ func (p *Parser) Tmp() (error) {
 	return nil
 }
 
-func (p *Parser) TmpRollback() (error) {
+func (p *Parser) ChangeCaRollback() (error) {
 	err := p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
 
 	return nil
 }
 
-func (p *Parser) TmpRollbackFront() error {
+func (p *Parser) ChangeCaRollbackFront() error {
 	return p.limitRequestsRollback("name")
 }

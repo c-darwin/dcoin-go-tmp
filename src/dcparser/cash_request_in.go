@@ -194,11 +194,14 @@ func (p *Parser) CashRequestIn() (error) {
 	for _, currencyId := range forRepaidCurrencyIds{
 		// либо сумма погашенных стала >= максимальной обещанной, т.к. в этом случае прислать этому юзеру cash_request_out будет невозможно
 		maxPromisedAmount, err := p.GetMaxPromisedAmount(currencyId);
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		repaidAmount, err := p.GetRepaidAmount(currencyId, p.TxUserID);
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if repaidAmount <= maxPromisedAmount {
+		if repaidAmount < maxPromisedAmount {
 			forRepaidCurrencyIdsNew = append(forRepaidCurrencyIdsNew, currencyId)
 		}
 	}

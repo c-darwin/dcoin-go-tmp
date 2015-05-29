@@ -70,7 +70,17 @@ func (p *Parser) VotesComplexFront() (error) {
 		vComplex := new(vComplex)
 		err = json.Unmarshal(p.TxMap["json_data"], &vComplex)
 		if err != nil {
-			return p.ErrInfo(err)
+			vComplex_ := new(vComplex_)
+			err = json.Unmarshal(p.TxMap["json_data"], &vComplex_)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			vComplex.Referral = make(map[string]string)
+			for k, v := range vComplex_.Referral {
+				vComplex.Referral[k] = utils.Int64ToStr(v)
+			}
+			vComplex.Currency = vComplex_.Currency
+			vComplex.Admin = vComplex_.Admin
 		}
 
 		if vComplex.Referral == nil {
@@ -197,11 +207,21 @@ func (p *Parser) VotesComplex() (error) {
 		vComplex := new(vComplex)
 		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
 		if err != nil {
-			return p.ErrInfo(err)
+			vComplex_ := new(vComplex_)
+			err = json.Unmarshal(p.TxMap["json_data"], &vComplex_)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			vComplex.Referral = make(map[string]string)
+			for k, v := range vComplex_.Referral {
+				vComplex.Referral[k] = utils.Int64ToStr(v)
+			}
+			vComplex.Currency = vComplex_.Currency
+			vComplex.Admin = vComplex_.Admin
 		}
 		currencyVotes = vComplex.Currency
 		// голоса за реф. %
-		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{utils.Int64ToStr(vComplex.Referral["first"]), utils.Int64ToStr(vComplex.Referral["second"]), utils.Int64ToStr(vComplex.Referral["third"])}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{vComplex.Referral["first"], vComplex.Referral["second"], vComplex.Referral["third"]}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 
 		// раньше не было выборов админа
 		if p.BlockData.BlockId >= 153750 && vComplex.Admin>0 {
@@ -281,10 +301,20 @@ func (p *Parser) VotesComplexRollback() (error) {
 	currencyVotes := make(map[string][]float64)
 
 	if p.BlockData.BlockId > 77951 {
-		vComplex:= new(vComplex)
+		vComplex := new(vComplex)
 		err := json.Unmarshal(p.TxMap["json_data"], &vComplex)
 		if err != nil {
-			return p.ErrInfo(err)
+			vComplex_ := new(vComplex_)
+			err = json.Unmarshal(p.TxMap["json_data"], &vComplex_)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			vComplex.Referral = make(map[string]string)
+			for k, v := range vComplex_.Referral {
+				vComplex.Referral[k] = utils.Int64ToStr(v)
+			}
+			vComplex.Currency = vComplex_.Currency
+			vComplex.Admin = vComplex_.Admin
 		}
 		if p.BlockData.BlockId > 153750  && vComplex.Admin != 0  {
 			err := p.selectiveRollback([]string{"admin_user_id", "time"}, "votes_admin", "user_id="+string(p.TxMap["user_id"]), false)

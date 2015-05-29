@@ -144,7 +144,19 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		}
 	case "currency_id":
 		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok{
-			if StrToInt(data) < 256 {
+			if StrToInt(data) <= 255 {
+				return true
+			}
+		}
+	case "tinyint":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok{
+			if StrToInt(data) <= 127 {
+				return true
+			}
+		}
+	case "smallint":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,5}$`, data); ok{
+			if StrToInt(data) <= 65535 {
 				return true
 			}
 		}
@@ -154,8 +166,31 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "img_url":
+		regex = `https?\:\/\/`; // SCHEME
+		regex += `[a-z0-9-.]*\.[a-z]{2,4}`; // Host or IP
+		regex += `(\:[0-9]{2,5})?`; // Port
+		regex += `(\/[a-z0-9_-]+)*\/?`; // Path
+		regex += `\.(png|jpg)`; // Img
+		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
+			if StrToInt(data) < 50 {
+				return true
+			}
+		}
+	case "credit_pct", "pct":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}(\.[0-9]{2})?$`, data); ok{
+			return true
+		}
+	case "user_name":
+		if ok, _ := regexp.MatchString(`^[\w\s]{1,30}$`, data); ok{
+			return true
+		}
 	case "admin_currency_list":
 		if ok, _ := regexp.MatchString(`^((\d{1,3}\,){0,9}\d{1,3}|ALL)$`, data); ok{
+			return true
+		}
+	case "cf_currency_name":
+		if ok, _ := regexp.MatchString(`^[A-Z0-9]{7}$`, data); ok{
 			return true
 		}
 	case "users_ids":
@@ -235,6 +270,13 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case "coordinate":
 		if ok, _ := regexp.MatchString(`^\-?[0-9]{1,3}(\.[0-9]{1,5})?$`, data); ok{
 			return true
+		}
+	case "cf_links":
+		regex := `\["https?\:\/\/(goo\.gl|bit\.ly|t\.co)\/[0-9a-z_-]+",[0-9]+,[0-9]+,[0-9]+,[0-9]+\]`
+		if ok, _ := regexp.MatchString(`^\[`+regex+`(\,`+regex+`)*\]$`, data); ok{
+			if len(data) < 512 {
+				return true
+			}
 		}
 	case "host":
 		if ok, _ := regexp.MatchString(`^https?:\/\/[0-9a-z\_\.\-\/:]{1,100}[\/]$`, data); ok{
