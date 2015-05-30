@@ -57,7 +57,7 @@ func (p *Parser) ChangeCreditPartFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_CHANGE_CREDIT_PART, "change_credit_part", LIMIT_CHANGE_CREDIT_PART_PERIOD)
+	err = p.limitRequest(consts.LIMIT_CHANGE_CREDIT_PART, "change_credit_part", consts.LIMIT_CHANGE_CREDIT_PART_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

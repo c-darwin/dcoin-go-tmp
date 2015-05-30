@@ -64,17 +64,17 @@ func (p *Parser) NewCfProjectFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if currency >!= 0 {
+	if currency != 0 {
 		return p.ErrInfo("exists project_currency_name'")
 	}
 
 	// проверим, не занято ли имя валюты
-	currency, err := p.Single("SELECT id FROM cf_currency WHERE name  =  ?", p.TxMaps.String["project_currency_name"]).Int64()
+	currency, err = p.Single("SELECT id FROM cf_currency WHERE name  =  ?", p.TxMaps.String["project_currency_name"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if currency >!= 0 {
-		return p.ErrInfo("exists cf_currency'")
+	if currency != 0 {
+		return p.ErrInfo("exists cf_currency")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["end_time"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["category_id"], p.TxMap["project_currency_name"])
@@ -86,7 +86,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_NEW_CF_PROJECT, "new_cf_project", LIMIT_NEW_CF_PROJECT_PERIOD)
+	err = p.limitRequest(consts.LIMIT_NEW_CF_PROJECT, "new_cf_project", consts.LIMIT_NEW_CF_PROJECT_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

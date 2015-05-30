@@ -57,7 +57,7 @@ func (p *Parser) RepaymentCreditFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_REPAYMENT_CREDIT, "repayment_credit", REPAYMENT_CREDIT_PERIOD)
+	err = p.limitRequest(consts.LIMIT_REPAYMENT_CREDIT, "repayment_credit", consts.REPAYMENT_CREDIT_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -86,7 +86,7 @@ func (p *Parser) RepaymentCredit() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{(amount-p.TxMaps.Money["amount"]), p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
+	err = p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{(amount-p.TxMaps.Money["amount"]), p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -119,7 +119,7 @@ func (p *Parser) RepaymentCreditRollback() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err := p.selectiveRollback([]string{"amount","tx_hash","tx_block_id"}, "credits", "id="+utils.Int64ToStr(p.TxMaps.Int64["credit_id"]), false)
+	err = p.selectiveRollback([]string{"amount","tx_hash","tx_block_id"}, "credits", "id="+utils.Int64ToStr(p.TxMaps.Int64["credit_id"]), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

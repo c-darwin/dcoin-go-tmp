@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"utils"
 	"time"
-	"consts"
+	 "consts"
 )
 
 func (p *Parser) CfCommentInit() (error) {
@@ -61,7 +61,7 @@ func (p *Parser) CfCommentFront() (error) {
 	}
 
 	// в 1 проект можно писать только 1 комммент в сутки
-	if txTime - commentTime < LIMIT_TIME_COMMENTS_CF_PROJECT {
+	if txTime - commentTime < consts.LIMIT_TIME_COMMENTS_CF_PROJECT {
 		return p.ErrInfo("comment_time")
 	}
 
@@ -90,7 +90,7 @@ func (p *Parser) CfCommentFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_CF_COMMENTS, "cf_comments", LIMIT_CF_COMMENTS_PERIOD)
+	err = p.limitRequest(consts.LIMIT_CF_COMMENTS, "cf_comments", consts.LIMIT_CF_COMMENTS_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -342,6 +342,14 @@ func Int64SliceToStr(Int []int64) []string {
 	return result
 }
 
+func IntSliceToStr(Int []int) []string {
+	var result []string
+	for _, v := range Int {
+		result = append(result, utils.IntToStr(v))
+	}
+	return result
+}
+
 func (p *Parser)  getMyMinersIds() (map[int]int, error) {
 	myMinersIds := make(map[int]int)
 	var err error

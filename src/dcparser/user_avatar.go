@@ -42,7 +42,7 @@ func (p *Parser) UserAvatarFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_USER_AVATAR, "user_avatar", LIMIT_USER_AVATAR_PERIOD)
+	err = p.limitRequest(consts.LIMIT_USER_AVATAR, "user_avatar", consts.LIMIT_USER_AVATAR_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

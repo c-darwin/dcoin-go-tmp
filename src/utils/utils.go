@@ -132,6 +132,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		data = string(data_.([]byte))
 	}
 	switch dataType {
+	case "arbitration_trust_list":
+		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok{
+			return true
+		}
 	case "votes_comment", "cf_comment":
 		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
 			return true
@@ -167,13 +171,23 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 			}
 		}
 	case "img_url":
-		regex = `https?\:\/\/`; // SCHEME
+		regex := `https?\:\/\/`; // SCHEME
 		regex += `[a-z0-9-.]*\.[a-z]{2,4}`; // Host or IP
 		regex += `(\:[0-9]{2,5})?`; // Port
 		regex += `(\/[a-z0-9_-]+)*\/?`; // Path
 		regex += `\.(png|jpg)`; // Img
 		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
 			if StrToInt(data) < 50 {
+				return true
+			}
+		}
+	case "ca_url", "arbitrator_url":
+		regex := `https?\:\/\/`; // SCHEME
+		regex += `[a-z0-9-.]*\.[a-z]{2,4}`; // Host or IP
+		regex += `(\:[0-9]{2,5})?`; // Port
+		regex += `(\/[a-z0-9_-]+)*\/?`; // Path
+		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
+			if StrToInt(data) <= 30 {
 				return true
 			}
 		}

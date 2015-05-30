@@ -69,9 +69,9 @@ func (p *Parser) NewCreditFront() (error) {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == admin {
-		err = p.limitRequest(500, "new_credit", NEW_CREDIT_PERIOD)
+		err = p.limitRequest(500, "new_credit", consts.NEW_CREDIT_PERIOD)
 	} else {
-		err = p.limitRequest(LIMIT_NEW_CREDIT, "new_credit", NEW_CREDIT_PERIOD)
+		err = p.limitRequest(consts.LIMIT_NEW_CREDIT, "new_credit", consts.NEW_CREDIT_PERIOD)
 	}
 	if err != nil {
 		return p.ErrInfo(err)
@@ -92,6 +92,7 @@ func (p *Parser) NewCreditRollback() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	return nil
 }
 
 func (p *Parser) NewCreditRollbackFront() error {

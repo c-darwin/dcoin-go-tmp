@@ -61,7 +61,7 @@ func (p *Parser) CfProjectDataFront() (error) {
 
 	// для подписи
 	if p.BlockData!=nil && p.BlockData.BlockId < 134261 {
-		p.TxMap["hide"] = 0
+		p.TxMap["hide"] = []byte(`0`)
 	} else {
 		if !utils.CheckInputData(p.TxMap["hide"], "boolean") {
 			return fmt.Errorf("incorrect hide")
@@ -93,7 +93,7 @@ func (p *Parser) CfProjectDataFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_CF_PROJECT_DATA, "cf_project_data", LIMIT_CF_PROJECT_DATA_PERIOD)
+	err = p.limitRequest(consts.LIMIT_CF_PROJECT_DATA, "cf_project_data", consts.LIMIT_CF_PROJECT_DATA_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

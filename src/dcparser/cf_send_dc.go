@@ -67,7 +67,7 @@ func (p *Parser) CfSendDcFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.limitRequest(LIMIT_CF_SEND_DC, "cf_send_dc", LIMIT_CF_SEND_DC_PERIOD)
+	err = p.limitRequest(consts.LIMIT_CF_SEND_DC, "cf_send_dc", consts.LIMIT_CF_SEND_DC_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

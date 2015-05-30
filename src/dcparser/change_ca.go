@@ -3,11 +3,12 @@ package dcparser
 import (
 	"fmt"
 	"utils"
+	"consts"
 )
 
 func (p *Parser) ChangeCaInit() (error) {
 
-	fields := []map[string]string {{"ca1":"string"}, {"ca2":"string"}, {"ca3":"string"}, {"ca4":"string"}, {"sign":"bytes"}}
+	fields := []map[string]string {{"ca1":"string"}, {"ca2":"string"}, {"ca3":"string"}, {"sign":"bytes"}}
 	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -23,34 +24,17 @@ func (p *Parser) ChangeCaFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"name":"bigint", "name2":"bigint"}
-	err = p.CheckInputData(verifyData)
-	if err != nil {
-		return p.ErrInfo(err)
+	if !utils.CheckInputData(p.TxMaps.String["ca1"], "ca_url") && p.TxMaps.String["ca1"]!="0" {
+		return fmt.Errorf("incorrect ca1")
+	}
+	if !utils.CheckInputData(p.TxMaps.String["ca2"], "ca_url") && p.TxMaps.String["ca2"]!="0" {
+		return fmt.Errorf("incorrect ca2")
+	}
+	if !utils.CheckInputData(p.TxMaps.String["ca3"], "ca_url") && p.TxMaps.String["ca3"]!="0" {
+		return fmt.Errorf("incorrect ca3")
 	}
 
-	// является ли данный юзер майнером
-	err = p.checkMiner(p.TxUserID)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	// У юзера не должно быть cash_requests с pending
-	err = p.CheckCashRequests(p.TxUserID)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-
-	// нодовский ключ
-	nodePublicKey, err := p.GetNodePublicKey(p.TxUserID)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	if len(nodePublicKey) == 0 {
-		return p.ErrInfo("incorrect user_id")
-	}
-
-	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["name"])
+	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["ca1"], p.TxMap["ca2"], p.TxMap["ca3"])
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -59,7 +43,7 @@ func (p *Parser) ChangeCaFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(p.Variables.Int64["limit_name"], "name", p.Variables.Int64["limit_name_period"])
+	err = p.limitRequest(consts.LIMIT_CHANGE_CA, "change_ca", consts.LIMIT_CHANGE_CA_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -67,26 +51,13 @@ func (p *Parser) ChangeCaFront() (error) {
 }
 
 func (p *Parser) ChangeCa() (error) {
-
-	err := p.selectiveLoggingAndUpd([]string{"host"}, []string{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
-
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
-		fmt.Println(myPrefix)
-	}
-
-	return nil
+	return p.selectiveLoggingAndUpd([]string{"ca1","ca2","ca3" }, []string{p.TxMaps.String["ca1"], p.TxMaps.String["ca2"], p.TxMaps.String["ca3"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) ChangeCaRollback() (error) {
-	err := p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
-
-	return nil
+	return p.selectiveRollback([]string{"ca1","ca2","ca3"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 }
 
 func (p *Parser) ChangeCaRollbackFront() error {
-	return p.limitRequestsRollback("name")
+	return p.limitRequestsRollback("change_ca")
 }

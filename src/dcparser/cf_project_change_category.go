@@ -48,7 +48,7 @@ func (p *Parser) CfProjectChangeCategoryFront() (error) {
 		return p.ErrInfo("incorrect sign")
 	}
 
-	err = p.limitRequest(LIMIT_CF_PROJECT_DATA, "cf_project_data", LIMIT_CF_PROJECT_DATA_PERIOD)
+	err = p.limitRequest(consts.LIMIT_CF_PROJECT_DATA, "cf_project_data", consts.LIMIT_CF_PROJECT_DATA_PERIOD)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
