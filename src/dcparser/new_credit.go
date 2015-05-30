@@ -49,7 +49,7 @@ func (p *Parser) NewCreditFront() (error) {
 	}
 
 	// проверим, существует ли такая валюта в таблице DC-валют
-	if ok, err := p.CheckCurrency(p.TxMaps.Int64["currency_id"]); !ok {
+	if ok, _ := p.CheckCurrency(p.TxMaps.Int64["currency_id"]); !ok {
 		if ok, err := p.CheckCurrencyCF(p.TxMaps.Int64["currency_id"]); !ok {
 			return p.ErrInfo(err)
 		}

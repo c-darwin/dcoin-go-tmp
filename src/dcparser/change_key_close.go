@@ -44,7 +44,7 @@ func (p *Parser) ChangeKeyCloseFront() (error) {
 }
 
 func (p *Parser) ChangeKeyClose() (error) {
-	return p.selectiveLoggingAndUpd([]string{"change_key_close"}, []string{"1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	return p.selectiveLoggingAndUpd([]string{"change_key_close"}, []interface {}{"1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) ChangeKeyCloseRollback() (error) {

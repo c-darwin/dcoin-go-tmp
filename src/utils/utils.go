@@ -810,6 +810,23 @@ func BytesShift(str *[]byte, index int64) []byte {
 	return substr
 }
 
+func InterfaceToStr(i []interface {}) []string {
+	var str []string
+	for _, v := range i {
+		switch v.(type) {
+		case int:
+			str = append(str, IntToStr(v.(int)))
+		case int64:
+			str = append(str, Int64ToStr(v.(int64)))
+		case string:
+			str = append(str, v.(string))
+		case []byte:
+			str = append(str, string(v.([]byte)))
+		}
+	}
+	return str
+}
+
 func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
 	var index int64
 	switch index_.(type) {

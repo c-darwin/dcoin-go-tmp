@@ -79,7 +79,7 @@ func (p *Parser) ChangeHostFront() (error) {
 }
 
 func (p *Parser) ChangeHost() (error) {
-	err := p.selectiveLoggingAndUpd([]string{"host"}, []string{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err := p.selectiveLoggingAndUpd([]string{"host"}, []interface {}{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -276,7 +276,7 @@ func (p *Parser) NewPct() (error) {
 		}
 	}
 	if p.BlockData.BlockId > 77951 {
-		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{utils.Int64ToStr(newPctTx.Referral["first"]), utils.Int64ToStr(newPctTx.Referral["second"]), utils.Int64ToStr(newPctTx.Referral["third"])}, "referral", []string{}, []string{})
+		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface {}{utils.Int64ToStr(newPctTx.Referral["first"]), utils.Int64ToStr(newPctTx.Referral["second"]), utils.Int64ToStr(newPctTx.Referral["third"])}, "referral", []string{}, []string{})
 		if err != nil {
 			return p.ErrInfo(err)
 		}

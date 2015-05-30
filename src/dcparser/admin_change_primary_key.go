@@ -84,7 +84,7 @@ func (p *Parser) AdminChangePrimaryKey() (error) {
 }
 
 func (p *Parser) AdminChangePrimaryKeyRollback() (error) {
-	err := p.selectiveLoggingAndUpd([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, []string{p.TxMaps.String["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
+	err := p.selectiveLoggingAndUpd([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, []interface {}{p.TxMaps.String["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
 	if err != nil {
 		return p.ErrInfo(err)
 	}

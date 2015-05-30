@@ -64,7 +64,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err := p.selectiveLoggingAndUpd([]string{"latitude", "longitude", "country"}, []string{p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], }, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"latitude", "longitude", "country"}, []interface {}{p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], }, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -74,7 +74,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 	// это означает, что нужен пересчет TDC, т.к. до этого момента они майнились
 	// логируем предыдущее. Тут ASC, а при откате используем ORDER BY `id` DESC, чтобы не накосячить при уменьшении log_id
 
-	userHolidays, err := p.getHolidays(p.TxUserID)
+	userHolidays, err := p.GetHolidays(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -144,7 +144,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 			// для статуса 'pending', 'change_geo' нечего пересчитывать, т.к. во время этих статусов ничего не набегает
 			newTdc = tdc_amount
 		}
-		err = p.ExecSql("UPDATE promised_amount SET status = 'change_geo', start_time = 0, tdc_amount = ?, tdc_amount_update = ?, votes_start_time = ?, votes_0 = 0, votes_1 = 0, log_id = ? WHERE id = ?", newTdc, p.BlockData.Time, p.BlockData.Time, id)
+		err = p.ExecSql("UPDATE promised_amount SET status = 'change_geo', start_time = 0, tdc_amount = ?, tdc_amount_update = ?, votes_start_time = ?, votes_0 = 0, votes_1 = 0, log_id = ? WHERE id = ?", newTdc, p.BlockData.Time, p.BlockData.Time, logId, id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -172,7 +172,7 @@ func (p *Parser) ChangeGeolocationRollback() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err := p.selectiveRollback([]string{"latitude","longitude","country"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+	err = p.selectiveRollback([]string{"latitude","longitude","country"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -218,7 +218,7 @@ func (p *Parser) ChangeGeolocationRollback() (error) {
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

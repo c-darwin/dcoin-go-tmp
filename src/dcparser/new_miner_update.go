@@ -83,7 +83,7 @@ func (p *Parser) NewMinerUpdate() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err := p.selectiveLoggingAndUpd([]string{"photo_block_id", "photo_max_miner_id"}, []string{p.BlockData.BlockId, maxMinerId}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"photo_block_id", "photo_max_miner_id"}, []interface {}{p.BlockData.BlockId, maxMinerId}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}

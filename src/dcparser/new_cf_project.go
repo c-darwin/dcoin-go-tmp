@@ -95,7 +95,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 
 func (p *Parser) NewCfProject() (error) {
 
-	err := p.ExecSql("INSERT INTO cf_projects ( user_id, currency_id, amount, project_currency_name, start_time, end_time, latitude, longitude, category_id, block_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["amount"], p.TxMaps.String["project_currency_name"], p.BlockData.Time, p.TxMaps.Int64["end_time"], p.TxMaps.Float64["latitude"], p.TxMaps.Float4["longitude"], p.TxMaps.Int64["category_id"], p.BlockData.BlockId)
+	err := p.ExecSql("INSERT INTO cf_projects ( user_id, currency_id, amount, project_currency_name, start_time, end_time, latitude, longitude, category_id, block_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["amount"], p.TxMaps.String["project_currency_name"], p.BlockData.Time, p.TxMaps.Int64["end_time"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["category_id"], p.BlockData.BlockId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

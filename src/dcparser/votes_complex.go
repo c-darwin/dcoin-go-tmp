@@ -221,11 +221,11 @@ func (p *Parser) VotesComplex() (error) {
 		}
 		currencyVotes = vComplex.Currency
 		// голоса за реф. %
-		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []string{vComplex.Referral["first"], vComplex.Referral["second"], vComplex.Referral["third"]}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface {}{vComplex.Referral["first"], vComplex.Referral["second"], vComplex.Referral["third"]}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 
 		// раньше не было выборов админа
 		if p.BlockData.BlockId >= 153750 && vComplex.Admin>0 {
-			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []string{utils.Int64ToStr(vComplex.Admin), string(p.TxMap["time"])}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []interface {}{utils.Int64ToStr(vComplex.Admin), string(p.TxMap["time"])}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 		}
 
 
@@ -251,31 +251,31 @@ func (p *Parser) VotesComplex() (error) {
 		currencyIdStr := utils.IntToStr(currencyId)
 		UserIdStr := string(p.TxMap["user_id"])
 		// miner_pct
-		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []string{utils.Float64ToStr(data[0]), string(p.TxMap["time"])}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{utils.Float64ToStr(data[0]), string(p.TxMap["time"])}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// user_pct
-		err = p.selectiveLoggingAndUpd([]string{"pct"}, []string{utils.Float64ToStr(data[1])}, "votes_user_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct"}, []interface {}{utils.Float64ToStr(data[1])}, "votes_user_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// max_promised_amount
-		err = p.selectiveLoggingAndUpd([]string{"amount"}, []string{utils.Float64ToStr(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"amount"}, []interface {}{utils.Float64ToStr(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// max_other_currencies
-		err = p.selectiveLoggingAndUpd([]string{"count"}, []string{utils.Float64ToStr(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"count"}, []interface {}{utils.Float64ToStr(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// reduction
-		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []string{ utils.Float64ToStr(data[4]), string(p.TxMap["time"])}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{ utils.Float64ToStr(data[4]), string(p.TxMap["time"])}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}

@@ -7,7 +7,7 @@ import (
 )
 
 //  продавец меняет % и кол-во дней для новых сделок
-func (p *Parser) TmpInit() (error) {
+func (p *Parser) ChangeSellerHoldBackInit() (error) {
 
 	fields := []map[string]string {{"arbitration_days_refund":"int64"}, {"hold_back_pct":"money"}, {"sign":"bytes"}}
 	err := p.GetTxMaps(fields);
@@ -18,7 +18,7 @@ func (p *Parser) TmpInit() (error) {
 }
 
 
-func (p *Parser) TmpFront() (error) {
+func (p *Parser) ChangeSellerHoldBackFront() (error) {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -51,14 +51,14 @@ func (p *Parser) TmpFront() (error) {
 	return nil
 }
 
-func (p *Parser) Tmp() (error) {
-	return p.selectiveLoggingAndUpd([]string{"arbitration_days_refund", "seller_hold_back_pct"}, []string{p.TxMaps.Int64["arbitration_days_refund"], p.TxMaps.Money["hold_back_pct"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+func (p *Parser) ChangeSellerHoldBack() (error) {
+	return p.selectiveLoggingAndUpd([]string{"arbitration_days_refund", "seller_hold_back_pct"}, []interface {}{p.TxMaps.Int64["arbitration_days_refund"], p.TxMaps.Money["hold_back_pct"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
-func (p *Parser) TmpRollback() (error) {
+func (p *Parser) ChangeSellerHoldBackRollback() (error) {
 	return p.selectiveRollback([]string{"arbitration_days_refund","seller_hold_back_pct"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 }
 
-func (p *Parser) TmpRollbackFront() error {
+func (p *Parser) ChangeSellerHoldBackRollbackFront() error {
 	return p.limitRequestsRollback("change_seller_hold_back")
 }

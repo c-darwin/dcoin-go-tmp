@@ -64,7 +64,7 @@ func (p *Parser) ChangeKeyRequestFront() (error) {
 
 func (p *Parser) ChangeKeyRequest() (error) {
 	// change_key_close ставим в 0. чтобы админ через 30 дней мог сменить ключ
-	return p.selectiveLoggingAndUpd([]string{"change_key_time", "change_key_close"}, []string{p.BlockData.Time, 0}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])})
+	return p.selectiveLoggingAndUpd([]string{"change_key_time", "change_key_close"}, []interface {}{p.BlockData.Time, 0}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])})
 }
 
 func (p *Parser) ChangeKeyRequestRollback() (error) {

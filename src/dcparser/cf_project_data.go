@@ -103,7 +103,7 @@ func (p *Parser) CfProjectDataFront() (error) {
 func (p *Parser) CfProjectData() (error) {
 
 	// если описания проекта на этом языке еще нет, то добавляем, иначе - логируем и обновляем
-	return  p.selectiveLoggingAndUpd([]string{"blurb_img", "head_img", "description_img", "picture", "video_type", "video_url_id", "news_img", "links", "hide"}, []string{p.TxMaps.String["blurb_img"], p.TxMaps.String["head_img"], p.TxMaps.String["description_img"], p.TxMaps.String["picture"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.String["news_img"], p.TxMaps.String["links"], p.TxMaps.Int64["hide"]}, "cf_projects_data", []string{"project_id", "lang_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["project_id"]), utils.Int64ToStr(p.TxMaps.Int64["lang_id"])})
+	return  p.selectiveLoggingAndUpd([]string{"blurb_img", "head_img", "description_img", "picture", "video_type", "video_url_id", "news_img", "links", "hide"}, []interface {}{p.TxMaps.String["blurb_img"], p.TxMaps.String["head_img"], p.TxMaps.String["description_img"], p.TxMaps.String["picture"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.String["news_img"], p.TxMaps.String["links"], p.TxMaps.Int64["hide"]}, "cf_projects_data", []string{"project_id", "lang_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["project_id"]), utils.Int64ToStr(p.TxMaps.Int64["lang_id"])})
 }
 
 func (p *Parser) CfProjectDataRollback() (error) {

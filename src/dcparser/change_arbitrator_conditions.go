@@ -51,25 +51,25 @@ func (p *Parser) ChangeArbitratorConditionsFront() (error) {
 			if len(data) != 5 {
 				return fmt.Errorf("incorrect data")
 			}
-			minAmount := data[0];
-			maxAmount := data[1];
-			minCommission := data[2];
-			maxCommission := data[3];
-			commissionPct := data[4];
+			minAmount := utils.StrToFloat64(data[0])
+			maxAmount := utils.StrToFloat64(data[1])
+			minCommission := utils.StrToFloat64(data[2])
+			maxCommission := utils.StrToFloat64(data[3])
+			commissionPct := utils.StrToFloat64(data[4])
 
-			if !utils.CheckInputData(minAmount, "amount") || minAmount < 0.01 {
+			if !utils.CheckInputData(data[0], "amount") || minAmount < 0.01 {
 				return fmt.Errorf("incorrect minAmount")
 			}
-			if !utils.CheckInputData(maxAmount, "amount") {
+			if !utils.CheckInputData(data[1], "amount") {
 				return fmt.Errorf("incorrect maxAmount")
 			}
-			if !utils.CheckInputData(minCommission, "amount") || minCommission < 0.01 {
+			if !utils.CheckInputData(data[2], "amount") || minCommission < 0.01 {
 				return fmt.Errorf("incorrect minCommission")
 			}
-			if !utils.CheckInputData(maxCommission, "amount") {
+			if !utils.CheckInputData(data[3], "amount") {
 				return fmt.Errorf("incorrect maxCommission")
 			}
-			if !utils.CheckInputData(commissionPct, "pct") || commissionPct > 10 || commissionPct < 0.01 {
+			if !utils.CheckInputData(data[4], "pct") || commissionPct > 10 || commissionPct < 0.01 {
 				return fmt.Errorf("incorrect commissionPct")
 			}
 			if maxCommission >0 && minCommission > maxCommission {
@@ -81,11 +81,11 @@ func (p *Parser) ChangeArbitratorConditionsFront() (error) {
 			// проверим, существует ли такая валюта в таблице DC-валют
 			if ok, err := p.CheckCurrency(utils.StrToInt64(currencyId)); !ok {
 				// если нет, то это может быть $currency_id 1000, которая определяет комиссию для всх CF-валют
-				if currencyId != 1000 {
+				if currencyId != "1000" {
 					return p.ErrInfo(err)
 				}
 			}
-			if currencyId != 1000 {
+			if currencyId != "1000" {
 				currencyArray = append(currencyArray, currencyId)
 			} else {
 				minusCf = 1
@@ -143,7 +143,7 @@ func (p *Parser) ChangeArbitratorConditions() (error) {
 		}
 	}
 
-	err := p.selectiveLoggingAndUpd([]string{"url"}, []string{p.TxMaps.String["url"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"url"}, []interface {}{p.TxMaps.String["url"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}

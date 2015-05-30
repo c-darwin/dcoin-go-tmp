@@ -63,7 +63,7 @@ func (p *Parser) NewAdminFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxTime - adminTime <= p.Variables["new_pct_period"] {
+	if p.TxTime - adminTime <= p.Variables.Int64["new_pct_period"] {
 		return p.ErrInfo("14 day error")
 	}
 	// сколько всего майнеров
@@ -76,7 +76,7 @@ func (p *Parser) NewAdminFront() (error) {
 	}
 
 	// берем все голоса
-	count, err := p.Single("SELECT count(user_id) FROM votes_admin WHERE time > ? AND admin_user_id  =  ?", (p.TxTime - p.Variables["new_pct_period"]), p.TxMaps.Int64["admin_user_id"]).Int64()
+	count, err := p.Single("SELECT count(user_id) FROM votes_admin WHERE time > ? AND admin_user_id  =  ?", (p.TxTime - p.Variables.Int64["new_pct_period"]), p.TxMaps.Int64["admin_user_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -92,7 +92,7 @@ func (p *Parser) NewAdminFront() (error) {
 }
 
 func (p *Parser) NewAdmin() (error) {
-	return p.selectiveLoggingAndUpd([]string{"user_id", "time"}, []string{p.TxMaps.Int64["admin_user_id"], p.TxTime}, "admin", []string{}, []string{})
+	return p.selectiveLoggingAndUpd([]string{"user_id", "time"}, []interface {}{p.TxMaps.Int64["admin_user_id"], p.TxTime}, "admin", []string{}, []string{})
 }
 
 func (p *Parser) NewAdminRollback() (error) {

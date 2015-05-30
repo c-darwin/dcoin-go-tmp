@@ -34,7 +34,7 @@ func (p *Parser) ChangeCreditPartFront() (error) {
 		return p.ErrInfo("incorrect pct")
 	}
 
-	creditPart, err := p.Single("SELECT credit_part FROM users WHERE user_id  =  ?", p.TxUserID).Int64()
+	creditPart, err := p.Single("SELECT credit_part FROM users WHERE user_id  =  ?", p.TxUserID).Float64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -65,7 +65,7 @@ func (p *Parser) ChangeCreditPartFront() (error) {
 }
 
 func (p *Parser) ChangeCreditPart() (error) {
-	return p.selectiveLoggingAndUpd([]string{"credit_part"}, []string{utils.Float64ToStr(p.TxMaps.Float64["pct"])}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	return p.selectiveLoggingAndUpd([]string{"credit_part"}, []interface {}{utils.Float64ToStr(p.TxMaps.Float64["pct"])}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) ChangeCreditPartRollback() (error) {

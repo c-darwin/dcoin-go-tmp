@@ -68,7 +68,7 @@ func (p *Parser) TmpFront() (error) {
 
 func (p *Parser) Tmp() (error) {
 
-	err := p.selectiveLoggingAndUpd([]string{"host"}, []string{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err := p.selectiveLoggingAndUpd([]string{"host"}, []interface {}{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -86,7 +86,9 @@ func (p *Parser) Tmp() (error) {
 
 func (p *Parser) TmpRollback() (error) {
 	err := p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
-
+	if err != nil {
+		return p.ErrInfo(err)
+	}
 	return nil
 }
 

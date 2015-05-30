@@ -65,7 +65,7 @@ func (p *Parser) ChangeCreditorFront() (error) {
 }
 
 func (p *Parser) ChangeCreditor() (error) {
-	return p.selectiveLoggingAndUpd([]string{"to_user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
+	return p.selectiveLoggingAndUpd([]string{"to_user_id"}, []interface {}{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
 }
 
 func (p *Parser) ChangeCreditorRollback() (error) {

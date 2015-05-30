@@ -87,6 +87,8 @@ const AUTO_REDUCTION_PERIOD = 3600*24*2
 const LIMIT_ACTUALIZATION = 1
 const LIMIT_ACTUALIZATION_PERIOD = 3600*24*14
 
+// на сколько арбитр может продлить время рассмотрения манибека
+const MAX_MONEY_BACK_TIME = 180
 
 var LangMap = map[string]int{"en":1, "ru":42}
 
@@ -199,9 +201,9 @@ var TxTypes = map[int]string {
 	// покупатель хочет манибэк
 	63 : "MoneyBackRequest",
 	// магазин добровольно делает манибэк или же арбитр делает манибек
-/**/	64 : "MoneyBack",
+	64 : "MoneyBack",
 	// арбитр увеличивает время манибэка, чтобы успеть разобраться в ситуации
-/**/	65 : "ChangeMoneyBackTime",
+	65 : "ChangeMoneyBackTime",
 	// юзер меняет url центров сертификации, где хранятся его приватные ключи
 	66 : "ChangeCa",
 }

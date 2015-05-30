@@ -1523,7 +1523,9 @@ func (p *Parser) pointsUpdateRollback(logId, userId int64) error {
 }
 
 // не использовать для комментов
-func (p *Parser) selectiveLoggingAndUpd(fields , values []string, table string, whereFields, whereValues []string) error {
+func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}, table string, whereFields, whereValues []string) error {
+
+	values := utils.InterfaceToStr(values_)
 
 	addSqlFields := ""
 	for _, field := range fields {
@@ -1677,7 +1679,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 			take = sum
 		}
 		amountForCredit -= take;
-		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{utils.Float64ToStr(amount-take), string(p.TxHash), utils.Int64ToStr(p.BlockData.BlockId)}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
+		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{utils.Float64ToStr(amount-take), string(p.TxHash), utils.Int64ToStr(p.BlockData.BlockId)}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
 		if err!= nil {
 			return 0, err
 		}

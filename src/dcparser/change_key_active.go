@@ -13,13 +13,13 @@ func (p *Parser) ChangeKeyActiveInit() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	p.TxMaps.Bytes["secret_hex"] = utils.BinToHex(p.TxMaps.Bytes["secret"])
-	if p.TxMaps.Bytes["secret_hex"] == "30" {
+	p.TxMaps.String["secret_hex"] = string(utils.BinToHex(p.TxMaps.Bytes["secret"]))
+	if p.TxMaps.String["secret_hex"] == "30" {
 		p.TxMaps.Int64["active"] = 0
 	} else {
 		p.TxMaps.Int64["active"] = 1
 	}
-	p.TxMaps.Bytes["secret_hex"] = utils.BinToHex(p.TxMaps.Bytes["secret"])
+	p.TxMaps.String["secret_hex"] = string(utils.BinToHex(p.TxMaps.Bytes["secret"]))
 
 	return nil
 }
@@ -43,7 +43,7 @@ func (p *Parser) ChangeKeyActiveFront() (error) {
 		return p.ErrInfo("active")
 	}
 
-	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMaps.Bytes["secret_hex"])
+	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMaps.String["secret_hex"])
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -60,7 +60,7 @@ func (p *Parser) ChangeKeyActiveFront() (error) {
 }
 
 func (p *Parser) ChangeKeyActive() (error) {
-	return p.selectiveLoggingAndUpd([]string{"change_key"}, []string{p.TxMaps.Int64["active"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	return p.selectiveLoggingAndUpd([]string{"change_key"}, []interface {}{p.TxMaps.Int64["active"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) ChangeKeyActiveRollback() (error) {

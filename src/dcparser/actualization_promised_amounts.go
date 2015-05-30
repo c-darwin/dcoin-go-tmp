@@ -25,7 +25,7 @@ func (p *Parser) ActualizationPromisedAmountsFront() (error) {
 	}
 
 	// есть ли что актуализировать
-	promisedAmountId, err := p.Single("SELECT id FROM promised_amount WHERE status  =  'mining' AND user_id  =  ? AND currency_id > 1 AND del_block_id  =  0 AND del_mining_block_id  =  0 AND (cash_request_out_time > 0 AND cash_request_out_time < ? )", p.TxUserID, (p.TxTime-p.Variables["cash_request_time"])).Int64()
+	promisedAmountId, err := p.Single("SELECT id FROM promised_amount WHERE status  =  'mining' AND user_id  =  ? AND currency_id > 1 AND del_block_id  =  0 AND del_mining_block_id  =  0 AND (cash_request_out_time > 0 AND cash_request_out_time < ? )", p.TxUserID, (p.TxTime-p.Variables.Int64["cash_request_time"])).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

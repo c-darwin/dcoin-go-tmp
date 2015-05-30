@@ -55,7 +55,7 @@ func (p *Parser) MoneyBackRequestFront() (error) {
 		encData := make(map[string]string)
 		for i:=0; i<5; i++ {
 			iStr := utils.IntToStr(i)
-			encData["arbitrator"+iStr+"_enc_text"] = utils.BinToHex(p.TxMap["arbitrator"+iStr+"_enc_text"])
+			encData["arbitrator"+iStr+"_enc_text"] = string(utils.BinToHex(p.TxMap["arbitrator"+iStr+"_enc_text"]))
 			if encData["arbitrator"+iStr+"_enc_text"] == "00" {
 				encData["arbitrator"+iStr+"_enc_text"] = "0"
 			}
@@ -80,7 +80,7 @@ func (p *Parser) MoneyBackRequestFront() (error) {
 
 func (p *Parser) MoneyBackRequest() (error) {
 
-	err := p.selectiveLoggingAndUpd([]string{"status"}, []string{"refund"}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
+	err := p.selectiveLoggingAndUpd([]string{"status"}, []interface {}{"refund"}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -148,7 +148,7 @@ func (p *Parser) MoneyBackRequestRollback() (error) {
 			}
 		}
 	}
-	err := p.selectiveRollback([]string{"status"}, "orders", "id="+utils.Int64ToStr(p.TxMaps.Int64["order_id"]), false)
+	err = p.selectiveRollback([]string{"status"}, "orders", "id="+utils.Int64ToStr(p.TxMaps.Int64["order_id"]), false)
 
 	return nil
 }

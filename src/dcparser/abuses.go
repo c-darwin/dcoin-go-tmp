@@ -82,7 +82,7 @@ func (p *Parser) AbusesRollback() (error) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for userId, comment := range abuses {
+	for userId, _ := range abuses {
 		err = p.ExecSql("DELETE FROM abuses WHERE user_id = ? AND from_user_id = ? AND time = ?", userId, p.TxUserID, p.BlockData.Time)
 		if err != nil {
 			return p.ErrInfo(err)

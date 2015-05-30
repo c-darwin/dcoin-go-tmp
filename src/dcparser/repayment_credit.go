@@ -68,7 +68,7 @@ func (p *Parser) RepaymentCredit() (error) {
 
 	var amount float64
 	var currency_id, to_user_id int64
-	err := p.QueryRow("SELECT amount, to_user_id, currency_id  FROM credits WHERE id  =  ?", p.TxMaps.Int64p["credit_id"]).Scan(&amount, &to_user_id, &currency_id)
+	err := p.QueryRow("SELECT amount, to_user_id, currency_id  FROM credits WHERE id  =  ?", p.TxMaps.Int64["credit_id"]).Scan(&amount, &to_user_id, &currency_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -86,7 +86,7 @@ func (p *Parser) RepaymentCredit() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []string{(amount-p.TxMaps.Money["amount"]), p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
+	err = p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{(amount-p.TxMaps.Money["amount"]), p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["credit_id"])})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -104,17 +104,17 @@ func (p *Parser) RepaymentCredit() (error) {
 }
 
 func (p *Parser) RepaymentCreditRollback() (error) {
-	creditData, err := p.Single("SELECT to_user_id, currency_id FROM credits WHERE id  =  ?", p.TxMap["credit_id"]).Int64()
+	creditData, err := p.OneRow("SELECT to_user_id, currency_id FROM credits WHERE id  =  ?", p.TxMap["credit_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	err = p.generalRollback("wallets", p.TxUserID, "AND currency_id = "+creditData["currency_id"], false)
+	err = p.generalRollback("wallets", p.TxUserID, "AND currency_id = "+utils.Int64ToStr(creditData["currency_id"]), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	err = p.generalRollback("wallets", creditData["to_user_id"], "AND currency_id = "+creditData["currency_id"], false)
+	err = p.generalRollback("wallets", creditData["to_user_id"], "AND currency_id = "+utils.Int64ToStr(creditData["currency_id"]), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

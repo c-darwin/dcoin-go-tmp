@@ -56,7 +56,7 @@ func (p *Parser) CfProjectChangeCategoryFront() (error) {
 }
 
 func (p *Parser) CfProjectChangeCategory() (error) {
-	return p.selectiveLoggingAndUpd([]string{"category_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["category_id"])}, "cf_projects", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["project_id"])})
+	return p.selectiveLoggingAndUpd([]string{"category_id"}, []interface {}{p.TxMaps.Int64["category_id"]}, "cf_projects", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["project_id"])})
 }
 
 func (p *Parser) CfProjectChangeCategoryRollback() (error) {

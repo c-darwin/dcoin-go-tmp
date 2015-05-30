@@ -51,7 +51,7 @@ func (p *Parser) ChangeCaFront() (error) {
 }
 
 func (p *Parser) ChangeCa() (error) {
-	return p.selectiveLoggingAndUpd([]string{"ca1","ca2","ca3" }, []string{p.TxMaps.String["ca1"], p.TxMaps.String["ca2"], p.TxMaps.String["ca3"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	return p.selectiveLoggingAndUpd([]string{"ca1","ca2","ca3" }, []interface {}{p.TxMaps.String["ca1"], p.TxMaps.String["ca2"], p.TxMaps.String["ca3"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) ChangeCaRollback() (error) {
