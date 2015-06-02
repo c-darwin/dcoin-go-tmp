@@ -118,11 +118,11 @@ func (p *Parser) MessageToAdminRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == admin {
-		err = p.ExecSql("DELETE FROM _my_admin_messages WHERE encrypted = [hex] AND type = 'from_user' AND user_id = ?", p.TxMap["encrypted_message"], p.TxUserID)
+		err = p.ExecSql("DELETE FROM x_my_admin_messages WHERE encrypted = [hex] AND type = 'from_user' AND user_id = ?", p.TxMap["encrypted_message"], p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.rollbackAI("_my_admin_messages", 1)
+		err = p.rollbackAI("x_my_admin_messages", 1)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

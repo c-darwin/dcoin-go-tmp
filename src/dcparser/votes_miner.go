@@ -112,8 +112,8 @@ func (p *Parser) VotesMiner() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	minersData["votes_0_min"] = p.Variables.Int64["votes_0_min"]
-	minersData["votes_1_min"] = p.Variables.Int64["votes_1_min"]
+	minersData["votes_0_min"] = p.Variables.Int64["miner_votes_0"]
+	minersData["votes_1_min"] = p.Variables.Int64["miner_votes_1"]
 	minersData["votes_period"] = p.Variables.Int64["miner_votes_period"]
 
 	// -----------------------------------------------------------------------------

@@ -39,11 +39,12 @@ type Parser struct {
 	TxMaps *txMapsType
 	TxMap map[string][]byte
 	TxMapS map[string]string
+	TxIds []string
 	BlockData *utils.BlockData
 	PrevBlock *utils.BlockData
 	BinaryData []byte
 	blockHashHex []byte
-	dataType int64
+	dataType int
 	blockHex []byte
 	Variables *utils.Variables
 	CurrentBlockId int64
@@ -186,7 +187,7 @@ func (p *Parser) dataPre() {
 	p.blockHashHex = utils.DSha256(p.BinaryData)
 	p.blockHex = utils.BinToHex(p.BinaryData)
 	// определим тип данных
-	p.dataType =  utils.BinToDec(utils.BytesShift(&p.BinaryData, 1))
+	p.dataType =  int(utils.BinToDec(utils.BytesShift(&p.BinaryData, 1)))
 	fmt.Println("dataType", p.dataType)
 }
 
@@ -206,7 +207,7 @@ func (p *Parser) ParseBlock() error {
 	p.BlockData = utils.ParseBlockHeader(&p.BinaryData)
 
 	p.CurrentBlockId = p.BlockData.BlockId
-	fmt.Println(p.BlockData)
+	//fmt.Println(p.BlockData)
 
 	return nil
 }
@@ -339,6 +340,350 @@ func (p *Parser) CheckLogTx(tx_binary []byte) error {
 	return nil
 }
 
+func (p *Parser) GetInfoBlock() error {
+
+	// последний успешно записанный блок
+	p.PrevBlock = new(utils.BlockData)
+	var q string
+	if p.ConfigIni["db_type"] == "mysql" {
+		q = "SELECT LOWER(HEX(hash)) as hash, LOWER(HEX(head_hash)) as head_hash, block_id, level, time FROM info_block"
+	} else if p.ConfigIni["db_type"] == "postgresql" {
+		q = "SELECT encode(hash, 'HEX')  as hash, encode(head_hash, 'HEX') as head_hash, block_id, level, time FROM info_block"
+	} else {
+		q = "SELECT hash, head_hash, block_id, level, time FROM info_block"
+	}
+	err := p.QueryRow(q).Scan(&p.PrevBlock.Hash, &p.PrevBlock.HeadHash, &p.PrevBlock.BlockId, &p.PrevBlock.Level, &p.PrevBlock.Time)
+
+	if err != nil  && err!=sql.ErrNoRows {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
+/**
+ * Откат таблиц log_time_, которые были изменены транзакциями
+ */
+func (p *Parser) ParseDataRollbackFront (txTestblock bool) error {
+
+	// вначале нужно получить размеры всех тр-ий, чтобы пройтись по ним в обратном порядке
+	binForSize := p.BinaryData
+	var sizesSlice []int64
+	for {
+		txSize := utils.DecodeLength(&binForSize)
+		if (txSize == 0) {
+			break
+		}
+		sizesSlice = append(sizesSlice, txSize)
+		// удалим тр-ию
+		utils.BytesShift(&binForSize, txSize)
+		if len(binForSize) == 0 {
+			break
+		}
+	}
+	sizesSlice = utils.SliceReverse(sizesSlice)
+	for i:=0; i<len(sizesSlice); i++ {
+		// обработка тр-ий может занять много времени, нужно отметиться
+		p.UpdDaemonTime(p.GoroutineName)
+		// отделим одну транзакцию
+		transactionBinaryData := utils.BytesShiftReverse(&p.BinaryData, sizesSlice[i])
+		// узнаем кол-во байт, которое занимает размер
+		size_ := len(utils.EncodeLength(sizesSlice[i]))
+		// удалим размер
+		utils.BytesShiftReverse(&p.BinaryData, size_)
+		p.TxHash = utils.Md5(transactionBinaryData)
+
+		var err error
+		p.Variables, err = p.GetAllVariables()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// инфа о предыдущем блоке (т.е. последнем занесенном)
+		err = p.GetInfoBlock()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		if txTestblock {
+			err := p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+		err = p.ExecSql("DELETE FROM log_transactions WHERE hash = [hex]", p.TxHash)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		p.dataType = utils.BytesToInt(p.TxSlice[1])
+		//userId := p.TxSlice[3]
+		MethodName := consts.TxTypes[p.dataType]
+		err_ := utils.CallMethod(p, MethodName+"Init")
+		if _, ok := err_.(error); ok {
+			return p.ErrInfo(err_.(error))
+		}
+		err_ = utils.CallMethod(p, MethodName+"RollbackFront")
+		if _, ok := err_.(error); ok {
+			return p.ErrInfo(err_.(error))
+		}
+	}
+
+	return nil
+}
+
+/**
+ * Откат БД по блокам
+*/
+func (p *Parser) ParseDataRollback() error {
+
+	p.dataPre()
+	if p.dataType != 0  { // парсим только блоки
+		return utils.ErrInfo(fmt.Errorf("incorrect dataType"))
+	}
+	var err error
+
+	p.Variables, err = p.DCDB.GetAllVariables()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	err = p.ParseBlock()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	if len(p.BinaryData) > 0 {
+		// вначале нужно получить размеры всех тр-ий, чтобы пройтись по ним в обратном порядке
+		binForSize := p.BinaryData
+		var sizesSlice []int64
+		for {
+			txSize := utils.DecodeLength(&binForSize)
+			if (txSize == 0) {
+				break
+			}
+			sizesSlice = append(sizesSlice, txSize)
+			// удалим тр-ию
+			utils.BytesShift(&binForSize, txSize)
+			if len(binForSize) == 0 {
+				break
+			}
+		}
+		sizesSlice = utils.SliceReverse(sizesSlice)
+		for i := 0; i < len(sizesSlice); i++ {
+			// обработка тр-ий может занять много времени, нужно отметиться
+			p.UpdDaemonTime(p.GoroutineName)
+			// отделим одну транзакцию
+			transactionBinaryData := utils.BytesShiftReverse(&p.BinaryData, sizesSlice[i])
+			// узнаем кол-во байт, которое занимает размер
+			size_ := len(utils.EncodeLength(sizesSlice[i]))
+			// удалим размер
+			utils.BytesShiftReverse(&p.BinaryData, size_)
+			p.TxHash = utils.Md5(transactionBinaryData)
+
+			err = p.ExecSql("UPDATE transactions SET used=0, verified = 0 WHERE hash = [hex]", p.TxHash)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			err = p.ExecSql("DELETE FROM log_transactions WHERE hash = [hex]", p.TxHash)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			// даем юзеру понять, что его тр-ия не в блоке
+			err = p.ExecSql("UPDATE transactions_status SET block_id = 0 WHERE hash = [hex]", p.TxHash)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			// пишем тр-ию в очередь на проверку, авось пригодится
+			dataHex := utils.BinToHex(transactionBinaryData)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", p.TxHash)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			err = p.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", p.TxHash, dataHex)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+
+			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			p.dataType = utils.BytesToInt(p.TxSlice[1])
+			MethodName := consts.TxTypes[p.dataType]
+			err_ := utils.CallMethod(p, MethodName+"Init")
+			if _, ok := err_.(error); ok {
+				return p.ErrInfo(err_.(error))
+			}
+			err_ = utils.CallMethod(p, MethodName+"Rollback")
+			if _, ok := err_.(error); ok {
+				return p.ErrInfo(err_.(error))
+			}
+			err_ = utils.CallMethod(p, MethodName+"RollbackFront")
+			if _, ok := err_.(error); ok {
+				return p.ErrInfo(err_.(error))
+			}
+		}
+	}
+	return nil
+}
+
+func (p *Parser) RollbackToBlockId(blockId int64) error {
+
+	err := p.ExecSql("SET GLOBAL net_read_timeout = 86400")
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.ExecSql("SET GLOBAL max_connections  = 86400")
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.rollbackTransactions()
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.rollbackTransactionsTestblock(true)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.ExecSql("TRUNCATE TABLE testblock")
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	// откатываем наши блоки
+	var blocks []map[string][]byte
+	rows, err := p.Query("SELECT id, data FROM block_chain WHERE id > ? ORDER BY id DESC", blockId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	parser := new(Parser)
+	parser.DCDB = p.DCDB
+	fmt.Println("1111111")
+	for rows.Next() {
+		var data, id []byte
+		err = rows.Scan(&id, &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		blocks = append(blocks, map[string][]byte{"id":id, "data":data})
+	}
+	rows.Close()
+	for _, block := range blocks {
+		// Откатываем наши блоки до блока blockId
+		parser.BinaryData = block["data"]
+		err = parser.ParseDataRollback()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		err = p.ExecSql("DELETE FROM block_chain WHERE id = ?", block["id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+
+	var hash, head_hash, data []byte
+	err = p.QueryRow("SELECT hash, head_hash, data FROM block_chain WHERE id  =  ?", blockId).Scan(&hash, &head_hash, &data)
+	if err != nil  && err!=sql.ErrNoRows {
+		return p.ErrInfo(err)
+	}
+	utils.BytesShift(&data, 1)
+	block_id := utils.BinToDecBytesShift(&data, 4)
+	time := utils.BinToDecBytesShift(&data, 4)
+	//user_id := utils.BinToDecBytesShift(&data, 5)
+	level := utils.BinToDecBytesShift(&data, 1)
+	err = p.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id = ?, time = ?, level = ?", utils.BinToHex(hash), utils.BinToHex(head_hash), block_id, time, level)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	return nil
+}
+
+func (p *Parser) rollbackTransactions() error {
+
+	var blockBody []byte
+	rows, err := p.Query("SELECT data, hash FROM transactions WHERE verified = 1 AND used = 0")
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var data, hash []byte
+		err = rows.Scan(&data, &hash)
+		if err!= nil {
+			return p.ErrInfo(err)
+		}
+		blockBody = append(blockBody, utils.EncodeLengthPlusData(data)...)
+		err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", utils.BinToHex(hash))
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+
+	// нужно откатить наши транзакции
+	if len(blockBody) > 0 {
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.BinaryData = blockBody
+		err = parser.ParseDataRollbackFront(false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func (p *Parser) rollbackTransactionsTestblock(truncate bool) error {
+
+	// прежде чем удалять, нужно откатить
+	// получим наши транзакции в 1 бинарнике, просто для удобства
+	var blockBody []byte
+	rows, err := p.Query("SELECT data, hash FROM transactions_testblock ORDER BY id ASC")
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var data, hash []byte
+		err = rows.Scan(&data, &hash)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		blockBody = append(blockBody, utils.EncodeLengthPlusData(data)...)
+		if truncate {
+			// чтобы тр-ия не потерлась, её нужно заново записать
+			dataHex := utils.BinToHex(data)
+			hashHex := utils.BinToHex(hash)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", hashHex)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			err = p.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", hashHex, dataHex)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+	}
+
+	// нужно откатить наши транзакции
+	if len(blockBody) > 0 {
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.BinaryData = blockBody
+		err = parser.ParseDataRollbackFront(true)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+
+	if truncate {
+		err = p.ExecSql("TRUNCATE TABLE transactions_testblock")
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
 //  если в ходе проверки тр-ий возникает ошибка, то вызываем откатчик всех занесенных тр-ий
 func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool) error {
 	var err error
@@ -364,7 +709,7 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 		for i:=0; i<len(sizesSlice); i++ {
 			// обработка тр-ий может занять много времени, нужно отметиться
 			p.DCDB.UpdDaemonTime(p.GoroutineName)
-			// отчекрыжим одну транзакцию
+			// отделим одну транзакцию
 			transactionBinaryData := utils.BytesShiftReverse(&binaryData, sizesSlice[i])
 			transactionBinaryData_ := transactionBinaryData
 			// узнаем кол-во байт, которое занимает размер
@@ -493,11 +838,14 @@ func (p *Parser) InsertIntoBlockchain() {
 			p.BlockData.BlockId = utils.StrToInt64(p.GetConfigIni("start_block_id"))
 		}
 	}
+
+	TxIdsJson, _ := json.Marshal(p.TxIds)
+
 	mutex.Lock()
 	// пишем в цепочку блоков
 	p.DCDB.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
-	p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data) VALUES (?, [hex],[hex],[hex])",
-		p.BlockData.BlockId, p.BlockData.Hash, p.BlockData.HeadHash, p.blockHex)
+	p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data, time, tx) VALUES (?, [hex],[hex],[hex], ?, ?)",
+		p.BlockData.BlockId, p.BlockData.Hash, p.BlockData.HeadHash, p.blockHex, p.BlockData.Time, TxIdsJson)
 	mutex.Unlock()
 }
 /*public function insert_into_blockchain()
@@ -543,7 +891,6 @@ func (p *Parser) ParseDataFull() error {
 	var err error
 
 	p.Variables, err = p.DCDB.GetAllVariables()
-	fmt.Println("p.Variables", p.Variables)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -558,8 +905,10 @@ func (p *Parser) ParseDataFull() error {
 		return utils.ErrInfo(err)
 	}
 
-
-	p.DCDB.Single("DELETE FROM transactions WHERE used = 1")
+	err = p.ExecSql("DELETE FROM transactions WHERE used = 1")
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
 
 	txCounter := make(map[int64]int64)
 	p.fullTxBinaryData = p.BinaryData
@@ -646,6 +995,9 @@ func (p *Parser) ParseDataFull() error {
 
 			p.TxMap = map[string][]byte{}
 
+			// для статы
+			p.TxIds = append(p.TxIds, string(p.TxSlice[1]))
+
 			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
 			fmt.Println("MethodName", MethodName+"Init")
 			err_ := utils.CallMethod(p,MethodName+"Init")
@@ -669,8 +1021,9 @@ func (p *Parser) ParseDataFull() error {
 				return utils.ErrInfo(err_.(error))
 			}
 
+
 			// даем юзеру понять, что его тр-ия попала в блок
-			p.DCDB.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
+			p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
 
 			// Тут было time(). А значит если бы в цепочке блоков были блоки в которых были бы одинаковые хэши тр-ий, то ParseDataFull вернул бы error
 			err = p.DCDB.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
@@ -956,7 +1309,7 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 		where = fmt.Sprintf(" WHERE user_id = %d ", whereUserId)
 	}
 	// получим log_id, по которому можно найти данные, которые были до этого
-	logId, err := p.Single("SELECT log_id FROM "+table+" "+where+addWhere, ).Int64()
+	logId, err := p.Single("SELECT log_id FROM "+table+" "+where+addWhere).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -983,9 +1336,9 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 				case "sqlite":
 					addSql += fmt.Sprintf("%v='%x',", k, v)
 				case "postgresql":
-					addSql += fmt.Sprintf("%v=decode(%x,'HEX'),", k, v)
+					addSql += fmt.Sprintf("%v=decode('%x','HEX'),", k, v)
 				case "mysql":
-					addSql += fmt.Sprintf("%v=UNHEX(%x),", k, v)
+					addSql += fmt.Sprintf("%v=UNHEX('%x'),", k, v)
 				}
 			} else {
 				addSql += fmt.Sprintf("%v = '%v',", k, v)
@@ -998,8 +1351,8 @@ func (p *Parser) generalRollback(table string, whereUserId_ interface {}, addWhe
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-		// подчищаем _log
-		err = p.ExecSql("DELETE FROM "+table+" WHERE log_id= ?", logId)
+		// подчищаем log
+		err = p.ExecSql("DELETE FROM log_"+table+" WHERE log_id= ?", logId)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -1083,20 +1436,22 @@ func getMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 
 func (p *Parser) FormatBlockData() string {
 	result := ""
-	v := reflect.ValueOf(*p.BlockData)
-	typeOfT := v.Type()
-	if typeOfT.Kind() == reflect.Ptr {
-		typeOfT = typeOfT.Elem()
-	}
-	for i := 0; i < v.NumField(); i++ {
-		name := typeOfT.Field(i).Name
-		switch name {
-		case "BlockId", "Time", "UserId", "Level":
-			result += "["+name+"] = "+fmt.Sprintf("%d\n", v.Field(i).Interface())
-		case "Sign", "Hash", "HeadHash":
-			result += "["+name+"] = "+fmt.Sprintf("%x\n", v.Field(i).Interface())
-		default :
-			result += "["+name+"] = "+fmt.Sprintf("%s\n", v.Field(i).Interface())
+	if p.BlockData!=nil {
+		v := reflect.ValueOf(*p.BlockData)
+		typeOfT := v.Type()
+		if typeOfT.Kind() == reflect.Ptr {
+			typeOfT = typeOfT.Elem()
+		}
+		for i := 0; i < v.NumField(); i++ {
+			name := typeOfT.Field(i).Name
+			switch name {
+			case "BlockId", "Time", "UserId", "Level":
+				result += "["+name+"] = "+fmt.Sprintf("%d\n", v.Field(i).Interface())
+			case "Sign", "Hash", "HeadHash":
+				result += "["+name+"] = "+fmt.Sprintf("%x\n", v.Field(i).Interface())
+			default :
+				result += "["+name+"] = "+fmt.Sprintf("%s\n", v.Field(i).Interface())
+			}
 		}
 	}
 	return result
@@ -1484,7 +1839,7 @@ func (p *Parser) pointsRollback(points int64) error {
 		}
 	} else { // прошло меньше месяца
 		// отнимаем баллы
-		err = p.ExecSql("UPDATE points SET points = points - "+utils.Int64ToStr(points)+" WHERE user_id = ?", points, p.TxMap["user_id"])
+		err = p.ExecSql("UPDATE points SET points = points - "+utils.Int64ToStr(points)+" WHERE user_id = ?", p.TxMap["user_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1740,11 +2095,13 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			profit, err := p.calcProfit_(utils.StrToFloat64(walletData["amount"]), utils.StrToInt64(walletData["lastUpdate"]), p.BlockData.Time, pct[currencyId], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0)
+			profit, err := p.calcProfit_(utils.StrToFloat64(walletData["amount"]), utils.StrToInt64(walletData["last_update"]), p.BlockData.Time, pct[currencyId], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0)
 			newDCSum = utils.StrToFloat64(walletData["amount"])+profit
+			log.Println("newDCSum=", newDCSum, "=", walletData["amount"], "+", profit)
 		}
 		// итоговая сумма DC
 		newDCSumEnd := newDCSum + amount;
+		log.Println("newDCSumEnd", newDCSumEnd, "=", newDCSum, "+", amount)
 
 		// Плюсуем на кошелек с соответствующей валютой.
 		err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSumEnd, p.BlockData.Time, logId)
@@ -1818,6 +2175,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commi
 			return p.ErrInfo(err)
 		}
 		newDCSum = walletDataAmountFloat64 + profit - amount - commission;
+		log.Println("newDCSum", walletDataAmountFloat64, "+", profit, "-", amount, "-", commission)
 	}
 	err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSum, p.BlockData.Time, logId)
 	if err != nil {
@@ -2109,6 +2467,18 @@ type resultArrType struct {
 	amount float64
 }
 func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
+
+	log.Println("CalcProfit")
+	log.Println("amount", amount)
+	log.Println("timeStart", timeStart)
+	log.Println("timeFinish", timeFinish)
+	log.Println(pctArray)
+	log.Println(pointsStatusArray)
+	log.Println(holidaysArray)
+	log.Println(maxPromisedAmountArray)
+	log.Println("currencyId", currencyId)
+	log.Println("repaidAmount", repaidAmount)
+
 	if timeStart >= timeFinish {
 		return 0, nil
 	}
@@ -2517,6 +2887,16 @@ func findMinPct_24946 (needTime int64, pctArray []map[int64]map[string]float64, 
 
 func (p *Parser) CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 
+	log.Println("amount", amount)
+	log.Println("timeStart", timeStart)
+	log.Println("timeFinish", timeFinish)
+	log.Println(pctArray)
+	log.Println(pointsStatusArray)
+	log.Println(holidaysArray)
+	log.Println(maxPromisedAmountArray)
+	log.Println("currencyId", currencyId)
+	log.Println("repaidAmount", repaidAmount)
+
 
 	var lastStatus string = ""
 	var findMinArray []map[string]string
@@ -2905,17 +3285,19 @@ func (p *Parser) updPromisedAmountsRollback(userId int64, cashRequestOutTime boo
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		// данные, которые восстановим
-		logData, err := p.OneRow("SELECT tdc_amount, tdc_amount_update, "+sqlNameCashRequestOutTime+" prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).String()
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-		if cashRequestOutTime {
-			sqlUpdCashRequestOutTime = "cashRequestOutTime = "+logData["cash_request_out_time"]+", ";
-		}
-		err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUpdCashRequestOutTime+" log_id = ? WHERE log_id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], log_id)
-		if err != nil {
-			return p.ErrInfo(err)
+		if log_id > 0 {
+			// данные, которые восстановим
+			logData, err := p.OneRow("SELECT tdc_amount, tdc_amount_update, "+sqlNameCashRequestOutTime+" prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).String()
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			if cashRequestOutTime {
+				sqlUpdCashRequestOutTime = "cash_request_out_time = "+logData["cash_request_out_time"]+", ";
+			}
+			err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUpdCashRequestOutTime+" log_id = ? WHERE log_id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], log_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
 		}
 		// подчищаем _log
 		err = p.ExecSql("DELETE FROM log_promised_amount WHERE log_id = ?", log_id)

@@ -1041,6 +1041,7 @@ func (db *DCDB) CheckCashRequests(userId int64) (error) {
 		return err
 	}
 	if len(cashRequestStatus) > 0 {
+		log.Println("cashRequestStatus")
 		return fmt.Errorf("cashRequestStatus")
 	}
 	return nil
@@ -1283,7 +1284,7 @@ func (db *DCDB) DbLock(name string) error {
 			break
 		}
 	}
-	fmt.Println("OK")
+	log.Println("DbLock")
 	return nil
 }
 
@@ -1292,6 +1293,7 @@ func (db *DCDB) DbUnlock(name string) error {
 	if err != nil {
 		return err
 	}
+	log.Println("DbUnlock")
 	return nil
 }
 

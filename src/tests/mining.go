@@ -36,9 +36,9 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	txType := "Mining";
-	txTime := "1427383713";
+	txTime := "1406545931";
 	userId := []byte("2")
-	var blockId int64 = 1288
+	var blockId int64 = 123924
 
 	var txSlice [][]byte
 	// hash
@@ -50,9 +50,9 @@ func main() {
 	// user_id
 	txSlice = append(txSlice, userId)
 	// promised_amount_id
-	txSlice = append(txSlice, []byte(`4`))
+	txSlice = append(txSlice, []byte(`26`))
 	// amount
-	txSlice = append(txSlice, []byte(`8`))
+	txSlice = append(txSlice, []byte(`6`))
 	// sign
 	txSlice = append(txSlice, []byte("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"))
 

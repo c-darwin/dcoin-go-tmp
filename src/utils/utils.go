@@ -172,22 +172,22 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		}
 	case "img_url":
 		regex := `https?\:\/\/`; // SCHEME
-		regex += `[a-z0-9-.]*\.[a-z]{2,4}`; // Host or IP
+		regex += `[\w-.]*\.[a-z]{2,4}`; // Host or IP
 		regex += `(\:[0-9]{2,5})?`; // Port
-		regex += `(\/[a-z0-9_-]+)*\/?`; // Path
+		regex += `(\/[\w_-]+)*\/?`; // Path
 		regex += `\.(png|jpg)`; // Img
 		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
-			if StrToInt(data) < 50 {
+			if len(data) < 50 {
 				return true
 			}
 		}
 	case "ca_url", "arbitrator_url":
 		regex := `https?\:\/\/`; // SCHEME
-		regex += `[a-z0-9-.]*\.[a-z]{2,4}`; // Host or IP
+		regex += `[\w-.]*\.[a-z]{2,4}`; // Host or IP
 		regex += `(\:[0-9]{2,5})?`; // Port
-		regex += `(\/[a-z0-9_-]+)*\/?`; // Path
+		regex += `(\/[\w_-]+)*\/?`; // Path
 		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
-			if StrToInt(data) <= 30 {
+			if len(data) <= 30 {
 				return true
 			}
 		}
@@ -286,7 +286,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 			return true
 		}
 	case "cf_links":
-		regex := `\["https?\:\/\/(goo\.gl|bit\.ly|t\.co)\/[0-9a-z_-]+",[0-9]+,[0-9]+,[0-9]+,[0-9]+\]`
+		regex := `\["https?\:\/\/(goo\.gl|bit\.ly|t\.co)\/[\w-]+",[0-9]+,[0-9]+,[0-9]+,[0-9]+\]`
 		if ok, _ := regexp.MatchString(`^\[`+regex+`(\,`+regex+`)*\]$`, data); ok{
 			if len(data) < 512 {
 				return true

@@ -169,7 +169,9 @@ func (p *Parser) NewPctFront() (error) {
 		currencyIdStr := utils.Int64ToStr(currencyId)
 		// определяем % для майнеров
 		pctArr := utils.MakePctArray(data["miner_pct"])
+		log.Println("pctArrminer_pct", pctArr, currencyId)
 		key := utils.GetMaxVote(pctArr, 0, 390, 100)
+		log.Println("key", key)
 		if len(newPct["currency"][currencyIdStr]) == 0{
 			newPct["currency"][currencyIdStr] = make(map[string]string)
 		}
@@ -177,15 +179,22 @@ func (p *Parser) NewPctFront() (error) {
 
 		// определяем % для юзеров
 		pctArr = utils.MakePctArray(data["user_pct"])
+		log.Println("pctArruser_pct", pctArr, currencyId)
 		// раньше не было завимости юзерского % от майнерского
 		if p.BlockData!=nil && p.BlockData.BlockId<=95263 {
 			userMaxKey = 390
 		} else {
+			log.Println("newPct", newPct)
 			pctY := utils.ArraySearch(newPct["currency"][currencyIdStr]["miner_pct"], PctArray)
+			log.Println("newPct[currency][currencyIdStr][miner_pct]", newPct["currency"][currencyIdStr]["miner_pct"])
+			log.Println("PctArray", PctArray)
+			log.Println("miner_pct $pct_y=", pctY)
 			maxUserPctY := utils.Round(utils.StrToFloat64(pctY)/2, 2)
 			userMaxKey = utils.FindUserPct(int(maxUserPctY))
+			log.Println("maxUserPctY", maxUserPctY, "userMaxKey", userMaxKey, "currencyIdStr", currencyIdStr)
 			// отрезаем лишнее, т.к. поиск идет ровно до макимального возможного, т.е. до miner_pct/2
 			pctArr = utils.DelUserPct(pctArr, userMaxKey);
+			log.Println("pctArr", pctArr)
 		}
 		key = utils.GetMaxVote(pctArr, 0, userMaxKey, 100)
 		log.Println("data[user_pct]", data["user_pct"])
@@ -217,9 +226,7 @@ func (p *Parser) NewPctFront() (error) {
 			var votesReferral []map[int64]int64
 
 			// берем все голоса
-			//pctVotes := make(map[int64]map[string]map[string]int64)
-			//fmt.Println("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY ")
-			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY ?",  level)
+			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+"")
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -292,6 +299,11 @@ func (p *Parser) NewPctRollback() (error) {
 			return p.ErrInfo(err)
 		}
 	}
+	affect, err := p.ExecSqlGetAffect("DELETE FROM pct WHERE block_id = ?", p.BlockData.BlockId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.rollbackAI("pct", affect)
 	return nil
 }
 

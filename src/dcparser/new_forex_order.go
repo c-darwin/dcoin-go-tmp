@@ -329,7 +329,7 @@ func (p *Parser) NewForexOrderRollback() (error) {
 		} else {
 			addSql := ""
 			if (rowEmptyBlockId == p.BlockData.BlockId) {
-				addSql = ", emptyBlockId = 0";
+				addSql = ", empty_block_id = 0";
 			}
 
 			// вернем amount ордеру

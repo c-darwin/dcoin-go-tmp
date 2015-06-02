@@ -36,10 +36,10 @@ func fillPct() [391]map[string]string {
 	return arr
 }
 func ArraySearch(value string, arr [391]map[string]string) string {
-	for k, v := range(arr) {
-		for _, v0 := range(v) {
+	for _, v := range(arr) {
+		for k0, v0 := range(v) {
 			if v0 == value {
-				return IntToStr(k)
+				return k0
 			}
 		}
 	}

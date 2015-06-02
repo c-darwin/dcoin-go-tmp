@@ -50,6 +50,7 @@ func BlocksCollection(configIni map[string]string) {
         goto INSTALL
     }
 
+	var cur bool
     BEGIN:
 	for {
 
@@ -95,6 +96,11 @@ func BlocksCollection(configIni map[string]string) {
         fmt.Println("config", config)
         fmt.Println("currentBlockId", currentBlockId)
 
+		// на время тесто
+		if !cur {
+            currentBlockId = 0
+            cur = true
+        }
         if currentBlockId==0 {
 
 			if config["first_load_blockchain"]=="file" {
@@ -152,54 +158,57 @@ func BlocksCollection(configIni map[string]string) {
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-						//if blockId == 5800 {
-						//	break BEGIN
-						//}
+                        //if blockId == 108211 {
+                        //    break BEGIN
+                        //}
                         fmt.Println("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
                         fmt.Println("length", length)
                         fmt.Printf("data2 %x\n", data2)
                         blockBin := utils.BytesShift(&data2, length)
-                        fmt.Printf("blockDin %x\n", blockBin)
+                        fmt.Printf("blockBin %x\n", blockBin)
 
-                        // парсинг блока
-                        parser := new(dcparser.Parser)
-                        parser.DCDB = db
-                        parser.BinaryData = blockBin;
-                        parser.GoroutineName = GoroutineName
+                        if blockId > 137019 {
 
-                        if first {
-                            parser.CurrentVersion = consts.VERSION
-                            first = false
-                        }
-                        err = parser.ParseDataFull()
-                        if err != nil {
-                            log.Print(utils.ErrInfo(err))
-                            utils.Sleep(1)
-                            db.DbUnlock(GoroutineName);
-                            file.Close()
-                            break
-                        }
-                        parser.InsertIntoBlockchain()
+                            // парсинг блока
+                            parser := new(dcparser.Parser)
+                            parser.DCDB = db
+                            parser.BinaryData = blockBin;
+                            parser.GoroutineName = GoroutineName
 
-                        // отметимся в БД, что мы живы.
-                        parser.DCDB.UpdDaemonTime(GoroutineName)
-                        // отметимся, чтобы не спровоцировать очистку таблиц
-                       err =  parser.DCDB.UpdMainLock()
-                        if err != nil {
-                            log.Print(utils.ErrInfo(err))
-                            utils.Sleep(1)
-                            db.DbUnlock(GoroutineName);
-                            file.Close()
-                            break
-                        }
-                        if utils.CheckDaemonRestart(GoroutineName) {
-                            log.Print(utils.ErrInfo(err))
-                            utils.Sleep(1)
-                            db.DbUnlock(GoroutineName);
-                            file.Close()
-                            break BEGIN
+                            if first {
+                                parser.CurrentVersion = consts.VERSION
+                                first = false
+                            }
+                            err = parser.ParseDataFull()
+                            if err != nil {
+                                log.Print(utils.ErrInfo(err))
+                                utils.Sleep(1)
+                                db.DbUnlock(GoroutineName);
+                                file.Close()
+                                break
+                            }
+                            parser.InsertIntoBlockchain()
+
+                            // отметимся в БД, что мы живы.
+                            parser.DCDB.UpdDaemonTime(GoroutineName)
+                            // отметимся, чтобы не спровоцировать очистку таблиц
+                            err = parser.DCDB.UpdMainLock()
+                            if err != nil {
+                                log.Print(utils.ErrInfo(err))
+                                utils.Sleep(1)
+                                db.DbUnlock(GoroutineName);
+                                file.Close()
+                                break
+                            }
+                            if utils.CheckDaemonRestart(GoroutineName) {
+                                log.Print(utils.ErrInfo(err))
+                                utils.Sleep(1)
+                                db.DbUnlock(GoroutineName);
+                                file.Close()
+                                break BEGIN
+                            }
                         }
                         // ненужный тут размер в конце блока данных
                         data = make([]byte, 5)

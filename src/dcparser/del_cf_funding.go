@@ -64,7 +64,7 @@ func (p *Parser) DelCfFunding() (error) {
 	// нужно учесть набежавшие %
 	var amount float64
 	var time, project_id, currency_id int64
-	err := p.QueryRow("SELECT amount, time, project_id, currency_id FROM cf_funding WHERE id  =  ?", p.TxUserID,  p.TxMaps.Int64["funding_id"]).Scan(&amount, &time, &project_id, &currency_id)
+	err := p.QueryRow("SELECT amount, time, project_id, currency_id FROM cf_funding WHERE id  =  ?", p.TxMaps.Int64["funding_id"]).Scan(&amount, &time, &project_id, &currency_id)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}

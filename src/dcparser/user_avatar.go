@@ -50,7 +50,7 @@ func (p *Parser) UserAvatarFront() (error) {
 }
 
 func (p *Parser) UserAvatar() (error) {
-	return p.selectiveLoggingAndUpd([]string{"host", "avatar"}, []interface {}{p.TxMaps.String["host"], p.TxMaps.String["avatar"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	return p.selectiveLoggingAndUpd([]string{"name", "avatar"}, []interface {}{p.TxMaps.String["name"], p.TxMaps.String["avatar"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
 func (p *Parser) UserAvatarRollback() (error) {

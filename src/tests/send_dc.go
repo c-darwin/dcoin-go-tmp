@@ -12,9 +12,9 @@ func main() {
 	defer f.Close()
 
 	txType := "SendDc";
-	txTime := "1427383713";
+	txTime := "1409288580";
 	userId := []byte("2")
-	var blockId int64 = 128008
+	var blockId int64 = 10000
 
 	var txSlice [][]byte
 	// hash
@@ -28,17 +28,17 @@ func main() {
 	// to_user_id
 	txSlice = append(txSlice, []byte("2"))
 	// currency_id
-	txSlice = append(txSlice, []byte("1"))
+	txSlice = append(txSlice, []byte("72"))
 	// amount
-	txSlice = append(txSlice, []byte("10"))
+	txSlice = append(txSlice, []byte("8"))
 	// commission
-	txSlice = append(txSlice, []byte("0"))
-	for i:=0; i<5; i++ {
-		txSlice = append(txSlice, []byte("1"))
+	txSlice = append(txSlice, []byte("0.1"))
+/*	for i:=0; i<5; i++ {
+		txSlice = append(txSlice, []byte("0"))
 	}
 	for i:=0; i<5; i++ {
-		txSlice = append(txSlice, []byte("0.01"))
-	}
+		txSlice = append(txSlice, []byte("0"))
+	}*/
 	// comment
 	txSlice = append(txSlice, []byte("1111111111111111111111111111111111"))
 	// sign

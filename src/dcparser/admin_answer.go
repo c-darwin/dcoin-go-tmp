@@ -97,7 +97,7 @@ func (p *Parser) AdminAnswerRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == admin {
-		err = p.ExecSql("UPDATE _my_admin_messages SET status = 'approved' WHERE encrypted = [hex] AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
+		err = p.ExecSql("UPDATE x_my_admin_messages SET status = 'approved' WHERE encrypted = [hex] AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

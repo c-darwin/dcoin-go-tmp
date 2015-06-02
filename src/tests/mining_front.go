@@ -19,7 +19,7 @@ import (
 	"log"
 	"os"
 	//"github.com/alyu/configparser"
-	"github.com/astaxie/beego/config"
+//	"github.com/astaxie/beego/config"
 	//"strings"
 	//"regexp"
 	//"reflect"
@@ -37,11 +37,11 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	txType := "Mining";
-	txTime := "1399278817";
-	userId := []byte("2")
-	var blockId int64 = 1415
-	promised_amount_id:="4"
-	amount:="0.02"
+	txTime := "1406545938";
+	userId := []byte("105")
+	var blockId int64 = 123925
+	promised_amount_id:="24"
+	amount:="5.69"
 
 	var txSlice [][]byte
 	// hash
@@ -64,14 +64,7 @@ func main() {
 	blockData.Time = utils.StrToInt64(txTime)
 	blockData.UserId = utils.BytesToInt64(userId)
 
-	configIni_, err := config.NewConfig("ini", "config.ini")
-	if err != nil {
-		fmt.Println(err)
-	}
-	configIni, err := configIni_.GetSection("default")
-
-	db := utils.DbConnect(configIni)
-	err = tests_utils.MakeFrontTest(txSlice, utils.StrToInt64(txTime), dataForSign, txType, utils.BytesToInt64(userId), "", blockId, db)
+	err = tests_utils.MakeFrontTest(txSlice, utils.StrToInt64(txTime), dataForSign, txType, utils.BytesToInt64(userId), "", blockId)
 	if err != nil {
 		fmt.Println(err)
 	}

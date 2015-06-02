@@ -65,7 +65,7 @@ func (p *Parser) NewUserFront() (error) {
 	num, err := p.DCDB.Single("SELECT count(user_id) FROM users WHERE public_key_0 = [hex] OR public_key_1 = [hex] OR public_key_2 = [hex]",
 		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"]).Int()
 	if num > 0 {
-		return p.ErrInfo("exists public_ke")
+		return p.ErrInfo("exists public_key")
 	}
 	err = p.getAdminUserId()
 	if err != nil {

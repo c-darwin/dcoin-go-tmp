@@ -140,7 +140,7 @@ func (p *Parser) CashRequestIn() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -161,7 +161,7 @@ func (p *Parser) CashRequestIn() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -309,11 +309,11 @@ func (p *Parser) CashRequestInRollback() (error) {
 			return p.ErrInfo(err)
 		}
 		if log_id > 0 {
-			logData, err := p.OneRow("SELECT amount, tdc_amount, tdc_amount_update, prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).String()
+			logData, err := p.OneRow("SELECT amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, prev_log_id FROM log_promised_amount WHERE log_id  =  ?", log_id).String()
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?, log_id = ?, cash_request_in_block_id = 0 WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], id)
+			err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?,  cash_request_in_block_id = ?, log_id = ?, cash_request_in_block_id = 0 WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["cash_request_in_block_id"], logData["prev_log_id"], id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}

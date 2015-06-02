@@ -102,7 +102,7 @@ func AllHashes(db *utils.DCDB) (map[string]string, error) {
 	return result, nil
 }
 
-func dbConn() *utils.DCDB {
+func DbConn() *utils.DCDB {
 	configIni_, err := config.NewConfig("ini", "config.ini")
 	if err != nil {
 		fmt.Println(err)
@@ -126,7 +126,7 @@ func InitLog() *os.File {
 
 func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, txType string, userId int64, MY_PREFIX string, blockId int64) error {
 
-	db := dbConn()
+	db := DbConn()
 
 	priv, pub  := genKeys()
 
@@ -222,7 +222,7 @@ func MakeFrontTest(transactionArray [][]byte, time int64, dataForSign string, tx
 
 func MakeTest(txSlice [][]byte, blockData *utils.BlockData, txType string, testType string) error {
 
-	db := dbConn()
+	db := DbConn()
 
 	parser := new(dcparser.Parser)
 	parser.DCDB = db
