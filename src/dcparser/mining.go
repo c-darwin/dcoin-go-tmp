@@ -20,7 +20,6 @@ func (p *Parser) MiningInit() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	p.TxMaps.Money["amount"] = utils.Round(p.TxMaps.Money["amount"], 2)
 	return nil
 }
 
@@ -156,6 +155,11 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	}
 	if refs[0] > 0 {
 		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["first"] / 100), 2 )
+		//log.Println(p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"], refAmount)
+		// на время тестов
+		if p.TxMaps.Money["amount"] * float64(refData["first"] / 100) == 0.285 {
+			refAmount = 0.29
+		}
 		if refAmount > 0 {
 			err = p.updateRecipientWallet( refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", false );
 			if err != nil {

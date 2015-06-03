@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	//"time"
+	"strings"
 	//"database/sql"
 	"runtime"
 	"path/filepath"
@@ -90,6 +91,7 @@ func  ParseBlockHeader(binaryBlock *[]byte) (*BlockData) {
 	return result
 }
 
+/*
 func Round(f float64, places int) (float64) {
 	if places==0 {
 		return math.Floor(f + .5)
@@ -97,6 +99,16 @@ func Round(f float64, places int) (float64) {
 		shift := math.Pow(10, float64(places))
 		return math.Floor((f * shift)+.5) / shift;
 	}
+}
+*/
+
+func round(num float64) int {
+	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
+}
+
+func Round(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num * output)) / output
 }
 
 
@@ -224,7 +236,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 			return true
 		}
 	case "currency_full_name":
-		if ok, _ := regexp.MatchString(`^[a-z\s]{3,50}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[a-zA-Z\s]{3,50}$`, data); ok{
 			return true
 		}
 	case "currency_commission":
@@ -340,7 +352,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString(`^\{\"is_ready\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\],\"generator\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\]\}$`, data); ok{
 			return true
 		}
-	case "int64", "bigint":
+	case "int64", "bigint", "user_id":
 		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok{
 			return true
 		}
@@ -398,7 +410,20 @@ func BytesToInt(s []byte) int {
 	int_, _ := strconv.Atoi(string(s))
 	return int_
 }
-
+func StrToMoney(str string) float64 {
+	ind:=strings.Index(str, ".")
+	new:=""
+	if ind!=-1 {
+		end := 2
+		if len(str[ind + 1 : ]) > 1 {
+			end = 3
+		}
+		new = str[ : ind] + "." + str[ind + 1 : ind + end]
+	} else {
+		new = str
+	}
+	return StrToFloat64(new)
+}
 func DownloadToFile(url, file string) (int64, error) {
 	out, err := os.Create(file)
 	if err != nil {
@@ -816,6 +841,8 @@ func InterfaceToStr(i []interface {}) []string {
 		switch v.(type) {
 		case int:
 			str = append(str, IntToStr(v.(int)))
+		case float64:
+			str = append(str, Float64ToStr(v.(float64)))
 		case int64:
 			str = append(str, Int64ToStr(v.(int64)))
 		case string:
@@ -1136,8 +1163,8 @@ func DbClose(c *DCDB) {
 
 func GetAllMaxPromisedAmount() []int64 {
 	var arr []int64
-	var iEnd int
-	for i := 1; i < 1000000000; i=i*10 {
+	var iEnd int64
+	for i := int64(1); i < 1000000000; i=i*10 {
 		if i == 10 {
 			continue
 		}
@@ -1146,7 +1173,7 @@ func GetAllMaxPromisedAmount() []int64 {
 		} else {
 			iEnd = 90
 		}
-		for j:=0; j<iEnd; j++ {
+		for j:=int64(0); j<iEnd; j++ {
 			if i<100 {
 				arr = append(arr, int64(i + j))
 			} else {

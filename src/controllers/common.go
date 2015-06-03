@@ -289,6 +289,40 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 
 
+func Tools(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Tools")
+	w.Header().Set("Content-type", "text/html")
+
+	c := new(Controller)
+	c.r = r
+	dbInit := false;
+	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
+		dbInit = true
+	}
+
+	if dbInit {
+		var err error
+		c.DCDB, err = utils.NewDbConnect(configIni)
+		if err != nil {
+			log.Print(err)
+			dbInit = false
+		} else {
+			defer c.DCDB.Close()
+		}
+	}
+
+	r.ParseForm()
+	controllerName := r.FormValue("controllerName")
+	fmt.Println("controllerName=",controllerName)
+	// вызываем контроллер в зависимости от шаблона
+	html, err :=  CallController(c, controllerName)
+	if err != nil {
+		log.Print(err)
+	}
+	w.Write([]byte(html))
+}
+
 func Content(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("content")

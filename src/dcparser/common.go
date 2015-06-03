@@ -27,6 +27,11 @@ type vComplex_ struct {
 	Admin int64 `json:"admin"`
 }
 
+type vComplex__ struct {
+	Currency map[string][]float64 `json:"currency"`
+	Referral map[string]string `json:"referral"`
+	Admin string `json:"admin"`
+}
 type txMapsType struct {
 	Int64 map[string]int64
 	String map[string]string
@@ -1096,7 +1101,7 @@ func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
 			case "float64":
 				p.TxMaps.Float64[field] =  utils.BytesToFloat64(p.TxSlice[i+4])
 			case "money":
-				p.TxMaps.Money[field] = math.Floor(utils.BytesToFloat64(p.TxSlice[i+4])*100)/100
+				p.TxMaps.Money[field] = utils.StrToMoney(string(p.TxSlice[i+4]))
 			case "bytes":
 				p.TxMaps.Bytes[field] =  p.TxSlice[i+4]
 			case "string":
@@ -1539,7 +1544,7 @@ func (p *Parser) points(points int64) (error) {
 		}
 	} else { // прошло меньше месяца
 		// прибавляем баллы
-		err = p.ExecSql("UPDATE points SET points = points+1 WHERE user_id = ?", points, p.TxMap["user_id"])
+		err = p.ExecSql("UPDATE points SET points = points+? WHERE user_id = ?", points, p.TxMap["user_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1904,8 +1909,9 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 		addSqlFields := ""
 		for k, v := range logData {
 			if utils.InSliceString(k, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && v!="" {
+				v:=string(utils.BinToHex([]byte(v)))
 				query:=""
-				switch p.ConfigIni["dbType"] {
+				switch p.ConfigIni["db_type"] {
 				case "sqlite":
 					query = `'`+v+`',`
 				case "postgresql":
@@ -1933,7 +1939,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 		for i:=0; i < len(fields); i++ {
 			if utils.InSliceString(fields[i], []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(values[i])!=0 {
 				query:=""
-				switch p.ConfigIni["dbType"] {
+				switch p.ConfigIni["db_type"] {
 				case "sqlite":
 					query = fields[i]+`='`+values[i]+`',`
 				case "postgresql":
@@ -1959,7 +1965,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 			addSqlIns0 += ``+fields[i]+`,`
 			if utils.InSliceString(fields[i], []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(values[i])!=0 {
 				query:=""
-				switch p.ConfigIni["dbType"] {
+				switch p.ConfigIni["db_type"] {
 				case "sqlite":
 					query = `'`+values[i]+`',`
 				case "postgresql":
@@ -1992,7 +1998,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 	// нужно узнать, какую часть от суммы заещик хочет оставить себе
 	creditPart, err := p.Single("SELECT credit_part FROM users WHERE user_id  =  ?", toUserId).Float64()
 	if err != nil {
-		return 0, err
+		return 0, p.ErrInfo(err)
 	}
 	if creditPart > 0 {
 		save := math.Floor( utils.Round( amount*(creditPart/100), 3) *100 ) / 100
@@ -2005,7 +2011,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 
 	rows, err := p.Query("SELECT pct, amount, id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND amount > 0 AND del_block_id = 0 ORDER BY time", toUserId, currencyId)
 	if err != nil {
-		return 0, err
+		return 0, p.ErrInfo(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -2013,7 +2019,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 		var id, to_user_id int64
 		err = rows.Scan(&pct, &amount, &id, &to_user_id)
 		if err!= nil {
-			return 0, err
+			return 0, p.ErrInfo(err)
 		}
 		var sum float64
 		var take float64
@@ -2034,13 +2040,13 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 			take = sum
 		}
 		amountForCredit -= take;
-		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{utils.Float64ToStr(amount-take), string(p.TxHash), utils.Int64ToStr(p.BlockData.BlockId)}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
+		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{amount-take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
 		if err!= nil {
-			return 0, err
+			return 0, p.ErrInfo(err)
 		}
 		err = p.updateRecipientWallet(toUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
 		if err!= nil {
-			return 0, err
+			return 0, p.ErrInfo(err)
 		}
 	}
 	return amount - (amountForCreditSave - amountForCredit), nil
@@ -2382,20 +2388,21 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 	// получим log_id, по которому можно найти данные, которые были до этого
 	logId, err := p.Single("SELECT log_id FROM "+table+" "+where).Int64()
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 	if logId > 0 {
 		// данные, которые восстановим
 		logData, err := p.OneRow("SELECT "+addSqlFields+" prev_log_id FROM log_"+table+" WHERE log_id  =  ?", logId).String()
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		//fmt.Println("logData",logData)
 		addSqlUpdate:=""
 		for _, field := range fields {
 			if utils.InSliceString(field, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(logData[field])!=0 {
 				query:=""
-				switch p.ConfigIni["dbType"] {
+				logData[field] = string(utils.BinToHex([]byte(logData[field])))
+				switch p.ConfigIni["db_type"] {
 				case "sqlite":
 					query = field+`='`+logData[field]+`',`
 				case "postgresql":
@@ -2410,18 +2417,18 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 		}
 		err = p.ExecSql("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+where, logData["prev_log_id"])
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		// подчищаем _log
 		err = p.ExecSql("DELETE FROM log_"+table+" WHERE log_id = ?", logId)
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		p.rollbackAI("log_"+table, 1)
 	} else {
 		err = p.ExecSql("DELETE FROM "+table+" "+where)
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		if rollback {
 			p.rollbackAI(table, 1)

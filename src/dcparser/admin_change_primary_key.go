@@ -9,7 +9,7 @@ import (
 
 func (p *Parser) AdminChangePrimaryKeyInit() (error) {
 
-	fields := []map[string]string {{"for_user_id":"int64"}, {"public_key":"string"}, {"sign":"bytes"}}
+	fields := []map[string]string {{"for_user_id":"int64"}, {"public_key":"bytes"}, {"sign":"bytes"}}
 	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -26,7 +26,7 @@ func (p *Parser) AdminChangePrimaryKeyFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"for_user_id":"user_id", "public_key_hex":"public_key_hex"}
+	verifyData := map[string]string {"for_user_id":"user_id", "public_key_hex":"public_key"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -78,23 +78,14 @@ func (p *Parser) AdminChangePrimaryKeyFront() (error) {
 	return nil
 }
 
-func (p *Parser) AdminChangePrimaryKey() (error) {
-
-	return nil
+func (p *Parser) AdminChangePrimaryKey() error {
+	return p.selectiveLoggingAndUpd([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, []interface {}{p.TxMaps.Bytes["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
 }
 
-func (p *Parser) AdminChangePrimaryKeyRollback() (error) {
-	err := p.selectiveLoggingAndUpd([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, []interface {}{p.TxMaps.String["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	return nil
+func (p *Parser) AdminChangePrimaryKeyRollback() error {
+	return p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
 }
 
 func (p *Parser) AdminChangePrimaryKeyRollbackFront() error {
-	err := p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
 	return nil
 }

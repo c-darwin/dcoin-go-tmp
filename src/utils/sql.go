@@ -554,8 +554,12 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		if err != nil {
 			return "", ErrInfo(err)
 		}
+		columns = strings.Replace(columns,",`status_backup`","",-1)
+		columns = strings.Replace(columns,"`status_backup`,","",-1)
+		columns = strings.Replace(columns,",`cash_request_in_block_id`","",-1)
+		columns = strings.Replace(columns,"`cash_request_in_block_id`,","",-1)
 		q="SELECT MD5(GROUP_CONCAT( CONCAT_WS( '#', `"+columns+"`)  "+orderBy+" )) FROM `"+table+"` "+where
-		//fmt.Println(q)
+		log.Println(q)
 	}
 	//fmt.Println(q)
 

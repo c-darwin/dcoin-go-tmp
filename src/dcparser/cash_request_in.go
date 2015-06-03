@@ -120,7 +120,7 @@ func (p *Parser) CashRequestIn() (error) {
 		return p.ErrInfo(err)
 	}
 	var repaidPromisedAmountId int64
-	if (userStatus == "suspendedMiner") {
+	if (userStatus == "suspended_miner") {
 		promisedAmountStatus = "suspended"
 		// нужно понять, какой promised_amount ранее имел статус repaid
 		repaidPromisedAmountId, err = p.Single("SELECT id FROM promised_amount WHERE user_id  =  ? AND currency_id  =  ? AND status_backup  =  'repaid' AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxUserID, currency_id).Int64()
@@ -313,7 +313,7 @@ func (p *Parser) CashRequestInRollback() (error) {
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?,  cash_request_in_block_id = ?, log_id = ?, cash_request_in_block_id = 0 WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["cash_request_in_block_id"], logData["prev_log_id"], id)
+			err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?,  cash_request_in_block_id = ?, log_id = ? WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["cash_request_in_block_id"], logData["prev_log_id"], id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}

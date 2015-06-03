@@ -182,7 +182,7 @@ var TxTypes = map[int]string {
 	51 : "ChangeCreditor",//
 	52 : "DelCredit",//
 	53 : "RepaymentCredit",//
-	54 : "ChangeCreditPpart",//
+	54 : "ChangeCreditPart",//
 	55 : "NewAdmin",
 	// по истечении 30 дней после поступления запроса о восстановлении утерянного ключа, админ может изменить ключ юзера
 	56 : "AdminChangePrimaryKey",//
