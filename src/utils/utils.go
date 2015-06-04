@@ -103,10 +103,13 @@ func Round(f float64, places int) (float64) {
 */
 
 func round(num float64) int {
+	num += 0.0000001
 	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
 }
 
 func Round(num float64, precision int) float64 {
+	num += 0.0000001
+	num = StrToFloat64(Float64ToStr(num))
 	output := math.Pow(10, float64(precision))
 	return float64(round(num * output)) / output
 }

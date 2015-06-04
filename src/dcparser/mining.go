@@ -138,15 +138,16 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	if systemCommission >= p.TxMaps.Money["amount"] {
 		systemCommission = 0
 	}
+	log.Println("systemCommission", systemCommission)
 
 	// теперь начисляем DC, залогировав предыдущее значение
-	err = p.updateRecipientWallet( p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", false );
+	err = p.updateRecipientWallet( p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", true );
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	// теперь начисляем комиссию системе
 	if systemCommission > 0 {
-		err = p.updateRecipientWallet( 1, currencyId, systemCommission, "system_commission", p.TxMaps.Int64["promised_amount_id"], "", "", false );
+		err = p.updateRecipientWallet( 1, currencyId, systemCommission, "system_commission", p.TxMaps.Int64["promised_amount_id"], "", "", true );
 	}
 	// реферальные
 	refData, err := p.OneRow("SELECT * FROM referral").Float64()
@@ -154,14 +155,12 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 		return p.ErrInfo(err)
 	}
 	if refs[0] > 0 {
+		log.Println(p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"])
 		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["first"] / 100), 2 )
+		log.Println("refs[0]", refs[0], refAmount)
 		//log.Println(p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"], refAmount)
-		// на время тестов
-		if p.TxMaps.Money["amount"] * float64(refData["first"] / 100) == 0.285 {
-			refAmount = 0.29
-		}
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", false );
+			err = p.updateRecipientWallet( refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -175,8 +174,9 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 
 	if refs[1] > 0 {
 		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["second"] / 100), 2 )
+		log.Println("refs[1]", refs[1], refAmount)
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[1], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", false );
+			err = p.updateRecipientWallet( refs[1], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -190,8 +190,9 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 
 	if refs[2] > 0 {
 		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["third"] / 100), 2 )
+		log.Println("refs[2]", refs[2], refAmount)
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[2], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", false );
+			err = p.updateRecipientWallet( refs[2], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
 			if err != nil {
 				return p.ErrInfo(err)
 			}

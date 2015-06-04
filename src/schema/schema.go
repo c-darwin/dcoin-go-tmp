@@ -1009,8 +1009,6 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[1] = map[string]string{"name":"hash", "mysql":"binary(32) NOT NULL", "sqlite":"binary(32) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш от полного заголовка блока (new_block_id,prev_block_hash,merkle_root,time,user_id,level). Используется как PREV_BLOCK_HASH"}
 	s2[2] = map[string]string{"name":"head_hash", "mysql":"binary(32) NOT NULL", "sqlite":"binary(32) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш от заголовка блока (user_id,block_id,prev_head_hash). Используется для обновления head_hash в info_block при восстановлении после вилки в upd_block_info()"}
 	s2[3] = map[string]string{"name":"data", "mysql":"longblob NOT NULL", "sqlite":"longblob NOT NULL","postgresql":"bytea NOT NULL", "comment": ""}
-	s2[4] = map[string]string{"name":"time", "mysql":"int(10) unsigned NOT NULL DEFAULT '0'", "sqlite":"int(10)  NOT NULL DEFAULT '0'","postgresql":"int  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[5] = map[string]string{"name":"tx", "mysql":"text NOT NULL", "sqlite":"text NOT NULL","postgresql":"bytea NOT NULL", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["comment"] = "Главная таблица. Хранит цепочку блоков"
@@ -1235,9 +1233,8 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[12] = map[string]string{"name":"votes_0", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[13] = map[string]string{"name":"votes_1", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[14] = map[string]string{"name":"cash_request_out_time", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
-	s2[15] = map[string]string{"name":"cash_request_in_block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
-	s2[16] = map[string]string{"name":"block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
-	s2[17] = map[string]string{"name":"prev_log_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[15] = map[string]string{"name":"block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
+	s2[16] = map[string]string{"name":"prev_log_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"log_id"}
 	s1["AI"] = "log_id"
@@ -1657,7 +1654,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[2] = map[string]string{"name":"type", "mysql":"enum('votes_miners','promised_amount') NOT NULL", "sqlite":"varchar(100)  NOT NULL","postgresql":"enum('votes_miners','promised_amount') NOT NULL", "comment": "Нужно для voting_id"}
 	s2[3] = map[string]string{"name":"del_block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "В каком блоке было удаление. Нужно для чистки по крону старых данных и для откатов."}
 	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"user_id","voting_id","type"}
+	s1["PRIMARY"] = []string{"user_id","type"}
 	s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 	s["log_votes"] = s1
 	schema.s = s
@@ -2376,7 +2373,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s=make(recmap)
 	s1=make(recmap)
 	s2=make(recmapi)
-	s2[0] = map[string]string{"name":"hash", "mysql":"binary(16) NOT NULL", "sqlite":"binary(16) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш транзакции. Нужно для удаления данных из буфера, после того, как транзакция была обработана в блоке, либо анулирована из-за ошибок при повторной проверке"}
+	s2[0] = map[string]string{"name":"hash", "mysql":"binary(32) NOT NULL", "sqlite":"binary(32) NOT NULL","postgresql":"bytea  NOT NULL", "comment": "Хэш транзакции. Нужно для удаления данных из буфера, после того, как транзакция была обработана в блоке, либо анулирована из-за ошибок при повторной проверке"}
 	s2[1] = map[string]string{"name":"del_block_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": "Т.к. удалять нельзя из-за возможного отката блока, приходится делать delete=1, а через сутки - чистить"}
 	s2[2] = map[string]string{"name":"user_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[3] = map[string]string{"name":"currency_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2572,6 +2569,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s["config"] = s1
 	schema.s = s
 	schema.printSchema()
+
 
 
 

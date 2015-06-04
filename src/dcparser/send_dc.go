@@ -15,6 +15,7 @@ import (
 	"consts"
 	"math"
 	"database/sql"
+	"log"
 )
 
 func (p *Parser) SendDcInit() (error) {
@@ -113,13 +114,13 @@ func (p *Parser) SendDcFront() (error) {
 				return p.ErrInfo("arbitrator = user_id")
 			}
 
-			if len(p.TxMap[arbitrator_]) > 0 {
+			if p.TxMaps.Int64[arbitrator_]>0 {
 				dupArray[utils.BytesToInt64(p.TxMap[arbitrator_])]++
 				if dupArray[utils.BytesToInt64(p.TxMap[arbitrator_])] > 1 {
 					return p.ErrInfo("doubles")
 				}
 			}
-			if len(p.TxMap[arbitrator_]) > 0 {
+			if p.TxMaps.Int64[arbitrator_]>0 {
 
 				arbitrator := p.TxMap[arbitrator_]
 				// проверим, является ли арбитром указанный user_id
@@ -279,6 +280,7 @@ func (p *Parser) SendDc() (error) {
 		return p.ErrInfo(err)
 	}
 
+	log.Println("SendDC updateRecipientWallet")
 	// обновим сумму на кошельке получателю
 	err = p.updateRecipientWallet( p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], "from_user", p.TxMaps.Int64["from_user_id"], p.TxMaps.String["comment"], "encrypted", true )
 	if err != nil {

@@ -188,7 +188,7 @@ func (p *Parser) NewReductionFront() (error) {
 }
 
 func (p *Parser) NewReduction() (error) {
-	d := 100 - (utils.StrToFloat64(p.TxMaps.String["pct"]) / 100)
+	d := (100 - utils.StrToFloat64(p.TxMaps.String["pct"])) / 100
 	if utils.StrToFloat64(p.TxMaps.String["pct"]) > 0 {
 
 		// т.к. невозможо 2 отката подряд из-за промежутка в 2 дня между reduction,

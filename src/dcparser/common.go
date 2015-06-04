@@ -1209,7 +1209,14 @@ func (p *Parser) CheckInputData(data map[string]string) (error) {
 
 func (p *Parser) limitRequestsRollback(txType string) error {
 	time := p.TxMap["time"]
-	return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ?", p.TxMap["user_id"], time)
+	if p.ConfigIni["db_type"] == "mysql" {
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ? LIMIT 1", p.TxMap["user_id"], time)
+	} else if p.ConfigIni["db_type"] == "postgresql" {
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE ctid IN (SELECT ctid FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxMap["user_id"], time)
+	} else {
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE id IN (SELECT id FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxMap["user_id"], time)
+	}
+	return nil
 }
 
 func (p *Parser) countMinerAttempt(userId, vType string) (int64, error) {
@@ -1993,13 +2000,17 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 }
 
 func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64) (float64, error) {
+
+	log.Println("loan_payments", "toUserId:",toUserId, "amount:",amount, "currencyId:",currencyId)
+
 	amountForCredit := amount;
 
-	// нужно узнать, какую часть от суммы заещик хочет оставить себе
+	// нужно узнать, какую часть от суммы заемщик хочет оставить себе
 	creditPart, err := p.Single("SELECT credit_part FROM users WHERE user_id  =  ?", toUserId).Float64()
 	if err != nil {
 		return 0, p.ErrInfo(err)
 	}
+	log.Println("creditPart", creditPart)
 	if creditPart > 0 {
 		save := math.Floor( utils.Round( amount*(creditPart/100), 3) *100 ) / 100
 		if save < 0.01 {
@@ -2008,6 +2019,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 		amountForCredit-=save
 	}
 	amountForCreditSave := amountForCredit;
+	log.Println("amountForCredit", amountForCredit)
 
 	rows, err := p.Query("SELECT pct, amount, id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND amount > 0 AND del_block_id = 0 ORDER BY time", toUserId, currencyId)
 	if err != nil {
@@ -2015,36 +2027,42 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var pct, amount float64
-		var id, to_user_id int64
-		err = rows.Scan(&pct, &amount, &id, &to_user_id)
+		var rowPct, rowAmount float64
+		var rowToUserId int64
+		var rowId string
+		err = rows.Scan(&rowPct, &rowAmount, &rowId, &rowToUserId)
 		if err!= nil {
 			return 0, p.ErrInfo(err)
 		}
 		var sum float64
 		var take float64
 		if p.BlockData.BlockId > 169525 {
-			sum = utils.Round(pct/100 * amountForCreditSave, 2);
+			sum = utils.Round(rowPct/100 * amountForCreditSave, 2);
 		} else {
-			sum = utils.Round(pct/100 * amount, 2);
+			sum = utils.Round(rowPct/100 * amount, 2);
 		}
+		log.Println("sum", sum)
+
 		if sum < 0.01 {
 			sum = 0.01
 		}
 		if (sum > amountForCredit) {
 			sum = amountForCredit;
 		}
-		if (sum - amount > 0) {
-			take = amount;
+		if (sum - rowAmount > 0) {
+			take = rowAmount;
 		} else {
 			take = sum
 		}
 		amountForCredit -= take;
-		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{amount-take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{utils.Int64ToStr(id)})
+		log.Println("amountForCredit", amountForCredit)
+		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface {}{rowAmount-take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{rowId})
 		if err!= nil {
 			return 0, p.ErrInfo(err)
 		}
-		err = p.updateRecipientWallet(toUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
+
+		log.Println("rowToUserId", rowToUserId, "currencyId", currencyId, "take", take, "toUserId", toUserId)
+		err = p.updateRecipientWallet(rowToUserId, currencyId, take, "loan_payment", toUserId, "loan_payment", "decrypted", false)
 		if err!= nil {
 			return 0, p.ErrInfo(err)
 		}
@@ -2364,6 +2382,9 @@ func (p *Parser) getTdc(promisedAmountId, userId int64) (float64, error) {
 			return 0, err
 		}
 		newTdc = tdc_amount + profit
+		log.Println("profit", profit)
+		log.Println("gettdc tdc_amount", tdc_amount)
+		log.Println("newTdc", newTdc)
 	} else if status == "repaid" && existsCashRequests==nil {
 		profit, err := p.calcProfit_ ( tdc_amount, tdc_amount_update, time, pct[currency_id], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0 )
 		if err != nil {
@@ -2628,8 +2649,12 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 		}
 	}
 
+	log.Println("newArr21", newArr2)
+
 	// если в max_promised_amount больше чем в pct
 	if len(maxPromisedAmountArray) > 0 {
+		log.Println("maxPromisedAmountArray", maxPromisedAmountArray)
+
 		for i:=0; i<len(maxPromisedAmountArray); i++ {
 			for time, maxPromisedAmount := range maxPromisedAmountArray[i] {
 				MaxPromisedAmountCalcProfit := getMaxPromisedAmountCalcProfit(amount, repaidAmount, utils.StrToFloat64(maxPromisedAmount), currencyId);
@@ -2641,7 +2666,6 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 		}
 	}
 
-	log.Println("newArr2", newArr2)
 
 	maxTimeInNewArr2 := func(newArr2 []map[int64]pctAmount) int64 {
 		var max int64
@@ -2668,14 +2692,16 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 	var oldPctAndAmount pctAmount
 	var startHolidays bool
 	var finishHolidaysElement int64
+	log.Println("newArr2", newArr2)
 	START:
 	for i:=0; i < len(newArr2); i++ {
 
 		for time, pctAndAmount := range newArr2[i] {
 
+			log.Println(time, timeFinish)
 			log.Println("pctAndAmount", pctAndAmount)
-
 			if (time > timeFinish) {
+				log.Println("continue START", time, timeFinish)
 				continue START
 			}
 			if (time > timeStart) {
@@ -2728,8 +2754,11 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 				oldTime = timeStart
 			}
 			oldPctAndAmount = pctAndAmount
+			log.Println("oldPctAndAmount", oldPctAndAmount)
 		}
 	}
+	log.Println("oldTime", oldTime)
+	log.Println("timeFinish", timeFinish)
 
 	log.Println("resultArr", resultArr)
 
@@ -2739,11 +2768,13 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 
 	// время в процентах меньше, чем нужное нам конечное время
 	if (oldTime < timeFinish && !startHolidays) {
+		log.Println("oldTime < timeFinish")
 		// просто берем последний процент и добиваем его до нужного $time_finish
 		sec := timeFinish - oldTime;
 		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
 	}
 
+	log.Println("resultArr", resultArr)
 
 	var profit, amountAndProfit float64
 	for i:=0; i < len(resultArr); i++ {
@@ -2754,6 +2785,8 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
 	}
+
+	log.Println("total profit w/o amount:", profit)
 
 	return profit, nil
 }

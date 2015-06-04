@@ -158,7 +158,7 @@ func BlocksCollection(configIni map[string]string) {
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-                        if blockId == 137000 {
+                        if blockId == 167553 {
                             break BEGIN
                         }
                         fmt.Println("blockId", blockId)
@@ -169,7 +169,7 @@ func BlocksCollection(configIni map[string]string) {
                         blockBin := utils.BytesShift(&data2, length)
                         fmt.Printf("blockBin %x\n", blockBin)
 
-                        if blockId > 134999 {
+                        if blockId > 164999 {
 
                             // парсинг блока
                             parser := new(dcparser.Parser)
