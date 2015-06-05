@@ -266,7 +266,7 @@ func (p *Parser) SendDc() (error) {
 		if arbitration_days_refund > 0 {
 			for i:=0; i < 5; i++ {
 				iStr:=utils.IntToStr(i);
-				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >=1 {
+				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >=0.01 {
 					// нужно учесть комиссию арбитра
 					commission += p.TxMaps.Float64["arbitrator"+iStr+"_commission"]
 					arbitrators = true
@@ -295,8 +295,13 @@ func (p *Parser) SendDc() (error) {
 		}
 	}
 
+	log.Println("p.BlockData.BlockId", p.BlockData.BlockId)
+	log.Println("consts.ARBITRATION_BLOCK_START", consts.ARBITRATION_BLOCK_START)
 	if p.BlockData.BlockId > consts.ARBITRATION_BLOCK_START {
 		// если продавец не согласен на арбитраж, то $arbitration_days_refund будет равно 0
+
+		log.Println("arbitration_days_refund", arbitration_days_refund)
+		log.Println("arbitrators", arbitrators)
 		if (arbitration_days_refund > 0 && arbitrators) {
 			holdBackAmount := math.Floor(utils.Round(p.TxMaps.Float64["amount"]*(seller_hold_back_pct/100), 3) * 100) / 100;
 			if holdBackAmount < 0.01 {
@@ -309,7 +314,9 @@ func (p *Parser) SendDc() (error) {
 			// начисляем комиссию арбитрам
 			for i := 0; i < 5; i++ {
 				iStr := utils.IntToStr(i)
+				log.Println("arbitrator_commission "+iStr, p.TxMaps.Float64["arbitrator"+iStr+"_commission"])
 				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >= 0.01 {
+					log.Println("updateRecipientWallet")
 					err = p.updateRecipientWallet(p.TxMaps.Int64["arbitrator"+iStr], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["arbitrator"+iStr+"_commission"], "arbitrator_commission", orderId, "", "encrypted", true)
 					if err != nil {
 						return p.ErrInfo(err)

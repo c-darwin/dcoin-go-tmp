@@ -60,7 +60,7 @@ func (p *Parser) MoneyBackRequestFront() (error) {
 				encData["arbitrator"+iStr+"_enc_text"] = "0"
 			}
 		}
-		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["order_id"], encData["arbitrator0_enc_text"], encData["arbitrator1_enc_text"], encData["arbitrator2_enc_text"], encData["arbitrator3_enc_text"], encData["arbitrtaor4_enc_text"], utils.BinToHex(p.TxMap["seller_enc_text"]))
+		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["order_id"], encData["arbitrator0_enc_text"], encData["arbitrator1_enc_text"], encData["arbitrator2_enc_text"], encData["arbitrator3_enc_text"], encData["arbitrator4_enc_text"], utils.BinToHex(p.TxMap["seller_enc_text"]))
 	}
 
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
@@ -108,7 +108,7 @@ func (p *Parser) MoneyBackRequest() (error) {
 			return p.ErrInfo(err)
 		}
 		if orderData["arbitrator"+iStr] == myUserId {
-			err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment, comment_status ) VALUES ( 'arbitrator', ?, ?', 'encrypted' )", p.TxMap["order_id"], utils.BinToHex(p.TxMaps.Bytes["arbitrator"+iStr+"_enc_text"]))
+			err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment, comment_status ) VALUES ( 'arbitrator', ?, ?, 'encrypted' )", p.TxMap["order_id"], utils.BinToHex(p.TxMaps.Bytes["arbitrator"+iStr+"_enc_text"]))
 			if err != nil {
 				return p.ErrInfo(err)
 			}

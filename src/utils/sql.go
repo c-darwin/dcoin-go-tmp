@@ -5,7 +5,7 @@ import (
      _ "github.com/go-sql-driver/mysql"
 	 "database/sql"
 	"strings"
-	//"regexp"
+	"regexp"
 	//"errors"
 	"log"
 	"time"
@@ -17,6 +17,7 @@ import (
 //	"sync/atomic"
 //	"os"
 	//"dcparser"
+
 )
 
 type DCDB struct {
@@ -446,45 +447,63 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	return nil
 }
 
-func FormatQuery(query, dbType string) string {
-	switch dbType {
-	case "sqlite":
-		query = strings.Replace(query, "[hex]", "?", -1)
-	case "postgresql":
-		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
-		query = replQ(query)
-	case "mysql":
-		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
-	}
-	return query
-}
 
 func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64, error) {
-	query = FormatQuery(query, db.ConfigIni["db_type"])
-	res, err := db.Exec(query, args...)
+	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
+	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
-		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
+		return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return lastId, nil
 }
 
+func FormatQuery(q, dbType string, args...interface {}) (string, []interface {}) {
+	var newArgs []interface {}
+	newQ := q
+	switch dbType {
+	case "sqlite":
+		r, _ := regexp.Compile(`(\[hex\]|\?)`)
+		indexArr := r.FindAllStringSubmatchIndex(q, -1)
+		for i:=0; i < len(indexArr); i++ {
+			str:=q[indexArr[i][0]:indexArr[i][1]]
+			if str!="[hex]" {
+				newArgs = append(newArgs, args[i])
+			} else {
+				switch args[i].(type) {
+				case string:
+					newQ =strings.Replace(newQ, "[hex]", "x'"+args[i].(string)+"'", 1)
+				case []byte:
+					newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
+				}
+			}
+		}
+		newQ = strings.Replace(newQ, "[hex]", "?", -1)
+	case "postgresql":
+		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+		newQ = replQ(newQ)
+		newArgs = args
+	case "mysql":
+		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+		newArgs = args
+	}
+	return newQ, newArgs
+}
+
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
-	query = FormatQuery(query, db.ConfigIni["db_type"])
-	res, err := db.Exec(query, args...)
+	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
+	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
-		return fmt.Errorf("%s in query %s %s", err, query, args)
+		return fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["log"]=="1" {
-		log.Println(query)
-		log.Println(args)
-		log.Printf("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+		log.Printf("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return nil
 }
@@ -492,15 +511,15 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 
 
 func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
-	query = FormatQuery(query, db.ConfigIni["db_type"])
-	res, err := db.Exec(query, args...)
+	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
+	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
-		return 0, fmt.Errorf("%s in query %s %s", err, query, args)
+		return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", query, affect, lastId, args)
+		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return affect, nil
 }
@@ -1393,6 +1412,7 @@ func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	if err!=nil {
 		return BlockData, err
 	}
+	log.Printf("data: %x\n", data["data"])
 	if len(data["data"]) > 0 {
 		binaryData := []byte(data["data"])
 		BytesShift(&binaryData, 1)  // не нужно. 0 - блок, >0 - тр-ии

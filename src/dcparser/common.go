@@ -193,7 +193,7 @@ func (p *Parser) dataPre() {
 	p.blockHex = utils.BinToHex(p.BinaryData)
 	// определим тип данных
 	p.dataType =  int(utils.BinToDec(utils.BytesShift(&p.BinaryData, 1)))
-	fmt.Println("dataType", p.dataType)
+	log.Println("dataType", p.dataType)
 }
 
 
@@ -212,7 +212,7 @@ func (p *Parser) ParseBlock() error {
 	p.BlockData = utils.ParseBlockHeader(&p.BinaryData)
 
 	p.CurrentBlockId = p.BlockData.BlockId
-	//fmt.Println(p.BlockData)
+	//log.Println(p.BlockData)
 
 	return nil
 }
@@ -224,13 +224,13 @@ func (p *Parser) CheckBlockHeader() error {
 	// инфа о предыдущем блоке (т.е. последнем занесенном)
 	if p.PrevBlock == nil {
 		p.PrevBlock, err = p.DCDB.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
-		fmt.Println("PrevBlock 0",p.PrevBlock)
+		log.Println("PrevBlock 0",p.PrevBlock)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 	}
-	fmt.Println("PrevBlock",p.PrevBlock)
-	fmt.Println("p.PrevBlock.BlockId",p.PrevBlock.BlockId)
+	log.Println("PrevBlock",p.PrevBlock)
+	log.Println("p.PrevBlock.BlockId",p.PrevBlock.BlockId)
 	// для локальных тестов
 	if p.PrevBlock.BlockId == 1 {
 		if p.GetConfigIni("start_block_id") != "" {
@@ -245,19 +245,19 @@ func (p *Parser) CheckBlockHeader() error {
 	} else {
 		first = false
 	}
-	fmt.Println(first)
+	log.Println(first)
 
 	// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
-	fmt.Println(p.Variables)
+	log.Println(p.Variables)
 	p.MrklRoot, err = utils.GetMrklroot(p.BinaryData, p.Variables, first)
-	fmt.Println(p.MrklRoot)
+	log.Println(p.MrklRoot)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 
 	// проверим время
 	if !utils.CheckInputData(p.BlockData.Time, "int") {
-		fmt.Println("p.BlockData.Time",p.BlockData.Time)
+		log.Println("p.BlockData.Time",p.BlockData.Time)
 		return utils.ErrInfo(fmt.Errorf("incorrect time"))
 	}
 	// проверим уровень
@@ -273,15 +273,15 @@ func (p *Parser) CheckBlockHeader() error {
 
 	// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
 	isReadySleep := p.DCDB.GetIsReadySleep(p.PrevBlock.Level, sleepData["is_ready"])
-	fmt.Println("isReadySleep", isReadySleep)
+	log.Println("isReadySleep", isReadySleep)
 
 	// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
 	generatorSleep := utils.GetGeneratorSleep(p.BlockData.Level, sleepData["generator"])
-	fmt.Println("generatorSleep", generatorSleep)
+	log.Println("generatorSleep", generatorSleep)
 
 	// сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
 	isReadySleep2 := utils.GetIsReadySleepSum(p.BlockData.Level , sleepData["is_ready"])
-	fmt.Println("isReadySleep2", isReadySleep2)
+	log.Println("isReadySleep2", isReadySleep2)
 
 	// не слишком ли рано прислан этот блок. допустима погрешность = error_time
 	if !first {
@@ -319,7 +319,7 @@ func (p *Parser) CheckBlockHeader() error {
 		}
 		// SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
 		forSign := fmt.Sprintf("0,%d,%s,%d,%d,%d,%s", p.BlockData.BlockId, p.PrevBlock.Hash, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level, p.MrklRoot)
-		fmt.Println(forSign)
+		log.Println(forSign)
 		// проверим подпись
 		resultCheckSign, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.BlockData.Sign, true);
 		if err != nil {
@@ -562,7 +562,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	}
 	parser := new(Parser)
 	parser.DCDB = p.DCDB
-	fmt.Println("1111111")
+	log.Println("1111111")
 	for rows.Next() {
 		var data, id []byte
 		err = rows.Scan(&id, &data)
@@ -703,8 +703,8 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 			}
 			sizesSlice = append(sizesSlice, txSize)
 			// удалим тр-ию
-			fmt.Println("txSize", txSize)
-			//fmt.Println("binForSize", binForSize)
+			log.Println("txSize", txSize)
+			//log.Println("binForSize", binForSize)
 			utils.BytesShift(&binForSize, txSize)
 			if len(binForSize) == 0 {
 				break
@@ -811,12 +811,12 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		i:=0
 		for {
 			length := utils.DecodeLength(transactionBinaryData)
-			fmt.Printf("length%d\n", length)
+			log.Printf("length%d\n", length)
 			if length > 0 && length < p.Variables.Int64["max_tx_size"] {
 				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
 				merkleSlice = append(merkleSlice, utils.DSha256(data))
-				fmt.Printf("utils.DSha256(data) %s\n", utils.DSha256(data))
+				log.Printf("utils.DSha256(data) %s\n", utils.DSha256(data))
 			}
 			i++
 			if length == 0 || i >= 20 { // у нас нет тр-ий с более чем 20 элементами
@@ -829,9 +829,9 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 	} else {
 		merkleSlice = append(merkleSlice, []byte("0"))
 	}
-	fmt.Println("merkleSlice", merkleSlice)
+	log.Println("merkleSlice", merkleSlice)
 	p.MerkleRoot = utils.MerkleTreeRoot(merkleSlice)
-	fmt.Printf("MerkleRoot %s\n", p.MerkleRoot)
+	log.Printf("MerkleRoot %s\n", p.MerkleRoot)
 	return append(transSlice, returnSlice...), nil
 }
 
@@ -923,7 +923,7 @@ func (p *Parser) ParseDataFull() error {
 			// обработка тр-ий может занять много времени, нужно отметиться
 			p.DCDB.UpdDaemonTime(p.GoroutineName)
 			p.halfRollback = false
-			fmt.Println("&p.BinaryData", p.BinaryData)
+			log.Println("&p.BinaryData", p.BinaryData)
 			transactionSize := utils.DecodeLength(&p.BinaryData)
 			if len(p.BinaryData) == 0 {
 				return utils.ErrInfo(fmt.Errorf("empty BinaryData"))
@@ -931,33 +931,33 @@ func (p *Parser) ParseDataFull() error {
 
 
 			// отчекрыжим одну транзакцию от списка транзакций
-			//fmt.Printf("++p.BinaryData=%x\n", p.BinaryData)
-			//fmt.Println("transactionSize", transactionSize)
+			//log.Printf("++p.BinaryData=%x\n", p.BinaryData)
+			//log.Println("transactionSize", transactionSize)
 			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
 			transactionBinaryDataFull := transactionBinaryData
 
 			// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
 			txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
-			//fmt.Printf("transactionBinaryData: %x\n", transactionBinaryData)
-			//fmt.Printf("txForRollbackTo: %x\n", txForRollbackTo)
+			//log.Printf("transactionBinaryData: %x\n", transactionBinaryData)
+			//log.Printf("txForRollbackTo: %x\n", txForRollbackTo)
 
 			err = p.CheckLogTx(transactionBinaryDataFull)
 			if err != nil {
-				//fmt.Println("err", err)
-				//fmt.Println("RollbackTo")
+				//log.Println("err", err)
+				//log.Println("RollbackTo")
 				p.RollbackTo(txForRollbackTo, true, false);
 				return err
 			}
 
 			p.DCDB.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
-			//fmt.Println("transactionBinaryData", transactionBinaryData)
+			//log.Println("transactionBinaryData", transactionBinaryData)
 			p.TxHash = utils.Md5(transactionBinaryData)
-			fmt.Println("p.TxHash", p.TxHash)
+			log.Println("p.TxHash", p.TxHash)
 			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
-			fmt.Println("p.TxSlice", p.TxSlice)
+			log.Println("p.TxSlice", p.TxSlice)
 			if err !=nil {
-				fmt.Println("err", err)
-				fmt.Println("RollbackTo")
+				log.Println("err", err)
+				log.Println("RollbackTo")
 				p.RollbackTo (txForRollbackTo, true, false)
 				return err
 			}
@@ -1004,25 +1004,25 @@ func (p *Parser) ParseDataFull() error {
 			p.TxIds = append(p.TxIds, string(p.TxSlice[1]))
 
 			MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
-			fmt.Println("MethodName", MethodName+"Init")
+			log.Println("MethodName", MethodName+"Init")
 			err_ := utils.CallMethod(p,MethodName+"Init")
 			if _, ok := err_.(error); ok {
-				fmt.Println(err)
+				log.Println(err)
 				return utils.ErrInfo(err_.(error))
 			}
 
-			fmt.Println("MethodName", MethodName+"Front")
+			log.Println("MethodName", MethodName+"Front")
 			err_ = utils.CallMethod(p,MethodName+"Front")
 			if _, ok := err_.(error); ok {
-				fmt.Println(err)
+				log.Println(err)
 				p.RollbackTo(txForRollbackTo, true, false);
 				return utils.ErrInfo(err_.(error))
 			}
 
-			fmt.Println("MethodName", MethodName)
+			log.Println("MethodName", MethodName)
 			err_ = utils.CallMethod(p,MethodName)
 			if _, ok := err_.(error); ok {
-				fmt.Println(err)
+				log.Println(err)
 				return utils.ErrInfo(err_.(error))
 			}
 
@@ -1058,7 +1058,7 @@ func (p *Parser) UpdBlockInfo() {
 	headHashData := fmt.Sprintf("%d,%d,%s", p.BlockData.UserId, blockId, p.PrevBlock.HeadHash)
 	p.BlockData.HeadHash = utils.DSha256(headHashData)
 	forSha := fmt.Sprintf("%d,%s,%s,%d,%d,%d", blockId, p.PrevBlock.Hash, p.MrklRoot, p.BlockData.Time, p.BlockData.UserId, p.BlockData.Level)
-	fmt.Println("forSha", forSha)
+	log.Println("forSha", forSha)
 	p.BlockData.Hash = utils.DSha256(forSha)
 
 	if p.BlockData.BlockId == 1 {
@@ -1134,16 +1134,16 @@ func (p *Parser) GetTxMap(fields []string) (map[string][]byte, error) {
 	p.TxUserID = utils.BytesToInt64(TxMap["user_id"])
 	p.TxTime = utils.BytesToInt64(TxMap["time"])
 	p.PublicKeys =nil
-	//fmt.Println("TxMap", TxMap)
-	//fmt.Println("TxMap[hash]", TxMap["hash"])
-	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
+	//log.Println("TxMap", TxMap)
+	//log.Println("TxMap[hash]", TxMap["hash"])
+	//log.Println("p.TxSlice[0]", p.TxSlice[0])
 	return TxMap, nil
 }
 
 // старое
 func (p *Parser) GetTxMapStr(fields []string) (map[string]string, error) {
-	//fmt.Println("p.TxSlice", p.TxSlice)
-	//fmt.Println("fields", fields)
+	//log.Println("p.TxSlice", p.TxSlice)
+	//log.Println("fields", fields)
 	if len(p.TxSlice) != len(fields)+4 {
 		return nil, fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
@@ -1158,9 +1158,9 @@ func (p *Parser) GetTxMapStr(fields []string) (map[string]string, error) {
 	p.TxUserID = utils.StrToInt64(TxMapS["user_id"])
 	p.TxTime = utils.StrToInt64(TxMapS["time"])
 	p.PublicKeys =nil
-	fmt.Println("TxMapS", TxMapS)
-	//fmt.Println("TxMap[hash]", TxMap["hash"])
-	//fmt.Println("p.TxSlice[0]", p.TxSlice[0])
+	log.Println("TxMapS", TxMapS)
+	//log.Println("TxMap[hash]", TxMap["hash"])
+	//log.Println("p.TxSlice[0]", p.TxSlice[0])
 	return TxMapS, nil
 }
 
@@ -1396,9 +1396,9 @@ func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
 }
 
 func  (p *Parser) minersCheckVotes1(data *MinerData) bool {
-	fmt.Println("data.votes1",data.votes1)
-	fmt.Println("data.minMinersKeepers",data.minMinersKeepers)
-	fmt.Println("data.minersIds",data.minersIds)
+	log.Println("data.votes1",data.votes1)
+	log.Println("data.minMinersKeepers",data.minMinersKeepers)
+	log.Println("data.minersIds",data.minersIds)
 	if int64(data.votes1) >= data.minMinersKeepers || data.votes1 == len(data.minersIds) /*|| data.adminUiserId == p.TxUserID Админская нода не решающая*/ {
 		return true
 	} else {
@@ -1415,20 +1415,20 @@ func getMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 	var ctx_ float64
 	ctx_ = float64(ctx)
 	for i:=0; i<minersKeepers; i++ {
-		//fmt.Println("ctx", ctx)
+		//log.Println("ctx", ctx)
 		//var hi float34
 		hi := ctx_ / float64(127773)
-		//fmt.Println("hi", hi)
+		//log.Println("hi", hi)
 		lo := int(ctx_) % 127773
-		//fmt.Println("lo", lo)
+		//log.Println("lo", lo)
 		x := (float64(16807) * float64(lo)) - (float64(2836) * hi)
-		//fmt.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
+		//log.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
 		if x <= 0 {
 			x += 0x7fffffff
 		}
 		ctx_ = x
 		rez := int(ctx_) % (maxMinerId+1)
-		//fmt.Println("rez", rez)
+		//log.Println("rez", rez)
 		if rez == 0 {
 			rez = 1
 		}
@@ -1654,17 +1654,20 @@ func (p *Parser) pointsUpdate(points, prevLogId, timeStart, pointsStatusTimeStar
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Println("mean", mean, "points", points, "newPoints", newPoints, "points_factor", p.Variables.Float64["points_factor"])
 
 	// есть ли тр-ия с голосованием votes_complex за последние 4 недели
 	count, err := p.Single("SELECT count(user_id) FROM votes_miner_pct WHERE user_id = ? AND time > ?", userId, (p.BlockData.Time - p.Variables.Int64["limit_votes_complex_period"]*2)).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Println("count", count)
 
 	// и хватает ли наших баллов для получения статуса майнера
-	if count > 0 && float64(points+newPoints) >= mean * float64(p.Variables.Int64["points_factor"]) {
+	if count > 0 && float64(points+newPoints) >= mean * float64(p.Variables.Float64["points_factor"]) {
 		// от $time_start до текущего времени могло пройти несколько месяцев. 1-й месяц будет майнер, остальные - юзер
 		minerStartTime := pointsStatusTimeStart + p.Variables.Int64["points_update_time"]
+		log.Println("minerStartTime", minerStartTime)
 		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'miner', ? )", userId, minerStartTime, p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -1694,6 +1697,7 @@ func (p *Parser) pointsUpdate(points, prevLogId, timeStart, pointsStatusTimeStar
 	} else {
 		// следующая запись должна быть ровно через 1 месяц после предыдущего статуса
 		userStartTime := pointsStatusTimeStart + p.Variables.Int64["points_update_time"]
+		log.Println("userStartTime", userStartTime)
 		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", userId, userStartTime, p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -1960,8 +1964,8 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 			}
 		}
 		err = p.ExecSql("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere, logId)
-		//fmt.Println("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere)
-		//fmt.Println("logId", logId)
+		//log.Println("UPDATE "+table+" SET "+addSqlUpdate+" log_id = ? "+addSqlWhere)
+		//log.Println("logId", logId)
 		if err != nil {
 			return err
 		}
@@ -2280,13 +2284,10 @@ func (p*Parser) limitRequestsMoneyOrdersRollback() error {
 	return nil
 }
 
-func (p *Parser) formatQuery (q string) string {
-	return utils.FormatQuery(q, p.ConfigIni["db_type"])
-}
-
 func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
-	rows, err := p.Query(p.formatQuery("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC"), userId, currencyId, p.BlockData.BlockId, p.TxHash)
+	newQuery, newArgs := utils.FormatQuery("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface {}{userId, currencyId, p.BlockData.BlockId, p.TxHash})
+	rows, err := p.Query(newQuery, newArgs)
 	if err != nil {
 		return  p.ErrInfo(err)
 	}
@@ -2417,7 +2418,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		//fmt.Println("logData",logData)
+		//log.Println("logData",logData)
 		addSqlUpdate:=""
 		for _, field := range fields {
 			if utils.InSliceString(field, []string{"hash", "tx_hash", "public_key_0", "public_key_1", "public_key_2"}) && len(logData[field])!=0 {
@@ -2626,6 +2627,8 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 		lastAmount = amount
 	}
 
+	log.Println("newArr201", newArr)
+
 	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
 	for i:=0; i < len(newArr); i++ {
 		log.Println("i ", i)
@@ -2644,6 +2647,7 @@ func (p *Parser) CalcProfit(amount float64, timeStart, timeFinish int64, pctArra
 			}
 			if !findTime2(time, newArr2) {
 				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
+				log.Println("findTime2", time, pct)
 			}
 			pct_ = pct;
 		}

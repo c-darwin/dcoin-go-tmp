@@ -10,15 +10,24 @@ import (
 
 
 func (p *Parser) NewUserInit() (error) {
+
+	fields := []map[string]string {{"public_key":"bytes"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	p.TxMap["public_key_hex"] = utils.BinToHex(p.TxMap["public_key"]);
+	p.TxMaps.Bytes["public_key_hex"] = utils.BinToHex(p.TxMaps.Bytes["public_key"]);
+/*
 	fields := []string {"public_key", "sign"}
 	TxMap := make(map[string][]byte)
 	TxMap, err := p.GetTxMap(fields);
 	p.TxMap = TxMap;
 	fmt.Println("TxMap", p.TxMap)
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
-	TxMap["public_key_hex"] = utils.BinToHex(TxMap["public_key"]);
+	TxMap["public_key_hex"] = utils.BinToHex(TxMap["public_key"]);*/
 	return nil
 }
 
@@ -26,19 +35,19 @@ func (p *Parser) NewUserFront() (error) {
 
 	err := p.generalCheck()
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 
 	// является ли данный юзер майнером
 	err = p.checkMiner(p.TxUserID)
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 
 	// прошло ли 30 дней с момента регистрации майнера
 	err = p.checkMinerNewbie()
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 
 	// чтобы не записали слишком мелкий или слишком крупный ключ
@@ -69,7 +78,7 @@ func (p *Parser) NewUserFront() (error) {
 	}
 	err = p.getAdminUserId()
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 	if utils.BytesToInt64(p.TxMap["user_id"]) == p.AdminUserId {
 		err = p.limitRequest(1000, "new_user", 86400)
@@ -77,7 +86,7 @@ func (p *Parser) NewUserFront() (error) {
 		err = p.limitRequest(p.Variables.Int64["limit_new_user"], "new_user", p.Variables.Int64["limit_new_user_period"])
 	}
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 	return nil
 }
@@ -124,7 +133,7 @@ func (p *Parser) NewUser() (error) {
 	} else {
 		myUserId, err := p.DCDB.Single("SELECT user_id FROM my_table").Int64()
 		if err != nil {
-			return err
+			return p.ErrInfo(err)
 		}
 		if myUserId == 0 {
 
@@ -149,7 +158,7 @@ func (p *Parser) NewUser() (error) {
 	// проверим, не наш ли это user_id
 	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
 	if err != nil {
-		return err
+		return p.ErrInfo(err)
 	}
 	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
 		p.DCDB.ExecSql("UPDATE "+myPrefix+"my_new_users SET status ='approved', user_id = ? WHERE public_key = [hex]", newUserId, p.TxMap["public_key_hex"])
