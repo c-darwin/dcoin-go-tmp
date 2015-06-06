@@ -131,7 +131,7 @@ func (p *Parser) AdminBanMiners() (error) {
 			}
 			addSql := "";
 			if (status == "repaid" || status == "mining") {
-				addSql = fmt.Sprintf("tdcAmount = %f, tdcAmountUpdate = %d, ", newTdc, p.BlockData.Time)
+				addSql = fmt.Sprintf("tdcAmount = %f, tdcAmountUpdate = %d, ", utils.Round(newTdc, 2), p.BlockData.Time)
 			}
 
 			// логируем текущее значение

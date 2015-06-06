@@ -134,11 +134,16 @@ func (c *Controller) CheckNode() (string, error) {
 				return "", err
 			}
 			allCounts = append(allCounts, map[string]interface {}{table : count})
-			hash, err := c.HashTableData(table, sqlWhere, orderBy)
-			if len(hash) > 6 {
-				hash = hash[:6]
+			if c.ConfigIni["db_type"]!="sqlite" {
+				hash, err := c.HashTableData(table, sqlWhere, orderBy)
+				if err != nil {
+					return "", err
+				}
+				if len(hash) > 6 {
+					hash = hash[:6]
+				}
+				allCounts = append(allCounts, map[string]interface{}{"_hash_"+table : hash})
 			}
-			allCounts = append(allCounts, map[string]interface {}{"_hash_"+table : hash})
 
 		}
 		log.Println("allCounts", allCounts)

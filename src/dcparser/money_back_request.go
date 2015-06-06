@@ -108,7 +108,7 @@ func (p *Parser) MoneyBackRequest() (error) {
 			return p.ErrInfo(err)
 		}
 		if orderData["arbitrator"+iStr] == myUserId {
-			err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment, comment_status ) VALUES ( 'arbitrator', ?, ?, 'encrypted' )", p.TxMap["order_id"], utils.BinToHex(p.TxMaps.Bytes["arbitrator"+iStr+"_enc_text"]))
+			err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment, comment_status ) VALUES ( 'arbitrator', ?, ?, 'encrypted' )", p.TxMaps.Int64["order_id"], utils.BinToHex(p.TxMaps.Bytes["arbitrator"+iStr+"_enc_text"]))
 			if err != nil {
 				return p.ErrInfo(err)
 			}

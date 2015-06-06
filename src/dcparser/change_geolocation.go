@@ -144,7 +144,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 			// для статуса 'pending', 'change_geo' нечего пересчитывать, т.к. во время этих статусов ничего не набегает
 			newTdc = tdc_amount
 		}
-		err = p.ExecSql("UPDATE promised_amount SET status = 'change_geo', start_time = 0, tdc_amount = ?, tdc_amount_update = ?, votes_start_time = ?, votes_0 = 0, votes_1 = 0, log_id = ? WHERE id = ?", newTdc, p.BlockData.Time, p.BlockData.Time, logId, id)
+		err = p.ExecSql("UPDATE promised_amount SET status = 'change_geo', start_time = 0, tdc_amount = ?, tdc_amount_update = ?, votes_start_time = ?, votes_0 = 0, votes_1 = 0, log_id = ? WHERE id = ?", utils.Round(newTdc, 2), p.BlockData.Time, p.BlockData.Time, logId, id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

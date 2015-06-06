@@ -125,7 +125,7 @@ func (p *Parser) NewPctFront() (error) {
 		if err!= nil {
 			return p.ErrInfo(err)
 		}
-		log.Println("currency_id", currency_id, "pct", pct, "votes", votes)
+		log.Println("newpctcurrency_id", currency_id, "pct", pct, "votes", votes)
 		if len(pctVotes[currency_id]) == 0 {
 			pctVotes[currency_id] = make(map[string]map[string]int64)
 		}

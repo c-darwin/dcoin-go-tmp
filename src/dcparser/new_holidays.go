@@ -64,7 +64,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 	}
 
 	// проверяем, чтобы не было перекрывания
-	num, err := p.Single("SELECT id FROM holidays WHERE user_id  =  ? AND delete  =  0 AND ( start_time < ? AND end_time > ? )", p.TxUserID, p.TxMaps.Int64["end_time"], p.TxMaps.Int64["start_time"]).Int64()
+	num, err := p.Single("SELECT id FROM holidays WHERE user_id  =  ? AND `delete`  =  0 AND ( start_time < ? AND end_time > ? )", p.TxUserID, p.TxMaps.Int64["end_time"], p.TxMaps.Int64["start_time"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -90,17 +90,17 @@ func (p *Parser) NewHolidays() (error) {
 	//fmt.Println("TxMap", p.TxMap)
 	//var myUserIds []int64;
 	err := p.ExecSql(`INSERT INTO holidays (user_id, start_time,end_time) VALUES (?, ?, ?)`,
-		p.TxMap["user_id"], p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
+		p.TxUserID, p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
 	if err != nil {
 		return err
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
 	//fmt.Println(myUserIds)
-	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
+	if p.TxUserID  == myUserId && myBlockId <= p.BlockData.BlockId {
 		// обновим статус в нашей локальной табле
 		err := p.ExecSql("DELETE FROM "+myPrefix+"my_holidays WHERE start_time=? AND end_time=?", p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
 		if err != nil {
@@ -111,7 +111,7 @@ func (p *Parser) NewHolidays() (error) {
 }
 func (p *Parser) NewHolidaysRollback() (error) {
 	//fmt.Println(p.TxMap)
-	err := p.ExecSql("DELETE FROM holidays WHERE user_id=? AND start_time=? AND end_time=?", p.TxMap["user_id"], p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
+	err := p.ExecSql("DELETE FROM holidays WHERE user_id=? AND start_time=? AND end_time=?", p.TxUserID, p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
 
 	if err != nil {
 		return utils.ErrInfo(err)

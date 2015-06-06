@@ -14,10 +14,8 @@ import (
 
 
 func (p *Parser) VotesPromisedAmountInit() (error) {
-	var err error
-	var fields []string
-	fields = []string {"promised_amount_id", "result", "comment", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields := []map[string]string {{"promised_amount_id":"int64"}, {"result":"int64"}, {"comment":"string"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -44,7 +42,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	}
 
 	// проверим, не закончилось ли уже голосование и верный ли статус (pending)
-	status, err := p.Single("SELECT status FROM promised_amount WHERE id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxMap["promised_amount_id"]).String()
+	status, err := p.Single("SELECT status FROM promised_amount WHERE id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxMaps.Int64["promised_amount_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -53,7 +51,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	}
 
 	// проверим, не повторное ли это голосование данного юзера
-	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id  =  ? AND voting_id  =  ? AND type  =  'promised_amount'", p.TxMap["user_id"], p.TxMap["promised_amount_id"]).Int64()
+	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id  =  ? AND voting_id  =  ? AND type  =  'promised_amount'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["promised_amount_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -85,18 +83,18 @@ func (p *Parser) VotesPromisedAmount() (error) {
 	p.points(p.Variables.Int64["promised_amount_points"])
 
 	// логируем, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err := p.ExecSql("INSERT INTO log_votes ( user_id, voting_id, type ) VALUES ( ?, ?, 'promised_amount' )", p.TxMap["user_id"], p.TxMap["promised_amount_id"])
+	err := p.ExecSql("INSERT INTO log_votes ( user_id, voting_id, type ) VALUES ( ?, ?, 'promised_amount' )", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// обновляем голоса
-	err = p.ExecSql("UPDATE promised_amount SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+" + 1 WHERE id = ?", p.TxMap["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" + 1 WHERE id = ?", p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	promisedAmountData, err := p.OneRow("SELECT log_id, status, start_time, tdc_amount_update, user_id, votes_start_time, votes_0, votes_1 FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).String()
+	promisedAmountData, err := p.OneRow("SELECT log_id, status, start_time, tdc_amount_update, user_id, votes_start_time, votes_0, votes_1 FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -134,7 +132,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 
 		// перевесили голоса "за" или 1 голос от админа
 		if p.checkTrueVotes(data) {
-			err = p.ExecSql("UPDATE promised_amount SET status = 'mining', start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, p.BlockData.Time, logId, p.TxMap["promised_amount_id"])
+			err = p.ExecSql("UPDATE promised_amount SET status = 'mining', start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, p.BlockData.Time, logId, p.TxMaps.Int64["promised_amount_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -155,7 +153,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 				}
 			}
 		} else { // перевесили голоса "против"
-			err = p.ExecSql("UPDATE promised_amount SET status = 'rejected', start_time = 0, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, logId, p.TxMap["promised_amount_id"])
+			err = p.ExecSql("UPDATE promised_amount SET status = 'rejected', start_time = 0, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.BlockData.Time, logId, p.TxMaps.Int64["promised_amount_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -163,12 +161,12 @@ func (p *Parser) VotesPromisedAmount() (error) {
 	}
 
 	// возможно с голосом пришел коммент
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
 	if p.TxUserID == myUserId {
-		err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment ) VALUES ( 'promised_amount', ?, ? )", p.TxMap["promised_amount_id"], p.TxMap["comment"])
+		err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment ) VALUES ( 'promised_amount', ?, ? )", p.TxMaps.Int64["promised_amount_id"], p.TxMaps.String["comment"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -183,17 +181,17 @@ func (p *Parser) VotesPromisedAmountRollback() (error) {
 	p.pointsRollback(p.Variables.Int64["promised_amount_points"])
 
 	// удаляем логирование, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err := p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'promised_amount'", p.TxMap["user_id"], p.TxMap["promised_amount_id"])
+	err := p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'promised_amount'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// обновляем голоса
-	err = p.ExecSql("UPDATE promised_amount SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+" - 1 WHERE id = ?", p.TxMap["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" - 1 WHERE id = ?", p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	data, err := p.OneRow("SELECT status, user_id, log_id FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).String()
+	data, err := p.OneRow("SELECT status, user_id, log_id FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -206,7 +204,7 @@ func (p *Parser) VotesPromisedAmountRollback() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.ExecSql("UPDATE promised_amount SET status = ?, start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["status"], logData["start_time"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMap["promised_amount_id"])
+		err = p.ExecSql("UPDATE promised_amount SET status = ?, start_time = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["status"], logData["start_time"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMaps.Int64["promised_amount_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

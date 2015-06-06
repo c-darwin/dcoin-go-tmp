@@ -149,7 +149,7 @@ func (p *Parser) VotesComplexFront() (error) {
 			return p.ErrInfo("incorrect currencyId")
 		}
 		// у юзера по данной валюте должна быть обещанная сумма, которая имеет статус mining/repaid и находится с таким статусом >90 дней
-		id, err := p.Single("SELECT id FROM promised_amount	WHERE currency_id  =  ? AND user_id  =  ? AND status IN ('mining', 'repaid') AND start_time < ? AND start_time > 0 AND del_block_id  =  0 AND del_mining_block_id  =  0", currencyId, p.TxMap["user_id"], (txTime - p.Variables.Int64["min_hold_time_promise_amount"])).Int64()
+		id, err := p.Single("SELECT id FROM promised_amount	WHERE currency_id  =  ? AND user_id  =  ? AND status IN ('mining', 'repaid') AND start_time < ? AND start_time > 0 AND del_block_id  =  0 AND del_mining_block_id  =  0", currencyId, p.TxUserID, (txTime - p.Variables.Int64["min_hold_time_promise_amount"])).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -233,7 +233,7 @@ func (p *Parser) VotesComplex() (error) {
 
 		// раньше не было выборов админа
 		if p.BlockData.BlockId >= 153750 && vComplex.Admin>0 {
-			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []interface {}{vComplex.Admin, p.TxMap["time"]}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []interface {}{vComplex.Admin, p.TxTime}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 		}
 
 
@@ -259,7 +259,7 @@ func (p *Parser) VotesComplex() (error) {
 		currencyIdStr := utils.IntToStr(currencyId)
 		UserIdStr := string(p.TxMap["user_id"])
 		// miner_pct
-		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{utils.Float64ToStr(data[0]), string(p.TxMap["time"])}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{utils.Float64ToStr(data[0]), p.TxTime}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -283,13 +283,13 @@ func (p *Parser) VotesComplex() (error) {
 		}
 
 		// reduction
-		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{ utils.Float64ToStr(data[4]), string(p.TxMap["time"])}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{ utils.Float64ToStr(data[4]), p.TxTime}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+		myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -372,7 +372,7 @@ func (p *Parser) VotesComplexRollback() (error) {
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+		myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

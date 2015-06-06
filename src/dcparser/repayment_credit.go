@@ -104,7 +104,7 @@ func (p *Parser) RepaymentCredit() (error) {
 }
 
 func (p *Parser) RepaymentCreditRollback() (error) {
-	creditData, err := p.OneRow("SELECT to_user_id, currency_id FROM credits WHERE id  =  ?", p.TxMap["credit_id"]).Int64()
+	creditData, err := p.OneRow("SELECT to_user_id, currency_id FROM credits WHERE id  =  ?", p.TxMaps.Int64["credit_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

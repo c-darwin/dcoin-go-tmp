@@ -125,7 +125,7 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	}
 
 	// списываем сумму с promised_amount
-	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, del_mining_block_id = ?, log_id = ? WHERE id = ?", (newTdc - p.TxMaps.Money["amount"]), p.BlockData.Time, delMiningBlockId, logId, p.TxMaps.Int64["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, del_mining_block_id = ?, log_id = ? WHERE id = ?", utils.Round((newTdc - p.TxMaps.Money["amount"]), 2), p.BlockData.Time, delMiningBlockId, logId, p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -20,6 +20,15 @@ type SchemaStruct struct {
 /*
 В самом начале разработки dcoin-а таблицы log_ использовались для логирования, потом я их стал использовать для откатов, но название log_ так и осталось
 */
+/*
+- s1["PRIMARY"] = []string{"user_id","type"}
++ s1["PRIMARY"] = []string{"user_id","voting_id","type"}
+s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
+s["log_votes"] = s1
+
+sqlite votes_miner_pct pct = TEXT
+sqlite votes_user_pct pct = TEXT
+*/
 func (schema *SchemaStruct) GetSchema() {
 
 
@@ -1762,7 +1771,7 @@ s2[1] = map[string]string{"name":"voting_id", "mysql":"bigint(20) NOT NULL DEFAU
 s2[2] = map[string]string{"name":"type", "mysql":"enum('null','votes_miners','promised_amount') NOT NULL", "sqlite":"varchar(100)  NOT NULL","postgresql":"enum('null','votes_miners','promised_amount') NOT NULL", "comment": "Нужно для voting_id' DEFAULT 'null"}
 s2[3] = map[string]string{"name":"del_block_id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": "В каком блоке было удаление. Нужно для чистки по крону старых данных и для откатов."}
 s1["fields"] = s2
-s1["PRIMARY"] = []string{"user_id","type"}
+s1["PRIMARY"] = []string{"user_id","voting_id","type"}
 s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 s["log_votes"] = s1
 schema.s = s
@@ -1965,7 +1974,7 @@ s2=make(recmapi)
 s2[0] = map[string]string{"name":"user_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
 s2[1] = map[string]string{"name":"time", "mysql":"int(11) unsigned NOT NULL DEFAULT '0'", "sqlite":"int(11)  NOT NULL DEFAULT '0'","postgresql":"int  NOT NULL DEFAULT '0'", "comment": "Нужно только для того, чтобы определять, голосовал ли юзер или нет. От этого зависит, будет он получать майнерский или юзерский %"}
 s2[2] = map[string]string{"name":"currency_id", "mysql":"tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite":"tinyint(3)  NOT NULL DEFAULT '0'","postgresql":"smallint  NOT NULL DEFAULT '0'", "comment": ""}
-s2[3] = map[string]string{"name":"pct", "mysql":"decimal(13,13) NOT NULL DEFAULT '0'", "sqlite":"decimal(13,13) NOT NULL DEFAULT '0'","postgresql":"decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
+s2[3] = map[string]string{"name":"pct", "mysql":"decimal(13,13) NOT NULL DEFAULT '0'", "sqlite":"TEXT NOT NULL DEFAULT '0'","postgresql":"decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
 s2[4] = map[string]string{"name":"log_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": ""}
 s1["fields"] = s2
 s1["PRIMARY"] = []string{"user_id","currency_id"}
@@ -1996,7 +2005,7 @@ s1=make(recmap)
 s2=make(recmapi)
 s2[0] = map[string]string{"name":"user_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
 s2[1] = map[string]string{"name":"currency_id", "mysql":"tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite":"tinyint(3)  NOT NULL DEFAULT '0'","postgresql":"smallint  NOT NULL DEFAULT '0'", "comment": ""}
-s2[2] = map[string]string{"name":"pct", "mysql":"decimal(13,13) NOT NULL DEFAULT '0'", "sqlite":"decimal(13,13) NOT NULL DEFAULT '0'","postgresql":"decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
+s2[2] = map[string]string{"name":"pct", "mysql":"decimal(13,13) NOT NULL DEFAULT '0'", "sqlite":"TEXT NOT NULL DEFAULT '0'","postgresql":"decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
 s2[3] = map[string]string{"name":"log_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": ""}
 s1["fields"] = s2
 s1["PRIMARY"] = []string{"user_id","currency_id"}
@@ -2464,7 +2473,7 @@ schema.printSchema()
 s=make(recmap)
 s1=make(recmap)
 s2=make(recmapi)
-s2[0] = map[string]string{"name":"user_id", "mysql":"bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite":"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL","postgresql":"bigint NOT NULL  default nextval('wallets_user_id_seq')", "comment": ""}
+s2[0] = map[string]string{"name":"user_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"INTEGER NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": ""}
 s2[1] = map[string]string{"name":"currency_id", "mysql":"bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite":"bigint(20)  NOT NULL DEFAULT '0'","postgresql":"bigint  NOT NULL DEFAULT '0'", "comment": ""}
 s2[2] = map[string]string{"name":"amount", "mysql":"decimal(15,2) unsigned NOT NULL DEFAULT '0'", "sqlite":"decimal(15,2)  NOT NULL DEFAULT '0'","postgresql":"decimal(15,2)  NOT NULL DEFAULT '0'", "comment": ""}
 s2[3] = map[string]string{"name":"amount_backup", "mysql":"decimal(15,2) unsigned NOT NULL DEFAULT '0'", "sqlite":"decimal(15,2)  NOT NULL DEFAULT '0'","postgresql":"decimal(15,2)  NOT NULL DEFAULT '0'", "comment": "Может неравномерно обнуляться из-за обработки, а затем - отката new_reduction()"}
@@ -2472,7 +2481,6 @@ s2[4] = map[string]string{"name":"last_update", "mysql":"int(11) NOT NULL DEFAUL
 s2[5] = map[string]string{"name":"log_id", "mysql":"bigint(20) NOT NULL DEFAULT '0'", "sqlite":"bigint(20) NOT NULL DEFAULT '0'","postgresql":"bigint NOT NULL DEFAULT '0'", "comment": "ID log_wallets, откуда будет брать данные при откате на 1 блок. 0 - значит при откате нужно удалить строку"}
 s1["fields"] = s2
 s1["PRIMARY"] = []string{"user_id","currency_id"}
-s1["AI"] = "user_id"
 s1["comment"] = "У кого сколько какой валюты"
 s["wallets"] = s1
 schema.s = s
@@ -2877,6 +2885,7 @@ func  (schema *SchemaStruct) typeSqlite() {
 		primaryKey := ""
 		uniqKey := ""
 		AI := ""
+		AI_START := "1"
 		var tableSlice []string
 		for k, v1 := range v.(recmap) {
 			/*if k=="comment" {
@@ -2902,6 +2911,8 @@ func  (schema *SchemaStruct) typeSqlite() {
 				uniqKey = fmt.Sprintf("UNIQUE (`%v`)", strings.Join(v1.([]string), "`,`"))
 			} else if k=="AI" {
 				AI = v1.(string)
+			} else if k == "AI_START" {
+				AI_START = v1.(string)
 			}
 		}
 		if len(uniqKey) > 0 {
@@ -2921,9 +2932,19 @@ func  (schema *SchemaStruct) typeSqlite() {
 			}
 		}
 		result+=fmt.Sprintln(");\n\n")
+		log.Println(result)
 		err := schema.DCDB.ExecSql(result)
 		if err != nil {
 			log.Println(err)
+		}
+		log.Println("AI_START=", AI_START)
+		if AI_START!="1" {
+			q:=`BEGIN TRANSACTION; UPDATE sqlite_sequence SET seq = 999 WHERE name = 'cf_currency';INSERT INTO sqlite_sequence (name,seq) SELECT 'cf_currency', 999 WHERE NOT EXISTS (SELECT changes() AS change FROM sqlite_sequence WHERE change <> 0);COMMIT;`
+			err := schema.DCDB.ExecSql(q)
+			log.Println(q)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }

@@ -76,7 +76,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	// Всегда есть, что логировать, т.к. это обновление ключа
 	var public_key_0, public_key_1, public_key_2 []byte
 	var log_id int64
-	err := p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?", p.TxMap["user_id"]).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
+	err := p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?", p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -92,13 +92,13 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", p.newPublicKeysHex[0], p.newPublicKeysHex[1], p.newPublicKeysHex[2], logId, p.TxMap["user_id"])
+	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", p.newPublicKeysHex[0], p.newPublicKeysHex[1], p.newPublicKeysHex[2], logId, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// проверим, не наш ли это user_id или не наш ли это паблик-ключ
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 
 	// получим log_id, по которому можно найти данные, которые были до этого
 	// $log_id всегда больше нуля, т.к. это откат обновления ключа
-	logId, err := p.Single("SELECT log_id FROM users WHERE user_id  =  ?", p.TxMap["user_id"]).Int64()
+	logId, err := p.Single("SELECT log_id FROM users WHERE user_id  =  ?", p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -227,7 +227,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 		public_key_2 = utils.BinToHex(public_key_2)
 	}
 
-	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxMap["user_id"])
+	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -239,7 +239,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	p.rollbackAI("log_users", 1)
 
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}

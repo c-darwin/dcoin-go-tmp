@@ -14,9 +14,8 @@ import (
 )
 
 func (p *Parser) ChangePromisedAmountInit() (error) {
-	var err error
-	fields := []string {"promised_amount_id", "amount", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields := []map[string]string {{"promised_amount_id":"int64"}, {"amount":"money"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -45,7 +44,7 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 
 	// верный ли id. менять сумму можно, только когда статус mining
 	// нельзя изменить woc (currency_id=1)
-	promisedAmountData, err := p.OneRow("SELECT id, currency_id FROM promised_amount WHERE id  =  ? AND status  =  'mining' AND currency_id > 1 AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxMap["promised_amount_id"]).Int64()
+	promisedAmountData, err := p.OneRow("SELECT id, currency_id FROM promised_amount WHERE id  =  ? AND status  =  'mining' AND currency_id > 1 AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxMaps.Int64["promised_amount_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -63,7 +62,7 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if utils.BytesToFloat64(p.TxMap["amount"]) + repaidAmount > maxPromisedAmount {
+	if p.TxMaps.Money["amount"] + repaidAmount > maxPromisedAmount {
 		return p.ErrInfo("incorrect amount")
 	}
 
@@ -109,7 +108,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	// логируем предыдущее
 	var prevLogId, currencyId, tdcAmountUpdate int64
 	var amount, tdcAmount float64
-	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
+	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -139,7 +138,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.TxMap["amount"], newTdc, p.BlockData.Time, logId, p.TxMap["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", p.TxMaps.Money["amount"], utils.Round(newTdc, 2), p.BlockData.Time, logId, p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -154,7 +153,7 @@ func (p *Parser) ChangePromisedAmountRollback() (error) {
 		return p.ErrInfo(err)
 	}
 
-	logId, err := p.Single("SELECT log_id FROM promised_amount WHERE id  =  ?", p.TxMap["promised_amount_id"]).Int64()
+	logId, err := p.Single("SELECT log_id FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -165,7 +164,7 @@ func (p *Parser) ChangePromisedAmountRollback() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMap["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET amount = ?, tdc_amount = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["amount"], logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -6,8 +6,9 @@ import (
 //	"encoding/json"
 	//"regexp"
 	//"math"
-	"strings"
+//	"strings"
 	"os"
+	"log"
 )
 
 // голосования нодов, которые должны сохранить фото у себя.
@@ -15,10 +16,8 @@ import (
 // эту транзакцию генерит нод со своим ключом
 
 func (p *Parser) VotesNodeNewMinerInit() (error) {
-	fields := []string {"vote_id", "result", "sign"}
-	TxMap := make(map[string][]byte)
-	TxMap, err := p.GetTxMap(fields);
-	p.TxMap = TxMap;
+	fields := []map[string]string {{"vote_id":"int64"},{"result":"int64"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -60,7 +59,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	}
 
 	// проверим, верно ли указан ID и не закончилось ли голосование
-	id, err := p.Single("SELECT id FROM votes_miners WHERE id = ? AND type = 'node_voting' AND votes_end = 0", p.TxMap["vote_id"]).Int64()
+	id, err := p.Single("SELECT id FROM votes_miners WHERE id = ? AND type = 'node_voting' AND votes_end = 0", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -69,7 +68,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	}
 
 	// проверим, не повторное ли это голосование данного юзера
-	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMap["user_id"], p.TxMap["vote_id"]).Int64()
+	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -88,12 +87,15 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 
 
 func (p *Parser) VotesNodeNewMiner() (error) {
-	var votes [2]int
-	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMap["vote_id"]).Int()
+	var votes [2]int64
+	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Println("votesData", votesData)
+	log.Println("votesData[user_id]", votesData["user_id"])
 	minersData, err := p.OneRow("SELECT photo_block_id, photo_max_miner_id, miners_keepers, log_id FROM miners_data WHERE user_id = ?", votesData["user_id"]).String()
+	log.Println("minersData", minersData)
 	// $votes_data['user_id'] - это юзер, за которого голосуют
 	if err != nil {
 		return p.ErrInfo(err)
@@ -102,16 +104,16 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	votes[0] = votesData["votes_0"]
 	votes[1] = votesData["votes_1"]
 	// прибавим голос
-	votes[utils.BytesToInt(p.TxMap["result"])]++
+	votes[p.TxMaps.Int64["result"]]++
 
 	// обновляем голоса. При откате просто вычитаем
-	err = p.ExecSql("UPDATE votes_miners SET votes_"+string(p.TxMap["result"])+" = ? WHERE id = ?", votes[utils.BytesToInt(p.TxMap["result"])], p.TxMap["vote_id"] )
+	err = p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = ? WHERE id = ?", votes[p.TxMaps.Int64["result"]], p.TxMaps.Int64["vote_id"] )
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// логируем, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err = p.ExecSql("INSERT INTO log_votes (user_id, voting_id, type) VALUES (?, ?, 'votes_miners')", p.TxMap["user_id"], p.TxMap["vote_id"])
+	err = p.ExecSql("INSERT INTO log_votes (user_id, voting_id, type) VALUES (?, ?, 'votes_miners')", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -119,6 +121,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	// ID майнеров, у которых сохраняются фотки
 	minersIds := getMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 
+	log.Println("minersIds", minersIds, len(minersIds))
 	// данные для проверки окончания голосования
 
 	minerData := new(MinerData)
@@ -136,13 +139,13 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	minerData.minMinersKeepers = p.Variables.Int64["min_miners_keepers"]
 	if p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
 		// отмечаем, что голосование нодов закончено
-		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMap["vote_id"])
+		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		// отметим del_block_id всем, кто голосовал за данного юзера,
 		// чтобы через N блоков по крону удалить бесполезные записи
-		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMap["vote_id"])
+		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -230,14 +233,14 @@ type MinerData struct {
 	adminUiserId int64
 	myMinersIds map[int]int
 	minersIds map[int]int
-	votes0 int
-	votes1 int
+	votes0 int64
+	votes1 int64
 	minMinersKeepers int64
 }
 
 func (p *Parser) VotesNodeNewMinerRollback() (error) {
 
-	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMap["vote_id"]).Int()
+	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -251,20 +254,20 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 	minerData.votes0 = votesData["votes_0"]
 	minerData.votes1 = votesData["votes_1"]
 
-	var votes [2]int
+	var votes [2]int64
 	votes[0] = votesData["votes_0"]
 	votes[1] = votesData["votes_1"]
 	// вычтем голос
-	votes[utils.BytesToInt(p.TxMap["result"])]--
+	votes[p.TxMaps.Int64["result"]]--
 
 	// обновляем голоса
-	err = p.ExecSql("UPDATE votes_miners SET votes_"+string(p.TxMap["result"])+" = ? WHERE id = ?", votes[utils.BytesToInt(p.TxMap["result"])], p.TxMap["vote_id"])
+	err = p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = ? WHERE id = ?", votes[p.TxMaps.Int64["result"]], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// удаляем нашу запись из log_votes
-	err = p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMap["user_id"], p.TxMap["vote_id"])
+	err = p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -279,13 +282,13 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 	if p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
 
 		// отменяем отметку о том, что голосование нодов закончено
-		err = p.ExecSql("UPDATE votes_miners SET votes_end = 0, end_block_id = 0 WHERE id = ?", p.TxMap["vote_id"])
+		err = p.ExecSql("UPDATE votes_miners SET votes_end = 0, end_block_id = 0 WHERE id = ?", p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// всем, кому ставили del_block_id, его убираем, т.е. отменяем будущее удаление по крону
-		err = p.ExecSql("UPDATE log_votes SET del_block_id = 0 WHERE voting_id = ? AND type = 'votes_miners' AND del_block_id = ? ", p.TxMap["vote_id"], p.BlockData.BlockId)
+		err = p.ExecSql("UPDATE log_votes SET del_block_id = 0 WHERE voting_id = ? AND type = 'votes_miners' AND del_block_id = ? ", p.TxMaps.Int64["vote_id"], p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -320,8 +323,8 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 
 		// перемещаем фото из корзины, если есть, что перемещать
 		if len(data["profile_file_name"])>0 && len(data["face_file_name"])>0 {
-			utils.CopyFileContents("recycle_bin/"+data["face_file_name"], "public/face_"+utils.IntToStr(votesData["user_id"])+".jpg")
-			utils.CopyFileContents("recycle_bin/"+data["profile_file_name"], "public/profile_"+utils.IntToStr(votesData["user_id"])+".jpg")
+			utils.CopyFileContents("recycle_bin/"+data["face_file_name"], "public/face_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
+			utils.CopyFileContents("recycle_bin/"+data["profile_file_name"], "public/profile_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
 		}
 		p.generalRollback("recycle_bin", votesData["user_id"], "", false)
 	}
@@ -332,42 +335,4 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 
 func (p *Parser) VotesNodeNewMinerRollbackFront() error {
 	return p.limitRequestsRollback("votes_nodes")
-}
-
-func Int64SliceToStr(Int []int64) []string {
-	var result []string
-	for _, v := range Int {
-		result = append(result, utils.Int64ToStr(v))
-	}
-	return result
-}
-
-func IntSliceToStr(Int []int) []string {
-	var result []string
-	for _, v := range Int {
-		result = append(result, utils.IntToStr(v))
-	}
-	return result
-}
-
-func (p *Parser)  getMyMinersIds() (map[int]int, error) {
-	myMinersIds := make(map[int]int)
-	var err error
-	collective, err := p.GetCommunityUsers()
-	if err != nil {
-		return myMinersIds, p.ErrInfo(err)
-	}
-	if len(collective) > 0 {
-		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(Int64SliceToStr(collective), ",")+") AND miner_id > 0").MapInt()
-		if err != nil {
-			return myMinersIds, p.ErrInfo(err)
-		}
-	} else {
-		minerId, err := p.Single("SELECT miner_id FROM my_table").Int()
-		if err != nil {
-			return myMinersIds, p.ErrInfo(err)
-		}
-		myMinersIds[0] = minerId
-	}
-	return myMinersIds, nil
 }

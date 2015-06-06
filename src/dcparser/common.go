@@ -90,14 +90,14 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 	}
 
 	time := utils.BytesToInt(p.TxMap["time"])
-	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxMap["user_id"], (time-period)).Int()
+	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxUserID, (time-period)).Int()
 	if err != nil {
 		return err
 	}
 	if num >= limit {
 		return utils.ErrInfo(fmt.Errorf("[limit_requests] log_time_%v %v >= %v", txType, num, limit))
 	} else {
-		err := p.DCDB.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxMap["user_id"], time)
+		err := p.DCDB.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxUserID, time)
 		if err != nil {
 			return err
 		}
@@ -120,13 +120,13 @@ func (p *Parser) checkMinerNewbie() error {
 	} else {
 		time = utils.BytesToInt64(p.TxMap["time"])
 	}
-	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxMap["user_id"]).Int64()
+	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxUserID).Int64()
 	err = p.getAdminUserId()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	if (p.BlockData==nil) || (p.BlockData!=nil && p.BlockData.BlockId > 29047) {
-		if regTime > (time - p.Variables.Int64["miner_newbie_time"]) && utils.BytesToInt64(p.TxMap["user_id"]) != p.AdminUserId {
+		if regTime > (time - p.Variables.Int64["miner_newbie_time"]) && p.TxUserID != p.AdminUserId {
 			return utils.ErrInfo(fmt.Errorf("error miner_newbie (%v > %v - %v)", regTime, time, p.Variables.Int64["miner_newbie_time"]))
 		}
 	}
@@ -166,18 +166,19 @@ func (p *Parser) generalCheck() error {
 		return utils.ErrInfoFmt("incorrect time")
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.DCDB.OneRow("SELECT public_key_0,public_key_1,public_key_2	FROM users WHERE user_id = ?", p.TxMap["user_id"]).String()
+	data, err := p.OneRow("SELECT public_key_0,public_key_1,public_key_2	FROM users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
+	log.Println("datausers", data)
 	if len(data["public_key_0"])==0 {
 		return utils.ErrInfoFmt("incorrect user_id")
 	}
 	p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_0"]))
-	if len(data["public_key_1"]) > 0 {
+	if len(data["public_key_1"]) > 10 {
 		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_1"]))
 	}
-	if len(data["public_key_2"]) > 0 {
+	if len(data["public_key_2"]) > 10 {
 		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_2"]))
 	}
 	// чтобы не записали слишком длинную подпись
@@ -1073,6 +1074,7 @@ func (p *Parser) UpdBlockInfo() {
 
 
 func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
+	log.Println("p.TxSlice", p.TxSlice)
 	if len(p.TxSlice) != len(fields)+4 {
 		return fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
@@ -1210,11 +1212,11 @@ func (p *Parser) CheckInputData(data map[string]string) (error) {
 func (p *Parser) limitRequestsRollback(txType string) error {
 	time := p.TxMap["time"]
 	if p.ConfigIni["db_type"] == "mysql" {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ? LIMIT 1", p.TxMap["user_id"], time)
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ? LIMIT 1", p.TxUserID, time)
 	} else if p.ConfigIni["db_type"] == "postgresql" {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE ctid IN (SELECT ctid FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxMap["user_id"], time)
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE ctid IN (SELECT ctid FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
 	} else {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE id IN (SELECT id FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxMap["user_id"], time)
+		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE id IN (SELECT id FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
 	}
 	return nil
 }
@@ -1267,6 +1269,44 @@ func (p *Parser) rollbackAI(table string, num int64) (error) {
 	return nil
 }
 
+func (p *Parser)  getMyMinersIds() (map[int]int, error) {
+	myMinersIds := make(map[int]int)
+	var err error
+	collective, err := p.GetCommunityUsers()
+	if err != nil {
+		return myMinersIds, p.ErrInfo(err)
+	}
+	if len(collective) > 0 {
+		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(Int64SliceToStr(collective), ",")+") AND miner_id > 0").MapInt()
+		if err != nil {
+			return myMinersIds, p.ErrInfo(err)
+		}
+	} else {
+		minerId, err := p.Single("SELECT miner_id FROM my_table").Int()
+		if err != nil {
+			return myMinersIds, p.ErrInfo(err)
+		}
+		myMinersIds[0] = minerId
+	}
+	return myMinersIds, nil
+}
+
+func Int64SliceToStr(Int []int64) []string {
+	var result []string
+	for _, v := range Int {
+		result = append(result, utils.Int64ToStr(v))
+	}
+	return result
+}
+
+func IntSliceToStr(Int []int) []string {
+	var result []string
+	for _, v := range Int {
+		result = append(result, utils.IntToStr(v))
+	}
+	return result
+}
+
 func (p *Parser) generalCheckAdmin() error {
 	if !utils.CheckInputData(p.TxMap["user_id"], "int") {
 		return utils.ErrInfoFmt("user_id")
@@ -1281,7 +1321,7 @@ func (p *Parser) generalCheckAdmin() error {
 		return utils.ErrInfoFmt("user_id (%d!=%d)", p.AdminUserId, p.TxMap["user_id"])
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", p.TxMap["user_id"]).String()
+	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -1388,7 +1428,7 @@ func arrayIntersect(arr1, arr2 map[int]int) bool {
 }
 
 func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
-	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (int64(data.votes0) > data.minMinersKeepers || data.votes0 == len(data.minersIds)) {
+	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (data.votes0 > data.minMinersKeepers || int(data.votes0) == len(data.minersIds)) {
 		return true
 	} else {
 		return false
@@ -1398,8 +1438,9 @@ func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
 func  (p *Parser) minersCheckVotes1(data *MinerData) bool {
 	log.Println("data.votes1",data.votes1)
 	log.Println("data.minMinersKeepers",data.minMinersKeepers)
-	log.Println("data.minersIds",data.minersIds)
-	if int64(data.votes1) >= data.minMinersKeepers || data.votes1 == len(data.minersIds) /*|| data.adminUiserId == p.TxUserID Админская нода не решающая*/ {
+	log.Println("data.minersIds",len(data.minersIds))
+	if data.votes1 >= data.minMinersKeepers || int(data.votes1) == len(data.minersIds) /*|| data.adminUiserId == p.TxUserID Админская нода не решающая*/ {
+		log.Println("true")
 		return true
 	} else {
 		return false
@@ -1494,7 +1535,7 @@ func (p *Parser) ErrInfo(err_ interface{}) error {
 }
 
 func (p *Parser) maxDayVotesRollback() (error) {
-	err := p.ExecSql("DELETE FROM log_time_votes WHERE user_id = ? AND time = ?", p.TxMap["user_id"], p.TxTime)
+	err := p.ExecSql("DELETE FROM log_time_votes WHERE user_id = ? AND time = ?", p.TxUserID, p.TxTime)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1503,14 +1544,14 @@ func (p *Parser) maxDayVotesRollback() (error) {
 
 func (p *Parser) maxDayVotes() (error) {
 	// нельзя за сутки голосовать более max_day_votes раз
-	num, err := p.Single("SELECT count(time) FROM log_time_votes WHERE user_id = ?", p.TxMap["user_id"]).Int64()
+	num, err := p.Single("SELECT count(time) FROM log_time_votes WHERE user_id = ?", p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if num >= p.Variables.Int64["max_day_votes"] {
 		return p.ErrInfo(fmt.Sprintf("[limit_requests] max_day_votes log_time_votes limits %d >=%d", num, p.Variables.Int64["max_day_votes"]))
 	} else {
-		err = p.ExecSql("INSERT INTO log_time_votes ( user_id, time ) VALUES ( ?, ? )", p.TxMap["user_id"], p.TxTime)
+		err = p.ExecSql("INSERT INTO log_time_votes ( user_id, time ) VALUES ( ?, ? )", p.TxUserID, p.TxTime)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1521,11 +1562,11 @@ func (p *Parser) maxDayVotes() (error) {
 
 // начисление баллов
 func (p *Parser) points(points int64) (error) {
-	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id = ?", p.TxMap["user_id"]).Int64()
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id = ?", p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	pointsStatusTimeStart, err := p.Single("SELECT time_start FROM points_status WHERE user_id = ? ORDER BY time_start DESC", p.TxMap["user_id"]).Int64()
+	pointsStatusTimeStart, err := p.Single("SELECT time_start FROM points_status WHERE user_id = ? ORDER BY time_start DESC", p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1535,12 +1576,12 @@ func (p *Parser) points(points int64) (error) {
 
 	// если $time_start = 0, значит это первый голос юзера
 	if timeStart == 0 {
-		err = p.ExecSql("INSERT INTO points ( user_id, time_start, points ) VALUES ( ?, ?, ? )", p.TxMap["user_id"], p.BlockData.Time, points)
+		err = p.ExecSql("INSERT INTO points ( user_id, time_start, points ) VALUES ( ?, ?, ? )", p.TxUserID, p.BlockData.Time, points)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		// первый месяц в любом случае будет юзером
-		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", p.TxMap["user_id"], p.BlockData.Time, p.BlockData.BlockId)
+		err = p.ExecSql("INSERT INTO points_status ( user_id, time_start, status, block_id ) VALUES ( ?, ?, 'user', ? )", p.TxUserID, p.BlockData.Time, p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1551,7 +1592,7 @@ func (p *Parser) points(points int64) (error) {
 		}
 	} else { // прошло меньше месяца
 		// прибавляем баллы
-		err = p.ExecSql("UPDATE points SET points = points+? WHERE user_id = ?", points, p.TxMap["user_id"])
+		err = p.ExecSql("UPDATE points SET points = points+? WHERE user_id = ?", points, p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1831,7 +1872,7 @@ func (p *Parser) insOrUpdMinersRollback(minerId int64) error {
 
 // $points - баллы, которые были начислены за голос
 func (p *Parser) pointsRollback(points int64) error {
-	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id  =  ?", p.TxMap["user_id"]).Int64()
+	data, err := p.OneRow("SELECT time_start, points, log_id FROM points WHERE user_id  =  ?", p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1840,11 +1881,11 @@ func (p *Parser) pointsRollback(points int64) error {
 	}
 	// если time_start=времени в блоке, points=$points и log_id=0, значит это самая первая запись
 	if data["time_start"] == p.BlockData.Time && data["points"] == points && data["log_id"] == 0 {
-		err = p.ExecSql("DELETE FROM points WHERE user_id = ?", p.TxMap["user_id"])
+		err = p.ExecSql("DELETE FROM points WHERE user_id = ?", p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.ExecSql("DELETE FROM points_status WHERE user_id = ?", p.TxMap["user_id"])
+		err = p.ExecSql("DELETE FROM points_status WHERE user_id = ?", p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1855,7 +1896,7 @@ func (p *Parser) pointsRollback(points int64) error {
 		}
 	} else { // прошло меньше месяца
 		// отнимаем баллы
-		err = p.ExecSql("UPDATE points SET points = points - "+utils.Int64ToStr(points)+" WHERE user_id = ?", p.TxMap["user_id"])
+		err = p.ExecSql("UPDATE points SET points = points - "+utils.Int64ToStr(points)+" WHERE user_id = ?", p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1924,7 +1965,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				query:=""
 				switch p.ConfigIni["db_type"] {
 				case "sqlite":
-					query = `'`+v+`',`
+					query = `x'`+v+`',`
 				case "postgresql":
 					query = `decode(`+v+`,'HEX'),`
 				case "mysql":
@@ -1952,7 +1993,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				query:=""
 				switch p.ConfigIni["db_type"] {
 				case "sqlite":
-					query = fields[i]+`='`+values[i]+`',`
+					query = fields[i]+`=x'`+values[i]+`',`
 				case "postgresql":
 					query = fields[i]+`=decode(`+values[i]+`,'HEX'),`
 				case "mysql":
@@ -1978,7 +2019,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				query:=""
 				switch p.ConfigIni["db_type"] {
 				case "sqlite":
-					query = `'`+values[i]+`',`
+					query = `x'`+values[i]+`',`
 				case "postgresql":
 					query = `decode(`+values[i]+`,'HEX'),`
 				case "mysql":
@@ -2092,6 +2133,8 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 	}
 	walletWhere := "user_id = "+utils.Int64ToStr(toUserId)+" AND currency_id = "+utils.Int64ToStr(currencyId);
 	walletData, err := p.OneRow("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere).String()
+	log.Println("SELECT amount, amount_backup, last_update, log_id FROM wallets WHERE "+walletWhere)
+	log.Println("walletData", walletData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2132,7 +2175,7 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 		log.Println("newDCSumEnd", newDCSumEnd, "=", newDCSum, "+", amount)
 
 		// Плюсуем на кошелек с соответствующей валютой.
-		err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSumEnd, p.BlockData.Time, logId)
+		err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, utils.Round(newDCSumEnd, 2), p.BlockData.Time, logId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -2147,12 +2190,12 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 		}
 
 		// если кошелек получателя не создан, то создадим и запишем на него сумму перевода.
-		err = p.ExecSql("INSERT INTO wallets ( user_id, currency_id, amount, last_update ) VALUES ( ?, ?, ?, ? )", toUserId, currencyId, amount, p.BlockData.Time)
+		err = p.ExecSql("INSERT INTO wallets ( user_id, currency_id, amount, last_update ) VALUES ( ?, ?, ?, ? )", toUserId, currencyId, utils.Round(amount, 2), p.BlockData.Time)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2205,11 +2248,11 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commi
 		newDCSum = walletDataAmountFloat64 + profit - amount - commission;
 		log.Println("newDCSum", walletDataAmountFloat64, "+", profit, "-", amount, "-", commission)
 	}
-	err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, newDCSum, p.BlockData.Time, logId)
+	err = p.ExecSql("UPDATE wallets SET amount = ?, last_update = ?, log_id = ? WHERE "+walletWhere, utils.Round(newDCSum, 2), p.BlockData.Time, logId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2426,7 +2469,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 				logData[field] = string(utils.BinToHex([]byte(logData[field])))
 				switch p.ConfigIni["db_type"] {
 				case "sqlite":
-					query = field+`='`+logData[field]+`',`
+					query = field+`=x'`+logData[field]+`',`
 				case "postgresql":
 					query = field+`=decode(`+logData[field]+`,'HEX'),`
 				case "mysql":
@@ -3425,7 +3468,7 @@ func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool
 		} else {
 			newTdc = tdcAmount
 		}
-		err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUdpCashRequestOutTime+" log_id = ? WHERE id = ?", newTdc, p.BlockData.Time, logId, id)
+		err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, "+sqlUdpCashRequestOutTime+" log_id = ? WHERE id = ?", utils.Round(newTdc, 2), p.BlockData.Time, logId, id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -3563,9 +3606,9 @@ func (p *Parser) updateWalletsBuffer(amount float64, currencyId int64) (error) {
 	// добавим нашу сумму в буфер кошельков, чтобы юзер не смог послать запрос на вывод всех DC с кошелька.
 	hash, err := p.Single("SELECT hash FROM wallets_buffer WHERE hash = [hex]", p.TxHash).String()
 	if len(hash) > 0 {
-		err = p.ExecSql("UPDATE wallets_buffer SET user_id = ?, currency_id = ?, amount = ? WHERE hash = [hex]", p.TxUserID, currencyId, amount, p.TxHash)
+		err = p.ExecSql("UPDATE wallets_buffer SET user_id = ?, currency_id = ?, amount = ? WHERE hash = [hex]", p.TxUserID, currencyId, utils.Round(amount, 2), p.TxHash)
 	} else {
-		err = p.ExecSql("INSERT INTO wallets_buffer ( hash, user_id, currency_id, amount ) VALUES ( [hex], ?, ?, ? )", p.TxHash, p.TxUserID, currencyId, amount)
+		err = p.ExecSql("INSERT INTO wallets_buffer ( hash, user_id, currency_id, amount ) VALUES ( [hex], ?, ?, ? )", p.TxHash, p.TxUserID, currencyId, utils.Round(amount, 2))
 	}
 	if err != nil {
 		return p.ErrInfo(err)

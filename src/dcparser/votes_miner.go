@@ -15,9 +15,8 @@ import (
  * */
 
 func (p *Parser) VotesMinerInit() (error) {
-	var err error
-	fields := []string {"vote_id", "result", "comment", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields := []map[string]string {{"vote_id":"int64"}, {"result":"int64"},  {"comment":"string"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -47,7 +46,7 @@ func (p *Parser) VotesMinerFront() (error) {
 	}
 
 	// проверим, верно ли указан ID и не закончилось ли голосование
-	id, err := p.Single("SELECT id FROM votes_miners WHERE id = ? AND type = 'user_voting' AND votes_end = 0", p.TxMap["vote_id"]).Int()
+	id, err := p.Single("SELECT id FROM votes_miners WHERE id = ? AND type = 'user_voting' AND votes_end = 0", p.TxMaps.Int64["vote_id"]).Int()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -56,7 +55,7 @@ func (p *Parser) VotesMinerFront() (error) {
 	}
 
 	// проверим, не повторное ли это голосование данного юзера
-	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMap["user_id"], p.TxMap["vote_id"]).Int()
+	num, err := p.Single("SELECT count(user_id) FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"]).Int()
 	if err != nil {
 		return p.ErrInfo("double voting")
 	}
@@ -87,18 +86,18 @@ func (p *Parser) VotesMiner() (error) {
 	p.points(p.Variables.Int64["miner_points"])
 
 	// обновляем голоса
-	err := p.ExecSql("UPDATE votes_miners SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+"+1 WHERE id = ?", p.TxMap["vote_id"])
+	err := p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+"+1 WHERE id = ?", p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	data, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ? ", p.TxMap["vote_id"]).Int64()
+	data, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ? ", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// логируем, чтобы юзер {$this->tx_data['user_id']} не смог повторно проголосовать
-	err = p.ExecSql("INSERT INTO log_votes ( user_id, voting_id, type ) VALUES ( ?, ?, 'votes_miners' )", p.TxMap["user_id"], p.TxMap["vote_id"])
+	err = p.ExecSql("INSERT INTO log_votes ( user_id, voting_id, type ) VALUES ( ?, ?, 'votes_miners' )", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -107,7 +106,7 @@ func (p *Parser) VotesMiner() (error) {
 	minersData["votes_start_time"] = data["votes_start_time"]
 	minersData["votes_0"] = data["votes_0"]
 	minersData["votes_1"] = data["votes_1"]
-	minersData["vote_id"] = utils.BytesToInt64(p.TxMap["vote_id"])
+	minersData["vote_id"] = p.TxMaps.Int64["vote_id"]
 	minersData["count_miners"], err = p.Single("SELECT count(miner_id) FROM miners").Int64()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -154,13 +153,13 @@ func (p *Parser) VotesMiner() (error) {
 			}
 		}
 		//  ставим "завершено" голосованию
-		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1 WHERE id = ?", p.TxMap["vote_id"])
+		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1 WHERE id = ?", p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		// отметим del_block_id всем, кто голосовал за данного юзера,
 		// чтобы через 1440 блоков по крону удалить бесполезные записи
-		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMap["vote_id"])
+		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -172,7 +171,7 @@ func (p *Parser) VotesMiner() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == minersData["user_id"] {
-		err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment ) VALUES ( 'miner', ?, ? )", p.TxMap["vote_id"], p.TxMap["comment"])
+		err = p.ExecSql("INSERT INTO "+myPrefix+"my_comments ( type, id, comment ) VALUES ( 'miner', ?, ? )", p.TxMaps.Int64["vote_id"], p.TxMaps.String["comment"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -182,13 +181,13 @@ func (p *Parser) VotesMiner() (error) {
 }
 
 func (p *Parser) VotesMinerRollback() (error) {
-	userId, err := p.Single("SELECT user_id FROM votes_miners WHERE id  =  ?", p.TxMap["vote_id"]).Int64()
+	userId, err := p.Single("SELECT user_id FROM votes_miners WHERE id  =  ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// обновляем голоса
-	err = p.ExecSql("UPDATE votes_miners SET votes_"+string(p.TxMap["result"])+" = votes_"+string(p.TxMap["result"])+" - 1, votes_end = 0 WHERE id = ?", p.TxMap["vote_id"])
+	err = p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" - 1, votes_end = 0 WHERE id = ?", p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -200,7 +199,7 @@ func (p *Parser) VotesMinerRollback() (error) {
 	}
 
 	// удаляем нашу запись из log_votes
-	err = p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMap["user_id"], p.TxMap["vote_id"])
+	err = p.ExecSql("DELETE FROM log_votes WHERE user_id = ? AND voting_id = ? AND type = 'votes_miners'", p.TxMaps.Int64["user_id"], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -219,7 +218,7 @@ func (p *Parser) VotesMinerRollback() (error) {
 		}
 
 		// всем, кому ставили del_block_id, убираем, т.е. отменяем будущее удаление по крону
-		err = p.ExecSql("UPDATE log_votes SET del_block_id = 0 WHERE voting_id = ? AND type = 'votes_miners' AND del_block_id = ?", p.TxMap["vote_id"], p.BlockData.BlockId)
+		err = p.ExecSql("UPDATE log_votes SET del_block_id = 0 WHERE voting_id = ? AND type = 'votes_miners' AND del_block_id = ?", p.TxMaps.Int64["vote_id"], p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

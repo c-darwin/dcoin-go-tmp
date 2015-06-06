@@ -18,14 +18,13 @@ import (
 // Если было delete=1, то перезаписываем
 
 func (p *Parser) NewPromisedAmountInit() (error) {
-	var err error
-	var fields []string
+	var fields []map[string]string
 	if p.BlockData!= nil && p.BlockData.BlockId < 27134 {
-		fields = []string {"currency_id", "amount", "video_type", "video_url_id", "sign"}
+		fields = []map[string]string {{"currency_id":"int64"}, {"amount":"money"}, {"video_type":"string"}, {"video_url_id":"string"}, {"sign":"bytes"}}
 	} else {
-		fields = []string {"currency_id", "amount", "video_type", "video_url_id", "payment_systems_ids", "sign"}
+		fields = []map[string]string {{"currency_id":"int64"}, {"amount":"money"}, {"video_type":"string"}, {"video_url_id":"string"}, {"payment_systems_ids":"string"}, {"sign":"bytes"}}
 	}
-	p.TxMap, err = p.GetTxMap(fields);
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -49,7 +48,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	}
 
 	// проверим, существует ли такая валюта
-	if ok, err := p.CheckCurrency(utils.BytesToInt64(p.TxMap["currency_id"])); !ok {
+	if ok, err := p.CheckCurrency(p.TxMaps.Int64["currency_id"]); !ok {
 		return p.ErrInfo(err)
 	}
 
@@ -60,7 +59,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	}
 
 	// проверим статус. должно  вообще не быть записей. всё, что rejected/change_geo и пр. юзер должен вначале удалить
-	data, err := p.OneRow("SELECT status, currency_id FROM promised_amount WHERE currency_id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0 AND user_id  =  ?", p.TxMap["currency_id"], p.TxMap["user_id"]).String()
+	data, err := p.OneRow("SELECT status, currency_id FROM promised_amount WHERE currency_id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0 AND user_id  =  ?", p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["user_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -68,31 +67,31 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 		return p.ErrInfo("exists promised_amount")
 	}
 
-	newMaxPromisedAmount, err := p.Single("SELECT amount FROM max_promised_amounts WHERE currency_id  =  ? ORDER BY time DESC", p.TxMap["currency_id"]).Int64()
+	newMaxPromisedAmount, err := p.Single("SELECT amount FROM max_promised_amounts WHERE currency_id  =  ? ORDER BY time DESC", p.TxMaps.Int64["currency_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	newMaxOtherCurrencies, err := p.Single("SELECT max_other_currencies FROM currency WHERE id  =  ?", p.TxMap["currency_id"]).Int()
+	newMaxOtherCurrencies, err := p.Single("SELECT max_other_currencies FROM currency WHERE id  =  ?", p.TxMaps.Int64["currency_id"]).Int()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// т.к. можно перевести из mining в repaid, где нет лимитов, и так проделать много раз, то
 	// нужно жестко лимитировать ОБЩУЮ сумму по всем promised_amount данной валюты
-	repaidAmount, err := p.GetRepaidAmount(utils.BytesToInt64(p.TxMap["currency_id"]), p.TxUserID)
-	if utils.BytesToFloat64(p.TxMap["amount"]) + repaidAmount > float64(newMaxPromisedAmount) {
+	repaidAmount, err := p.GetRepaidAmount(p.TxMaps.Int64["currency_id"], p.TxUserID)
+	if p.TxMaps.Money["amount"] + repaidAmount > float64(newMaxPromisedAmount) {
 		return p.ErrInfo("amount")
 	}
 
 	// возьмем id всех добавленных валют
-	existsCurrencies, err := p.GetList("SELECT currency_id FROM promised_amount WHERE user_id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0 GROUP BY currency_id", p.TxMap["user_id"]).Int64()
+	existsCurrencies, err := p.GetList("SELECT currency_id FROM promised_amount WHERE user_id  =  ? AND del_block_id  =  0 AND del_mining_block_id  =  0 GROUP BY currency_id", p.TxMaps.Int64["user_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// нельзя добавлять новую валюту, пока не одобрена хотя бы одна, т.е. пока нет WOC
-	woc, err := p.Single("SELECT id FROM promised_amount WHERE user_id  =  ? AND currency_id  =  1", p.TxMap["user_id"]).Int64()
+	woc, err := p.Single("SELECT id FROM promised_amount WHERE user_id  =  ? AND currency_id  =  1", p.TxMaps.Int64["user_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -118,7 +117,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 		}
 	}
 	// должно быть geolocation
-	latitude, err := p.Single("SELECT latitude FROM miners_data WHERE user_id  =  ?", p.TxMap["user_id"]).Float64()
+	latitude, err := p.Single("SELECT latitude FROM miners_data WHERE user_id  =  ?", p.TxMaps.Int64["user_id"]).Float64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -163,7 +162,7 @@ func (p *Parser) NewPromisedAmount() (error) {
 	addSqlNames := ""
 	addSqlValues := ""
 	if p.BlockData.BlockId > 27134 {
-		paymentSystemsIds := strings.Split(string(p.TxMap["payment_systems_ids"]), ",")
+		paymentSystemsIds := strings.Split(string(p.TxMaps.String["payment_systems_ids"]), ",")
 		for i, v := range paymentSystemsIds {
 			addSqlNames += fmt.Sprintf("ps%d,", (i+1))
 			addSqlValues += fmt.Sprintf("%s,", v)
@@ -182,12 +181,12 @@ func (p *Parser) NewPromisedAmount() (error) {
 						votes_start_time
 					)
 					VALUES (
-						`+string(p.TxMap["user_id"])+`,
-						`+string(p.TxMap["amount"])+`,
-						`+string(p.TxMap["currency_id"])+`,
+						`+utils.Int64ToStr(p.TxMaps.Int64["user_id"])+`,
+						`+utils.Float64ToStr(p.TxMaps.Money["amount"])+`,
+						`+utils.Int64ToStr(p.TxMaps.Int64["currency_id"])+`,
 						`+addSqlValues+`
-						'`+string(p.TxMap["video_type"])+`',
-						'`+string(p.TxMap["video_url_id"])+`',
+						'`+p.TxMaps.String["video_type"]+`',
+						'`+p.TxMaps.String["video_url_id"]+`',
 						`+utils.Int64ToStr(p.BlockData.Time)+`
 					)`)
 	if err != nil {
@@ -195,13 +194,13 @@ func (p *Parser) NewPromisedAmount() (error) {
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		// Удалим, т.к. попало в блок
-		err = p.ExecSql("DELETE FROM "+myPrefix+"my_promised_amount WHERE amount = ? AND currency_id = ?", p.TxMap["amount"], p.TxMap["currency_id"])
+		err = p.ExecSql("DELETE FROM "+myPrefix+"my_promised_amount WHERE amount = ? AND currency_id = ?", p.TxMaps.Money["amount"], p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -211,7 +210,7 @@ func (p *Parser) NewPromisedAmount() (error) {
 }
 
 func (p *Parser) NewPromisedAmountRollback() (error) {
-	err := p.ExecSql("DELETE FROM promised_amount WHERE user_id = ? AND amount = ? AND currency_id = ? AND status = 'pending' AND votes_start_time = ?", p.TxMap["user_id"], p.TxMap["amount"], p.TxMap["currency_id"], p.BlockData.Time)
+	err := p.ExecSql("DELETE FROM promised_amount WHERE user_id = ? AND amount = ? AND currency_id = ? AND status = 'pending' AND votes_start_time = ?", p.TxMaps.Int64["user_id"], p.TxMaps.Money["amount"], p.TxMaps.Int64["currency_id"], p.BlockData.Time)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

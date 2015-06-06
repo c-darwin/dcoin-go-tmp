@@ -14,15 +14,14 @@ type exampleSpots struct {
 	Profile map[string][]interface {} `json:"profile"`
 }
 func (p *Parser) NewMinerInit() (error) {
-	fields := []string {"race", "country", "latitude", "longitude", "host", "face_coords", "profile_coords", "face_hash", "profile_hash", "video_type", "video_url_id", "node_public_key", "sign"}
-	TxMap := make(map[string][]byte)
-	TxMap, err := p.GetTxMap(fields);
-	p.TxMap = TxMap;
-	fmt.Println("TxMap", p.TxMap)
+
+	fields := []map[string]string {{"race":"int64"},{"country":"int64"}, {"latitude":"float64"}, {"longitude":"float64"}, {"host":"string"}, {"face_coords":"string"}, {"profile_coords":"string"}, {"face_hash":"string"}, {"profile_hash":"string"}, {"video_type":"string"}, {"video_url_id":"string"}, {"node_public_key":"bytes"}, {"sign":"bytes"}}
+	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	TxMap["node_public_key"] = utils.BinToHex(TxMap["node_public_key"]);
+	p.TxMap["node_public_key"] = utils.BinToHex(p.TxMap["node_public_key"]);
+	p.TxMaps.Bytes["node_public_key"] = utils.BinToHex(p.TxMaps.Bytes["node_public_key"]);
 	return nil
 }
 
@@ -79,7 +78,7 @@ func (p *Parser) NewMinerFront() (error) {
 	if !utils.CheckInputData(p.TxMap["node_public_key"], "public_key") {
 		return utils.ErrInfoFmt("node_public_key")
 	}
-	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["race"], p.TxMap["country"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["host"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["node_public_key"])
+	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"],p.TxMap["user_id"], p.TxMap["race"], p.TxMap["country"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["host"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["node_public_key"])
 	fmt.Println("forSign", forSign)
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
@@ -98,7 +97,7 @@ func (p *Parser) NewMinerFront() (error) {
 		return p.ErrInfo(err)
 	}
 	//  на всякий случай не даем начать нодовское, если идет юзерское голосование
-	userVoting, err := p.DCDB.Single("SELECT id FROM votes_miners WHERE user_id = ? AND type = 'user_voting' AND votes_end = 0", p.TxMap["user_id"]).String()
+	userVoting, err := p.DCDB.Single("SELECT id FROM votes_miners WHERE user_id = ? AND type = 'user_voting' AND votes_end = 0",p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -107,7 +106,7 @@ func (p *Parser) NewMinerFront() (error) {
 	}
 
 	// проверим, не является ли юзер майнером и  не разжалованный ли это бывший майнер
-	minerStatus, err := p.DCDB.Single("SELECT status FROM miners_data WHERE user_id = ? AND status IN ('miner','passive_miner','suspended_miner')", p.TxMap["user_id"]).String()
+	minerStatus, err := p.DCDB.Single("SELECT status FROM miners_data WHERE user_id = ? AND status IN ('miner','passive_miner','suspended_miner')",p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -132,12 +131,12 @@ func (p *Parser) NewMiner() (error) {
 		return p.ErrInfo(err)
 	}
 	// т.к. у юзера это может быть не первая попытка стать майнером, то отменяем голосования по всем предыдущим
-	err = p.DCDB.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE user_id = ? AND type = 'node_voting' AND end_block_id = 0 AND votes_end = 0", p.BlockData.BlockId, p.TxMap["user_id"])
+	err = p.DCDB.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE user_id = ? AND type = 'node_voting' AND end_block_id = 0 AND votes_end = 0", p.BlockData.BlockId,p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	// создаем новое голосование для нодов
-	err = p.DCDB.ExecSql("INSERT INTO votes_miners (type,	user_id,	votes_start_time) VALUES ('node_voting', ?, ?)",  p.TxMap["user_id"], p.BlockData.Time)
+	err = p.DCDB.ExecSql("INSERT INTO votes_miners (type,	user_id,	votes_start_time) VALUES ('node_voting', ?, ?)", p.TxUserID, p.BlockData.Time)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -218,7 +217,7 @@ func (p *Parser) NewMiner() (error) {
 
 	// Для откатов
 	// проверим, есть ли в БД запись, которую нужно залогировать
-	logData, err := p.DCDB.OneRow("SELECT * FROM faces WHERE user_id = ?", p.TxMap["user_id"]).String()
+	logData, err := p.DCDB.OneRow("SELECT * FROM faces WHERE user_id = ?", p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -257,7 +256,7 @@ func (p *Parser) NewMiner() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.ExecSql("UPDATE faces SET "+addSql["upd"]+", version = ?, race = ?, country = ?, log_id = ? WHERE user_id = ?", spotsVersion, p.TxMap["race"], p.TxMap["country"], logId, p.TxMap["user_id"])
+		err = p.ExecSql("UPDATE faces SET "+addSql["upd"]+", version = ?, race = ?, country = ?, log_id = ? WHERE user_id = ?", spotsVersion, p.TxMaps.Int64["race"], p.TxMaps.Int64["country"], logId,p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -283,7 +282,7 @@ func (p *Parser) NewMiner() (error) {
 	}
 
 	// проверим, есть ли в БД запись, которую надо залогировать
-	logData, err = p.OneRow("SELECT * FROM miners_data WHERE user_id = ?", p.TxMap["user_id"]).String()
+	logData, err = p.OneRow("SELECT * FROM miners_data WHERE user_id = ?",p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -335,7 +334,7 @@ func (p *Parser) NewMiner() (error) {
 					country = ?,
 					host = ?,
 					log_id = ?
-				WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"], logId, p.TxMap["user_id"])
+				WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMaps.String["face_hash"], p.TxMaps.String["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMaps.String["face_coords"], p.TxMaps.String["profile_coords"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], p.TxMaps.String["host"], logId,p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -358,17 +357,17 @@ func (p *Parser) NewMiner() (error) {
 					country,
 					host
 			) VALUES (?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			p.TxMap["user_id"], p.TxMap["node_public_key"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"], p.TxMap["host"])
+			p.TxUserID, p.TxMap["node_public_key"], p.TxMaps.String["face_hash"], p.TxMaps.String["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMaps.String["face_coords"], p.TxMaps.String["profile_coords"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], p.TxMaps.String["host"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
-	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
+	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_node_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["node_public_key"])
 		if err != nil {
 			return p.ErrInfo(err)
@@ -378,11 +377,11 @@ func (p *Parser) NewMiner() (error) {
 }
 
 func (p *Parser) NewMinerRollback() (error) {
-	err := p.generalRollback("faces", p.TxMap["user_id"], "", false)
+	err := p.generalRollback("faces",p.TxUserID, "", false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.generalRollback("miners_data", p.TxMap["user_id"], "", false)
+	err = p.generalRollback("miners_data",p.TxUserID, "", false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -390,16 +389,16 @@ func (p *Parser) NewMinerRollback() (error) {
 	p.ExecSql(`UPDATE votes_miners
 					SET votes_end = 0, end_block_id = 0
 					WHERE user_id = ? AND type = 'node_voting' AND end_block_id = ? AND votes_end > 0`,
-					p.TxMap["user_id"], p.BlockData.BlockId)
+					p.TxUserID, p.BlockData.BlockId)
 	p.ExecSql(`DELETE FROM votes_miners
-					WHERE type = 'node_voting' AND user_id = ? AND votes_start_time = ?`, p.TxMap["user_id"], p.BlockData.Time)
+					WHERE type = 'node_voting' AND user_id = ? AND votes_start_time = ?`,p.TxUserID, p.BlockData.Time)
 	p.rollbackAI("votes_miners", 1)
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
-	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId {
+	if p.TxUserID == myUserId {
 		pub, err := p.Single("SELECT public_key SELECT public_key "+myPrefix+"my_node_keys WHERE block_id=?", p.BlockData.BlockId).String()
 		if err != nil {
 			return err

@@ -132,7 +132,7 @@ func (p *Parser) CashRequestOutFront() (error) {
 	}
 
 	// не находится ли юзер в данный момент на каникулах.
-	rows, err := p.Query(p.adaptQuery("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0"), p.TxMaps.Int64["to_user_id"])
+	rows, err := p.Query(p.adaptQuery("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0"), p.TxMaps.Int64["to_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

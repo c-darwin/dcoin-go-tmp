@@ -10,24 +10,12 @@ import (
 
 
 func (p *Parser) NewUserInit() (error) {
-
-	fields := []map[string]string {{"public_key":"bytes"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	err := p.GetTxMaps([]map[string]string {{"public_key":"bytes"}, {"sign":"bytes"}});
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	p.TxMap["public_key_hex"] = utils.BinToHex(p.TxMap["public_key"]);
 	p.TxMaps.Bytes["public_key_hex"] = utils.BinToHex(p.TxMaps.Bytes["public_key"]);
-/*
-	fields := []string {"public_key", "sign"}
-	TxMap := make(map[string][]byte)
-	TxMap, err := p.GetTxMap(fields);
-	p.TxMap = TxMap;
-	fmt.Println("TxMap", p.TxMap)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	TxMap["public_key_hex"] = utils.BinToHex(TxMap["public_key"]);*/
 	return nil
 }
 
@@ -94,7 +82,7 @@ func (p *Parser) NewUserFront() (error) {
 
 func (p *Parser) NewUser() (error) {
 	// пишем в БД нового юзера
-	newUserId, err := p.DCDB.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", p.TxMap["public_key_hex"], p.TxMap["user_id"])
+	newUserId, err := p.DCDB.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", p.TxMap["public_key_hex"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -156,11 +144,11 @@ func (p *Parser) NewUser() (error) {
 		}
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(utils.BytesToInt64(p.TxMap["user_id"]))
+	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if utils.BytesToInt64(p.TxMap["user_id"]) == myUserId && myBlockId <= p.BlockData.BlockId {
+	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		p.DCDB.ExecSql("UPDATE "+myPrefix+"my_new_users SET status ='approved', user_id = ? WHERE public_key = [hex]", newUserId, p.TxMap["public_key_hex"])
 	}
 	return nil

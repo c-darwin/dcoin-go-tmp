@@ -419,7 +419,9 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 
 func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	result := make(map[string]string)
+	log.Println(query, args)
 	all, err := db.GetAll(query, 1, args ...)
+	log.Println(all)
 	if err != nil {
 		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
 	}
@@ -472,7 +474,12 @@ func FormatQuery(q, dbType string, args...interface {}) (string, []interface {})
 		for i:=0; i < len(indexArr); i++ {
 			str:=q[indexArr[i][0]:indexArr[i][1]]
 			if str!="[hex]" {
-				newArgs = append(newArgs, args[i])
+				switch args[i].(type) {
+				case []byte:
+					newArgs = append(newArgs, string(args[i].([]byte)))
+				default:
+					newArgs = append(newArgs, args[i])
+				}
 			} else {
 				switch args[i].(type) {
 				case string:
@@ -481,6 +488,7 @@ func FormatQuery(q, dbType string, args...interface {}) (string, []interface {})
 					newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
 				}
 			}
+			//log.Println("newQ", newQ)
 		}
 		newQ = strings.Replace(newQ, "[hex]", "?", -1)
 	case "postgresql":
@@ -1113,11 +1121,11 @@ func (db *DCDB) CheckCurrencyId(id int64) (int64, error) {
 func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
 	sql:=""
-	if db.ConfigIni["db_type"]=="mysql" {
+	//if db.ConfigIni["db_type"]=="mysql" {
 		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0";
-	} else {
-		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0";
-	}
+	//} else {
+	//	sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0";
+	//}
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		return result, err

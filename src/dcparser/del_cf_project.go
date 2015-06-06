@@ -57,7 +57,7 @@ func (p *Parser) DelCfProject() (error) {
 		return p.ErrInfo(err)
 	}
 
-	project_currency_id, err := p.Single("SELECT currency_id FROM cf_projects WHERE id  =  ?", p.TxMap["project_id"]).Int64()
+	project_currency_id, err := p.Single("SELECT currency_id FROM cf_projects WHERE id  =  ?", p.TxMaps.Int64["project_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -95,7 +95,7 @@ func (p *Parser) DelCfProject() (error) {
 
 func (p *Parser) DelCfProjectRollback() (error) {
 
-	project_currency_id, err := p.Single("SELECT currency_id FROM cf_projects WHERE id  =  ?", p.TxMap["project_id"]).Int64()
+	project_currency_id, err := p.Single("SELECT currency_id FROM cf_projects WHERE id  =  ?", p.TxMaps.Int64["project_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

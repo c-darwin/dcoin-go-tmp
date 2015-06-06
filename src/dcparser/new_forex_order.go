@@ -3,7 +3,7 @@ package dcparser
 import (
 	"fmt"
 	"utils"
-	//"log"
+	"log"
 	//"encoding/json"
 	//"regexp"
 	//"math"
@@ -146,10 +146,11 @@ func (p *Parser) NewForexOrder() (error) {
 	}
 
 	// берем из БД только те ордеры, которые удовлетворяют нашим требованиям
-	rows, err := p.Query("SELECT id, sell_rate, amount, user_id, sell_currency_id, buy_currency_id  FROM forex_orders WHERE buy_currency_id = ? AND sell_rate >= ? AND sell_currency_id = ? AND del_block_id = 0 AND empty_block_id = 0",  p.TxMap["sell_currency_id"], reverseRate, p.TxMap["buy_currency_id"])
+	rows, err := p.Query("SELECT id, sell_rate, amount, user_id, sell_currency_id, buy_currency_id  FROM forex_orders WHERE buy_currency_id = ? AND sell_rate >= ? AND sell_currency_id = ? AND del_block_id = 0 AND empty_block_id = 0",  p.TxMaps.Int64["sell_currency_id"], reverseRate, p.TxMaps.Int64["buy_currency_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+
 	defer rows.Close()
 	for rows.Next() {
 		var rowId, rowUserId, rowSellCurrencyId, rowBuyCurrencyId int64
@@ -158,6 +159,7 @@ func (p *Parser) NewForexOrder() (error) {
 		if err!= nil {
 			return p.ErrInfo(err)
 		}
+		log.Println("rowId", rowId, "rowUserId", rowUserId, "rowSellCurrencyId", rowSellCurrencyId, "rowBuyCurrencyId", rowBuyCurrencyId, "rowSellRate", rowSellRate, "rowAmount", rowAmount)
 		// сколько мы готовы купить по курсу владельца данного ордера
 		readyToBuy := totalSellAmount * rowSellRate
 

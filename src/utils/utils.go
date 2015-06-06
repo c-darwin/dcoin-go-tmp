@@ -990,7 +990,9 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			signsSlice = append(signsSlice, BytesShift(&signs, length))
 		}
 		if len(publicKeys) != len(signsSlice) {
-			return false, fmt.Errorf("sign error %d=%d", len(publicKeys), len(signsSlice) )
+			log.Println("signsSlice", signsSlice)
+			log.Println("publicKeys", publicKeys)
+			return false, fmt.Errorf("sign error %d!=%d", len(publicKeys), len(signsSlice) )
 		}
 	}
 

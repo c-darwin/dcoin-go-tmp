@@ -75,8 +75,11 @@ func MakePctArray(pctArray map[string]int64) []map[int64]int64 {
 	arr := fillPct()
 	var i int64
 	var result []map[int64]int64
+	//log.Println("pctArray", pctArray)
 	for _, pct := range arr {
 		for _, sec := range pct {
+			//log.Println("sec", sec)
+			//log.Println("sec e", fmt.Sprintf("%e", sec))
 			if pctArray[sec] != 0 {
 				result = append(result, map[int64]int64{i: pctArray[sec]})
 			}
