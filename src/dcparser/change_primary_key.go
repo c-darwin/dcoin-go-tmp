@@ -76,7 +76,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	// Всегда есть, что логировать, т.к. это обновление ключа
 	var public_key_0, public_key_1, public_key_2 []byte
 	var log_id int64
-	err := p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?", p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
+	err := p.QueryRow(p.FormatQuery("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?"), p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -88,7 +88,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 		public_key_2 = utils.BinToHex(public_key_2)
 	}
 
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_users ( public_key_0, public_key_1, public_key_2, block_id, prev_log_id ) VALUES ( [hex], [hex], [hex], ?, ? )", public_key_0, public_key_1, public_key_2, p.BlockData.BlockId, log_id)
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_users ( public_key_0, public_key_1, public_key_2, block_id, prev_log_id ) VALUES ( [hex], [hex], [hex], ?, ? )", "log_id", public_key_0, public_key_1, public_key_2, p.BlockData.BlockId, log_id)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -157,7 +157,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 			}
 
 			// cash_requests
-			rows, err := p.Query("SELECT to_user_id, currency_id, amount,  hash_code, status, id FROM cash_requests WHERE to_user_id = ? OR from_user_id = ?", myUserId, myUserId)
+			rows, err := p.Query(p.FormatQuery("SELECT to_user_id, currency_id, amount,  hash_code, status, id FROM cash_requests WHERE to_user_id = ? OR from_user_id = ?"), myUserId, myUserId)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -176,7 +176,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 			}
 
 			//holidays
-			rows, err = p.Query("SELECT start_time, end_time, id FROM holidays WHERE user_id = ?", myUserId)
+			rows, err = p.Query(p.FormatQuery("SELECT start_time, end_time, id FROM holidays WHERE user_id = ?"), myUserId)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -213,7 +213,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	// данные, которые восстановим
 	var public_key_0, public_key_1, public_key_2 []byte
 	var prev_log_id int64
-	err = p.QueryRow("SELECT public_key_0, public_key_1, public_key_2, prev_log_id FROM log_users WHERE log_id  =  ?", logId).Scan(&public_key_0, &public_key_1, &public_key_2, &prev_log_id)
+	err = p.QueryRow(p.FormatQuery("SELECT public_key_0, public_key_1, public_key_2, prev_log_id FROM log_users WHERE log_id  =  ?"), logId).Scan(&public_key_0, &public_key_1, &public_key_2, &prev_log_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}

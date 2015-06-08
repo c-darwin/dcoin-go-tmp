@@ -124,7 +124,7 @@ func (p *Parser) SendDcFront() (error) {
 
 				arbitrator := p.TxMap[arbitrator_]
 				// проверим, является ли арбитром указанный user_id
-				arbitratorConditionsJson, err := p.Single("SELECT conditions FROM arbitrator_conditions WHERE user_id  =  ?", arbitrator).Bytes()
+				arbitratorConditionsJson, err := p.Single("SELECT conditions FROM arbitrator_conditions WHERE user_id  =  ?", utils.BytesToInt64(arbitrator)).Bytes()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -132,6 +132,7 @@ func (p *Parser) SendDcFront() (error) {
 				err = json.Unmarshal(arbitratorConditionsJson, &arbitratorConditionsMap)
 				// арбитр к этому моменту мог передумать и убрать свои условия, уйдя из арбитров для новых сделок поставив [0] что вызовет тут ошибку
 				if err != nil {
+					log.Println("arbitratorConditionsJson",arbitratorConditionsJson)
 					return p.ErrInfo(err)
 				}
 				// проверим, работает ли выбранный арбитр с валютой данной сделки
@@ -145,7 +146,7 @@ func (p *Parser) SendDcFront() (error) {
 					return p.ErrInfo("len(arbitratorConditionsMap[checkCurrency]) == 0")
 				}
 				// указан ли этот арбитр в списке доверенных у продавца
-				sellerArbitrator, err := p.Single("SELECT user_id FROM arbitration_trust_list WHERE user_id  =  ? AND arbitrator_user_id  =  ?", p.TxMaps.Int64["to_user_id"], arbitrator).Int64()
+				sellerArbitrator, err := p.Single("SELECT user_id FROM arbitration_trust_list WHERE user_id  =  ? AND arbitrator_user_id  =  ?", p.TxMaps.Int64["to_user_id"], utils.BytesToInt64(arbitrator)).Int64()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -153,7 +154,7 @@ func (p *Parser) SendDcFront() (error) {
 					return p.ErrInfo("sellerArbitrator == 0")
 				}
 				// указан ли этот арбитр в списке доверенных у покупателя
-				buyerArbitrator, err := p.Single("SELECT user_id FROM arbitration_trust_list WHERE user_id  =  ? AND arbitrator_user_id  =  ?", p.TxMaps.Int64["from_user_id"], arbitrator).Int64()
+				buyerArbitrator, err := p.Single("SELECT user_id FROM arbitration_trust_list WHERE user_id  =  ? AND arbitrator_user_id  =  ?", p.TxMaps.Int64["from_user_id"], utils.BytesToInt64(arbitrator)).Int64()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -259,7 +260,7 @@ func (p *Parser) SendDc() (error) {
 	var arbitrators bool
 	if p.BlockData.BlockId > consts.ARBITRATION_BLOCK_START {
 		// на какой период манибека согласен продавец
-		err := p.QueryRow("SELECT arbitration_days_refund, seller_hold_back_pct FROM users WHERE user_id  =  ?", p.TxMaps.Int64["to_user_id"]).Scan(&arbitration_days_refund, &seller_hold_back_pct)
+		err := p.QueryRow(p.FormatQuery("SELECT arbitration_days_refund, seller_hold_back_pct FROM users WHERE user_id  =  ?"), p.TxMaps.Int64["to_user_id"]).Scan(&arbitration_days_refund, &seller_hold_back_pct)
 		if err != nil && err!=sql.ErrNoRows {
 			return p.ErrInfo(err)
 		}
@@ -307,7 +308,7 @@ func (p *Parser) SendDc() (error) {
 			if holdBackAmount < 0.01 {
 				holdBackAmount = 0.01
 			}
-			orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO orders ( time, buyer, seller, arbitrator0, arbitrator1, arbitrator2, arbitrator3, arbitrator4, amount, hold_back_amount, currency_id, block_id, end_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", p.BlockData.Time, p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["arbitrator0"], p.TxMaps.Int64["arbitrator1"], p.TxMaps.Int64["arbitrator2"], p.TxMaps.Int64["arbitrator3"], p.TxMaps.Int64["arbitrator4"], p.TxMaps.Float64["amount"], holdBackAmount, p.TxMaps.Int64["currency_id"], p.BlockData.BlockId, (p.BlockData.Time+arbitration_days_refund*86400))
+			orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO orders ( time, buyer, seller, arbitrator0, arbitrator1, arbitrator2, arbitrator3, arbitrator4, amount, hold_back_amount, currency_id, block_id, end_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", "id", p.BlockData.Time, p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["arbitrator0"], p.TxMaps.Int64["arbitrator1"], p.TxMaps.Int64["arbitrator2"], p.TxMaps.Int64["arbitrator3"], p.TxMaps.Int64["arbitrator4"], p.TxMaps.Float64["amount"], holdBackAmount, p.TxMaps.Int64["currency_id"], p.BlockData.BlockId, (p.BlockData.Time+arbitration_days_refund*86400))
 			if err != nil {
 				return p.ErrInfo(err)
 			}

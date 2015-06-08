@@ -119,7 +119,7 @@ func (p *Parser) ChangeCommission() (error) {
 	}
 	// если есть, что логировать, то логируем
 	if len(logData) > 0 {
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_commission ( commission, block_id, prev_log_id ) VALUES ( ?, ?, ? )", logData["commission"], p.BlockData.BlockId, logData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_commission ( commission, block_id, prev_log_id ) VALUES ( ?, ?, ? )", "log_id", logData["commission"], p.BlockData.BlockId, logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

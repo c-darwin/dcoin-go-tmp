@@ -77,7 +77,7 @@ func (p *Parser) AdminBanMiners() (error) {
 		}
 
 		// логируем текущие значения
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners_data ( miner_id, status, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", data["miner_id"], data["status"], p.BlockData.BlockId, data["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners_data ( miner_id, status, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", "log_id", data["miner_id"], data["status"], p.BlockData.BlockId, data["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -99,7 +99,7 @@ func (p *Parser) AdminBanMiners() (error) {
 
 		// изменение статуса юзера влечет смену %, а значит нужен пересчет TDC на обещанных суммах
 		// все обещанные суммы, по которым делается превращение tdc->DC
-		rows, err := p.Query(`
+		rows, err := p.Query(p.FormatQuery(`
 					SELECT id,
 								 amount,
 								 currency_id,
@@ -112,7 +112,7 @@ func (p *Parser) AdminBanMiners() (error) {
 					WHERE user_id = ? AND
 								 del_block_id = 0 AND
 								 del_mining_block_id = 0
-					ORDER BY id ASC`, userId)
+					ORDER BY id ASC`), userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -135,7 +135,7 @@ func (p *Parser) AdminBanMiners() (error) {
 			}
 
 			// логируем текущее значение
-			logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( tdc_amount, tdc_amount_update, status, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", tdc_amount, tdc_amount_update, status, p.BlockData.BlockId, log_id)
+			logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( tdc_amount, tdc_amount_update, status, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", tdc_amount, tdc_amount_update, status, p.BlockData.BlockId, log_id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -206,14 +206,14 @@ func (p *Parser) AdminBanMinersRollback() (error) {
 		}
 
 		// Откатываем обещанные суммы в обратном прядке
-		rows, err := p.Query(`
+		rows, err := p.Query(p.FormatQuery(`
 					SELECT id,
 								 log_id
 					FROM promised_amount
 					WHERE user_id = ? AND
 								 del_block_id = 0 AND
 								 del_mining_block_id = 0
-					ORDER BY id DESC`, userId)
+					ORDER BY id DESC`), userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

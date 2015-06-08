@@ -65,7 +65,7 @@ func (p *Parser) DelCfProject() (error) {
 	pointsStatus := []map[int64]string {{0:"user"}}
 	pct, err := p.GetPct()
 	// проходимся по всем фундерам и возращаем на их кошельки деньги
-	rows, err := p.Query("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC", p.TxMaps.Int64["project_id"])
+	rows, err := p.Query(p.FormatQuery("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC"), p.TxMaps.Int64["project_id"])
 	if err != nil {
 		return  p.ErrInfo(err)
 	}
@@ -101,7 +101,7 @@ func (p *Parser) DelCfProjectRollback() (error) {
 	}
 
 	// проходимся по всем фундерам и возращаем на их кошельки деньги
-	rows, err := p.Query("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC", p.TxMaps.Int64["project_id"])
+	rows, err := p.Query(p.FormatQuery("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC"), p.TxMaps.Int64["project_id"])
 	if err != nil {
 		return  p.ErrInfo(err)
 	}

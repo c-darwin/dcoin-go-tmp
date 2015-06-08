@@ -50,7 +50,7 @@ func (p *Parser) AdminAddCurrencyFront() (error) {
 }
 
 func (p *Parser) AdminAddCurrency() (error) {
-	currencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO currency ( name, full_name, max_other_currencies ) VALUES ( ?, ?, ? )", p.TxMaps.String["currency_name"], p.TxMaps.String["currency_full_name"], p.TxMaps.Int64["max_other_currencies"])
+	currencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO currency ( name, full_name, max_other_currencies ) VALUES ( ?, ?, ? )", "id", p.TxMaps.String["currency_name"], p.TxMaps.String["currency_full_name"], p.TxMaps.Int64["max_other_currencies"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

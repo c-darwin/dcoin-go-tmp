@@ -25,7 +25,7 @@ type DCDB struct {
 	ConfigIni map[string]string
 }
 
-func replQ(q string) string {
+func ReplQ(q string) string {
 	q1:=strings.Split(q, "?")
 	fmt.Println(q1)
 	result:=""
@@ -296,12 +296,12 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
 		query = strings.Replace(query, "[hex]", "?", -1)
+		query = strings.Replace(query, "delete", "`delete`", -1)
 	case "postgresql":
 		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
-		query = replQ(query)
+		query = ReplQ(query)
 	case "mysql":
 		query = strings.Replace(query, "delete", "`delete`", -1)
-		query = strings.Replace(query, "``delete``", "`delete`", -1)
 		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
 	}
 	var result []byte
@@ -347,7 +347,7 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[string]string, error) {
 	if db.ConfigIni["db_type"] == "postgresql" {
-		query = replQ(query)
+		query = ReplQ(query)
 	}
 	var result []map[string]string
 	// Execute the query
@@ -450,21 +450,40 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 }
 
 
-func (db *DCDB) ExecSqlGetLastInsertId(query string, args ...interface{}) (int64, error) {
-	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
-	res, err := db.Exec(newQuery, newArgs...)
-	if err != nil {
-		return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
-	}
-	affect, err := res.RowsAffected()
-	lastId, err := res.LastInsertId()
-	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interface{}) (int64, error) {
+	var lastId int64
+	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
+	if db.ConfigIni["db_type"] == "postgresql" {
+		newQuery = newQuery+" RETURNING "+returning
+		err := db.QueryRow(newQuery, newArgs...).Scan(&lastId)
+		if err != nil {
+			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		}
+		if db.ConfigIni["log"] == "1" {
+			log.Printf("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
+		}
+		/*r, _ := regexp.Compile(`(?i)insert into (\w+)`)
+		find := r.FindStringSubmatch(newQuery)
+		err =  db.ExecSql("SELECT setval('"+find[1]+"_"+returning+"_seq', max("+returning+")) FROM   "+find[1]+";")
+		if err != nil {
+			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		}*/
+
+	} else {
+		res, err := db.Exec(newQuery, newArgs...)
+		if err != nil {
+			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		}
+		affect, err := res.RowsAffected()
+		lastId, err = res.LastInsertId()
+		if db.ConfigIni["log"] == "1" {
+			log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+		}
 	}
 	return lastId, nil
 }
 
-func FormatQuery(q, dbType string, args...interface {}) (string, []interface {}) {
+func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface {}) {
 	var newArgs []interface {}
 	newQ := q
 	switch dbType {
@@ -493,7 +512,8 @@ func FormatQuery(q, dbType string, args...interface {}) (string, []interface {})
 		newQ = strings.Replace(newQ, "[hex]", "?", -1)
 	case "postgresql":
 		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
-		newQ = replQ(newQ)
+		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+		newQ = ReplQ(newQ)
 		newArgs = args
 	case "mysql":
 		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
@@ -502,8 +522,10 @@ func FormatQuery(q, dbType string, args...interface {}) (string, []interface {})
 	return newQ, newArgs
 }
 
+
+
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
-	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
+	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
 		return fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
@@ -519,7 +541,7 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 
 
 func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
-	newQuery, newArgs := FormatQuery(query, db.ConfigIni["db_type"], args...)
+	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
 		return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
@@ -914,10 +936,28 @@ func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 	return sleepDataMap, nil;
 }
 
+func (db *DCDB) FormatQuery(q string) string {
+	newQ := q
+	switch db.ConfigIni["db_type"] {
+	case "sqlite":
+		newQ = strings.Replace(newQ, "[hex]", "?", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	case "postgresql":
+		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+		newQ = ReplQ(newQ)
+		newQ = strings.Replace(newQ, "delete", `"delete"`, -1)
+
+	case "mysql":
+		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	}
+	return newQ
+}
 
 func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 	var miners []int64
-	rows, err := db.Query("SELECT miner_id FROM miners_data WHERE user_id IN ($1) AND miner_id > 0", strings.Join(SliceInt64ToString(collective), ","))
+	rows, err := db.Query(db.FormatQuery("SELECT miner_id FROM miners_data WHERE user_id IN (?) AND miner_id > 0"), strings.Join(SliceInt64ToString(collective), ","))
 	if err != nil {
 		return miners, err
 	}
@@ -1097,7 +1137,13 @@ func(db *DCDB) GetLastBlockId() (int64, error) {
 
 func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 	result := make(map[int64][]map[int64]map[string]float64)
-	rows, err := db.Query("SELECT currency_id, time, user, miner FROM pct ORDER BY time ASC")
+	var q string
+	if db.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT currency_id, time, "user", miner FROM pct ORDER BY time ASC`
+	} else {
+		q = `SELECT currency_id, time, user, miner FROM pct ORDER BY time ASC`
+	}
+	rows, err := db.Query(q)
 	if err != nil {
 		return result, err
 	}
@@ -1121,11 +1167,11 @@ func (db *DCDB) CheckCurrencyId(id int64) (int64, error) {
 func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
 	sql:=""
-	//if db.ConfigIni["db_type"]=="mysql" {
+	if db.ConfigIni["db_type"]=="mysql" || db.ConfigIni["db_type"]=="sqlite"  {
 		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0";
-	//} else {
-	//	sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0";
-	//}
+	} else {
+		sql =`SELECT start_time, end_time FROM holidays WHERE user_id = $1 AND "delete" = 0`;
+	}
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		return result, err

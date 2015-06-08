@@ -37,7 +37,7 @@ func (p *Parser) ChangeMoneyBackTimeFront() (error) {
 	}
 
 	// проверим, является ли арбитром для данного ордера наш юзер и не увеличивал ли он уже время
-	orderId, err := p.Single("SELECT id FROM orders WHERE id  =  ? AND (arbitrator0  =  ? OR arbitrator1  =  ? OR arbitrator2  =  ? OR arbitrator3  =  ? OR arbitrator4  =  ?) AND end_time_changed  =  0 AND status  =  'refund'", p.TxMap["order_id"], p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID).Int64()
+	orderId, err := p.Single("SELECT id FROM orders WHERE id  =  ? AND (arbitrator0  =  ? OR arbitrator1  =  ? OR arbitrator2  =  ? OR arbitrator3  =  ? OR arbitrator4  =  ?) AND end_time_changed  =  0 AND status  =  'refund'", p.TxMaps.Int64["order_id"], p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

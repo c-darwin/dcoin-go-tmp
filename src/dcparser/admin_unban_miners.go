@@ -93,7 +93,7 @@ func (p *Parser) AdminUnbanMiners() (error) {
 
 		// изменение статуса юзера влечет обновление tdc_amount_update
 		// все обещанные суммы, по которым делается превращение tdc->DC
-		rows, err := p.Query(`
+		rows, err := p.Query(p.FormatQuery(`
 					SELECT id,
 								 status,
 								 status_backup,
@@ -103,7 +103,7 @@ func (p *Parser) AdminUnbanMiners() (error) {
 					WHERE user_id = ? AND
 								 del_block_id = 0 AND
 								 del_mining_block_id = 0
-					ORDER BY id ASC`, userId)
+					ORDER BY id ASC`), userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -116,7 +116,7 @@ func (p *Parser) AdminUnbanMiners() (error) {
 				return p.ErrInfo(err)
 			}
 
-			logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, status_backup, block_id, tdc_amount_update, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", status, status_backup, p.BlockData.BlockId, tdc_amount_update, log_id)
+			logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, status_backup, block_id, tdc_amount_update, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", status, status_backup, p.BlockData.BlockId, tdc_amount_update, log_id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -179,14 +179,14 @@ func (p *Parser) AdminUnbanMinersRollback() (error) {
 		}
 
 		// Откатываем обещанные суммы в обратном порядке
-		rows, err := p.Query(`
+		rows, err := p.Query(p.FormatQuery(`
 					SELECT id,
 								 log_id
 					FROM promised_amount
 					WHERE user_id = ? AND
 								 del_block_id = 0 AND
 								 del_mining_block_id = 0
-					ORDER BY id DESC`, userId)
+					ORDER BY id DESC`), userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

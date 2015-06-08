@@ -105,7 +105,7 @@ func (p *Parser) MoneyBack() (error) {
 	// получим сумму на кошельке юзера + %
 	var wallet_amount float64
 	var last_update int64
-	err = p.QueryRow("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?", sellerUserId, p.TxMaps.Int64["currency_id"]).Scan(&wallet_amount, &last_update)
+	err = p.QueryRow(p.FormatQuery("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?"), sellerUserId, p.TxMaps.Int64["currency_id"]).Scan(&wallet_amount, &last_update)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}

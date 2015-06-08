@@ -271,19 +271,19 @@ func (p *Parser) VotesComplex() (error) {
 		}
 
 		// max_promised_amount
-		err = p.selectiveLoggingAndUpd([]string{"amount"}, []interface {}{utils.Float64ToStr(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"amount"}, []interface {}{int64(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// max_other_currencies
-		err = p.selectiveLoggingAndUpd([]string{"count"}, []interface {}{utils.Float64ToStr(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"count"}, []interface {}{int64(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// reduction
-		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{ utils.Float64ToStr(data[4]), p.TxTime}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{int64(data[4]), p.TxTime}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}

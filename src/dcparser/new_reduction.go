@@ -193,14 +193,14 @@ func (p *Parser) NewReduction() (error) {
 
 		// т.к. невозможо 2 отката подряд из-за промежутка в 2 дня между reduction,
 		// то можем использовать только бекап на 1 уровень назад вместо _log
-		err := p.ExecSql("UPDATE wallets SET amount_backup = amount, amount = round(amount*("+utils.Float64ToStr(d)+"), 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
+		err := p.ExecSql("UPDATE wallets SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// если бы не урезали amount, то пришлось бы делать пересчет tdc по всем, у кого есть данная валюта
 		// после 87826 блока убрано amount_backup = amount, amount = amount*({$d}) т.к. теряется смысл в reduction c type=promised_amount
-		err = p.ExecSql("UPDATE promised_amount SET tdc_amount_backup = tdc_amount, tdc_amount = round(tdc_amount*("+utils.Float64ToStr(d)+"), 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
+		err = p.ExecSql("UPDATE promised_amount SET tdc_amount_backup = tdc_amount, tdc_amount = round(tdc_amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -218,13 +218,13 @@ func (p *Parser) NewReduction() (error) {
 		}
 
 		// форeкс-ордеры
-		err = p.ExecSql("UPDATE forex_orders SET amount_backup = amount, amount = round(amount*("+utils.Float64ToStr(d)+"), 2) WHERE sell_currency_id = ?", p.TxMaps.Int64["currency_id"])
+		err = p.ExecSql("UPDATE forex_orders SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE sell_currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// крауд-фандинг
-		err = p.ExecSql("UPDATE cf_funding SET amount_backup = amount, amount = round(amount*("+utils.Float64ToStr(d)+"), 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
+		err = p.ExecSql("UPDATE cf_funding SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

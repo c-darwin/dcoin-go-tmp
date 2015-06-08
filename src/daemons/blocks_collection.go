@@ -46,6 +46,10 @@ func BlocksCollection(configIni map[string]string) {
     INSTALL:
     progress, err := db.Single("SELECT progress FROM install").String()
     if err != nil || progress != "complete" {
+		log.Println(`progress != "complete"`)
+		if err!=nil {
+            log.Print(utils.ErrInfo(err))
+        }
         utils.Sleep(1)
         goto INSTALL
     }
@@ -54,7 +58,7 @@ func BlocksCollection(configIni map[string]string) {
     BEGIN:
 	for {
 
-		fmt.Println("BlocksCollection")
+		log.Println("BlocksCollection")
         // отметимся в БД, что мы живы.
         db.UpdDaemonTime(GoroutineName)
         // проверим, не нужно нам выйти из цикла
@@ -75,7 +79,7 @@ func BlocksCollection(configIni map[string]string) {
             utils.Sleep(1)
             continue BEGIN
         }
-		fmt.Println("myPrefix",myPrefix)
+		log.Println("myPrefix",myPrefix)
 
        err = db.DbLock(GoroutineName);
         if err != nil {
@@ -93,8 +97,8 @@ func BlocksCollection(configIni map[string]string) {
             continue BEGIN
         }
 
-        fmt.Println("config", config)
-        fmt.Println("currentBlockId", currentBlockId)
+        log.Println("config", config)
+        log.Println("currentBlockId", currentBlockId)
 
 		// на время тесто
 		if !cur {
@@ -105,7 +109,7 @@ func BlocksCollection(configIni map[string]string) {
 
 			if config["first_load_blockchain"]=="file" {
 
-                fmt.Println("first_load_blockchain=file")
+                log.Println("first_load_blockchain=file")
                 /*
                 На время тестов не какчаем
                 blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain")
@@ -146,30 +150,30 @@ func BlocksCollection(configIni map[string]string) {
                     continue BEGIN
                 }
 
-                fmt.Println("GO!")
+                log.Println("GO!")
                 for {
                     b1 := make([]byte, 5)
                     file.Read(b1)
                     dataSize := utils.BinToDec(b1)
-                    fmt.Println("dataSize", dataSize)
+                    log.Println("dataSize", dataSize)
                     if dataSize > 0 {
 
                         data := make([]byte, dataSize)
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-                        if blockId == 138500 {
+                        if blockId == 50000 {
                            break BEGIN
                         }
-                        fmt.Println("blockId", blockId)
+                        log.Println("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
-                        fmt.Println("length", length)
+                        log.Println("length", length)
                         fmt.Printf("data2 %x\n", data2)
                         blockBin := utils.BytesShift(&data2, length)
                         fmt.Printf("blockBin %x\n", blockBin)
 
-                        if blockId > 134999 {
+                        if blockId > 0 {
 
                             // парсинг блока
                             parser := new(dcparser.Parser)

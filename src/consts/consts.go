@@ -79,6 +79,8 @@ const LIMIT_CHANGE_SELLER_HOLD_BACK_PERIOD = 3600*24
 const LIMIT_CHANGE_CA = 3
 const LIMIT_CHANGE_CA_PERIOD = 3600*24
 
+const ROUND_FIX = 0.00000000001
+
 // через сколько можно делать следующее урезание.
 // важно учитывать то, что не должно быть роллбеков дальше чем на 1 урезание
 // т.к. при урезании используется backup в этой же табле вместо отдельной таблы log_

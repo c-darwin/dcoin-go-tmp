@@ -83,7 +83,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 		return p.ErrInfo(err)
 	}
 
-	rows, err := p.Query(`
+	rows, err := p.Query(p.FormatQuery(`
 				SELECT id,
 							 currency_id,
 							 status,
@@ -101,7 +101,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 							 currency_id > 1 AND
 							 del_block_id = 0 AND
 							 del_mining_block_id = 0
-				ORDER BY id ASC`, p.TxUserID)
+				ORDER BY id ASC`), p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -114,7 +114,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, start_time, tdc_amount, tdc_amount_update, votes_start_time, votes_0, votes_1, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )", status, start_time, tdc_amount, tdc_amount_update, votes_start_time, votes_0, votes_1, p.BlockData.BlockId, log_id)
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, start_time, tdc_amount, tdc_amount_update, votes_start_time, votes_0, votes_1, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )", "log_id", status, start_time, tdc_amount, tdc_amount_update, votes_start_time, votes_0, votes_1, p.BlockData.BlockId, log_id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -178,14 +178,14 @@ func (p *Parser) ChangeGeolocationRollback() (error) {
 	}
 
 	// идем в обратном порядке (DESC)
-	rows, err := p.Query(`
+	rows, err := p.Query(p.FormatQuery(`
 				SELECT log_id
 				FROM promised_amount
 				WHERE status = 'change_geo' AND
 				             user_id = ? AND
 				             del_block_id = 0 AND
 				             del_mining_block_id = 0
-				ORDER BY id DESC`, p.TxUserID)
+				ORDER BY id DESC`), p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

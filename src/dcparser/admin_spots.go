@@ -76,7 +76,7 @@ func (p *Parser) AdminSpots() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_spots_compatibility ( version, example_spots, compatibility, segments, tolerances, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ?, ? )", logData["version"], logData["example_spots"], logData["compatibility"], logData["segments"], logData["tolerances"], p.BlockData.BlockId, logData["log_id"])
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_spots_compatibility ( version, example_spots, compatibility, segments, tolerances, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ?, ? )", "log_id", logData["version"], logData["example_spots"], logData["compatibility"], logData["segments"], logData["tolerances"], p.BlockData.BlockId, logData["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

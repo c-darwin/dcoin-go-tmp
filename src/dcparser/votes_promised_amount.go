@@ -125,7 +125,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 	if p.check24hOrAdminVote(data) {
 
 		// нужно залогировать, т.к. не известно, какие были status и tdc_amount_update
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, start_time, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", promisedAmountData["status"], promisedAmountData["start_time"], promisedAmountData["tdc_amount_update"], p.BlockData.BlockId, promisedAmountData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( status, start_time, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", promisedAmountData["status"], promisedAmountData["start_time"], promisedAmountData["tdc_amount_update"], p.BlockData.BlockId, promisedAmountData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

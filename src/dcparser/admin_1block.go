@@ -41,8 +41,9 @@ func (p *Parser) Admin1Block() (error) {
 	}
 	for _, currencyData := range firstBlock.Currency {
 		fmt.Println(currencyData[0], currencyData[1], currencyData[2])
-		currencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO currency (name, full_name, max_other_currencies) VALUES (?,?,?)",
-			currencyData[0], currencyData[1], currencyData[3])
+		// Этой первый блок от админа, поэтому .(float64) можно юзать
+		currencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO currency (name, full_name, max_other_currencies) VALUES (?,?,?)", "id",
+			currencyData[0], currencyData[1], int(currencyData[3].(float64)))
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -52,7 +53,7 @@ func (p *Parser) Admin1Block() (error) {
 			return p.ErrInfo(err)
 		}
 		err = p.ExecSql("INSERT INTO max_promised_amounts (time, currency_id, amount, block_id) VALUES (0,?,?,1)",
-			currencyId, currencyData[2])
+			currencyId, int(currencyData[2].(float64)))
 		if err != nil {
 			return p.ErrInfo(err)
 		}

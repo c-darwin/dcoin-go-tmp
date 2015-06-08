@@ -208,7 +208,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 				return p.ErrInfo(err)
 			}
 			if len(logData) > 0 {
-				logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_recycle_bin ( user_id, profile_file_name, face_file_name, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", logData["user_id"], logData["profile_file_name"], logData["face_file_name"], p.BlockData.BlockId, logData["log_id"])
+				logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_recycle_bin ( user_id, profile_file_name, face_file_name, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", logData["user_id"], logData["profile_file_name"], logData["face_file_name"], p.BlockData.BlockId, logData["log_id"])
 				if err != nil {
 					return p.ErrInfo(err)
 				}

@@ -132,7 +132,7 @@ func (p *Parser) CashRequestOutFront() (error) {
 	}
 
 	// не находится ли юзер в данный момент на каникулах.
-	rows, err := p.Query(p.adaptQuery("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0"), p.TxMaps.Int64["to_user_id"])
+	rows, err := p.Query(p.FormatQuery("SELECT start_time, end_time FROM holidays WHERE user_id = ? AND delete = 0"), p.TxMaps.Int64["to_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -228,7 +228,7 @@ func (p *Parser) CashRequestOut() (error) {
 		}
 	}
 	// пишем запрос в БД
-	cashRequestId, err := p.ExecSqlGetLastInsertId("INSERT INTO cash_requests ( time, from_user_id, to_user_id, currency_id, amount, hash_code ) VALUES ( ?, ?, ?, ?, ?, [hex] )", p.BlockData.Time, p.TxUserID, p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Money["amount"], p.TxMaps.String["hash_code"])
+	cashRequestId, err := p.ExecSqlGetLastInsertId("INSERT INTO cash_requests ( time, from_user_id, to_user_id, currency_id, amount, hash_code ) VALUES ( ?, ?, ?, ?, ?, [hex] )", "id", p.BlockData.Time, p.TxUserID, p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Money["amount"], p.TxMaps.String["hash_code"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -233,7 +233,7 @@ func (p *Parser) NewMiner() (error) {
 			addSql2 += fmt.Sprintf("%v,", logData[fmt.Sprintf("p%v", i)])
 		}
 		// для откатов
-		logId, err := p.DCDB.ExecSqlGetLastInsertId(`
+		logId, err := p.ExecSqlGetLastInsertId(`
 			INSERT INTO log_faces (
 					user_id,
 					version,
@@ -252,7 +252,7 @@ func (p *Parser) NewMiner() (error) {
 					`+addSql2+`
 					`+logData["log_id"]+`,
 					`+utils.Int64ToStr(p.BlockData.BlockId)+`
-				)`)
+				)`, "log_id")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -312,7 +312,7 @@ func (p *Parser) NewMiner() (error) {
 					prev_log_id
 				) VALUES (
 					?, ?, ?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-				) `, logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
+				) `, "log_id",  logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

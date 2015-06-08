@@ -141,7 +141,7 @@ func (p *Parser) checkMiner(userId int64) error {
 	// если разжаловали в этом блоке, то считаем всё еще майнером
 	if p.BlockData!=nil {
 		blockId = p.BlockData.BlockId
-		addSql = " OR `ban_block_id`= "+utils.Int64ToStr(blockId)
+		addSql = " OR ban_block_id= "+utils.Int64ToStr(blockId)
 	}
 
 	// когда админ разжаловывает майнера, у него пропадет miner_id
@@ -557,7 +557,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	}
 	// откатываем наши блоки
 	var blocks []map[string][]byte
-	rows, err := p.Query("SELECT id, data FROM block_chain WHERE id > ? ORDER BY id DESC", blockId)
+	rows, err := p.Query(p.FormatQuery("SELECT id, data FROM block_chain WHERE id > ? ORDER BY id DESC"), blockId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -588,7 +588,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	}
 
 	var hash, head_hash, data []byte
-	err = p.QueryRow("SELECT hash, head_hash, data FROM block_chain WHERE id  =  ?", blockId).Scan(&hash, &head_hash, &data)
+	err = p.QueryRow(p.FormatQuery("SELECT hash, head_hash, data FROM block_chain WHERE id  =  ?"), blockId).Scan(&hash, &head_hash, &data)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -1544,7 +1544,7 @@ func (p *Parser) maxDayVotesRollback() (error) {
 
 func (p *Parser) maxDayVotes() (error) {
 	// нельзя за сутки голосовать более max_day_votes раз
-	num, err := p.Single("SELECT count(time) FROM log_time_votes WHERE user_id = ?", p.TxUserID).Int64()
+	num, err := p.Single("SELECT count(time) FROM log_time_votes WHERE user_id = ? AND time > ?", p.TxUserID, p.TxTime - 86400).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1639,7 +1639,7 @@ func (p *Parser) getPointsStatus(userId int64) ([]map[int64]string, error) {
 	// т.к. перед вызовом этой функции всегда идет обновление points_status, значит при данном запросе у нас
 	// всегда будут свежие данные, т.е. крайний элемент массива всегда будет относиться к текущим 30-и дням
 	var result []map[int64]string
-	rows, err := p.Query("SELECT time_start, status FROM points_status WHERE user_id= ? ORDER BY time_start ASC", userId)
+	rows, err := p.Query(p.FormatQuery("SELECT time_start, status FROM points_status WHERE user_id= ? ORDER BY time_start ASC"), userId)
 	if err != nil {
 		return result, err
 	}
@@ -1760,7 +1760,7 @@ func (p *Parser) pointsUpdate(points, prevLogId, timeStart, pointsStatusTimeStar
 	}
 
 	// перед тем, как обновить time_start, нужно его залогировать
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_points ( time_start, points, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", timeStart, points, p.BlockData.BlockId, prevLogId)
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_points ( time_start, points, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", "log_id", timeStart, points, p.BlockData.BlockId, prevLogId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1789,12 +1789,12 @@ func (p *Parser) insOrUpdMiners(userId int64) (int64, error) {
 	}
 	minerId := miners["miner_id"]
 	if minerId == 0 {
-		minerId, err = p.ExecSqlGetLastInsertId("INSERT INTO miners (active) VALUES (1)")
+		minerId, err = p.ExecSqlGetLastInsertId("INSERT INTO miners (active) VALUES (1)", "miner_id")
 		if err != nil {
 			return 0, p.ErrInfo(err)
 		}
 	} else {
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners ( block_id, prev_log_id ) VALUES ( ?, ?)", p.BlockData.BlockId, miners["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners ( block_id, prev_log_id ) VALUES ( ?, ?)", "log_id", p.BlockData.BlockId, miners["log_id"])
 		if err != nil {
 			return 0, p.ErrInfo(err)
 		}
@@ -1983,7 +1983,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 		addSqlValues = addSqlValues[0:len(addSqlValues)-1]
 		addSqlFields = addSqlFields[0:len(addSqlFields)-1]
 
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+", block_id ) VALUES ( "+addSqlValues+", ? )", p.BlockData.BlockId)
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_"+table+" ( "+addSqlFields+", block_id ) VALUES ( "+addSqlValues+", ? )", "log_id", p.BlockData.BlockId)
 		if err != nil {
 			return err
 		}
@@ -2066,7 +2066,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 	amountForCreditSave := amountForCredit;
 	log.Println("amountForCredit", amountForCredit)
 
-	rows, err := p.Query("SELECT pct, amount, id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND amount > 0 AND del_block_id = 0 ORDER BY time", toUserId, currencyId)
+	rows, err := p.Query(p.FormatQuery("SELECT pct, amount, id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND amount > 0 AND del_block_id = 0 ORDER BY time"), toUserId, currencyId)
 	if err != nil {
 		return 0, p.ErrInfo(err)
 	}
@@ -2114,15 +2114,15 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 	}
 	return amount - (amountForCreditSave - amountForCredit), nil
 }
-
-func (p *Parser) adaptQuery(query_ string) (string) {
+/*
+func (p *Parser) FormatQuery(query_ string) (string) {
 	query:=query_
-	if p.ConfigIni["db_type"]=="mysql" {
+	if p.ConfigIni["db_type"]=="mysql" || p.ConfigIni["db_type"]=="sqlite" {
 		query = strings.Replace(query, "delete", "`delete`", -1)
 	}
 	return query
 }
-
+*/
 /*
  * Начисляем новые DC юзеру, пересчитав ему % от того, что уже было на кошельке
  * */
@@ -2151,7 +2151,7 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 		}
 
 		// нужно залогировать текущие значения для to_user_id
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -2225,7 +2225,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount,  commi
 	}
 	// перед тем, как менять значения на кошельках юзеров, нужно залогировать текущие значения для юзера from_user_id
 
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_wallets ( amount, amount_backup, last_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", walletData["amount"], walletData["amount_backup"], walletData["last_update"], p.BlockData.BlockId, walletData["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2326,10 +2326,29 @@ func (p*Parser) limitRequestsMoneyOrdersRollback() error {
 	}
 	return nil
 }
+/*
+func (p*Parser) FormatQuery(q string) string {
+	newQ := q
+	switch p.ConfigIni["db_type"] {
+	case "sqlite":
+		newQ = strings.Replace(newQ, "[hex]", "?", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	case "postgresql":
+		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+		newQ = utils.ReplQ(newQ)
+		newQ = strings.Replace(newQ, "delete", `"delete"`, -1)
+
+	case "mysql":
+		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	}
+	return newQ
+}*/
 
 func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
-	newQuery, newArgs := utils.FormatQuery("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface {}{userId, currencyId, p.BlockData.BlockId, p.TxHash})
+	newQuery, newArgs := utils.FormatQueryArgs("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface {}{userId, currencyId, p.BlockData.BlockId, p.TxHash})
 	rows, err := p.Query(newQuery, newArgs)
 	if err != nil {
 		return  p.ErrInfo(err)
@@ -2401,7 +2420,7 @@ func (p *Parser) getTdc(promisedAmountId, userId int64) (float64, error) {
 	var status string
 	var amount, tdc_amount float64
 	var currency_id, tdc_amount_update int64
-	err = p.QueryRow("SELECT status, amount, currency_id, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", promisedAmountId).Scan(&status, &amount, &currency_id, &tdc_amount, &tdc_amount_update)
+	err = p.QueryRow(p.FormatQuery("SELECT status, amount, currency_id, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?"), promisedAmountId).Scan(&status, &amount, &currency_id, &tdc_amount, &tdc_amount_update)
 	if err != nil  && err!=sql.ErrNoRows {
 		return 0, err
 	}
@@ -3329,7 +3348,7 @@ func (p *Parser) getWalletsBufferAmount(currencyId int64) (float64, error) {
 func (p *Parser) getTotalAmount(currencyId int64) (float64, error) {
 	var amount float64
 	var last_update int64
-	err := p.QueryRow("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?", p.TxUserID, currencyId).Scan(&amount, &last_update)
+	err := p.QueryRow(p.FormatQuery("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?"), p.TxUserID, currencyId).Scan(&amount, &last_update)
 	if err != nil && err!=sql.ErrNoRows {
 		return 0, p.ErrInfo(err)
 	}
@@ -3361,7 +3380,7 @@ func (p *Parser) updPromisedAmountsRollback(userId int64, cashRequestOutTime boo
 	}
 
 	// идем в обратном порядке (DESC)
-	rows, err := p.Query("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 ORDER BY id DESC", userId)
+	rows, err := p.Query(p.FormatQuery("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 ORDER BY id DESC"), userId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -3404,7 +3423,7 @@ func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool
 		sqlNameCashRequestOutTime = "cash_request_out_time, "
 		sqlUdpCashRequestOutTime = "cash_request_out_time = "+utils.Int64ToStr(cashRequestOutTime)+", "
 	}
-	rows, err := p.Query(`
+	rows, err := p.Query(p.FormatQuery(`
 				SELECT  id,
 							 currency_id,
 							 amount,
@@ -3419,7 +3438,7 @@ func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool
 							 del_block_id = 0 AND
 							 del_mining_block_id = 0
 				ORDER BY id ASC
-	`, userId)
+	`), userId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -3454,7 +3473,7 @@ func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool
 							?,
 							?
 					)
-		`, tdcAmount, tdcAmountUpdate, p.BlockData.BlockId, log_Id)
+		`,"log_id",  tdcAmount, tdcAmountUpdate, p.BlockData.BlockId, log_Id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -3476,7 +3495,7 @@ func (p *Parser) updPromisedAmounts(userId int64, getTdc, cashRequestOutTimeBool
 	return nil
 }
 func (p *Parser) updPromisedAmountsCashRequestOutTime(userId int64) error {
-	rows, err := p.Query(`
+	rows, err := p.Query(p.FormatQuery(`
 				SELECT id,
 							 cash_request_out_time,
 							 log_id
@@ -3488,7 +3507,7 @@ func (p *Parser) updPromisedAmountsCashRequestOutTime(userId int64) error {
 							 del_mining_block_id = 0 AND
 							 cash_request_out_time = 0
 				ORDER BY id ASC
-	`, userId)
+	`), userId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -3514,7 +3533,7 @@ func (p *Parser) updPromisedAmountsCashRequestOutTime(userId int64) error {
 func (p *Parser) updPromisedAmountsCashRequestOutTimeRollback(userId int64) error {
 
 	// идем в обратном порядке (DESC)
-	rows, err := p.Query("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND cash_request_out_time = ? ORDER BY id DESC", userId, p.BlockData.Time)
+	rows, err := p.Query(p.FormatQuery("SELECT log_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND cash_request_out_time = ? ORDER BY id DESC"), userId, p.BlockData.Time)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

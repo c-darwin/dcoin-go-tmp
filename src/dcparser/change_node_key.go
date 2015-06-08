@@ -80,7 +80,7 @@ func (p *Parser) ChangeNodeKey() (error) {
 	}
 	nodePublicKeyHex := utils.BinToHex([]byte(logData["node_public_key"]))
 
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners_data ( node_public_key, block_id, prev_log_id ) VALUES ( [hex], ?, ? )", nodePublicKeyHex, p.BlockData.BlockId, logData["log_id"])
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_miners_data ( node_public_key, block_id, prev_log_id ) VALUES ( [hex], ?, ? )", "log_id", nodePublicKeyHex, p.BlockData.BlockId, logData["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

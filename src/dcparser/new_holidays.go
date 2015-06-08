@@ -64,7 +64,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 	}
 
 	// проверяем, чтобы не было перекрывания
-	num, err := p.Single("SELECT id FROM holidays WHERE user_id  =  ? AND `delete`  =  0 AND ( start_time < ? AND end_time > ? )", p.TxUserID, p.TxMaps.Int64["end_time"], p.TxMaps.Int64["start_time"]).Int64()
+	num, err := p.Single("SELECT id FROM holidays WHERE user_id  =  ? AND delete  =  0 AND ( start_time < ? AND end_time > ? )", p.TxUserID, p.TxMaps.Int64["end_time"], p.TxMaps.Int64["start_time"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -29,7 +29,7 @@ func (c *Controller) CheckNode() (string, error) {
 	//table := c.r.FormValue("table")
 
 	if block_id > 0 {
-		hash, err := c.Single("SELECT hash FROM block_chain WHERE id =  ?", block_id).String()
+		hash, err := c.Single(c.FormatQuery("SELECT hash FROM block_chain WHERE id =  ?"), block_id).String()
 		if err != nil {
 			return "", err
 		}
@@ -78,6 +78,8 @@ func (c *Controller) CheckNode() (string, error) {
 		allCounts = append(allCounts, map[string]interface {}{"sum_promised_tdc_amount" : data["tdc_amount"]})
 		sum_wallets_amount, err := c.Single("SELECT sum(amount) FROM wallets").String()
 		allCounts = append(allCounts, map[string]interface {}{"sum_wallets_amount" : sum_wallets_amount})
+		sum_forex_amount, err := c.Single("SELECT sum(amount) FROM forex_orders").String()
+		allCounts = append(allCounts, map[string]interface {}{"sum_forex_amount" : sum_forex_amount})
 		if err != nil {
 			return "", err
 		}

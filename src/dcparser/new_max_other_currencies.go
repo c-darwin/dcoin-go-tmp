@@ -157,7 +157,7 @@ func (p *Parser) NewMaxOtherCurrencies() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_currency ( max_other_currencies, prev_log_id ) VALUES ( ?, ? )", logData["max_other_currencies"], logData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_currency ( max_other_currencies, prev_log_id ) VALUES ( ?, ? )", "log_id", logData["max_other_currencies"], logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

@@ -108,12 +108,12 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	// логируем предыдущее
 	var prevLogId, currencyId, tdcAmountUpdate int64
 	var amount, tdcAmount float64
-	err = p.QueryRow("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
+	err = p.QueryRow(p.FormatQuery("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?"), p.TxMaps.Int64["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", amount, tdcAmount, tdcAmountUpdate, p.BlockData.BlockId, prevLogId)
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", amount, tdcAmount, tdcAmountUpdate, p.BlockData.BlockId, prevLogId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

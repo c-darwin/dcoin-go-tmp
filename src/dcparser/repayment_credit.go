@@ -68,7 +68,7 @@ func (p *Parser) RepaymentCredit() (error) {
 
 	var amount float64
 	var currency_id, to_user_id int64
-	err := p.QueryRow("SELECT amount, to_user_id, currency_id  FROM credits WHERE id  =  ?", p.TxMaps.Int64["credit_id"]).Scan(&amount, &to_user_id, &currency_id)
+	err := p.QueryRow(p.FormatQuery("SELECT amount, to_user_id, currency_id  FROM credits WHERE id  =  ?"), p.TxMaps.Int64["credit_id"]).Scan(&amount, &to_user_id, &currency_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}

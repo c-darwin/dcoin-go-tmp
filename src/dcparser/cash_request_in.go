@@ -59,7 +59,7 @@ func (p *Parser) CashRequestInFront() (error) {
 	var to_user_id, cTime int64
 	var status string
 	var hash_code []byte
-	err = p.QueryRow("SELECT to_user_id, status, hash_code, time FROM cash_requests WHERE id  =  ?", p.TxMaps.Int64["cash_request_id"]).Scan(&to_user_id, &status, &hash_code, &cTime)
+	err = p.QueryRow(p.FormatQuery("SELECT to_user_id, status, hash_code, time FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&to_user_id, &status, &hash_code, &cTime)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -104,7 +104,7 @@ func (p *Parser) CashRequestIn() (error) {
 	var status string
 	var hash_code []byte
 	var amount float64
-	err := p.QueryRow("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?", p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
+	err := p.QueryRow(p.FormatQuery("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -140,7 +140,7 @@ func (p *Parser) CashRequestIn() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", "log_id", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -161,7 +161,7 @@ func (p *Parser) CashRequestIn() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( amount, tdc_amount, tdc_amount_update, cash_request_in_block_id, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ?, ? )", "log_id", data["amount"], data["tdc_amount"], data["tdc_amount_update"], data["cash_request_in_block_id"], p.BlockData.BlockId, data["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -274,7 +274,7 @@ func (p *Parser) CashRequestInRollback() (error) {
 	var status, currency_id string
 	var hash_code []byte
 	var amount float64
-	err = p.QueryRow("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?", p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
+	err = p.QueryRow(p.FormatQuery("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -297,7 +297,7 @@ func (p *Parser) CashRequestInRollback() (error) {
 	}
 
 	// откатываем обещанные суммы, у которых было затронуто amount
-	rows, err := p.Query("SELECT id, log_id FROM promised_amount WHERE user_id = ? AND currency_id = ? AND cash_request_in_block_id = ? AND del_block_id = 0 AND del_mining_block_id = 0 ORDER BY log_id DESC", p.TxUserID, currency_id, p.BlockData.BlockId)
+	rows, err := p.Query(p.FormatQuery("SELECT id, log_id FROM promised_amount WHERE user_id = ? AND currency_id = ? AND cash_request_in_block_id = ? AND del_block_id = 0 AND del_mining_block_id = 0 ORDER BY log_id DESC"), p.TxUserID, currency_id, p.BlockData.BlockId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

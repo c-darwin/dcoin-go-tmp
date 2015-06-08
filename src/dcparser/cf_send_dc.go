@@ -78,7 +78,7 @@ func (p *Parser) CfSendDc() (error) {
 	var cf_projects_amount float64
 	var cf_projects_project_currency_name string
 	var cf_projects_end_time, cf_projects_currency_id, cf_projects_user_id int64
-	err := p.QueryRow("SELECT amount, end_time, currency_id, project_currency_name, user_id FROM cf_projects WHERE id  =  ?", p.TxMaps.Int64["project_id"]).Scan(&cf_projects_amount, &cf_projects_end_time, &cf_projects_currency_id, &cf_projects_project_currency_name, &cf_projects_user_id)
+	err := p.QueryRow(p.FormatQuery("SELECT amount, end_time, currency_id, project_currency_name, user_id FROM cf_projects WHERE id  =  ?"), p.TxMaps.Int64["project_id"]).Scan(&cf_projects_amount, &cf_projects_end_time, &cf_projects_currency_id, &cf_projects_project_currency_name, &cf_projects_user_id)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -94,7 +94,7 @@ func (p *Parser) CfSendDc() (error) {
 			return p.ErrInfo(err)
 		}
 	}
-	fundingId, err := p.ExecSqlGetLastInsertId("INSERT INTO cf_funding ( project_id, user_id, amount, currency_id, time, block_id ) VALUES ( ?, ?, ?, ?, ?, ? )", p.TxMaps.Int64["project_id"], p.TxUserID, p.TxMaps.Money["amount"], cf_projects_currency_id, p.BlockData.Time, p.BlockData.BlockId)
+	fundingId, err := p.ExecSqlGetLastInsertId("INSERT INTO cf_funding ( project_id, user_id, amount, currency_id, time, block_id ) VALUES ( ?, ?, ?, ?, ?, ? )", "id", p.TxMaps.Int64["project_id"], p.TxUserID, p.TxMaps.Money["amount"], cf_projects_currency_id, p.BlockData.Time, p.BlockData.BlockId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -127,7 +127,7 @@ func (p *Parser) CfSendDc() (error) {
 		if sum >= cf_projects_amount {
 
 			// запишем в таблицу CF-валют новую валюту и получим ID
-			projectCurrencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO cf_currency ( name, project_id ) VALUES ( ?, ? )", cf_projects_project_currency_name, p.TxMaps.Int64["project_id"])
+			projectCurrencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO cf_currency ( name, project_id ) VALUES ( ?, ? )", "id", cf_projects_project_currency_name, p.TxMaps.Int64["project_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -135,7 +135,7 @@ func (p *Parser) CfSendDc() (error) {
 			// начисляем общую сумму на кошелек автора проекта
 			// а также, начисляем бэкерам валюту проекта
 			// нужно учесть набежавшие %
-			rows, err := p.Query("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC", p.TxMaps.Int64["project_id"])
+			rows, err := p.Query(p.FormatQuery("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC"), p.TxMaps.Int64["project_id"])
 			if err != nil {
 				return  p.ErrInfo(err)
 			}
@@ -172,7 +172,7 @@ func (p *Parser) CfSendDc() (error) {
 		} else { // нужная сумма не набрана
 
 			// проходимся по всем фундерам и возращаем на их кошельки деньги
-			rows, err := p.Query("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC", p.TxMaps.Int64["project_id"])
+			rows, err := p.Query(p.FormatQuery("SELECT amount, time, user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id ASC"), p.TxMaps.Int64["project_id"])
 			if err != nil {
 				return  p.ErrInfo(err)
 			}
@@ -207,7 +207,7 @@ func (p *Parser) CfSendDcRollback() (error) {
 	var cf_projects_amount float64
 	var cf_projects_project_currency_name string
 	var cf_projects_end_time, cf_projects_currency_id, cf_projects_user_id int64
-	err := p.QueryRow("SELECT amount, end_time, currency_id, project_currency_name, user_id FROM cf_projects WHERE id  =  ?", p.TxMaps.Int64["project_id"]).Scan(&cf_projects_amount, &cf_projects_end_time, &cf_projects_currency_id, &cf_projects_project_currency_name, &cf_projects_user_id)
+	err := p.QueryRow(p.FormatQuery("SELECT amount, end_time, currency_id, project_currency_name, user_id FROM cf_projects WHERE id  =  ?"), p.TxMaps.Int64["project_id"]).Scan(&cf_projects_amount, &cf_projects_end_time, &cf_projects_currency_id, &cf_projects_project_currency_name, &cf_projects_user_id)
 	if err != nil && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
@@ -240,7 +240,7 @@ func (p *Parser) CfSendDcRollback() (error) {
 			}
 
 			// проходимся по всем фундерам и забираем у них начисленную валюту проекта
-			rows, err := p.Query("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC", p.TxMaps.Int64["project_id"])
+			rows, err := p.Query(p.FormatQuery("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC"), p.TxMaps.Int64["project_id"])
 			if err != nil {
 				return  p.ErrInfo(err)
 			}
@@ -276,7 +276,7 @@ func (p *Parser) CfSendDcRollback() (error) {
 		} else { // нужная сумма не набрана
 
 			// проходимся по всем фундерам и возращаем на их кошельки деньги
-			rows, err := p.Query("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC", p.TxMaps.Int64["project_id"])
+			rows, err := p.Query(p.FormatQuery("SELECT user_id FROM cf_funding WHERE project_id = ? AND del_block_id = 0 ORDER BY id DESC"), p.TxMaps.Int64["project_id"])
 			if err != nil {
 				return  p.ErrInfo(err)
 			}

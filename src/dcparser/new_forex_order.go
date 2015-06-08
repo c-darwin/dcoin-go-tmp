@@ -112,7 +112,7 @@ func (p *Parser) NewForexOrder() (error) {
 	}
 
 	// логируем, чтобы можно было делать откат. Важен только сам ID
-	mainId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_forex_orders_main ( block_id ) VALUES ( ? )", p.BlockData.BlockId)
+	mainId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_forex_orders_main ( block_id ) VALUES ( ? )", "id", p.BlockData.BlockId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -146,7 +146,7 @@ func (p *Parser) NewForexOrder() (error) {
 	}
 
 	// берем из БД только те ордеры, которые удовлетворяют нашим требованиям
-	rows, err := p.Query("SELECT id, sell_rate, amount, user_id, sell_currency_id, buy_currency_id  FROM forex_orders WHERE buy_currency_id = ? AND sell_rate >= ? AND sell_currency_id = ? AND del_block_id = 0 AND empty_block_id = 0",  p.TxMaps.Int64["sell_currency_id"], reverseRate, p.TxMaps.Int64["buy_currency_id"])
+	rows, err := p.Query(p.FormatQuery("SELECT id, sell_rate, amount, user_id, sell_currency_id, buy_currency_id  FROM forex_orders WHERE buy_currency_id = ? AND sell_rate >= ? AND sell_currency_id = ? AND del_block_id = 0 AND empty_block_id = 0"),  p.TxMaps.Int64["sell_currency_id"], reverseRate, p.TxMaps.Int64["buy_currency_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -177,14 +177,14 @@ func (p *Parser) NewForexOrder() (error) {
 			}
 		} else {
 			// вычитаем забранную сумму из ордера
-			err = p.ExecSql("UPDATE forex_orders SET amount = amount - ? WHERE id = ?", sellerSellAmount, rowId)
+			err = p.ExecSql("UPDATE forex_orders SET amount = round(amount - ?, 2) WHERE id = ?", sellerSellAmount, rowId)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
 		}
 
 		// логируем данную операцию
-		err = p.ExecSql("INSERT INTO log_forex_orders ( main_id, order_id, amount, to_user_id, block_id ) VALUES ( ?, ?, ?, ?, ? )", mainId, rowId, sellerSellAmount, p.TxUserID, p.BlockData.BlockId)
+		err = p.ExecSql("INSERT INTO log_forex_orders ( main_id, order_id, amount, to_user_id, block_id ) VALUES ( ?, ?, round(?, 2), ?, ? )", mainId, rowId, sellerSellAmount, p.TxUserID, p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -256,7 +256,7 @@ func (p *Parser) NewForexOrder() (error) {
 
 	// если после прохода по всем имеющимся ордерам мы не потратили все средства, то создаем свой ордер
 	if (totalSellAmount >= 0.01) {
-		orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO forex_orders ( user_id, sell_currency_id, sell_rate, amount, buy_currency_id, commission ) VALUES ( ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["sell_rate"], totalSellAmount, p.TxMaps.Int64["buy_currency_id"], p.TxMaps.Money["commission"])
+		orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO forex_orders ( user_id, sell_currency_id, sell_rate, amount, buy_currency_id, commission ) VALUES ( ?, ?, ?, round(?, 2), ?, ? )", "id", p.TxUserID, p.TxMaps.Int64["sell_currency_id"], p.TxMaps.Float64["sell_rate"], totalSellAmount, p.TxMaps.Int64["buy_currency_id"], p.TxMaps.Money["commission"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -285,7 +285,7 @@ func (p *Parser) NewForexOrderRollback() (error) {
 	}
 
 	// проходимся по всем ордерам, которые затронула данная тр-ия
-	rows, err := p.Query(`
+	rows, err := p.Query(p.FormatQuery(`
 				SELECT   log_forex_orders.amount,
 							  log_forex_orders.id,
 							  empty_block_id,
@@ -301,7 +301,7 @@ func (p *Parser) NewForexOrderRollback() (error) {
 				LEFT JOIN forex_orders ON log_forex_orders.order_id = forex_orders.id
 				WHERE main_id = ?
 				ORDER BY log_forex_orders.id DESC
-	`,  mainId)
+	`),  mainId)
 	if err != nil {
 		return  err
 	}
@@ -335,7 +335,7 @@ func (p *Parser) NewForexOrderRollback() (error) {
 			}
 
 			// вернем amount ордеру
-			err = p.ExecSql("UPDATE forex_orders SET amount = amount + ? "+addSql+" WHERE id = ?", rowAmount, rowOrderId)
+			err = p.ExecSql("UPDATE forex_orders SET amount = round(amount + ?, 2) "+addSql+" WHERE id = ?", rowAmount, rowOrderId)
 			if err != nil {
 				return p.ErrInfo(err)
 			}

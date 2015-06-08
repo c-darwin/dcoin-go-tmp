@@ -82,7 +82,7 @@ func (p *Parser) NewUserFront() (error) {
 
 func (p *Parser) NewUser() (error) {
 	// пишем в БД нового юзера
-	newUserId, err := p.DCDB.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", p.TxMap["public_key_hex"], p.TxUserID)
+	newUserId, err := p.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", "user_id", p.TxMap["public_key_hex"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

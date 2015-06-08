@@ -128,7 +128,7 @@ func (p *Parser) ChangeArbitratorConditions() (error) {
 	}
 	// если есть, что логировать, то логируем
 	if len(logData) > 0 {
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_arbitrator_conditions ( conditions, block_id, prev_log_id ) VALUES ( ?, ?, ? )", logData["conditions"], p.BlockData.BlockId, logData["log_id"])
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_arbitrator_conditions ( conditions, block_id, prev_log_id ) VALUES ( ?, ?, ? )", "log_id", logData["conditions"], p.BlockData.BlockId, logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

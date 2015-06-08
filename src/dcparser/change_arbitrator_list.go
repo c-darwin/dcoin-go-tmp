@@ -92,7 +92,7 @@ func (p *Parser) ChangeArbitratorList() (error) {
 			return p.ErrInfo(err)
 		}
 		// логируем текущие значения, если они есть
-		logId, err = p.ExecSqlGetLastInsertId("INSERT INTO log_arbitration_trust_list ( arbitration_trust_list, prev_log_id ) VALUES ( ?, ? )", logArbitrationTrustListJson, prevLogId)
+		logId, err = p.ExecSqlGetLastInsertId("INSERT INTO log_arbitration_trust_list ( arbitration_trust_list, prev_log_id ) VALUES ( ?, ? )", "log_id", logArbitrationTrustListJson, prevLogId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
