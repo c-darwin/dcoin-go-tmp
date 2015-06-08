@@ -6,6 +6,7 @@ import (
 	"time"
 	"database/sql"
 	"math"
+//	"log"
 )
 
 func (p *Parser) MoneyBackInit() (error) {
@@ -59,7 +60,7 @@ func (p *Parser) MoneyBackFront() (error) {
 									)
 							)
 				LIMIT 1
-	`, p.TxMaps.Int64["order_id"], p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, p.TxMaps.Money["amount"], txTime, p.TxUserID, p.TxMaps.Money["amount"], txTime).Int64()
+	`, p.TxMaps.Int64["order_id"], p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, p.TxUserID, string(p.TxMap["amount"]), txTime, p.TxUserID, string(p.TxMap["amount"]), txTime).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

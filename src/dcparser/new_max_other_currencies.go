@@ -103,7 +103,7 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 
 	// берем все голоса
 	maxOtherCurrenciesVotes := make(map[int64][]map[int64]int64)
-	rows, err := p.Query("SELECT currency_id, count, count(user_id) as votes FROM votes_max_other_currencies GROUP BY currency_id, count")
+	rows, err := p.Query("SELECT currency_id, count, count(user_id) as votes FROM votes_max_other_currencies GROUP BY currency_id, count ORDER BY currency_id, count ASC")
 	if err != nil {
 		return p.ErrInfo(err)
 	}

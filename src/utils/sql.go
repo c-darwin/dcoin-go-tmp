@@ -27,7 +27,6 @@ type DCDB struct {
 
 func ReplQ(q string) string {
 	q1:=strings.Split(q, "?")
-	fmt.Println(q1)
 	result:=""
 	for i:=0; i < len(q1); i++ {
 		if i != len(q1)-1 {
@@ -36,6 +35,7 @@ func ReplQ(q string) string {
 			result+=q1[i]
 		}
 	}
+	log.Println(result)
 	return result
 }
 
@@ -944,6 +944,7 @@ func (db *DCDB) FormatQuery(q string) string {
 		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
 	case "postgresql":
 		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+		newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
 		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
 		newQ = ReplQ(newQ)
 		newQ = strings.Replace(newQ, "delete", `"delete"`, -1)

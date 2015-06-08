@@ -131,7 +131,7 @@ func (c *Controller) CheckNode() (string, error) {
 			} else if ok, _ := regexp.MatchString(`(?i)^(points_status)$`, table); ok {
 				orderBy = "block_id, time_start"
 			}
-			count, err := c.Single("SELECT count(*) FROM "+table+" "+sqlWhere).Int64()
+			count, err := c.Single(c.FormatQuery("SELECT count(*) FROM "+table+" "+sqlWhere)).Int64()
 			if err != nil {
 				return "", err
 			}

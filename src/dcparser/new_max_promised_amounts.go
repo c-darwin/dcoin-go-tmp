@@ -107,7 +107,7 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 
 	// берем все голоса
 	maxPromisedAmountVotes := make(map[int64][]map[int64]int64)
-	rows, err := p.Query("SELECT currency_id, amount, count(user_id) as votes FROM votes_max_promised_amount GROUP BY currency_id, amount")
+	rows, err := p.Query("SELECT currency_id, amount, count(user_id) as votes FROM votes_max_promised_amount GROUP BY currency_id, amount ORDER BY currency_id, amount ASC")
 	if err != nil {
 		return p.ErrInfo(err)
 	}

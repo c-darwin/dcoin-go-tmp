@@ -113,7 +113,7 @@ func (p *Parser) NewPctFront() (error) {
 	}
 	// берем все голоса miner_pct
 	pctVotes := make(map[int64]map[string]map[string]int64)
-	rows, err := p.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_miner_pct GROUP BY currency_id, pct")
+	rows, err := p.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_miner_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -136,7 +136,7 @@ func (p *Parser) NewPctFront() (error) {
 	}
 
 	// берем все голоса user_pct
-	rows, err = p.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct")
+	rows, err = p.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -226,7 +226,7 @@ func (p *Parser) NewPctFront() (error) {
 			var votesReferral []map[int64]int64
 
 			// берем все голоса
-			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+"")
+			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+" ORDER BY "+level+" ASC ")
 			if err != nil {
 				return p.ErrInfo(err)
 			}

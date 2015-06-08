@@ -1428,6 +1428,12 @@ func arrayIntersect(arr1, arr2 map[int]int) bool {
 }
 
 func  (p *Parser) minersCheckMyMinerIdAndVotes0(data *MinerData) bool {
+	log.Println("data.myMinersIds", data.myMinersIds)
+	log.Println("data.minersIds", data.minersIds)
+	log.Println("data.votes0", data.votes0)
+	log.Println("data.minMinersKeepers", data.minMinersKeepers)
+	log.Println("int(data.votes0)", int(data.votes0))
+	log.Println("len(data.minersIds)", len(data.minersIds))
 	if (arrayIntersect(data.myMinersIds, data.minersIds)) && (data.votes0 > data.minMinersKeepers || int(data.votes0) == len(data.minersIds)) {
 		return true
 	} else {
@@ -1967,7 +1973,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				case "sqlite":
 					query = `x'`+v+`',`
 				case "postgresql":
-					query = `decode(`+v+`,'HEX'),`
+					query = `decode('`+v+`','HEX'),`
 				case "mysql":
 					query = `UNHEX("`+v+`"),`
 				}
@@ -1995,7 +2001,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				case "sqlite":
 					query = fields[i]+`=x'`+values[i]+`',`
 				case "postgresql":
-					query = fields[i]+`=decode(`+values[i]+`,'HEX'),`
+					query = fields[i]+`=decode('`+values[i]+`','HEX'),`
 				case "mysql":
 					query = fields[i]+`=UNHEX("`+values[i]+`"),`
 				}
@@ -2021,7 +2027,7 @@ func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}
 				case "sqlite":
 					query = `x'`+values[i]+`',`
 				case "postgresql":
-					query = `decode(`+values[i]+`,'HEX'),`
+					query = `decode('`+values[i]+`','HEX'),`
 				case "mysql":
 					query = `UNHEX("`+values[i]+`"),`
 				}
@@ -2490,7 +2496,7 @@ func (p *Parser) selectiveRollback(fields []string, table string, where string, 
 				case "sqlite":
 					query = field+`=x'`+logData[field]+`',`
 				case "postgresql":
-					query = field+`=decode(`+logData[field]+`,'HEX'),`
+					query = field+`=decode('`+logData[field]+`','HEX'),`
 				case "mysql":
 					query = field+`=UNHEX("`+logData[field]+`"),`
 				}
@@ -3513,12 +3519,12 @@ func (p *Parser) updPromisedAmountsCashRequestOutTime(userId int64) error {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var id, cash_request_out_time, log_id string
+		var id, cash_request_out_time, log_id int64
 		err = rows.Scan(&id, &cash_request_out_time, &log_id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( cash_request_out_time, block_id, prev_log_id ) VALUES ( ?, ?, ? )", cash_request_out_time, p.BlockData.BlockId, log_id)
+		logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( cash_request_out_time, block_id, prev_log_id ) VALUES ( ?, ?, ? )", "log_id",cash_request_out_time, p.BlockData.BlockId, log_id)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

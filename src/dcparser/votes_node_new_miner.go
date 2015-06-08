@@ -137,12 +137,15 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	minerData.votes0 = votes[0]
 	minerData.votes1 = votes[1]
 	minerData.minMinersKeepers = p.Variables.Int64["min_miners_keepers"]
-	if p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
+	log.Println("minerData", minerData)
+	if p.minersCheckVotes1(minerData) || (minerData.votes0 > minerData.minMinersKeepers || int(minerData.votes0) == len(minerData.minersIds)) {
 		// отмечаем, что голосование нодов закончено
 		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
+	}
+	if  p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
 		// отметим del_block_id всем, кто голосовал за данного юзера,
 		// чтобы через N блоков по крону удалить бесполезные записи
 		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
