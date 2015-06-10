@@ -343,14 +343,14 @@
 						$('#block_time').text(d);
 						$('#cur_block_id').text(data.block_id);
 						console.log(d);
-						var pct = Math.round(data.block_id/220000*100);
+						var pct = {{.BlockMeter}};
 						$('#meter').width(pct+'%');
 						$('#meter').text(pct+'%');
 
 					}
 					else if (data.block_id==-1) {
 						window.clearInterval(refreshId);
-						window.location.href = "index.php";
+						window.location.href = "/";
 					}
 				}, 'JSON'
 			);
@@ -361,7 +361,7 @@
 	<div id="blockchain_loading" style="display: {{if .WaitText}} block {{else}} none {{end}}"><div class="blockchain_loader" >Loading...</div>
 	<br>
 	{{.WaitText}}
-
+	</div>
 	<div id="blocks_counter" style="display: {{if .WaitText}} none {{else}} block {{end}}">
 		<h3 style="margin-bottom: 20px">{{.Lang.synchronization_blockchain}}</h3>
 		<div style="text-align:center; position:relative; width:230px; margin:auto; margin-bottom: 10px">

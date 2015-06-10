@@ -29,6 +29,7 @@ func (c *Controller) CheckNode() (string, error) {
 	//table := c.r.FormValue("table")
 
 	if block_id > 0 {
+		// используется для учета кол-ва подвержденных блоков, т.е. тех, которые есть у большинства нодов
 		hash, err := c.Single(c.FormatQuery("SELECT hash FROM block_chain WHERE id =  ?"), block_id).String()
 		if err != nil {
 			return "", err

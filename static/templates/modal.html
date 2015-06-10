@@ -109,6 +109,10 @@ $('#key_div').on(
 						<textarea rows="3" id="modal_key" class="form-control" style="display:none"></textarea><br>
 						<label>{{.Lang.key_password}}</label>
 						<input type="password" id="modal_password" class="form-control">
+						{{if .SetupPassword}}
+						<label>SetupPassword</label>
+						<input type="password" id="modal_setup_password" class="form-control">
+						{{end}}
 					</fieldset>
 			</div>
 			<div class="modal-footer">

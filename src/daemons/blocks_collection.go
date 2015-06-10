@@ -162,9 +162,9 @@ func BlocksCollection(configIni map[string]string) {
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-                       // if blockId == 230000 {
-                        //   break BEGIN
-                        //}
+                        if blockId == 244790 {
+                            break BEGIN
+                        }
                         log.Println("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
@@ -173,7 +173,7 @@ func BlocksCollection(configIni map[string]string) {
                         blockBin := utils.BytesShift(&data2, length)
                         fmt.Printf("blockBin %x\n", blockBin)
 
-                        if blockId > 199790 {
+                        if blockId > 244790 {
 
                             // парсинг блока
                             parser := new(dcparser.Parser)
@@ -217,7 +217,9 @@ func BlocksCollection(configIni map[string]string) {
                         // ненужный тут размер в конце блока данных
                         data = make([]byte, 5)
                         file.Read(data)
-                    }
+                    } else {
+						break
+					}
                    // utils.Sleep(1)
                 }
                 file.Close()

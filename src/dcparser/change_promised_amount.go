@@ -122,7 +122,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	pointsStatus, err := p.getPointsStatus(p.TxUserID)
+	pointsStatus, err := p.GetPointsStatus(p.TxUserID, p.Variables.Int64["points_update_time"], p.BlockData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

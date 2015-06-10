@@ -14,6 +14,7 @@ import (
 	//"github.com/astaxie/beego/config"
 	"consts"
 	"sync"
+	"math"
 //	"sync/atomic"
 //	"os"
 	//"dcparser"
@@ -293,27 +294,19 @@ func (r *singleResult) Bytes() ([]byte, error) {
 
 
 func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		query = strings.Replace(query, "[hex]", "?", -1)
-		query = strings.Replace(query, "delete", "`delete`", -1)
-	case "postgresql":
-		query = strings.Replace(query, "[hex]", "decode(?,'HEX')", -1)
-		query = ReplQ(query)
-	case "mysql":
-		query = strings.Replace(query, "delete", "`delete`", -1)
-		query = strings.Replace(query, "[hex]", "UNHEX(?)", -1)
-	}
+
+	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
+
 	var result []byte
-	err := db.QueryRow(query, args...).Scan(&result)
+	err := db.QueryRow(newQuery, newArgs...).Scan(&result)
 	switch {
 	case err == sql.ErrNoRows:
 		return &singleResult{[]byte(""), nil}
 	case err != nil:
-		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, query, args)}
+		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
 	}
 	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / %v", query, args)
+		log.Printf("SQL: %s / %v", newQuery, newArgs)
 	}
 	return &singleResult{result, nil}
 }
@@ -507,16 +500,19 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 					newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
 				}
 			}
-			//log.Println("newQ", newQ)
 		}
 		newQ = strings.Replace(newQ, "[hex]", "?", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+		log.Println("newQ", newQ)
 	case "postgresql":
 		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
 		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+		newQ = strings.Replace(newQ, "delete,", `"delete",`, -1)
 		newQ = ReplQ(newQ)
 		newArgs = args
 	case "mysql":
 		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
 		newArgs = args
 	}
 	return newQ, newArgs
@@ -675,7 +671,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 	} else {
 		// user_id уже есть, т.к. мы смогли зайти в урезанном режиме по паблик-кею
 		// проверим, может есть что-то в miners_data
-		status, err := db.Single("SELECT status FROM miners_data WHERE user_id = $1", sessUserId).String()
+		status, err := db.Single("SELECT status FROM miners_data WHERE user_id = ?", sessUserId).String()
 		if err != nil {
 			return result, ErrInfo(err)
 		}
@@ -685,7 +681,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix s
 			result["account_status"] = "user"
 		}
 	}
-	result["account_status"] = lang["status_"+result["account_status"]]
+	result["account_status_text"] = lang["status_"+result["account_status"]]
 
 	// Инфа о последнем блоке
 	blockData, err := db.GetLastBlockData()
@@ -721,6 +717,167 @@ func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
 	return result, nil
 }
 
+func (db *DCDB) CalcProfitGen(currencyId int64, amount float64, userId int64, lastUpdate, endTime int64, calcType string) (float64, error) {
+	var err error
+	pct, err := db.GetPct()
+	if err != nil {
+		return 0, err
+	}
+	var pointsStatus []map[int64]string
+	var userHolidays [][]int64
+	var maxPromisedAmounts map[int64][]map[int64]string
+	var repaidAmount float64
+	if calcType == "wallet" {
+		pointsStatus = []map[int64]string {{0:"user"}}
+	} else if (calcType == "mining") { // обычная обещанная сумма
+		pointsStatus, err = db.GetPointsStatus(userId, 0, nil)
+		if err != nil {
+			return 0, err
+		}
+		userHolidays, err = db.GetHolidays(userId)
+		if err != nil {
+			return 0, err
+		}
+		maxPromisedAmounts, err = db.GetMaxPromisedAmounts()
+		if err != nil {
+			return 0, err
+		}
+		repaidAmount, err = db.GetRepaidAmount(userId, currencyId)
+		if err != nil {
+			return 0, err
+		}
+	} else if calcType == "repaid" { // погашенная обещанная сумма
+		pointsStatus, err = db.GetPointsStatus(userId, 0, nil)
+		if err != nil {
+			return 0, err
+		}
+	}
+	var profit float64
+	if (calcType == "mining" || calcType == "repaid" && db.CheckCashRequests(userId)==nil) || calcType == "wallet" {
+		profit, err = CalcProfit(amount, lastUpdate, endTime, pct[currencyId], pointsStatus, userHolidays, maxPromisedAmounts[currencyId], currencyId, repaidAmount);
+	}
+	return profit, nil
+}
+
+func (db *DCDB) GetCurrencyList(cf bool) (map[string]string, error) {
+	var result map[string]string
+	result, err := db.GetMap("SELECT id, name FROM currency ORDER BY name", "id", "name")
+	if err != nil {
+		return result, err
+	}
+	/*
+	rows, err := db.Query("SELECT id, name FROM currency ORDER BY name")
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var name string
+		err = rows.Scan(&id, &name)
+		if err != nil {
+			return result, err
+		}
+		result[id] = name
+	}*/
+	if cf {
+		result_, err := db.GetMap("SELECT id, name FROM currency ORDER BY name", "id", "name")
+		if err != nil {
+			return result, err
+		}
+		for id, name := range(result_) {
+			result[id] = name
+		}
+		/*
+		rows, err := db.Query("SELECT id, name FROM cf_currency ORDER BY name")
+		if err != nil {
+			return result, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id int64
+			var name string
+			err = rows.Scan(&id, &name)
+			if err != nil {
+				return result, err
+			}
+			result[id] = name
+		}*/
+	}
+	return result, nil
+}
+
+func (db *DCDB) GetBalances(userId int64) ([]map[string]string, error) {
+	var result []map[string]string
+	rows, err := db.Query(db.FormatQuery("SELECT amount, currency_id, last_update FROM wallets WHERE user_id= ?"), userId)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var amount float64
+		var currency_id, last_update int64
+		err = rows.Scan(&amount, &currency_id, &last_update)
+		if err != nil {
+			return result, err
+		}
+		profit, err := db.CalcProfitGen(currency_id, amount, userId, last_update, time.Now().Unix(), "wallet")
+		if err != nil {
+			return result, err
+		}
+		amount+=profit
+		amount = Round(amount, 8)
+		forexOrdersAmount, err := db.Single("SELECT sum(amount) FROM forex_orders WHERE user_id  =  ? AND sell_currency_id  =  ? AND del_block_id  =  0", userId, currency_id).Float64()
+		if err != nil {
+			return result, err
+		}
+		amount+=forexOrdersAmount
+		pctSec, err := db.Single("SELECT user FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC", currency_id).Float64()
+		if err != nil {
+			return result, err
+		}
+		pct := Round( (math.Pow(1+pctSec, 3600*24*365)-1)*100, 2 )
+		result = append(result, map[string]string{"currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pctSec)})
+	}
+	return result, err
+}
+
+func (db *DCDB) GetPointsStatus(userId, pointsUpdateTime int64, BlockData *BlockData) ([]map[int64]string, error) {
+
+	// т.к. перед вызовом этой функции всегда идет обновление points_status, значит при данном запросе у нас
+	// всегда будут свежие данные, т.е. крайний элемент массива всегда будет относиться к текущим 30-и дням
+	var result []map[int64]string
+	rows, err := db.Query(db.FormatQuery("SELECT time_start, status FROM points_status WHERE user_id= ? ORDER BY time_start ASC"), userId)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var time_start int64
+		var status string
+		err = rows.Scan(&time_start, &status)
+		if err!= nil {
+			return result, err
+		}
+		result = append(result, map[int64]string{time_start:status})
+	}
+
+	// НО! При фронтальной проверке может получиться, что последний элемент miner и прошло более 30-и дней.
+	// поэтому нужно добавлять последний элемент = user, если вызов происходит не в блоке
+	if BlockData!=nil && len(result)>0 {
+		for time_start, _ := range result[len(result)-1] {
+			if time_start < time.Now().Unix() - pointsUpdateTime {
+				result = append(result, map[int64]string{time_start+pointsUpdateTime:"user"})
+			}
+		}
+	}
+	// для майнеров, которые не получили ни одного балла, а уже шлют кому-то DC, или для всех юзеров
+	if len(result) == 0 {
+		result = append(result, map[int64]string{0:"user"})
+	}
+	return result, nil
+}
+
 func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").Bytes()
 	if err != nil {
@@ -731,16 +888,8 @@ func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 
 func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	// получим данные для подписи
-	var sql string
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		sql = `SELECT data FROM authorization WHERE hash = $1`
-	case "postgresql":
-		sql = `select data from "authorization" where "hash" = '\x$1'`
-	case "mysql":
-		sql = `SELECT data FROM authorization WHERE hash = 0x$1`
-	}
-	data, err := db.Single(sql, hash).String()
+	log.Println("hash", hash)
+	data, err := db.Single(`SELECT data FROM authorization WHERE hash = [hex]`, hash).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -756,7 +905,7 @@ func (db *DCDB) GetAdminUserId() (int64, error) {
 }
 
 func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
-	result, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = $1", userId).String()
+	result, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = ?", userId).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -954,6 +1103,100 @@ func (db *DCDB) FormatQuery(q string) string {
 		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
 	}
 	return newQ
+}
+
+func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []map[string]string, map[int64]map[string]string, error) {
+	var actualizationPromisedAmounts int64
+	var promisedAmountListAccepted []map[string]string
+	var promisedAmountListGen map[int64]map[string]string
+	rows, err := db.Query(db.FormatQuery("SELECT currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update FROM promised_amount WHERE user_id = ?"))
+	if err != nil {
+		return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currency_id, del_block_id, tdc_amount_update int64
+		var tdc_amount, amount float64
+		var status string
+		err = rows.Scan(&currency_id, &status, &tdc_amount, &amount, &del_block_id, tdc_amount_update)
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		// есть ли просроченные запросы
+		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		if len(cashRequestPending) > 0 && currency_id > 1 && status == "mining" {
+			status = "for_repaid"
+			// и заодно проверим, можно ли делать актуализацию обещанных сумм
+			actualizationPromisedAmounts, err := db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix() - cash_request_time).Int64()
+			if err != nil {
+				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			}
+		}
+		tdc := tdc_amount
+		if del_block_id > 0 {
+			continue
+		}
+		if status == "mining" {
+			profit, err := db.CalcProfitGen(currency_id, amount+tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "mining")
+			if err != nil {
+				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			}
+			tdc+=profit
+			tdc = Round(tdc, 9)
+		} else if status == "repaid" {
+			profit, err := db.CalcProfitGen(currency_id, tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "repaid")
+			if err != nil {
+				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			}
+			tdc+=profit
+			tdc = Round(tdc, 9)
+		} else {
+			tdc = tdc_amount
+		}
+
+		status_text := "status_text"
+		maxAmount, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currency_id  =  ? ORDER BY block_id DESC", currency_id).Float64()
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		maxOtherCurrencies, err := db.Single("SELECT max_other_currencies FROM currency WHERE id  =  ?", currency_id).Int64()
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		// для WOC amount не учитывается. Вместо него берется max_promised_amount
+		if currency_id == 1 {
+			amount = maxAmount
+		}
+		// обещанная не может быть больше max_promised_amounts
+		if amount >= maxAmount {
+			amount = maxAmount
+		}
+		if status == "repaid" {
+			amount = 0
+		}
+		// последний статус юзера
+		pctStatus, err := db.Single("SELECT status FROM points_status WHERE user_id  =  ? ORDER BY time_start DESC", userId).String()
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		if len(pctStatus) == 0 {
+			pctStatus = "user"
+		}
+		pct, err := db.Single("SELECT "+pctStatus+" FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC", pctStatus, currency_id).Float64()
+		if err != nil {
+			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		}
+		pct_sec := pct
+		pct = Round((math.Pow(1+pct, 3600*24*365)-1)*100, 2)
+		// тут accepted значит просто попало в блок
+		promisedAmountListAccepted = append(promisedAmountListAccepted, map[string]string{"pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "max_amount":Float64ToStr(maxAmount), "max_other_currencies":Int64ToStr(maxOtherCurrencies), "status_text":status_text, "tdc":Float64ToStr(tdc), "tdc_amount":Float64ToStr(tdc_amount), "status":status})
+		// для вывода на главную общей инфы
+		promisedAmountListGen[currency_id] = map[string]string{"tdc":Float64ToStr(tdc), "amount":Float64ToStr(amount), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id)}
+	}
+	return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, nil
 }
 
 func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
@@ -1164,7 +1407,11 @@ func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 func (db *DCDB) CheckCurrencyId(id int64) (int64, error) {
 	return db.Single("SELECT id FROM currency WHERE id = ?", id).Int64()
 }
-
+/*
+func(db *DCDB) GetRepaidAmount(userId, currencyId int64) (float64, error) {
+	return db.Single("SELECT amount FROM promised_amount WHERE status = 'repaid' AND currency_id = ? AND user_id = ?", currencyId, userId).Float64()
+}
+*/
 func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
 	sql:=""
@@ -1223,33 +1470,15 @@ func (db *DCDB) CheckCurrencyCF(currency_id int64) (bool, error) {
 
 
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
-	var sql string
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		sql = `SELECT user_id FROM users WHERE public_key_0 = $1`
-	case "postgresql":
-		sql = `SELECT user_id FROM users WHERE public_key_0 = '\x$1'`
-	case "mysql":
-		sql = `SELECT user_id FROM users WHERE public_key_0 = 0x$1`
-	}
-	userId, err := db.Single(sql, publicKey).String()
-	if err != nil{
+	userId, err := db.Single(`SELECT user_id FROM users WHERE public_key_0 = [hex]`, publicKey).String()
+	if err != nil {
 		return "", ErrInfo(err)
 	}
 	return userId, nil
 }
 
-func (db *DCDB) InsertIntoMyKey(userId string, publicKey []byte, curBlockId string) error {
-	var sql string
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES ($1,'approved', $2)`
-	case "postgresql":
-		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES ('\x$1','approved', $2)`
-	case "mysql":
-		sql = `INSERT INTO `+userId+`_my_keys (public_key, status, block_id) VALUES (0x$1,'approved', $2)`
-	}
-	err := db.ExecSql(sql, publicKey, curBlockId )
+func (db *DCDB) InsertIntoMyKey(prefix string, publicKey []byte, curBlockId string) error {
+	err := db.ExecSql( `INSERT INTO `+prefix+`my_keys (public_key, status, block_id) VALUES ([hex],'approved', ?)`, publicKey, curBlockId )
 	if err != nil {
 		return err
 	}

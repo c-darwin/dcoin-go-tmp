@@ -23,13 +23,18 @@ import (
 type Controller struct {
 	*utils.DCDB
 	r *http.Request
-	w *http.ResponseWriter
+	w http.ResponseWriter
+	sess session.SessionStore
 	Lang map[string]string
 	Community bool
 	ShowSignData bool
 	MyPrefix string
 	Alert string
 	UserId int64
+	SessRestricted int
+	SessUserId int64
+	MyNotice map[string]string
+	Variables *utils.Variables
 }
 
 var configIni map[string]string
@@ -39,7 +44,7 @@ var globalSessions *session.Manager
 var globalLangReadOnly map[int]map[string]string
 
 func init() {
-	globalSessions, _ = session.NewManager("memory", `{"cookieName":"gosessionid", "enableSetCookie,omitempty": true, "gclifetime":3600, "maxLifetime": 3600, "secure": false, "sessionIDHashFunc": "sha1", "sessionIDHashKey": "", "cookieLifeTime": 3600, "providerConfig": ""}`)
+	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"./tmp"}`)
 	go globalSessions.GC()
 
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -146,29 +151,22 @@ func Content1(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
-func GetSessUserId(w http.ResponseWriter, r *http.Request) int64 {
-	sess, _ := globalSessions.SessionStart(w, r)
-	defer sess.SessionRelease(w)
+func GetSessUserId(sess session.SessionStore) int64 {
 	sessUserId := sess.Get("user_id")
 	switch sessUserId.(type) {
+	case int64:
+		return sessUserId.(int64)
 	default:
 		return 0
-	case int:
-		return int64(sessUserId.(int))
 	}
 	return 0
 }
 
-func DelSessResctricted(w http.ResponseWriter, r *http.Request) {
-	sess, _ := globalSessions.SessionStart(w, r)
-	defer sess.SessionRelease(w)
+func DelSessResctricted(sess session.SessionStore) {
 	sess.Delete("restricted")
 }
 
-func GetSessRestricted(w http.ResponseWriter, r *http.Request) int {
-	sess, _ := globalSessions.SessionStart(w, r)
-	defer sess.SessionRelease(w)
+func GetSessRestricted(sess session.SessionStore) int {
 	sessRestricted := sess.Get("restricted")
 	switch sessRestricted.(type) {
 	default:
@@ -179,9 +177,7 @@ func GetSessRestricted(w http.ResponseWriter, r *http.Request) int {
 	return 0
 }
 
-func GetSessPublicKey(w http.ResponseWriter, r *http.Request) string {
-	sess, _ := globalSessions.SessionStart(w, r)
-	defer sess.SessionRelease(w)
+func GetSessPublicKey(sess session.SessionStore) string {
 	sessPublicKey := sess.Get("public_key")
 	switch sessPublicKey.(type) {
 	default:
@@ -248,14 +244,20 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Ajax")
 	w.Header().Set("Content-type", "text/html")
 
-	/*sessUserId := GetSessUserId(w, r)
-	sessRestricted := GetSessRestricted(w, r)
-	sessPublicKey := GetSessPublicKey(w, r)
 	sess, _ := globalSessions.SessionStart(w, r)
-	defer sess.SessionRelease(w)*/
+	defer sess.SessionRelease(w)
+	sessUserId := GetSessUserId(sess)
+	sessRestricted := GetSessRestricted(sess)
+	sessPublicKey := GetSessPublicKey(sess)
+	log.Println("sessUserId", sessUserId)
+	log.Println("sessRestricted", sessRestricted)
+	log.Println("sessPublicKey", sessPublicKey)
+	log.Println("user_id", sess.Get("user_id"))
 
 	c := new(Controller)
 	c.r = r
+	c.w = w
+	c.sess = sess
 	dbInit := false;
 	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
 		dbInit = true
@@ -324,19 +326,27 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 }
 
 func Content(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("content")
+	var err error
+	log.Println("content")
 	w.Header().Set("Content-type", "text/html")
 
-	sessUserId := GetSessUserId(w, r)
-	sessRestricted := GetSessRestricted(w, r)
-	sessPublicKey := GetSessPublicKey(w, r)
 	sess, _ := globalSessions.SessionStart(w, r)
 	defer sess.SessionRelease(w)
-	//sess.Set("user_id", 1212)
+	sessUserId := GetSessUserId(sess)
+	sessRestricted := GetSessRestricted(sess)
+	sessPublicKey := GetSessPublicKey(sess)
+	log.Println("sessUserId", sessUserId)
+	log.Println("sessRestricted", sessRestricted)
+	log.Println("sessPublicKey", sessPublicKey)
 
 	c := new(Controller)
 	c.r = r
+	c.SessRestricted = sessRestricted
+	c.SessUserId = sessUserId
+	if err != nil {
+		log.Print(err)
+	}
+
 	var installProgress, configExists string
 	var lastBlockTime int64
 
@@ -374,13 +384,15 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 		}
 
+		c.Variables, err = c.GetAllVariables()
+
 		// Инфа о последнем блоке
 		blockData, err := c.DCDB.GetLastBlockData()
 		if err != nil {
 			log.Print(err)
 		}
 		//время последнего блока
-		lastBlockTime := blockData["lastBlockTime"]
+		lastBlockTime = blockData["lastBlockTime"]
 		fmt.Println("installProgress", installProgress, "configExists", configExists,  "lastBlockTime", lastBlockTime)
 	}
 	r.ParseForm()
@@ -415,7 +427,6 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
 
 	var communityUsers []int64
-	var err error
 	if dbInit {
 		communityUsers, err = c.DCDB.GetCommunityUsers()
 		if err != nil {
@@ -428,7 +439,13 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("dbInit", dbInit)
 	// идет загрузка блокчейна
-	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*2) && len(configExists)>0 {
+	wTime := int64(2)
+	if c.ConfigIni["test_mode"] == "1" {
+		wTime = 365*24
+		log.Println(wTime)
+		log.Println(lastBlockTime)
+	}
+	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*wTime) && len(configExists)>0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
 			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config").String()
@@ -498,7 +515,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
 				tplName = "pool_tech_works"
 			}
-			if len(communityUsers) > 0 {
+			if len(communityUsers) == 0 {
 				c.MyPrefix = "";
 			} else {
 				c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
@@ -541,6 +558,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
+		c.MyNotice = myNotice
 
 		fmt.Println("tplName==", tplName)
 

@@ -87,7 +87,7 @@ function login_ok (result) {
             if (!tpl_name || tpl_name=='install_step_0' || tpl_name=='install_step_6')
                 tpl_name = 'home';
 
-            $( "#dc_menu" ).load( "ajax/menu.php", { }, function() {
+            $( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
                 $( "#dc_content" ).load( "content", { tpl_name: tpl_name}, function() {
                     $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function() {
                         $.getScript("static/js/sb-admin.js");
@@ -130,9 +130,11 @@ function save_key () {
 
     var key = $("#modal_key").val();
     var password = $("#modal_password").val();
+    var setup_password = $("#modal_setup_password").val();
 
     $('#key').text( key );
     $('#password').text( password );
+    $('#setup_password').text( setup_password );
 }
 
 
@@ -447,6 +449,7 @@ function doSign_(type, mcrypt_iv) {
 
     var key = $("#key").text();
     var pass = $("#password").text();
+    var setup_password = $("#setup_password").text();
 
     if (type=='sign') {
         var forsignature = $("#for-signature").val();
@@ -477,7 +480,8 @@ function doSign_(type, mcrypt_iv) {
 				$.post( 'ajax?controllerName=check_sign', {
 							'sign': e_n_sign['hSig'],
 							'n' : e_n_sign['modulus'],
-							'e': e_n_sign['exp']
+							'e': e_n_sign['exp'],
+                            'setup_password': setup_password
 						}, function (data) {
 							// залогинились
 							console.log(data.result);

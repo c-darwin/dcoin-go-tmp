@@ -12,6 +12,7 @@ import (
     //"encoding/json"
 	"utils"
 	"time"
+	"log"
 )
 
 type CheckSignStruct struct {
@@ -29,6 +30,7 @@ func (c *Controller) Check_sign() (string, error) {
 	n := []byte(c.r.FormValue("n"))
 	e := []byte(c.r.FormValue("e"))
 	sign := []byte(c.r.FormValue("sign"))
+	setupPassword := c.r.FormValue("setup_password")
 	if !utils.CheckInputData(n, "hex") {
 		return `{"result":"incorrect n"}`, nil
 	}
@@ -45,7 +47,11 @@ func (c *Controller) Check_sign() (string, error) {
 	}
 
 	var hash []byte
-
+	if configIni["sign_hash"] == "ip" {
+		hash = utils.Md5(c.r.RemoteAddr);
+	} else {
+		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
+	}
 	community, err := c.DCDB.GetCommunityUsers()
 	if err != nil {
 		return "{\"result\":0}", err
@@ -65,44 +71,34 @@ func (c *Controller) Check_sign() (string, error) {
 			if err != nil {
 				return "{\"result\":0}", err
 			}
-			if configIni["sign_hash"] == "ip" {
-				hash = utils.Md5(c.r.Header.Get("REMOTE_ADDR"));
-			} else {
-				hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.Header.Get("REMOTE_ADDR"));
-			}
 
 			// получим данные для подписи
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}
 			// если подпись верная, значит мы нашли юзера, который эту подпись смог сделать
 			if resultCheckSign {
 				myUserId := userId
-				sess, err := globalSessions.SessionStart(*c.w, c.r)
-				if err != nil {
-					return "{\"result\":0}", err
-				}
-				defer sess.SessionRelease(*c.w)
 				// убираем ограниченный режим
-				sess.Delete("restricted")
-				sess.Set("user_id", myUserId)
+				c.sess.Delete("restricted")
+				c.sess.Set("user_id", myUserId)
 				public_key, err := c.DCDB.GetUserPublicKey(myUserId)
 				if err != nil {
 					return "{\"result\":0}", err
 				}
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
-				sess.Set("public_key", public_key)
+				c.sess.Set("public_key", public_key)
 
 				adminUSerID, err := c.DCDB.GetAdminUserId();
 				if err != nil {
 					return "{\"result\":0}", err
 				}
 				if adminUSerID == myUserId {
-					sess.Set("admin", 1)
+					c.sess.Set("admin", 1)
 				}
 				return "{\"result\":1}", nil
 			}
@@ -122,19 +118,14 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}
 			if resultCheckSign {
 
 				// если юзер смог подписать наш хэш, значит у него актуальный праймари ключ
-				sess, err := globalSessions.SessionStart(*c.w, c.r)
-				if err != nil {
-					return "{\"result\":0}", err
-				}
-				defer sess.SessionRelease(*c.w)
-				sess.Set("user_id", userId)
+				c.sess.Set("user_id", userId)
 
 				// возможно в табле my_keys старые данные, но если эта табла есть, то нужно добавить туда ключ
 				if utils.InSliceString(userId+"_my_keys", allTables) {
@@ -142,13 +133,13 @@ func (c *Controller) Check_sign() (string, error) {
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					err = c.DCDB.InsertIntoMyKey(userId, publicKey, utils.Int64ToStr(curBlockId))
+					err = c.DCDB.InsertIntoMyKey(userId+"_", publicKey, utils.Int64ToStr(curBlockId))
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					sess.Delete("restricted")
+					c.sess.Delete("restricted")
 				} else {
-					sess.Set("restricted", 1)
+					c.sess.Set("restricted", 1)
 				}
 				return "{\"result\":1}", nil
 			} else {
@@ -173,18 +164,52 @@ func (c *Controller) Check_sign() (string, error) {
 			}
 			fmt.Println("infoBlock", infoBlock)
 			// если последний блок не старше 2-х часов
-			if (time.Now().Unix() - utils.StrToInt64(infoBlock["time"])) < 3600*2  {
-				publicKey := utils.MakeAsn1(n, e)
-				userId, err := c.DCDB.GetUserIdByPublicKey(publicKey)
+			wTime := int64(2)
+			if c.ConfigIni["test_mode"] == "1" {
+				wTime = 365*24
+			}
+			log.Println(time.Now().Unix(), utils.StrToInt64(infoBlock["time"]), wTime)
+			if (time.Now().Unix() - utils.StrToInt64(infoBlock["time"])) < 3600*wTime  {
+
+				// проверим, верный ли установочный пароль, если он, конечно, есть
+				setupPassword_, err := c.Single("SELECT setup_password FROM config").String()
 				if err != nil {
 					return "{\"result\":0}", err
 				}
+				if len(setupPassword_) > 0 && setupPassword_ != fmt.Sprintf("%x", utils.HashSha1(setupPassword)) {
+					log.Println(setupPassword_, fmt.Sprintf("%x", utils.HashSha1(setupPassword)), setupPassword)
+					return "{\"result\":0}", nil
+				}
+
+				publicKey := utils.MakeAsn1(n, e)
+				log.Println("new key", string(publicKey))
+				userId, err := c.GetUserIdByPublicKey(publicKey)
+				if err != nil {
+					return "{\"result\":0}", err
+				}
+
+				// получим данные для подписи
+				forSign, err := c.DCDB.GetDataAuthorization(hash)
+				// проверим подпись
+				resultCheckSign, err := utils.CheckSign([][]byte{utils.HexToBin(publicKey)}, forSign, utils.HexToBin(sign), true);
+				if err != nil {
+					return "{\"result\":0}", err
+				}
+				if !resultCheckSign {
+					return "{\"result\":0}", nil
+				}
+
 				if len(userId) > 0 {
-					err := c.DCDB.InsertIntoMyKey(userId, publicKey, "0")
+					err := c.InsertIntoMyKey("", publicKey, "0")
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					c.DCDB.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
+					myUserId, err := c.GetMyUserId("")
+					if myUserId > 0 {
+						c.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
+					} else {
+						c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
+					}
 				} else {
 					checkError = true
 				}
@@ -194,16 +219,19 @@ func (c *Controller) Check_sign() (string, error) {
 		} else {
 
 			if configIni["sign_hash"] == "ip" {
-				hash = utils.Md5(c.r.Header.Get("REMOTE_ADDR"));
+				hash = utils.Md5(c.r.RemoteAddr);
 			} else {
-				hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.Header.Get("REMOTE_ADDR"));
+				hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
 			}
+			log.Println("hash", hash)
 
 			// получим данные для подписи
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
-
+			log.Println("forSign", forSign)
+			log.Printf("publicKey %x\n", string(publicKey))
+			log.Println("sign_",string(sign))
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, sign, true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true);
 			if err != nil {
 				return "{\"result\":0}", err
 			}
@@ -222,13 +250,9 @@ func (c *Controller) Check_sign() (string, error) {
 			if err != nil {
 				return "{\"result\":0}", err
 			}
-			sess, err := globalSessions.SessionStart(*c.w, c.r)
-			if err != nil {
-				return "{\"result\":0}", err
-			}
-			defer sess.SessionRelease(*c.w)
-			sess.Delete("restricted")
-			sess.Set("user_id", myUserId)
+			c.sess.Delete("restricted")
+			c.sess.Set("user_id", myUserId)
+
 			// если уже пришел блок, в котором зареган ключ юзера
 			if (myUserId!=-1) {
 
@@ -237,14 +261,14 @@ func (c *Controller) Check_sign() (string, error) {
 					return "{\"result\":0}", err
 				}
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
-				sess.Set("public_key", public_key)
+				c.sess.Set("public_key", public_key)
 
 				AdminUserId, err := c.DCDB.GetAdminUserId()
 				if err != nil {
 					return "{\"result\":0}", err
 				}
 				if AdminUserId == myUserId {
-					sess.Set("admin", 1)
+					c.sess.Set("admin", 1)
 				}
 				return "{\"result\":1}", nil
 			}

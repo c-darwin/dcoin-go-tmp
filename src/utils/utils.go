@@ -102,6 +102,698 @@ func Round(f float64, places int) (float64) {
 }
 */
 
+
+// ищем ближайшее время в $points_status_array или $max_promised_amount_array
+// $type - status для $points_status_array / amount - для $max_promised_amount_array
+func  findMinPointsStatus(needTime int64, pointsStatusArray []map[int64]string, pType string) ([]map[string]string, []map[int64]string) {
+	var findTime []int64
+	newPointsStatusArray := pointsStatusArray
+	var timeStatusArr []map[string]string
+BR:
+	for i:=0; i<len(pointsStatusArray); i++ {
+		for time, _ := range pointsStatusArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = append(findTime, time)
+			start:=i+1
+			if i+1 > len(pointsStatusArray) {
+				start=len(pointsStatusArray)
+			}
+			newPointsStatusArray = pointsStatusArray[start:]
+		}
+	}
+	if len(findTime) > 0 {
+		for i:=0; i<len(findTime); i++ {
+			for _, status := range pointsStatusArray[i] {
+				timeStatusArr = append(timeStatusArr, map[string]string{"time" : Int64ToStr(findTime[i]), pType : status})
+			}
+		}
+	}
+	return timeStatusArr, newPointsStatusArray
+}
+
+func findMinPct (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
+	var findTime int64 = -1
+	var pct float64 = 0
+BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	if findTime >=0 {
+		for _, arr := range pctArray[findTime] {
+			pct = arr[status]
+		}
+	}
+	return pct
+}
+
+
+func findMinPct1 (needTime int64, pctArray []map[int64]float64) float64 {
+	var findTime int64 = -1
+	var pct float64 = 0
+BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	if findTime >=0 {
+		for _, pct0 := range pctArray[findTime] {
+			pct = pct0
+		}
+	}
+	return pct
+}
+
+func  getMaxPromisedAmountCalcProfit(amount, repaidAmount, maxPromisedAmount float64, currencyId int64) float64 {
+	// для WOC $repaid_amount всегда = 0, т.к. cash_request на WOC послать невозможно
+	// если наша сумма больше, чем максимально допустимая ($find_min_array[$i]['amount'])
+	var result float64
+	if (amount+repaidAmount > maxPromisedAmount) {
+		result = maxPromisedAmount-repaidAmount;
+	} else if (amount < maxPromisedAmount && currencyId==1) { // для WOC разрешено брать maxPromisedAmount вместо promisedAmount, если promisedAmount < maxPromisedAmount
+		result = maxPromisedAmount
+	} else {
+		result = amount;
+	}
+	return result
+}
+
+type resultArrType struct {
+	num_sec int64
+	pct float64
+	amount float64
+}
+
+type pctAmount struct {
+	pct float64
+	amount float64
+}
+
+
+func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
+
+	log.Println("amount", amount)
+	log.Println("timeStart", timeStart)
+	log.Println("timeFinish", timeFinish)
+	log.Println(pctArray)
+	log.Println(pointsStatusArray)
+	log.Println(holidaysArray)
+	log.Println(maxPromisedAmountArray)
+	log.Println("currencyId", currencyId)
+	log.Println("repaidAmount", repaidAmount)
+
+
+	var lastStatus string = ""
+	var findMinArray []map[string]string
+	var newArr []map[int64]float64
+	var statusPctArray_ map[string]float64
+	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
+
+	findTime := func(key int64, arr []map[int64]float64) bool {
+		for i:=0; i< len(arr); i++ {
+			if arr[i][key]!=0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	log.Println("pctArray", pctArray)
+	for i:=0; i < len(pctArray); i++ {
+		for time, statusPctArray := range pctArray[i] {
+			log.Println("i=", i, "pctArray[i]=", pctArray[i])
+			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
+			//log.Println("i", i)
+			log.Println("time", time)
+			log.Println("findMinArray", findMinArray)
+			log.Println("pointsStatusArray", pointsStatusArray)
+			for j := 0; j < len(findMinArray); j++ {
+				if StrToInt64(findMinArray[j]["time"]) < time {
+					findMinPct := findMinPct_24946(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
+					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
+						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
+						log.Println("findMinPct", findMinPct)
+					}
+					lastStatus = findMinArray[j]["status"];
+				}
+			}
+			if len(findMinArray) == 0 && len(lastStatus) == 0 {
+				findMinArray = append(findMinArray, map[string]string{"status": "user"})
+			} else if len(findMinArray) == 0 && len(lastStatus) != 0 { // есть проценты, но кончились points_status
+				findMinArray = append(findMinArray, map[string]string{"status": "miner"})
+			}
+			if !findTime(time, newArr) {
+				newArr = append(newArr, map[int64]float64{time : statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
+			}
+			statusPctArray_ = statusPctArray;
+		}
+	}
+
+	// если в points больше чем в pct
+	if len(pointsStatusArray)>0 {
+		for i:=0; i < len(pointsStatusArray); i++ {
+			for time, status := range pointsStatusArray[i] {
+				if !findTime(time, newArr) {
+					newArr = append(newArr, map[int64]float64{time : statusPctArray_[status]})
+				}
+			}
+		}
+	}
+
+	log.Println("newArr", newArr)
+
+
+	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
+
+	// $max_promised_amount_array + $pct_array
+	/*
+	 * в $pct_array сейчас
+			[1394308000] =>  0,05
+			[1394308100] =>  0,1
+
+		после обработки станет
+
+			[1394308000] => Array
+				(
+					[pct] => 0,05
+					[amount] => 1000
+				)
+			[1394308005] => Array
+				(
+					[pct] => 0,05
+					[amount] => 100
+				)
+			[1394308100] => Array
+				(
+					[pct] => 0,1
+					[amount] => 100
+				)
+
+	 * */
+
+	findTime2 := func(key int64, arr []map[int64]pctAmount) bool {
+		for i:=0; i< len(arr); i++ {
+			if arr[i][key].pct!=0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	var newArr2 []map[int64]pctAmount
+	var lastAmount float64
+	var amount_ float64
+	var pct_ float64
+	if len(maxPromisedAmountArray)==0{
+		lastAmount = amount
+	}
+
+	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
+	for i:=0; i < len(newArr); i++ {
+		log.Println("i ", i)
+		for time, pct := range newArr[i] {
+			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
+			for j:=0; j < len(findMinArray); j++ {
+				if amount+repaidAmount > StrToFloat64(findMinArray[j]["amount"]) {
+					amount_ = StrToFloat64(findMinArray[j]["amount"]) - repaidAmount
+				} else if amount < StrToFloat64(findMinArray[j]["amount"]) && currencyId==1 {
+					amount_ = StrToFloat64(findMinArray[j]["amount"])
+				} else {
+					amount_ = amount
+				}
+				if StrToInt64(findMinArray[j]["time"]) <= time {
+					minPct := findMinPct1_24946(StrToInt64(findMinArray[j]["time"]), newArr);
+					if !findTime2(StrToInt64(findMinArray[j]["time"]), newArr2) {
+						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]):{pct:minPct, amount:amount_}})
+					}
+					lastAmount = amount_;
+
+				}
+			}
+			if !findTime2(time, newArr2) {
+				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
+			}
+			pct_ = pct
+		}
+	}
+
+
+	log.Println("newArr2", newArr2)
+
+	if !findTime2(timeFinish, newArr2) {
+		newArr2 = append(newArr2, map[int64]pctAmount{timeFinish:{pct:pct_, amount:0}})
+	}
+
+	var workTime, oldTime int64
+	var resultArr []resultArrType
+	var oldPctAndAmount pctAmount
+	var startHolidays bool
+	var finishHolidaysElement int64
+	//START:
+	for i:=0; i < len(newArr2); i++ {
+
+		for time, pctAndAmount := range newArr2[i] {
+
+			log.Println("pctAndAmount", pctAndAmount)
+
+			if (time > timeStart) {
+				workTime = time
+				for j := 0; j < len(holidaysArray); j++ {
+
+					if holidaysArray[j][1] <= oldTime {
+						continue
+					}
+
+					log.Println("holidaysArray[j]", holidaysArray[j])
+
+					// полные каникулы в промежутке между time и old_time
+					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						time = holidaysArray[j][0];
+						holidaysArray[j][0] = -1
+						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+						log.Println("resultArr append")
+						oldTime = holidaysArray[j][1];
+						holidaysArray[j][1] = -1
+					}
+					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] {
+						startHolidays = true; // есть начало каникул, но есть ли конец?
+						finishHolidaysElement = holidaysArray[j][1]; // для записи в лог
+						time = holidaysArray[j][0];
+						if time < timeStart {
+							time = timeStart
+						}
+						holidaysArray[j][0] = -1
+					} else if holidaysArray[j][1]!=-1 && workTime < holidaysArray[j][1] && holidaysArray[j][0]==-1 {
+						// конец каникул заканчивается после $work_time
+						time = oldTime
+						continue
+					} else if holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						oldTime = holidaysArray[j][1]
+						holidaysArray[j][1] = -1
+						startHolidays = false; // конец каникул есть
+					} else if j == len(holidaysArray)-1 && !startHolidays {
+						// если это последний полный внутрений холидей, то time должен быть равен текущему workTime
+						time = workTime
+					}
+				}
+				if (time > timeFinish) {
+					time = timeFinish
+				}
+				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+				log.Println("new", (time-oldTime))
+				oldTime = time
+			} else {
+				oldTime = timeStart
+			}
+			oldPctAndAmount = pctAndAmount
+		}
+	}
+
+	log.Println("resultArr", resultArr)
+
+	if (startHolidays && finishHolidaysElement>0) {
+		log.Println("finishHolidaysElement:", finishHolidaysElement)
+	}
+
+	// время в процентах меньше, чем нужное нам конечное время
+	if (oldTime < timeFinish && !startHolidays) {
+		// просто берем последний процент и добиваем его до нужного $time_finish
+		sec := timeFinish - oldTime;
+		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+	}
+
+
+	var profit, amountAndProfit float64
+	for i:=0; i < len(resultArr); i++ {
+		pct := 1+resultArr[i].pct
+		num := resultArr[i].num_sec
+		amountAndProfit = profit +resultArr[i].amount
+		//$profit = ( floor( round( $amount_and_profit*pow($pct, $num), 3)*100 ) / 100 ) - $new[$i]['amount'];
+		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
+		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
+	}
+	log.Println("profit", profit)
+
+	return profit, nil
+}
+
+
+// только для блоков до 24946
+func findMinPct1_24946(needTime int64, pctArray []map[int64]float64) float64 {
+	var findTime int64 = 0
+	var pct float64 = 0
+BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			if time > needTime {
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	if findTime >=0 {
+		for _, pct0 := range pctArray[findTime] {
+			pct = pct0
+		}
+	}
+	return pct
+}
+
+
+// только для блоков до 24946
+func findMinPct_24946 (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
+	var findTime int64 = 0
+	var pct float64 = 0
+	log.Println("pctArray findMinPct_24946", pctArray)
+BR:
+	for i:=0; i<len(pctArray); i++ {
+		for time, _ := range pctArray[i] {
+			log.Println(time, ">", needTime, "?")
+			if time > needTime {
+				log.Println("break")
+				break BR
+			}
+			findTime = int64(i)
+		}
+	}
+	log.Println("findTime", findTime)
+	if findTime >0 {
+		for _, arr := range pctArray[findTime] {
+			pct = arr[status]
+		}
+	}
+	return pct
+}
+func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
+
+	log.Println("CalcProfit")
+	log.Println("amount", amount)
+	log.Println("timeStart", timeStart)
+	log.Println("timeFinish", timeFinish)
+	log.Println(pctArray)
+	log.Println(pointsStatusArray)
+	log.Println(holidaysArray)
+	log.Println(maxPromisedAmountArray)
+	log.Println("currencyId", currencyId)
+	log.Println("repaidAmount", repaidAmount)
+
+	if timeStart >= timeFinish {
+		return 0, nil
+	}
+
+	// для WOC майнинг останавливается только если майнера забанил админ, каникулы на WOC не действуют
+	if currencyId == 1 {
+		holidaysArray = nil
+	}
+
+	/* $max_promised_amount_array имеет дефолтные значения от времени = 0
+	 * $pct_array имеет дефолтные значения 0% для user/miner от времени = 0
+	 * в $points_status_array крайний элемент массива всегда будет относиться к текущим 30-и дням т.к. перед calc_profit всегда идет вызов points_update
+	 * */
+
+	var lastStatus string = ""
+	var findMinArray []map[string]string
+	var newArr []map[int64]float64
+	var statusPctArray_ map[string]float64
+	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
+
+	findTime := func(key int64, arr []map[int64]float64) bool {
+		for i:=0; i< len(arr); i++ {
+			if arr[i][key]!=0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	log.Println("pctArray", pctArray)
+	for i:=0; i < len(pctArray); i++ {
+		for time, statusPctArray := range pctArray[i] {
+			log.Println("i=", i, "pctArray[i]=", pctArray[i])
+			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
+			//log.Println("i", i)
+			log.Println("time", time)
+			log.Println("findMinArray", findMinArray)
+			log.Println("pointsStatusArray", pointsStatusArray)
+			for j := 0; j < len(findMinArray); j++ {
+				if StrToInt64(findMinArray[j]["time"]) <= time {
+					findMinPct := findMinPct(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
+					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
+						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
+						log.Println("findMinPct", findMinPct)
+					}
+					lastStatus = findMinArray[j]["status"];
+				}
+			}
+			if len(findMinArray) == 0 && len(lastStatus) == 0 {
+				findMinArray = append(findMinArray, map[string]string{"status": "user"})
+			} else if len(findMinArray) == 0 && len(lastStatus) != 0 { // есть проценты, но кончились points_status
+				findMinArray = append(findMinArray, map[string]string{"status": lastStatus})
+			}
+			if !findTime(time, newArr) {
+				newArr = append(newArr, map[int64]float64{time : statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
+			}
+			statusPctArray_ = statusPctArray;
+		}
+	}
+
+	// если в points больше чем в pct
+	if len(pointsStatusArray)>0 {
+		for i:=0; i < len(pointsStatusArray); i++ {
+			for time, status := range pointsStatusArray[i] {
+				if !findTime(time, newArr) {
+					newArr = append(newArr, map[int64]float64{time : statusPctArray_[status]})
+				}
+			}
+		}
+	}
+
+	log.Println("newArr", newArr)
+
+
+	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
+
+	// $max_promised_amount_array + $pct_array
+	/*
+	 * в $pct_array сейчас
+			[1394308000] =>  0,05
+			[1394308100] =>  0,1
+
+		после обработки станет
+
+			[1394308000] => Array
+				(
+					[pct] => 0,05
+					[amount] => 1000
+				)
+			[1394308005] => Array
+				(
+					[pct] => 0,05
+					[amount] => 100
+				)
+			[1394308100] => Array
+				(
+					[pct] => 0,1
+					[amount] => 100
+				)
+
+	 * */
+
+	findTime2 := func(key int64, arr []map[int64]pctAmount) bool {
+		for i:=0; i< len(arr); i++ {
+			if arr[i][key].pct!=0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	var newArr2 []map[int64]pctAmount
+	var lastAmount float64
+	var amount_ float64
+	var pct_ float64
+	if len(maxPromisedAmountArray)==0{
+		lastAmount = amount
+	}
+
+	log.Println("newArr201", newArr)
+
+	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
+	for i:=0; i < len(newArr); i++ {
+		log.Println("i ", i)
+		for time, pct := range newArr[i] {
+			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
+			for j:=0; j < len(findMinArray); j++ {
+				amount_ = getMaxPromisedAmountCalcProfit(amount, repaidAmount, StrToFloat64(findMinArray[j]["amount"]), currencyId)
+				if StrToInt64(findMinArray[j]["time"]) <= time {
+					minPct := findMinPct1(StrToInt64(findMinArray[j]["time"]), newArr);
+					if !findTime2(StrToInt64(findMinArray[j]["time"]), newArr2) {
+						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]):{pct:minPct, amount:amount_}})
+					}
+					lastAmount = amount_;
+
+				}
+			}
+			if !findTime2(time, newArr2) {
+				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
+				log.Println("findTime2", time, pct)
+			}
+			pct_ = pct;
+		}
+	}
+
+	log.Println("newArr21", newArr2)
+
+	// если в max_promised_amount больше чем в pct
+	if len(maxPromisedAmountArray) > 0 {
+		log.Println("maxPromisedAmountArray", maxPromisedAmountArray)
+
+		for i:=0; i<len(maxPromisedAmountArray); i++ {
+			for time, maxPromisedAmount := range maxPromisedAmountArray[i] {
+				MaxPromisedAmountCalcProfit := getMaxPromisedAmountCalcProfit(amount, repaidAmount, StrToFloat64(maxPromisedAmount), currencyId);
+				amount_ = MaxPromisedAmountCalcProfit
+				if !findTime2(time, newArr2) {
+					newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct_, amount:MaxPromisedAmountCalcProfit}})
+				}
+			}
+		}
+	}
+
+
+	maxTimeInNewArr2 := func(newArr2 []map[int64]pctAmount) int64 {
+		var max int64
+		for i:=0; i < len(newArr2); i++ {
+			for time, _ := range newArr2[i] {
+				if time > max {
+					max = time
+				}
+			}
+		}
+		return max
+	}
+
+	if maxTimeInNewArr2(newArr2) < timeFinish {
+		// добавим сразу время окончания
+		//newArr2[timeFinish] = pct;
+		if !findTime2(timeFinish, newArr2) {
+			newArr2 = append(newArr2, map[int64]pctAmount{timeFinish:{pct:pct_, amount:0}})
+		}
+	}
+
+	var workTime, oldTime int64
+	var resultArr []resultArrType
+	var oldPctAndAmount pctAmount
+	var startHolidays bool
+	var finishHolidaysElement int64
+	log.Println("newArr2", newArr2)
+START:
+	for i:=0; i < len(newArr2); i++ {
+
+		for time, pctAndAmount := range newArr2[i] {
+
+			log.Println(time, timeFinish)
+			log.Println("pctAndAmount", pctAndAmount)
+			if (time > timeFinish) {
+				log.Println("continue START", time, timeFinish)
+				continue START
+			}
+			if (time > timeStart) {
+				workTime = time
+				for j := 0; j < len(holidaysArray); j++ {
+
+					if holidaysArray[j][1] <= oldTime {
+						continue
+					}
+
+					log.Println("holidaysArray[j]", holidaysArray[j])
+
+					// полные каникулы в промежутке между time и old_time
+					if holidaysArray[j][0]!=-1 && oldTime <= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						time = holidaysArray[j][0];
+						holidaysArray[j][0] = -1
+						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+						log.Println("resultArr append")
+						oldTime = holidaysArray[j][1];
+						holidaysArray[j][1] = -1
+					}
+					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] {
+						startHolidays = true; // есть начало каникул, но есть ли конец?
+						finishHolidaysElement = holidaysArray[j][1]; // для записи в лог
+						time = holidaysArray[j][0];
+						if time < timeStart {
+							time = timeStart
+						}
+						holidaysArray[j][0] = -1
+					} else if holidaysArray[j][1]!=-1 && workTime < holidaysArray[j][1] && holidaysArray[j][0]==-1 {
+						// конец каникул заканчивается после $work_time
+						time = oldTime
+						continue
+					} else if holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+						oldTime = holidaysArray[j][1]
+						holidaysArray[j][1] = -1
+						startHolidays = false; // конец каникул есть
+					} else if j == len(holidaysArray)-1 && !startHolidays {
+						// если это последний полный внутрений холидей, то time должен быть равен текущему workTime
+						time = workTime
+					}
+				}
+				if (time > timeFinish) {
+					time = timeFinish
+				}
+				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+				log.Println("new", (time-oldTime))
+				oldTime = time
+			} else {
+				oldTime = timeStart
+			}
+			oldPctAndAmount = pctAndAmount
+			log.Println("oldPctAndAmount", oldPctAndAmount)
+		}
+	}
+	log.Println("oldTime", oldTime)
+	log.Println("timeFinish", timeFinish)
+
+	log.Println("resultArr", resultArr)
+
+	if (startHolidays && finishHolidaysElement>0) {
+		log.Println("finishHolidaysElement:", finishHolidaysElement)
+	}
+
+	// время в процентах меньше, чем нужное нам конечное время
+	if (oldTime < timeFinish && !startHolidays) {
+		log.Println("oldTime < timeFinish")
+		// просто берем последний процент и добиваем его до нужного $time_finish
+		sec := timeFinish - oldTime;
+		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+	}
+
+	log.Println("resultArr", resultArr)
+
+	var profit, amountAndProfit float64
+	for i:=0; i < len(resultArr); i++ {
+		pct := 1+resultArr[i].pct
+		num := resultArr[i].num_sec
+		amountAndProfit = profit +resultArr[i].amount
+		//$profit = ( floor( round( $amount_and_profit*pow($pct, $num), 3)*100 ) / 100 ) - $new[$i]['amount'];
+		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
+		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
+	}
+
+	log.Println("total profit w/o amount:", profit)
+
+	return profit, nil
+}
+
 func round(num float64) int {
 	//num += ROUND_FIX
 	//	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
@@ -115,10 +807,16 @@ func Round(num float64, precision int) float64 {
 	return float64(round(num * output)) / output
 }
 
-
-
 func CheckDaemonRestart(name string) bool {
 	return false
+}
+
+func RandSlice(min, max, count int64) []string {
+	var result []string
+	for i:=0; i<int(count); i++ {
+		result = append(result, IntToStr(RandInt(int(min), int(max))))
+	}
+	return result
 }
 
 func RandInt(min int, max int) int {
@@ -742,9 +1440,9 @@ func EncodeLengthPlusData(data []byte) []byte  {
 func EncodeLength(len0 int64) []byte  {
 	if len0<=127 {
 		if len0%2 > 0 {
-			return []byte(fmt.Sprintf("0%x", len0))
+			return HexToBin([]byte(fmt.Sprintf("0%x", len0)))
 		}
-		return []byte(fmt.Sprintf("%x", len0))
+		return HexToBin([]byte(fmt.Sprintf("%x", len0)))
 	}
 	temphex:= fmt.Sprintf("%x", len0)
 	if len(temphex)%2 > 0 {
@@ -959,21 +1657,42 @@ func RandSeq(n int) string {
 }
 
 func MakeAsn1(hex_n, hex_e []byte) []byte {
+	//hex_n = append([]byte("00"), hex_n...)
 	n_ := []byte(HexToBin(hex_n))
-	n_ = append([]byte("02"), EncodeLength(int64(len(HexToBin(hex_n))))...)
+	n_ = append([]byte("02"), BinToHex(EncodeLength(int64(len(HexToBin(hex_n)))))...)
+	//log.Println("n_length", string(n_))
 	n_ = append(n_, hex_n...)
-	e_ := append([]byte("02"), EncodeLength(int64(len(HexToBin(hex_e))))...)
+	//log.Println("n_", string(n_))
+	e_ := append([]byte("02"), BinToHex(EncodeLength(int64(len(HexToBin(hex_e)))))...)
 	e_ = append(e_, hex_e...)
-	length := EncodeLength(int64(len(HexToBin(append(n_,e_...)))))
+	//log.Println("e_", string(e_))
+	length := BinToHex(EncodeLength(int64(len(HexToBin(append(n_,e_...))))))
+	//log.Println("length", string(length))
 	rez := append([]byte("30"), length...)
 	rez = append(rez, n_...)
 	rez = append(rez, e_...)
+	rez = append([]byte("00"), rez...)
+	//log.Println(string(rez))
+	//log.Println(len(string(rez)))
+	//log.Println(len(HexToBin(rez)))
+	rez = append(BinToHex(EncodeLength(int64(len(HexToBin(rez))))), rez...)
+	rez = append([]byte("03"), rez...)
+	//log.Println(string(rez))
+	rez = append([]byte("300d06092a864886f70d0101010500"), rez...)
+	//log.Println(string(rez))
+	rez = append(BinToHex(EncodeLength(int64(len(HexToBin(rez))))), rez...)
+	//log.Println(string(rez))
+	rez = append([]byte("30"), rez...)
+	//log.Println(string(rez))
+
 	return rez
 	//b64:=base64.StdEncoding.EncodeToString([]byte(utils.HexToBin("30"+length+bin_enc)))
 	//fmt.Println(b64)
 }
 
 func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
+
+	log.Println("forSign", forSign)
 	//fmt.Println("publicKeys", publicKeys)
 	var signsSlice [][]byte
 	// у нода всегда 1 подпись
@@ -998,11 +1717,11 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		//fmt.Println("publicKeys[i]", publicKeys[i])
+		log.Println("publicKeys[i]", string(publicKeys[i]))
 		key := base64.StdEncoding.EncodeToString(publicKeys[i])
 		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
 		//fmt.Printf("%x\n", publicKeys[i])
-		//fmt.Println("key", key)
+		log.Println("key", key)
 		block, _ := pem.Decode([]byte(key))
 		if block == nil {
 			return false, ErrInfo(fmt.Errorf("incorrect key"))
@@ -1017,12 +1736,12 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
-			//fmt.Println("pub", pub)
-			//fmt.Println("crypto.SHA1", crypto.SHA1)
-			//fmt.Println("HashSha1(forSign)", HashSha1(forSign))
-			//fmt.Println("HashSha1(forSign)", HashSha1(forSign))
-			//fmt.Println("forSign", forSign)
-			//fmt.Printf("sign: %x\n", signsSlice[i])
+			log.Println("pub", pub)
+			log.Println("crypto.SHA1", crypto.SHA1)
+			log.Println("HashSha1(forSign)", HashSha1(forSign))
+			log.Println("HashSha1(forSign)", string(HashSha1(forSign)))
+			log.Println("forSign", forSign)
+			log.Printf("sign: %x\n", signsSlice[i])
 			return false, ErrInfoFmt("incorrect sign: key = %s ; hash = %x; forSign = %v", key, HashSha1(forSign), forSign)
 		}
 	}

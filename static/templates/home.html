@@ -1,3 +1,4 @@
+{{ define "home" }}
 <link rel="stylesheet" type="text/css" href="css/tooltipster.css" />
 <link rel="stylesheet" type="text/css" href="css/tooltipster-shadow.css" />
 <script type="text/javascript" src="js/jquery.tooltipster.min.js"></script>
@@ -61,17 +62,18 @@
 		});
 
 	});
-	<?php
-	if (preg_match('/user|miner/iD', $tpl['my_notice']['account_status']) && !$user_id)
-		echo '$("#main-login").html(\'<a href="#myModal" data-backdrop="static" data-toggle="modal" role="button" class="btn btn-danger  btn-block "><i class="fa fa-sign-in fa-lg"></i> Login</a><div style="margin: 2px 10px; font-size: 11px">'.$lng['login_alert'].'</div>\');';
-	?>
+	{{if and (or (eq .MyNotice.account_status "user") (eq .MyNotice.account_status "miner") ) (not .UserId)}}
+		$("#main-login").html('<a href="#myModal" data-backdrop="static" data-toggle="modal" role="button" class="btn btn-danger  btn-block "><i class="fa fa-sign-in fa-lg"></i> Login</a><div style="margin: 2px 10px; font-size: 11px">{{.Lang.login_alert}}</div>');
+	{{else}}
+
+	{{end}}
 </script>
 <style>
 	.alert-info a:link{text-decoration: underline}
 	.page-header{margin-top: 10px}
 </style>
 <link href="css/cf.css" rel="stylesheet">
-<?php require_once( ABSPATH . 'templates/alert_success.php' );?>
+{{ template "alert_success". }}
 
 <style>
 	.fd-tile.detail .content {
@@ -570,19 +572,15 @@
 
 				var markerCluster = new MarkerClusterer(map, markers, { maxZoom: 18 });
 
-				<?php
-				for ($i=0; $i<sizeof($tpl['rand_miners']); $i++) {
-					echo "$.get( 'ajax/get_miner_data.php?user_id={$tpl['rand_miners'][$i]}', function (data) {\n
-									get_img_home (0, {$tpl['rand_miners'][$i]}, data.hosts, data.lnglat, data.html, data.counters, data.pct_sec, 1);\n
-								}, \"json\" );\n";
-				}
-				?>
+				{{range $i, $minerId := .RandMiners}}
+					$.get( 'ajax/get_miner_data.php?user_id={{$minerId}}', function (data) {
+										get_img_home (0, {{$minerId}}, data.hosts, data.lnglat, data.html, data.counters, data.pct_sec, 1);
+									}, "json" );
+					}
+				{{end}}
 
 
 			}, "json" );
-
-
-
 
 		}
 
@@ -662,19 +660,17 @@
 </style>
 <div class="panel0">
 	<div class="col-lg-3 col-sm-6">
-		<div class="panel mini-box" title="<?php echo $lng['home_account_text']?>">
+		<div class="panel mini-box" title="{{.Lang.home_account_text}}">
 	                <span class="box-icon bg-success">
 	                    <i class="fa fa-credit-card"></i>
 	                </span>
 			<div class="box-info">
-				<p class="size-h2"><?php echo $user_id ?></p>
-				<p class="text-muted"><span data-i18n="Growth"><?php echo $lng['account_number']?></span></p>
+				<p class="size-h2">{{.UserId}}</p>
+				<p class="text-muted"><span data-i18n="Growth">{{.Lang.account_number}}</span></p>
 			</div>
 		</div>
 	</div>
-	<?php
-	if($tpl['my_notice']['account_status']=='Miner'){
-	?>
+	{{if eq .MyNotice.account_status "miner" }}
 	<div class="col-lg-3 col-sm-6">
 		<div class="panel mini-box">
 	                <span class="box-icon bg-danger">
@@ -682,7 +678,7 @@
 	                </span>
 			<div class="box-info">
 				<p class="size-h2"><a href="#cash_requests_in"><?php echo $tpl['cash_requests']?></a></p>
-				<p class="text-muted"><span data-i18n="New users"><?php echo $lng['inbox']?></span></p>
+				<p class="text-muted"><span data-i18n="New users">{{.Lang.inbox}}</span></p>
 			</div>
 		</div>
 	</div>
@@ -692,8 +688,8 @@
 	                    <i class="fa fa-check"></i>
 	                </span>
 			<div class="box-info">
-				<p class="size-h2"><a href="#points"><?php echo $tpl['points']?></a></p>
-				<p class="text-muted"><span data-i18n="New users"><?php echo $lng['points']?></span></p>
+				<p class="size-h2"><a href="#points">{{.Points}}</a></p>
+				<p class="text-muted"><span data-i18n="New users">{{.Lang.points}}</span></p>
 			</div>
 		</div>
 	</div>
@@ -704,13 +700,11 @@
 	                </span>
 			<div class="box-info">
 				<p class="size-h2"><a href="#tasks"><?php echo $tpl['tasks_count']?></a></p>
-				<p class="text-muted"><span data-i18n="New users"><?php echo $lng['tasks']?></span></p>
+				<p class="text-muted"><span data-i18n="New users">{{.Lang.tasks}}</span></p>
 			</div>
 		</div>
 	</div>
-	<?php
-	}
-	?>
+	{{end}}
 </div>
 <div style="clear: both"></div>
 
@@ -824,7 +818,7 @@
 
 </style>
 
-<h3 class="page-header" style="margin-top: 20px"><?php echo $lng['mining']?></h3>
+<h3 class="page-header" style="margin-top: 20px">{{.Lang.mining}}</h3>
 <div class="pct">
 	<div class="col-lg-3 col-sm-6">
 		<div class="panel widget bg-woc">
@@ -935,12 +929,12 @@
 </style>
 
 
-<h3 class="page-header" title="<?php echo $lng['home_account_text']?>"><?php echo $lng['my_accounts']?></h3>
+<h3 class="page-header" title="{{.Lang.home_account_text}}">{{.Lang.my_accounts}}</h3>
 <div>
 
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-success m-bottom-md" title="<?php echo $lng['home_dwoc_text']?>">
+		<div class="statistic-box bg-success m-bottom-md" title="{{.Lang.home_dwoc_text}}">
 			<div class="statistic-title">
 				dWOC
 			</div>
@@ -1025,22 +1019,22 @@
 </div>
 
 <div style="clear: both"></div>
-<h3 class="page-header" title="<?php echo $lng['home_ex_text']?>"><?php echo $lng['applications_from_exchange']?></h3>
+<h3 class="page-header" title="{{.Lang.home_ex_text}}">{{.Lang.applications_from_exchange}}</h3>
 <div class="ex">
 	<div class="col-lg-3 col-sm-6">
 		<div class="fd-tile detail clean tile-purple">
-			<div class="content"><p><?php echo $lng['total']?></p><h1 class="text-left" id="dwoc_ex_buy_sum">0</h1><p><?php echo $lng['best_rate']?>:</p><p id="dwoc_ex_buy_rate" style="font-weight: bold">0</p></div>
+			<div class="content"><p>{{.Lang.total}}</p><h1 class="text-left" id="dwoc_ex_buy_sum">0</h1><p>{{.Lang.best_rate}}:</p><p id="dwoc_ex_buy_rate" style="font-weight: bold">0</p></div>
 			<div class="icon"><i class="fa fa-globe"></i></div>
-			<a class="details" href="http://dcoinsimple.com" target="_blank"><?php echo $lng['details']?> <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
+			<a class="details" href="http://dcoinsimple.com" target="_blank">{{.Lang.details}} <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
 		</div>
 	</div>
 
 
 	<div class="col-lg-3 col-sm-6">
 		<div class="fd-tile detail clean tile-green">
-			<div class="content"><p><?php echo $lng['total']?></p><h1 class="text-left" id="dusd_ex_buy_sum">0</h1><p><?php echo $lng['best_rate']?>:</p><p id="dusd_ex_buy_rate" style="font-weight: bold">0</p></div>
+			<div class="content"><p>{{.Lang.total}}</p><h1 class="text-left" id="dusd_ex_buy_sum">0</h1><p>{{.Lang.best_rate}}:</p><p id="dusd_ex_buy_rate" style="font-weight: bold">0</p></div>
 			<div class="icon"><i class="fa fa-usd"></i></div>
-			<a class="details" href="http://dcoinsimple.com" target="_blank"><?php echo $lng['details']?> <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
+			<a class="details" href="http://dcoinsimple.com" target="_blank">{{.Lang.details}} <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
 		</div>
 	</div>
 
@@ -1048,33 +1042,29 @@
 
 	<div class="col-lg-3 col-sm-6">
 		<div class="fd-tile detail clean tile-prusia">
-			<div class="content"><p><?php echo $lng['total']?></p><h1 class="text-left" id="deur_ex_buy_sum">0</h1><p><?php echo $lng['best_rate']?>:</p><p id="deur_ex_buy_rate" style="font-weight: bold">0</p></div>
+			<div class="content"><p>{{.Lang.total}}</p><h1 class="text-left" id="deur_ex_buy_sum">0</h1><p>{{.Lang.best_rate}}:</p><p id="deur_ex_buy_rate" style="font-weight: bold">0</p></div>
 			<div class="icon"><i class="fa fa-euro"></i></div>
-			<a class="details" href="http://dcoinsimple.com" target="_blank"><?php echo $lng['details']?> <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
+			<a class="details" href="http://dcoinsimple.com" target="_blank">{{.Lang.details}} <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
 		</div>
 	</div>
 
 	<div class="col-lg-3 col-sm-6">
 		<div class="fd-tile detail clean tile-red">
-			<div class="content"><p><?php echo $lng['total']?></p><h1 class="text-left" id="drub_ex_buy_sum">0</h1><p><?php echo $lng['best_rate']?>:</p><p id="drub_ex_buy_rate" style="font-weight: bold">0</p></div>
+			<div class="content"><p>{{.Lang.total}}</p><h1 class="text-left" id="drub_ex_buy_sum">0</h1><p>{{.Lang.best_rate}}:</p><p id="drub_ex_buy_rate" style="font-weight: bold">0</p></div>
 			<div class="icon"><i class="fa fa-ruble"></i></div>
-			<a class="details" href="http://dcoinsimple.com" target="_blank"><?php echo $lng['details']?> <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
+			<a class="details" href="http://dcoinsimple.com" target="_blank">{{.Lang.details}} <span><i class="fa fa-arrow-circle-right pull-right"></i></span></a>
 		</div>
 	</div>
 </div>
 
-<?php
-if ($tpl['show_map']) {
-	?>
+{{if .ShowMap}}
 	<div style="clear: both"></div>
 	<h3 class="page-header" style="margin-top: 30px;margin-bottom: 0px;"
-	    title="<?php echo $lng['home_miners_text'] ?>"><?php echo $lng['miners_on_the_map'] ?></h3>
-	<?php echo empty($_SESSION['restricted'])?'<div style="float: right"><a href="#interface/show_map=0">Убрать карту</a></div>':''?>
+	    title="{{.Lang.home_miners_text}}">{{.Lang.miners_on_the_map}}</h3>
+	{{if eq .SessRestricted 0}}<div style="float: right"><a href="#interface/show_map=0">Hide map</a></div>{{end}}
 	<div class="clearfix"></div>
 	<div id="map_canvas" style="width: 100%; height:500px;"></div>
-<?php
-}
-?>
+{{end}}
 
 	<style>
 		.ibox {
@@ -1185,7 +1175,7 @@ if ($tpl['show_map']) {
 	</style>
 	<div style="clear: both"></div>
 
-<h3 class="page-header" style="margin-top: 30px" title="<?php echo $lng['home_promised_text']?>"><?php echo $lng['promised_amounts_of_cash']?></h3>
+<h3 class="page-header" style="margin-top: 30px" title="{{.Lang.home_promised_text}}">{{.Lang.promised_amounts_of_cash}}</h3>
 <div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-woc">
@@ -1234,7 +1224,7 @@ if ($tpl['show_map']) {
 </div>
 
 <div style="clear: both"></div>
-<h3 class="page-header" style="margin-top: 0px" title="<?php echo $lng['home_total_coins']?>"><?php echo $lng['total_amount_of_coins']?></h3>
+<h3 class="page-header" style="margin-top: 0px" title="{{.Lang.home_total_coins}}">{{.Lang.total_amount_of_coins}}</h3>
 <div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-woc">
@@ -1334,9 +1324,9 @@ if ($tpl['show_map']) {
 	});
 </script>
 <div style="clear: both;"></div>
-<h3 class="page-header" style="margin-top: 0px" title="<?php echo $lng['home_total_coins']?>"><?php echo $lng['forecast_number_coins']?></h3>
+<h3 class="page-header" style="margin-top: 0px" title="{{.Lang.home_total_coins}}">{{.Lang.forecast_number_coins}}</h3>
 <div class="form-inline">
-	<?php echo $lng['my_balance']?>: <input id="calc_amount" type="text" class="form-control" value="100"  style="width: 80px; display: inline-block">
+	{{.Lang.my_balance}}: <input id="calc_amount" type="text" class="form-control" value="100"  style="width: 80px; display: inline-block">
 	<select id="calc_currency_id" style="width: 100px; display: inline-block" class="form-control" >
 		<?php
 		foreach ($tpl['currency_pct'] as $id => $data) {
@@ -1349,21 +1339,21 @@ if ($tpl['show_map']) {
 		}
 		?>
 	</select><br><br>
-	<?php echo $lng['my_status']?>:  <select id="calc_status" style="width: 100px; display: inline-block" class="form-control" >
-		<option value='miner' selected><?php echo $lng['status_miner']?></option>
-		<option value='user'><?php echo $lng['status_user']?></option>
+	{{.Lang.my_status}}:  <select id="calc_status" style="width: 100px; display: inline-block" class="form-control" >
+		<option value='miner' selected>{{.Lang.status_miner}}</option>
+		<option value='user'>{{.Lang.status_user}}</option>
 	</select>
 	<br><br>
-	<?php echo $lng['home_after']?> <select id="calc_period" style="width: 100px; display: inline-block" class="form-control" >
-		<option value='86400'><?php echo $lng['day']?></option>
-		<option value='604800'><?php echo $lng['week']?></option>
-		<option value='2592000' selected><?php echo $lng['month']?></option>
-		<option value='15768000'><?php echo $lng['half_year']?></option>
-		<option value='31536000'><?php echo $lng['year']?></option>
-		<option value='63072000'><?php echo $lng['2_years']?></option>
-		<option value='94608000'><?php echo $lng['3_years']?></option>
-		<option value='157680000'><?php echo $lng['5_years']?></option>
-	</select> <?php echo $lng['i_will']?> <span title="<?php echo $lng['unless_reduction']?>" style="border-bottom: 1px dotted black;"><?php echo $lng['probably']?></span> <?php echo $lng['be']?> <span id="calc_total">+<?php echo round(100*pow(1+$tpl['currency_pct'][72]['miner_sec'], 3600*24*30)-100) ?> dUSD</span>
+	{{.Lang.home_after}} <select id="calc_period" style="width: 100px; display: inline-block" class="form-control" >
+		<option value='86400'>{{.Lang.day}}</option>
+		<option value='604800'>{{.Lang.week}}</option>
+		<option value='2592000' selected>{{.Lang.month}}</option>
+		<option value='15768000'>{{.Lang.half_year}}</option>
+		<option value='31536000'>{{.Lang.year}}</option>
+		<option value='63072000'>{{.Lang.years_2}}</option>
+		<option value='94608000'>{{.Lang.years_3}}</option>
+		<option value='157680000'>{{.Lang.years_5}}</option>
+	</select> {{.Lang.i_will}} <span title="{{.Lang.unless_reduction}}" style="border-bottom: 1px dotted black;">{{.Lang.probably}}</span> {{.Lang.be}} <span id="calc_total">+<?php echo round(100*pow(1+$tpl['currency_pct'][72]['miner_sec'], 3600*24*30)-100) ?> dUSD</span>
 </div>
 
 <div style="clear: both; margin-bottom: 55px"></div>
@@ -1384,3 +1374,4 @@ if ($tpl['show_map']) {
 		$( "#progress_bar" ).load( "ajax/progress_bar.php");
 	});
 </script>
+{{end}}

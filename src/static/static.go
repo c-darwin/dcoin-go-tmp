@@ -2075,10 +2075,10 @@ func static_templates_after_install_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_alert_success_php reads file data from disk. It returns an error on failure.
-func static_templates_alert_success_php() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/alert_success.php"
-	name := "static/templates/alert_success.php"
+// static_templates_alert_success_html reads file data from disk. It returns an error on failure.
+func static_templates_alert_success_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/alert_success.html"
+	name := "static/templates/alert_success.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4023,7 +4023,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/abuse.tpl": static_templates_abuse_tpl,
 	"static/templates/add_cf_project_data.tpl": static_templates_add_cf_project_data_tpl,
 	"static/templates/after_install.html": static_templates_after_install_html,
-	"static/templates/alert_success.php": static_templates_alert_success_php,
+	"static/templates/alert_success.html": static_templates_alert_success_html,
 	"static/templates/arbitration.tpl": static_templates_arbitration_tpl,
 	"static/templates/arbitration_arbitrator.tpl": static_templates_arbitration_arbitrator_tpl,
 	"static/templates/arbitration_buyer.tpl": static_templates_arbitration_buyer_tpl,
@@ -4410,7 +4410,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"after_install.html": &_bintree_t{static_templates_after_install_html, map[string]*_bintree_t{
 			}},
-			"alert_success.php": &_bintree_t{static_templates_alert_success_php, map[string]*_bintree_t{
+			"alert_success.html": &_bintree_t{static_templates_alert_success_html, map[string]*_bintree_t{
 			}},
 			"arbitration.tpl": &_bintree_t{static_templates_arbitration_tpl, map[string]*_bintree_t{
 			}},

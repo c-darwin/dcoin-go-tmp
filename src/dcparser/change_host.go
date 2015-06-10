@@ -62,7 +62,7 @@ func (p *Parser) ChangeHostFront() (error) {
 	if p.BlockData!=nil && p.BlockData.BlockId <= 240240 {
 		CheckSignResult, err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	} else {
-		CheckSignResult, err = utils.CheckSign([][]byte{p.nodePublicKey}, forSign, p.TxMap["sign"], true);
+		CheckSignResult, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
 	}
 	if err != nil {
 		return p.ErrInfo(err)

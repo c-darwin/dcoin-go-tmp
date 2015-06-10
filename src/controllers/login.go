@@ -19,6 +19,7 @@ type loginStruct struct {
 	MyModalIdName string
 	UserID int64
 	PoolTechWorks int
+	SetupPassword bool
 }
 func Noescape(s string) template.HTML {
 	return template.HTML(s)
@@ -51,6 +52,21 @@ func (c *Controller) Login() (string, error) {
 	t = template.Must(t.Parse(string(modal)))
 
 	b := new(bytes.Buffer)
+
+	// есть ли установочный пароль и был ли начально записан ключ
+	setupPassword_, err := c.Single("SELECT setup_password FROM config").String()
+	if err != nil {
+		return "", err
+	}
+	myKey, err := c.GetMyPublicKey("")
+	if err != nil {
+		return "", err
+	}
+	var setupPassword bool
+	if len(myKey) == 0 && len(setupPassword_) > 0 {
+		setupPassword = true
+	}
+
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле
 	config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
@@ -63,6 +79,6 @@ func (c *Controller) Login() (string, error) {
 		pool_tech_works = 0
 	}
 	fmt.Println(c.Lang["login_help_text"])
-	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works})
+	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword})
 	return b.String(), nil
 }

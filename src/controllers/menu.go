@@ -20,5 +20,5 @@ func (c *Controller) Menu() (string, error) {
 
 	fmt.Println("menu")
 
-	return "", nil
+	return "menu", nil
 }
