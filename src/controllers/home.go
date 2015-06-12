@@ -55,24 +55,7 @@ type CurrencyPct struct {
 
 func (c *Controller) Home() (string, error) {
 	fmt.Println("Home1")
-	data, err := static.Asset("static/templates/home.html")
-	if err != nil {
-		return "", err
-	}
-	alert_success, err := static.Asset("static/templates/alert_success.html")
-	if err != nil {
-		return "", err
-	}
-	signatures, err := static.Asset("static/templates/signatures.html")
-	if err != nil {
-		return "", err
-	}
-	funcMap := template.FuncMap{
-		"ReplaceCurrency": func(text, name string) string { return strings.Replace(text, "[currency]", name, -1) },
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-	t = template.Must(t.Parse(string(alert_success)))
-	t = template.Must(t.Parse(string(signatures)))
+
 
 	var publicKey []byte
 	var poolAdmin bool
@@ -228,6 +211,24 @@ func (c *Controller) Home() (string, error) {
 
 	calcTotal := utils.Round(100*math.Pow(1+currency_pct[72].MinerSec, 3600*24*30)-100, 0)
 
+	data, err := static.Asset("static/templates/home.html")
+	if err != nil {
+		return "", err
+	}
+	alert_success, err := static.Asset("static/templates/alert_success.html")
+	if err != nil {
+		return "", err
+	}
+	signatures, err := static.Asset("static/templates/signatures.html")
+	if err != nil {
+		return "", err
+	}
+	funcMap := template.FuncMap{
+		"ReplaceCurrency": func(text, name string) string { return strings.Replace(text, "[currency]", name, -1) },
+	}
+	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+	t = template.Must(t.Parse(string(alert_success)))
+	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
 	t.ExecuteTemplate(b, "home", &page{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: "", MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
 	 return b.String(), nil

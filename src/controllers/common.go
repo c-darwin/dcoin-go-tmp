@@ -27,6 +27,7 @@ type Controller struct {
 	w http.ResponseWriter
 	sess session.SessionStore
 	Lang map[string]string
+	LangInt int64
 	Community bool
 	ShowSignData bool
 	MyPrefix string
@@ -315,6 +316,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	lang:=GetLang(w, r)
 	fmt.Println("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
+	c.LangInt = lang
 	if lang == 42 {
 		c.TimeFormat = "2006-01-02 15:04:05"
 	} else {
@@ -467,6 +469,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]
+	c.LangInt = lang
 
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
