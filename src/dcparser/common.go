@@ -1277,7 +1277,7 @@ func (p *Parser)  getMyMinersIds() (map[int]int, error) {
 		return myMinersIds, p.ErrInfo(err)
 	}
 	if len(collective) > 0 {
-		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(Int64SliceToStr(collective), ",")+") AND miner_id > 0").MapInt()
+		myMinersIds, err = p.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(collective), ",")+") AND miner_id > 0").MapInt()
 		if err != nil {
 			return myMinersIds, p.ErrInfo(err)
 		}
@@ -1291,13 +1291,6 @@ func (p *Parser)  getMyMinersIds() (map[int]int, error) {
 	return myMinersIds, nil
 }
 
-func Int64SliceToStr(Int []int64) []string {
-	var result []string
-	for _, v := range Int {
-		result = append(result, utils.Int64ToStr(v))
-	}
-	return result
-}
 
 func IntSliceToStr(Int []int) []string {
 	var result []string
@@ -1453,45 +1446,7 @@ func  (p *Parser) minersCheckVotes1(data *MinerData) bool {
 	}
 }
 
-func getMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[int]int {
-	ctx:=utils.StrToInt(ctx0)
-	maxMinerId:=utils.StrToInt(maxMinerId0)
-	minersKeepers:=utils.StrToInt(minersKeepers0)
-	result := make(map[int]int)
-	newResult := make(map[int]int)
-	var ctx_ float64
-	ctx_ = float64(ctx)
-	for i:=0; i<minersKeepers; i++ {
-		//log.Println("ctx", ctx)
-		//var hi float34
-		hi := ctx_ / float64(127773)
-		//log.Println("hi", hi)
-		lo := int(ctx_) % 127773
-		//log.Println("lo", lo)
-		x := (float64(16807) * float64(lo)) - (float64(2836) * hi)
-		//log.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
-		if x <= 0 {
-			x += 0x7fffffff
-		}
-		ctx_ = x
-		rez := int(ctx_) % (maxMinerId+1)
-		//log.Println("rez", rez)
-		if rez == 0 {
-			rez = 1
-		}
-		result[rez] = 1
-	}
-	if arr0 {
-		i:=0
-		for k, _ := range result {
-			newResult[i] = k
-			i++
-		}
-	} else {
-		newResult = result
-	}
-	return newResult
-}
+
 
 func (p *Parser) FormatBlockData() string {
 	result := ""

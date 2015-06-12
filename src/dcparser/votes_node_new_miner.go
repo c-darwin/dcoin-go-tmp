@@ -119,7 +119,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	}
 
 	// ID майнеров, у которых сохраняются фотки
-	minersIds := getMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
+	minersIds := utils.GetMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 
 	log.Println("minersIds", minersIds, len(minersIds))
 	// данные для проверки окончания голосования
@@ -274,7 +274,7 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	minersIds := getMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
+	minersIds := utils.GetMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 	minerData.myMinersIds, err = p.getMyMinersIds()
 	if err != nil {
 		return p.ErrInfo(err)

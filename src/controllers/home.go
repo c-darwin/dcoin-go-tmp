@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"math"
+//	"log"
 )
 
 type page struct {
@@ -32,6 +33,24 @@ type page struct {
 	RandMiners []int64
 	Points int64
 	SessRestricted int64
+	PromisedAmountListGen map[int]utils.DCAmounts
+	Wallets map[int]utils.DCAmounts
+	SumWallets map[int]float64
+	CurrencyPct map[int]CurrencyPct
+	Admin bool
+	CalcTotal float64
+	CountSign int
+	CountSignArr []int
+}
+
+type CurrencyPct struct {
+	Name string
+	Miner float64
+	User float64
+	MinerBlock float64
+	UserBlock float64
+	MinerSec float64
+	UserSec float64
 }
 
 func (c *Controller) Home() (string, error) {
@@ -44,13 +63,16 @@ func (c *Controller) Home() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	signatures, err := static.Asset("static/templates/signatures.html")
+	if err != nil {
+		return "", err
+	}
 	funcMap := template.FuncMap{
-		"noescape": func(s string) template.HTML {
-			return template.HTML(s)
-		},
+		"ReplaceCurrency": func(text, name string) string { return strings.Replace(text, "[currency]", name, -1) },
 	}
 	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))
+	t = template.Must(t.Parse(string(signatures)))
 
 	var publicKey []byte
 	var poolAdmin bool
@@ -93,9 +115,9 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 	//var walletsByCurrency map[string]map[string]string
-	walletsByCurrency:=make(map[string]map[string]string)
+	walletsByCurrency:=make(map[int]utils.DCAmounts)
 	for _, data := range wallets {
-		walletsByCurrency[data["currency_id"]] = data
+		walletsByCurrency[int(data.CurrencyId)] = data
 	}
 	blockId, err := c.GetBlockId()
 	if err != nil {
@@ -151,7 +173,7 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 
-	currency_pct := make(map[int64]map[string]string)
+	currency_pct := make(map[int]CurrencyPct)
 	// проценты
 	listPct, err := c.GetMap("SELECT * FROM currency", "id", "name")
 	for id, name := range(listPct) {
@@ -159,7 +181,7 @@ func (c *Controller) Home() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		currency_pct[utils.StrToInt64(id)] = map[string]string{"name":name, "miner":utils.Float64ToStr(utils.Round((math.Pow(1+pct["miner"], 3600*24*365)-1)*100, 2)), "user":utils.Float64ToStr(utils.Round((math.Pow(1+pct["user"], 3600*24*365)-1)*100, 2)), "miner_block":utils.Float64ToStr(utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 4)),  "user_block":utils.Float64ToStr(utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 4)), "miner_sec":utils.Float64ToStr(pct["miner"]), "user_sec":utils.Float64ToStr(pct["user"])}
+		currency_pct[utils.StrToInt(id)] = CurrencyPct{Name:name, Miner:(utils.Round((math.Pow(1+pct["miner"], 3600*24*365)-1)*100, 2)), User:(utils.Round((math.Pow(1+pct["user"], 3600*24*365)-1)*100, 2)), MinerBlock:(utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 4)), UserBlock:(utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 4)), MinerSec:(pct["miner"]), UserSec:(pct["user"])}
 	}
 	// случайне майнеры для нанесения на карту
 	maxMinerId, err := c.Single("SELECT max(miner_id) FROM miners_data").Int64()
@@ -176,9 +198,9 @@ func (c *Controller) Home() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sumWallets := make(map[int64]float64)
+	sumWallets := make(map[int]float64)
 	for currencyId, amount := range(sumWallets_) {
-		sumWallets[utils.StrToInt64(currencyId)] = utils.StrToFloat64(amount)
+		sumWallets[utils.StrToInt(currencyId)] = utils.StrToFloat64(amount)
 	}
 
 	// получаем кол-во TDC на обещанных суммах, плюсуем к тому, что на кошельках
@@ -188,7 +210,7 @@ func (c *Controller) Home() (string, error) {
 	}
 
 	for currencyId, amount := range(sumTdc) {
-		currencyIdInt := utils.StrToInt64(currencyId)
+		currencyIdInt := utils.StrToInt(currencyId)
 		if sumWallets[currencyIdInt] == 0 {
 			sumWallets[currencyIdInt] =  utils.StrToFloat64(amount)
 		} else {
@@ -202,10 +224,11 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 
-	_, _, _, err = c.GetPromisedAmounts(c.SessUserId, c.Variables.Int64["cash_request_time"])
+	_, _, promisedAmountListGen, err := c.GetPromisedAmounts(c.SessUserId, c.Variables.Int64["cash_request_time"])
 
+	calcTotal := utils.Round(100*math.Pow(1+currency_pct[72].MinerSec, 3600*24*30)-100, 0)
 
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "home", &page{SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: "", MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
+	t.ExecuteTemplate(b, "home", &page{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: "", MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
 	 return b.String(), nil
 }

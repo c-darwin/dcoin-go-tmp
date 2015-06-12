@@ -89,7 +89,7 @@ func (p *Parser) ChangeCommissionFront() (error) {
 		}
 	}
 
-	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+strings.Join(Int64SliceToStr(currencyArray), ",")+")").Int()
+	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+strings.Join(utils.SliceInt64ToString(currencyArray), ",")+")").Int()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

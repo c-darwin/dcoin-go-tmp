@@ -268,7 +268,7 @@ func (c *Controller) Check_sign() (string, error) {
 					return "{\"result\":0}", err
 				}
 				if AdminUserId == myUserId {
-					c.sess.Set("admin", 1)
+					c.sess.Set("admin", int64(1))
 				}
 				return "{\"result\":1}", nil
 			}

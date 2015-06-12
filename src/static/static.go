@@ -3317,10 +3317,10 @@ func static_templates_progress_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_progress_bar_tpl reads file data from disk. It returns an error on failure.
-func static_templates_progress_bar_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/progress_bar.tpl"
-	name := "static/templates/progress_bar.tpl"
+// static_templates_progress_bar_html reads file data from disk. It returns an error on failure.
+func static_templates_progress_bar_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/progress_bar.html"
+	name := "static/templates/progress_bar.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3515,10 +3515,10 @@ func static_templates_sign_up_in_the_pool_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_signatures_tpl reads file data from disk. It returns an error on failure.
-func static_templates_signatures_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/signatures.tpl"
-	name := "static/templates/signatures.tpl"
+// static_templates_signatures_html reads file data from disk. It returns an error on failure.
+func static_templates_signatures_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/signatures.html"
+	name := "static/templates/signatures.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4092,7 +4092,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/pool_admin.tpl": static_templates_pool_admin_tpl,
 	"static/templates/pool_tech_works.tpl": static_templates_pool_tech_works_tpl,
 	"static/templates/progress.tpl": static_templates_progress_tpl,
-	"static/templates/progress_bar.tpl": static_templates_progress_bar_tpl,
+	"static/templates/progress_bar.html": static_templates_progress_bar_html,
 	"static/templates/promised_amount_actualization.tpl": static_templates_promised_amount_actualization_tpl,
 	"static/templates/promised_amount_add.tpl": static_templates_promised_amount_add_tpl,
 	"static/templates/promised_amount_delete.tpl": static_templates_promised_amount_delete_tpl,
@@ -4103,7 +4103,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/restoring_access.tpl": static_templates_restoring_access_tpl,
 	"static/templates/rewrite_primary_key.tpl": static_templates_rewrite_primary_key_tpl,
 	"static/templates/sign_up_in_the_pool.tpl": static_templates_sign_up_in_the_pool_tpl,
-	"static/templates/signatures.tpl": static_templates_signatures_tpl,
+	"static/templates/signatures.html": static_templates_signatures_html,
 	"static/templates/statistic.tpl": static_templates_statistic_tpl,
 	"static/templates/statistic_voting.tpl": static_templates_statistic_voting_tpl,
 	"static/templates/tasks.tpl": static_templates_tasks_tpl,
@@ -4548,7 +4548,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"progress.tpl": &_bintree_t{static_templates_progress_tpl, map[string]*_bintree_t{
 			}},
-			"progress_bar.tpl": &_bintree_t{static_templates_progress_bar_tpl, map[string]*_bintree_t{
+			"progress_bar.html": &_bintree_t{static_templates_progress_bar_html, map[string]*_bintree_t{
 			}},
 			"promised_amount_actualization.tpl": &_bintree_t{static_templates_promised_amount_actualization_tpl, map[string]*_bintree_t{
 			}},
@@ -4570,7 +4570,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"sign_up_in_the_pool.tpl": &_bintree_t{static_templates_sign_up_in_the_pool_tpl, map[string]*_bintree_t{
 			}},
-			"signatures.tpl": &_bintree_t{static_templates_signatures_tpl, map[string]*_bintree_t{
+			"signatures.html": &_bintree_t{static_templates_signatures_html, map[string]*_bintree_t{
 			}},
 			"statistic.tpl": &_bintree_t{static_templates_statistic_tpl, map[string]*_bintree_t{
 			}},

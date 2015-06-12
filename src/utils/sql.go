@@ -652,7 +652,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	return result, nil
 }
 
-func (db *DCDB) GetMyNoticeData(sessRestricted int, sessUserId int64, myPrefix string, lang map[string]string) (map[string]string, error) {
+func (db *DCDB) GetMyNoticeData(sessRestricted int64, sessUserId int64, myPrefix string, lang map[string]string) (map[string]string, error) {
 	result := make(map[string]string)
 	if sessRestricted == 0 {
 		my_table, err := db.OneRow("SELECT user_id, miner_id, status FROM "+myPrefix+"my_table").String()
@@ -807,8 +807,49 @@ func (db *DCDB) GetCurrencyList(cf bool) (map[string]string, error) {
 	return result, nil
 }
 
-func (db *DCDB) GetBalances(userId int64) ([]map[string]string, error) {
+// последние тр-ии от данного юзера
+func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat string) ([]map[string]string, error) {
 	var result []map[string]string
+	rows, err := db.Query(db.FormatQuery(`
+			SELECT  transactions_status.hash,
+						 transactions_status.time,
+						 transactions_status.type,
+						 transactions_status.user_id,
+						 transactions_status.block_id,
+						 transactions_status.error,
+						 queue_tx.hash as queue_tx,
+						 transactions.hash as tx
+			FROM transactions_status
+			LEFT JOIN transactions ON transactions.hash = transactions_status.hash
+			LEFT JOIN queue_tx ON queue_tx.hash = transactions_status.hash
+			WHERE  transactions_status.user_id = ? AND
+						 transactions_status.type IN (?)
+			ORDER BY time DESC
+			LIMIT ?
+			`), userId, strings.Join(SliceInt64ToString(types), ","), limit)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var hash, txTime, txType, user_id, block_id, error, queue_tx, tx string
+		err = rows.Scan(&hash, &txTime, &txType, &user_id, &block_id, &error, &queue_tx, &tx)
+		if err != nil {
+			return result, err
+		}
+		if len(tx)>0 || len(queue_tx)>0 {
+			error = ""
+		}
+		timeInt := StrToInt64(txTime)
+		t := time.Unix(timeInt, 0)
+		txTime = t.Format(timeFormat)
+		result = append(result, map[string]string{"hash": hash, "time": txTime, "type": txType, "user_id": user_id, "block_id": block_id, "error": error, "queue_tx": queue_tx, "tx": tx})
+	}
+	return result, nil
+}
+
+func (db *DCDB) GetBalances(userId int64) ([]DCAmounts, error) {
+	var result []DCAmounts
 	rows, err := db.Query(db.FormatQuery("SELECT amount, currency_id, last_update FROM wallets WHERE user_id= ?"), userId)
 	if err != nil {
 		return result, err
@@ -837,7 +878,7 @@ func (db *DCDB) GetBalances(userId int64) ([]map[string]string, error) {
 			return result, err
 		}
 		pct := Round( (math.Pow(1+pctSec, 3600*24*365)-1)*100, 2 )
-		result = append(result, map[string]string{"currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pctSec)})
+		result = append(result, DCAmounts{CurrencyId:currency_id, Amount:amount, Pct:pct, PctSec:pctSec})
 	}
 	return result, err
 }
@@ -1105,11 +1146,19 @@ func (db *DCDB) FormatQuery(q string) string {
 	return newQ
 }
 
-func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []map[string]string, map[int64]map[string]string, error) {
+type DCAmounts struct {
+	Tdc float64
+	Amount float64
+	PctSec float64
+	CurrencyId int64
+	Pct float64
+}
+
+func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []map[string]string, map[int]DCAmounts, error) {
 	var actualizationPromisedAmounts int64
 	var promisedAmountListAccepted []map[string]string
-	var promisedAmountListGen map[int64]map[string]string
-	rows, err := db.Query(db.FormatQuery("SELECT currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update FROM promised_amount WHERE user_id = ?"))
+	promisedAmountListGen := make(map[int]DCAmounts)
+	rows, err := db.Query(db.FormatQuery("SELECT currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update FROM promised_amount WHERE user_id = ?"), userId)
 	if err != nil {
 		return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
 	}
@@ -1118,10 +1167,11 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		var currency_id, del_block_id, tdc_amount_update int64
 		var tdc_amount, amount float64
 		var status string
-		err = rows.Scan(&currency_id, &status, &tdc_amount, &amount, &del_block_id, tdc_amount_update)
+		err = rows.Scan(&currency_id, &status, &tdc_amount, &amount, &del_block_id, &tdc_amount_update)
 		if err != nil {
 			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
 		}
+		log.Println(currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
 		// есть ли просроченные запросы
 		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
 		if err != nil {
@@ -1194,9 +1244,13 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		// тут accepted значит просто попало в блок
 		promisedAmountListAccepted = append(promisedAmountListAccepted, map[string]string{"pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "max_amount":Float64ToStr(maxAmount), "max_other_currencies":Int64ToStr(maxOtherCurrencies), "status_text":status_text, "tdc":Float64ToStr(tdc), "tdc_amount":Float64ToStr(tdc_amount), "status":status})
 		// для вывода на главную общей инфы
-		promisedAmountListGen[currency_id] = map[string]string{"tdc":Float64ToStr(tdc), "amount":Float64ToStr(amount), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id)}
+		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc:tdc, Amount:amount, PctSec:pct_sec, CurrencyId:currency_id}
 	}
 	return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, nil
+}
+
+func (db *DCDB) GetMyMinerId(userId int64) (int64, error) {
+	return db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", userId).Int64()
 }
 
 func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
@@ -1514,7 +1568,7 @@ func (db *DCDB) GetTestBlockId() (int64, error) {
 	return 0, nil
 }
 
-func (db *DCDB) GetMyPrefix() (string, error) {
+func (db *DCDB) GetMyPrefix(userId int64) (string, error) {
 	collective, err := db.GetCommunityUsers()
 	if err != nil {
 		return "", ErrInfo(err)
@@ -1522,15 +1576,15 @@ func (db *DCDB) GetMyPrefix() (string, error) {
 	if len(collective) == 0 {
 		return "", nil
 	} else {
-		myUserId, err := db.GetPoolAdminUserId()
+		/*myUserId, err := db.GetPoolAdminUserId()
 		if err != nil || myUserId == 0  {
 			if err != nil {
 				return "", ErrInfo(err)
 			} else {
 				return "", fmt.Errorf("myUserId==0")
 			}
-		}
-		return Int64ToStr(myUserId)+"_", nil
+		}*/
+		return Int64ToStr(userId)+"_", nil
 	}
 }
 

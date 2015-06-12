@@ -1261,6 +1261,8 @@ static function get_block_generator_miner_id ($max_miner_id, $ctx)
 }
 */
 
+
+
 func SliceInt64ToString(int64 []int64) []string  {
 	result := make([]string, len(int64))
 	for i, v := range int64 {
@@ -2011,6 +2013,14 @@ func MaxInSliceMap(m []map[int64]int64) (int64, int64) {
 	return max, maxK
 }
 
+func TypesToIds(arr []string) []int64 {
+	var result []int64
+	for _, v := range(arr) {
+		result = append(result, TypeArray(v))
+	}
+	return result
+}
+
 func TypeArray (txType string) int64 {
 	for k, v := range consts.TxTypes {
 		if v == txType {
@@ -2019,6 +2029,7 @@ func TypeArray (txType string) int64 {
 	}
 	return 0
 }
+
 func MakePrivateKey(key string) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode([]byte(key))
 	if block == nil {
@@ -2028,4 +2039,52 @@ func MakePrivateKey(key string) (*rsa.PrivateKey, error) {
 		return nil, errors.New("unknown key type "+got+", want "+want)
 	}
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
+}
+
+func JoinInts(arr map[int]int, sep string) string {
+	var arrStr []string
+	for _, v := range arr {
+		arrStr = append(arrStr, IntToStr(v))
+	}
+	return strings.Join(arrStr, sep)
+}
+
+func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[int]int {
+	ctx:=StrToInt(ctx0)
+	maxMinerId:=StrToInt(maxMinerId0)
+	minersKeepers:=StrToInt(minersKeepers0)
+	result := make(map[int]int)
+	newResult := make(map[int]int)
+	var ctx_ float64
+	ctx_ = float64(ctx)
+	for i:=0; i<minersKeepers; i++ {
+		//log.Println("ctx", ctx)
+		//var hi float34
+		hi := ctx_ / float64(127773)
+		//log.Println("hi", hi)
+		lo := int(ctx_) % 127773
+		//log.Println("lo", lo)
+		x := (float64(16807) * float64(lo)) - (float64(2836) * hi)
+		//log.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
+		if x <= 0 {
+			x += 0x7fffffff
+		}
+		ctx_ = x
+		rez := int(ctx_) % (maxMinerId+1)
+		//log.Println("rez", rez)
+		if rez == 0 {
+			rez = 1
+		}
+		result[rez] = 1
+	}
+	if arr0 {
+		i:=0
+		for k, _ := range result {
+			newResult[i] = k
+			i++
+		}
+	} else {
+		newResult = result
+	}
+	return newResult
 }

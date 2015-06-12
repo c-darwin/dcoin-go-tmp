@@ -73,13 +73,13 @@ func BlocksCollection(configIni map[string]string) {
             continue BEGIN
         }
 
-        myPrefix, err:= db.GetMyPrefix()
+        /*myPrefix, err:= db.GetMyPrefix()
         if err != nil {
             log.Print(utils.ErrInfo(err))
             utils.Sleep(1)
             continue BEGIN
         }
-		log.Println("myPrefix",myPrefix)
+		log.Println("myPrefix",myPrefix)*/
 
        err = db.DbLock(GoroutineName);
         if err != nil {

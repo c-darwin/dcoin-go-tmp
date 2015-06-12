@@ -518,7 +518,7 @@
 
 			console.log('-----------------------------------------------------------------------');
 
-			$.get( 'ajax/get_miners_data_map.php', function (map_markers) {
+			$.get( 'ajax?controllerName=GetMinerDataMap', function (map_markers) {
 
 				var markers = [];
 				var mapOptions = {
@@ -545,7 +545,7 @@
 						}
 
 						$('#map_canvas').spin();
-						$.get( 'ajax/get_miner_data.php?user_id='+user_id, function (data) {
+						$.get( 'ajax?controllerName=GetMinerData?userId='+user_id, function (data) {
 							get_img_home (0, user_id, data.hosts, data.lnglat, data.html,  data.counters, data.pct_sec, 0);
 						}, "json" );
 
@@ -573,7 +573,7 @@
 				var markerCluster = new MarkerClusterer(map, markers, { maxZoom: 18 });
 
 				{{range $i, $minerId := .RandMiners}}
-					$.get( 'ajax/get_miner_data.php?user_id={{$minerId}}', function (data) {
+					$.get( 'ajax?controllerName=getMinerData&userId={{$minerId}}', function (data) {
 										get_img_home (0, {{$minerId}}, data.hosts, data.lnglat, data.html, data.counters, data.pct_sec, 1);
 									}, "json" );
 					}
@@ -677,7 +677,7 @@
 	                    <i class="fa fa-bell"></i>
 	                </span>
 			<div class="box-info">
-				<p class="size-h2"><a href="#cash_requests_in"><?php echo $tpl['cash_requests']?></a></p>
+				<p class="size-h2"><a href="#cash_requests_in">{{.CashRequests}}</a></p>
 				<p class="text-muted"><span data-i18n="New users">{{.Lang.inbox}}</span></p>
 			</div>
 		</div>
@@ -699,7 +699,7 @@
 	                    <i class="fa fa-camera"></i>
 	                </span>
 			<div class="box-info">
-				<p class="size-h2"><a href="#tasks"><?php echo $tpl['tasks_count']?></a></p>
+				<p class="size-h2"><a href="#tasks">{{.Assignments}}</a></p>
 				<p class="text-muted"><span data-i18n="New users">{{.Lang.tasks}}</span></p>
 			</div>
 		</div>
@@ -827,12 +827,11 @@
 					<em class="fa fa-globe fa-3x" style="width: 40px; margin: 0px 10px 0px 10px"></em>
 				</div>
 				<div class="col-xs-8 pv-lg">
-					<div class="dc_promised mt0" id="promised_currency_1"><?php echo echo_zero($tpl['promised_amount_list_gen'][1]['tdc'], '0.00')?></div>
-					<div class="h4 mt0"><?php echo echo_zero($tpl['promised_amount_list_gen'][1]['amount'], 0)?>&nbsp;WOC</div>
-					<?php
-					if ($tpl['promised_amount_list_gen'][1]['pct_sec']>0)
-						echo "<script>dc_counter({$tpl['promised_amount_list_gen'][1]['tdc']}, {$tpl['promised_amount_list_gen'][1]['pct_sec']}, 'promised_currency_1', 8);\n</script>";
-					?>
+					<div class="dc_promised mt0" id="promised_currency_1">{{(index .PromisedAmountListGen 1).Tdc}}</div>
+					<div class="h4 mt0">{{(index .PromisedAmountListGen 1).Amount}}&nbsp;WOC</div>
+					{{if gt (index .PromisedAmountListGen 1).PctSec 0.0}}
+						<script>dc_counter({{(index .PromisedAmountListGen 1).Tdc}}, {{(index .PromisedAmountListGen 1).PctSec}}, 'promised_currency_1', 8);</script>
+					{{end}}
 				</div>
 			</div>
 		</div>
@@ -844,12 +843,12 @@
 					<em class="fa fa-usd fa-3x" style="width: 40px; margin: 0px 10px 0px 10px"></em>
 				</div>
 				<div class="col-xs-8 pv-lg">
-					<div class="dc_promised mt0" id="promised_currency_72"><?php echo echo_zero($tpl['promised_amount_list_gen'][72]['tdc'], '0.00')?></div>
-					<div class="h4 mt0"><?php echo echo_zero($tpl['promised_amount_list_gen'][72]['amount'], 0)?>&nbsp;USD</div>
-					<?php
-					if ($tpl['promised_amount_list_gen'][72]['pct_sec']>0)
-						echo "<script>dc_counter({$tpl['promised_amount_list_gen'][72]['tdc']}, {$tpl['promised_amount_list_gen'][72]['pct_sec']}, 'promised_currency_72', 8);\n</script>";
-					?>
+					<div class="dc_promised mt0" id="promised_currency_72">{{(index .PromisedAmountListGen 72).Tdc}}</div>
+					<div class="h4 mt0">{{(index .PromisedAmountListGen 72).PctSec}}&nbsp;USD</div>
+					
+					{{if gt (index .PromisedAmountListGen 72).PctSec 0.0}}
+						<script>dc_counter({{(index .PromisedAmountListGen 72).Tdc}}, {{(index .PromisedAmountListGen 72).PctSec}}, 'promised_currency_72', 8);</script>
+					{{end}}
 				</div>
 			</div>
 		</div>
@@ -861,12 +860,11 @@
 					<em class="fa fa-euro fa-3x" style="width: 40px; margin: 0px 10px 0px 10px"></em>
 				</div>
 				<div class="col-xs-8 pv-lg">
-					<div class="dc_promised mt0" id="promised_currency_23"><?php echo echo_zero($tpl['promised_amount_list_gen'][23]['tdc'], '0.00')?></div>
-					<div class="h4 mt0"><?php echo echo_zero($tpl['promised_amount_list_gen'][23]['amount'], 0)?>&nbsp;EUR</div>
-					<?php
-					if ($tpl['promised_amount_list_gen'][23]['pct_sec']>0)
-						echo "<script>dc_counter({$tpl['promised_amount_list_gen'][23]['tdc']}, {$tpl['promised_amount_list_gen'][23]['pct_sec']}, 'promised_currency_23', 8);\n</script>";
-					?>
+					<div class="dc_promised mt0" id="promised_currency_23">{{(index .PromisedAmountListGen 23).Tdc}}</div>
+					<div class="h4 mt0">{{(index .PromisedAmountListGen 23).PctSec}}&nbsp;EUR</div>
+					{{if gt (index .PromisedAmountListGen 23).PctSec 0.0}}
+						<script>dc_counter({{(index .PromisedAmountListGen 23).Tdc}}, {{(index .PromisedAmountListGen 23).PctSec}}, 'promised_currency_23', 8);</script>
+					{{end}}
 				</div>
 			</div>
 		</div>
@@ -878,12 +876,11 @@
 					<em class="fa fa-ruble fa-3x" style="width: 40px; margin: 0px 10px 0px 10px"></em>
 				</div>
 				<div class="col-xs-8 pv-lg">
-					<div class="dc_promised mt0" id="promised_currency_58"><?php echo echo_zero($tpl['promised_amount_list_gen'][58]['tdc'], '0.00')?></div>
-					<div class="h4 mt0"><?php echo echo_zero($tpl['promised_amount_list_gen'][58]['amount'], 0)?>&nbsp;RUB</div>
-					<?php
-					if ($tpl['promised_amount_list_gen'][58]['pct_sec']>0)
-						echo "<script>dc_counter({$tpl['promised_amount_list_gen'][58]['tdc']}, {$tpl['promised_amount_list_gen'][58]['pct_sec']}, 'promised_currency_58', 8);\n</script>";
-					?>
+					<div class="dc_promised mt0" id="promised_currency_58">{{(index .PromisedAmountListGen 58).Tdc}}</div>
+					<div class="h4 mt0">{{(index .PromisedAmountListGen 58).PctSec}}&nbsp;RUB</div>
+					{{if gt (index .PromisedAmountListGen 58).PctSec 0.0}}
+						<script>dc_counter({{(index .PromisedAmountListGen 58).Tdc}}, {{(index .PromisedAmountListGen 58).PctSec}}, 'promised_currency_58', 8);</script>
+					{{end}}
 				</div>
 			</div>
 		</div>
@@ -940,12 +937,11 @@
 			</div>
 
 			<div class="statistic-value" id="currency_1">
-				<?php echo $tpl['wallets'][1]['amount']?$tpl['wallets'][1]['amount']:'0.00' ?>
+				{{(index .Wallets 1).Amount}}
 			</div>
-			<?php
-			if ($tpl['wallets'][1]['pct_sec']>0)
-				echo "<script>dc_counter({$tpl['wallets'][1]['amount']}, {$tpl['wallets'][1]['pct_sec']}, 'currency_1', 8);\n</script>";
-			?>
+			{{if gt (index .Wallets 1).PctSec 0.0}}
+				<script>dc_counter({{(index .Wallets 1).Amount}}, {{(index .Wallets 1).PctSec}}, 'currency_1', 8);</script>
+			{{end}}
 			<div class="statistic-icon-background">
 				<i class="ion-stats-bars"></i>
 			</div>
@@ -953,18 +949,17 @@
 	</div>
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-info m-bottom-md" title="<?php echo str_replace('[currency]', 'USD', $lng['home_dc_text'])?>">
+		<div class="statistic-box bg-info m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "DUSD"}}">
 			<div class="statistic-title">
 				dUSD
 			</div>
 
 			<div class="statistic-value" id="currency_72">
-				<?php echo $tpl['wallets'][72]['amount']?$tpl['wallets'][72]['amount']:'0.00' ?>
+				{{(index .Wallets 72).Amount}}
 			</div>
-			<?php
-			if ($tpl['wallets'][72]['pct_sec']>0)
-				echo "<script>dc_counter({$tpl['wallets'][72]['amount']}, {$tpl['wallets'][72]['pct_sec']}, 'currency_72', 8);\n</script>";
-			?>
+			{{if gt (index .Wallets 72).PctSec 0.0}}
+				<script>dc_counter({{(index .Wallets 72).Amount}}, {{(index .Wallets 72).PctSec}}, 'currency_72', 8);</script>
+			{{end}}
 
 			<div class="statistic-icon-background">
 				<i class="ion-ios7-cart-outline"></i>
@@ -975,18 +970,17 @@
 
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-euro m-bottom-md" title="<?php echo str_replace('[currency]', 'EUR', $lng['home_dc_text'])?>">
+		<div class="statistic-box bg-euro m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "EUR"}}">
 			<div class="statistic-title">
 				dEUR
 			</div>
 
 			<div class="statistic-value" id="currency_23">
-				<?php echo $tpl['wallets'][23]['amount']?$tpl['wallets'][23]['amount']:'0.00' ?>
+				{{(index .Wallets 23).Amount}}
 			</div>
-			<?php
-			if ($tpl['wallets'][23]['pct_sec']>0)
-				echo "<script>dc_counter({$tpl['wallets'][23]['amount']}, {$tpl['wallets'][23]['pct_sec']}, 'currency_23', 8);\n</script>";
-			?>
+			{{if gt (index .Wallets 23).PctSec 0.0}}
+				<script>dc_counter({{(index .Wallets 23).Amount}}, {{(index .Wallets 23).PctSec}}, 'currency_23', 8);</script>
+			{{end}}
 
 			<div class="statistic-icon-background">
 				<i class="ion-person-add"></i>
@@ -996,18 +990,17 @@
 
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-danger m-bottom-md" title="<?php echo str_replace('[currency]', 'RUB', $lng['home_dc_text'])?>">
+		<div class="statistic-box bg-danger m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "RUB"}}">
 			<div class="statistic-title">
 				dRUB
 			</div>
 
 			<div class="statistic-value" id="currency_58">
-				<?php echo $tpl['wallets'][58]['amount']?$tpl['wallets'][58]['amount']:'0.00' ?>
+				{{(index .Wallets 58).Amount}}
 			</div>
-			<?php
-			if ($tpl['wallets'][58]['pct_sec']>0)
-				echo "<script>dc_counter({$tpl['wallets'][58]['amount']}, {$tpl['wallets'][58]['pct_sec']}, 'currency_58', 8);\n</script>";
-			?>
+			{{if gt (index .Wallets 58).PctSec 0.0}}
+				<script>dc_counter({{(index .Wallets 58).Amount}}, {{(index .Wallets 58).PctSec}}, 'currency_58', 8);</script>
+			{{end}}
 
 
 			<div class="statistic-icon-background">
@@ -1184,40 +1177,36 @@
 			</div>
 			<div class="ibox-content">
 				<h1 class="no-margins">0</h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dWOC', $lng['home_pct_y_promised_text'])?>"><?php echo $tpl['currency_pct'][1]['miner_block']?><?php echo $lng['pct_block']?> </div>-->
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-usd">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_promised_text_personal'])?>">USD</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_promised_text_personal "dUSD"}}">USD</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins" title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_promised_text_personal'])?>"><?php echo echo_zero($sum_promised_amount[72])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_pct_y_promised_text'])?>"><?php echo $tpl['currency_pct'][72]['miner_block']?><?php echo $lng['pct_block']?> </div>-->
+				<h1 class="no-margins" title="{{ReplaceCurrency .Lang.home_promised_text_personal "dUSD"}}">{{index .SumPromisedAmount "72"}}</h1>
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-euro">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_promised_text_personal'])?>">EUR</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_promised_text_personal "dEUR"}}">EUR</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins" title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_promised_text_personal'])?>"><?php echo echo_zero($sum_promised_amount[23])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_pct_y_promised_text'])?>"><?php echo $tpl['currency_pct'][23]['miner_block']?><?php echo $lng['pct_block']?> </div>-->
+				<h1 class="no-margins" title="{{ReplaceCurrency .Lang.home_promised_text_personal "dEUR"}}">{{index .SumPromisedAmount "23"}}</h1>
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-rub">
 			<div class="ibox-title">
-				<h5   title="<?php echo str_replace('[currency]', 'dRUB', $lng['home_promised_text_personal'])?>">RUB</h5>
+				<h5   title="{{ReplaceCurrency .Lang.home_promised_text_personal "dRUB"}}">RUB</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins"  title="<?php echo str_replace('[currency]', 'dRUB', $lng['home_promised_text_personal'])?>"><?php echo echo_zero($sum_promised_amount[58])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dRUB', $lng['home_pct_y_promised_text'])?>"><?php echo $tpl['currency_pct'][58]['miner_block']?><?php echo $lng['pct_block']?> </div>-->
+				<h1 class="no-margins"  title="{{ReplaceCurrency .Lang.home_promised_text_personal "dRUB"}}">{{index .SumPromisedAmount "58"}}</h1>
 			</div>
 		</div>
 	</div>
@@ -1229,60 +1218,52 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-woc">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dWOC', $lng['home_total_coins_personal'])?>">dWOC</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dWOC"}}">dWOC</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_1" class="no-margins" title="<?php echo str_replace('[currency]', 'dWOC', $lng['home_total_coins_personal'])?>"><?php echo echo_zero($sum_wallets[1])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dWOC', $lng['home_coins_pct_y'])?>"><?php echo $tpl['currency_pct'][1]['user_block']?><?php echo $lng['pct_block']?> </div>-->
-				<?php
-				if ($tpl['currency_pct'][1]['user_sec']>0)
-					echo "<script>dc_counter({$sum_wallets[1]}, {$tpl['currency_pct'][1]['user_sec']}, 'total_currency_1', 8);\n</script>";
-				?>
+				<h1 id="total_currency_1" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dWOC"}}">{{index .SumWallets 1}}</h1>
+				{{if gt (index .CurrencyPct 1).UserSec 0.0}}
+					<script>dc_counter({{index .SumWallets 1}}, {{(index .CurrencyPct 1).UserSec}}, 'total_currency_1', 8);</script>
+				{{end}}
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-usd">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_total_coins_personal'])?>">dUSD</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dUSD"}}">dUSD</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_72"  class="no-margins" title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_total_coins_personal'])?>"><?php echo echo_zero($sum_wallets[72])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dUSD', $lng['home_coins_pct_y'])?>"><?php echo $tpl['currency_pct'][72]['user_block']?><?php echo $lng['pct_block']?> </div>-->
-				<?php
-				if ($tpl['currency_pct'][72]['user_sec']>0)
-					echo "<script>dc_counter({$sum_wallets[72]}, {$tpl['currency_pct'][72]['user_sec']}, 'total_currency_72', 8);\n</script>";
-				?>
+				<h1 id="total_currency_72"  class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dUSD"}}">{{index .SumWallets  72}}</h1>
+				{{if gt (index .CurrencyPct 72).UserSec 0.0}}
+					<script>dc_counter({{index .SumWallets 72}}, {{(index .CurrencyPct 72).UserSec}}, 'total_currency_72', 8);</script>
+				{{end}}
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-euro">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_total_coins_personal'])?>">dEUR</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dEUR"}}">dEUR</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_23" class="no-margins" title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_total_coins_personal'])?>"><?php echo echo_zero($sum_wallets[23])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo str_replace('[currency]', 'dEUR', $lng['home_coins_pct_y'])?>"><?php echo $tpl['currency_pct'][23]['user_block']?><?php echo $lng['pct_block']?> </div>-->
-				<?php
-				if ($tpl['currency_pct'][23]['user_sec']>0)
-					echo "<script>dc_counter({$sum_wallets[23]}, {$tpl['currency_pct'][23]['user_sec']}, 'total_currency_23', 8);\n</script>";
-				?>
+				<h1 id="total_currency_23" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dEUR"}}">{{index .SumWallets 23}}</h1>
+				{{if gt (index .CurrencyPct 23).UserSec 0.0}}
+					<script>dc_counter({{index .SumWallets 23}}, {{(index .CurrencyPct 23).UserSec}}, 'total_currency_23', 8);</script>
+				{{end}}
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-rub">
 			<div class="ibox-title">
-				<h5 title="<?php echo str_replace('[currency]', 'dRUB', $lng['home_total_coins_personal'])?>">dRUB</h5>
+				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dRUB"}}">dRUB</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_58" class="no-margins" title="<?php echo str_replace('[currency]', 'dRUB', $lng['home_total_coins_personal'])?>"><?php echo echo_zero($sum_wallets[58])?></h1>
-				<!--<div class="stat-percent font-bold" title="<?php echo $lng['home_coins_pct_y']?>"><?php echo $tpl['currency_pct'][58]['user_block']?><?php echo $lng['pct_block']?> </div>-->
-				<?php
-				if ($tpl['currency_pct'][58]['user_sec']>0)
-					echo "<script>dc_counter({$sum_wallets[58]}, {$tpl['currency_pct'][58]['user_sec']}, 'total_currency_58', 8);\n</script>";
-				?>
+				<h1 id="total_currency_58" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dRUB"}}	">{{index .SumWallets 58}}</h1>
+				{{if gt (index .CurrencyPct 58).UserSec 0.0}}
+					<script>dc_counter({{index .SumWallets 58}}, {{(index .CurrencyPct 58).UserSec}}, 'total_currency_58', 8);</script>
+				{{end}}
 			</div>
 		</div>
 	</div>
@@ -1290,16 +1271,12 @@
 
 <script>
 	var currency_list = [];
-	<?php
-	foreach ($tpl['currency_pct'] as $id => $data) {
-		if ($data['miner']) {
-			echo "currency_list[{$id}] = []\n";
-			echo "currency_list[{$id}]['miner'] = {$data['miner_sec']}\n";
-			echo "currency_list[{$id}]['user'] = {$data['user_sec']}\n";
-			echo "currency_list[{$id}]['name'] = '{$data['name']}'\n";
-		}
-	}
-	?>
+	{{range $id, $data := .CurrencyPct}}	{{if $data.Miner}}
+			currency_list[{{$id}}] = []
+			currency_list[{{$id}}]['miner'] = {{$data.MinerSec}}
+			currency_list[{{$id}}]['user'] = {{$data.UserSec}}
+			currency_list[{{$id}}]['name'] = '{{$data.Name}}'
+	{{end}}{{end}}
 
 	$('#calc_amount, #calc_currency_id, #calc_status, #calc_period').bind("keyup change", function(e) {
 		var amount = $('#calc_amount').val();
@@ -1328,16 +1305,15 @@
 <div class="form-inline">
 	{{.Lang.my_balance}}: <input id="calc_amount" type="text" class="form-control" value="100"  style="width: 80px; display: inline-block">
 	<select id="calc_currency_id" style="width: 100px; display: inline-block" class="form-control" >
-		<?php
-		foreach ($tpl['currency_pct'] as $id => $data) {
-			if ($id==72)
-				$selected = 'selected';
-			else
-				$selected = '';
-			if ($data['miner'])
-				echo "<option value='{$id}' {$selected}>d{$data['name']}</option>";
-		}
-		?>
+		{{range $id, $data := .CurrencyPct}}
+			{{if $data.Miner}}
+				{{if eq $id 72}}
+					<option value='{{$id}}' selected>d{{$data.Name}}</option>
+				{{else}}
+					<option value='{{$id}}' >d{{$data.Name}}</option>
+				{{end}}
+			{{end}}
+		{{end}}
 	</select><br><br>
 	{{.Lang.my_status}}:  <select id="calc_status" style="width: 100px; display: inline-block" class="form-control" >
 		<option value='miner' selected>{{.Lang.status_miner}}</option>
@@ -1353,25 +1329,25 @@
 		<option value='63072000'>{{.Lang.years_2}}</option>
 		<option value='94608000'>{{.Lang.years_3}}</option>
 		<option value='157680000'>{{.Lang.years_5}}</option>
-	</select> {{.Lang.i_will}} <span title="{{.Lang.unless_reduction}}" style="border-bottom: 1px dotted black;">{{.Lang.probably}}</span> {{.Lang.be}} <span id="calc_total">+<?php echo round(100*pow(1+$tpl['currency_pct'][72]['miner_sec'], 3600*24*30)-100) ?> dUSD</span>
+	</select> {{.Lang.i_will}} <span title="{{.Lang.unless_reduction}}" style="border-bottom: 1px dotted black;">{{.Lang.probably}}</span> {{.Lang.be}} <span id="calc_total">+{{.CalcTotal}}dUSD</span>
 </div>
 
 <div style="clear: both; margin-bottom: 55px"></div>
 
-<?php if (@$_SESSION['ADMIN']==1) {?>
+{{if .Admin}}
 			<br><br><br><br><button type="button" class="btn" data-toggle="button"  onclick="$.post('admin/content.php', { tpl_name: 'index', parameters: '' },
 	              function(data) {
 	              $('#dc_content').html( data );
 	              }, 'html');" style="margin-left:30px">admin</button>
-		<?php } ?>
+{{end}}
 	</div>
 
-	<?php require_once( 'signatures.tpl' );?>
+{{ template "signatures". }}
 
 <script>
 	$('#wrapper').spin(false);
 	$(document).ready(function() {
-		$( "#progress_bar" ).load( "ajax/progress_bar.php");
+		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
 	});
 </script>
 {{end}}

@@ -21,6 +21,7 @@ import (
 )
 
 type Controller struct {
+	dbInit bool
 	*utils.DCDB
 	r *http.Request
 	w http.ResponseWriter
@@ -31,10 +32,16 @@ type Controller struct {
 	MyPrefix string
 	Alert string
 	UserId int64
-	SessRestricted int
+	Admin bool
+	SessRestricted int64
 	SessUserId int64
 	MyNotice map[string]string
 	Variables *utils.Variables
+	CountSign int
+	CountSignArr []int
+	TimeFormat string
+	PoolAdmin bool
+	PoolAdminUserId int64
 }
 
 var configIni map[string]string
@@ -44,7 +51,7 @@ var globalSessions *session.Manager
 var globalLangReadOnly map[int]map[string]string
 
 func init() {
-	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"./tmp"}`)
+	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"./tmp"}`)
 	go globalSessions.GC()
 
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -162,17 +169,28 @@ func GetSessUserId(sess session.SessionStore) int64 {
 	return 0
 }
 
+func GetSessAdmin(sess session.SessionStore) int64 {
+	admin := sess.Get("admin")
+	switch admin.(type) {
+	case int64:
+		return admin.(int64)
+	default:
+		return 0
+	}
+	return 0
+}
+
 func DelSessResctricted(sess session.SessionStore) {
 	sess.Delete("restricted")
 }
 
-func GetSessRestricted(sess session.SessionStore) int {
+func GetSessRestricted(sess session.SessionStore) int64 {
 	sessRestricted := sess.Get("restricted")
 	switch sessRestricted.(type) {
 	default:
 		return 0
-	case int:
-		return sessRestricted.(int)
+	case int64:
+		return sessRestricted.(int64)
 	}
 	return 0
 }
@@ -272,11 +290,44 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		} else {
 			defer c.DCDB.Close()
 		}
+		c.Variables, err = c.GetAllVariables()
+		var communityUsers []int64
+		communityUsers, err = c.GetCommunityUsers()
+		if err != nil {
+			log.Print(err)
+		}
+		if len(communityUsers) > 0 {
+			c.Community = true
+		}
+		if c.Community {
+			poolAdminUserId, err := c.GetPoolAdminUserId()
+			if err != nil {
+				log.Print(err)
+			}
+			if c.SessUserId == poolAdminUserId {
+				c.PoolAdmin = true
+				c.PoolAdminUserId = poolAdminUserId
+			}
+		}
 	}
+	c.dbInit = dbInit
 
 	lang:=GetLang(w, r)
 	fmt.Println("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
+	if lang == 42 {
+		c.TimeFormat = "2006-01-02 15:04:05"
+	} else {
+		c.TimeFormat = "2006-02-01 15:04:05"
+	}
+
+	if dbInit {
+		myNotice, err := c.GetMyNoticeData(sessRestricted, sessUserId, c.MyPrefix, globalLangReadOnly[lang])
+		if err != nil {
+			log.Print(err)
+		}
+		c.MyNotice = myNotice
+	}
 
 	r.ParseForm()
 	controllerName := r.FormValue("controllerName")
@@ -312,6 +363,8 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 		} else {
 			defer c.DCDB.Close()
 		}
+		c.Variables, err = c.GetAllVariables()
+
 	}
 
 	r.ParseForm()
@@ -335,6 +388,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	sessUserId := GetSessUserId(sess)
 	sessRestricted := GetSessRestricted(sess)
 	sessPublicKey := GetSessPublicKey(sess)
+	sessAdmin := GetSessAdmin(sess)
 	log.Println("sessUserId", sessUserId)
 	log.Println("sessRestricted", sessRestricted)
 	log.Println("sessPublicKey", sessPublicKey)
@@ -343,6 +397,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.r = r
 	c.SessRestricted = sessRestricted
 	c.SessUserId = sessUserId
+	if sessAdmin==1 {
+		c.Admin = true
+	}
 	if err != nil {
 		log.Print(err)
 	}
@@ -463,7 +520,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("tplName2=",tplName)
 
 	// кол-во ключей=подписей у юзера
-	countSign := 0
+	var countSign int
 	var userId int64
 	var myUserId int64
 	if sessUserId > 0 && dbInit && installProgress == "complete" {
@@ -485,6 +542,12 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		myUserId = 0
 	}
 	c.UserId = userId
+	var CountSignArr []int
+	for i:=0; i < countSign; i++ {
+		CountSignArr = append(CountSignArr, i)
+	}
+	c.CountSign = countSign
+	c.CountSignArr = CountSignArr
 	fmt.Println(countSign, userId, myUserId ,countSign)
 
 	if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
