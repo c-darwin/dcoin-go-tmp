@@ -312,11 +312,12 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	c.dbInit = dbInit
+	c.SessUserId = sessUserId
 
 	lang:=GetLang(w, r)
 	fmt.Println("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
-	c.LangInt = lang
+	c.LangInt = int64(lang)
 	if lang == 42 {
 		c.TimeFormat = "2006-01-02 15:04:05"
 	} else {
@@ -469,7 +470,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]
-	c.LangInt = lang
+	c.LangInt = int64(lang)
 
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
@@ -630,15 +631,19 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 		// подсвечиваем красным номер блока, если идет процесс обновления
 		var blockJs string
+		blockId, err := c.GetBlockId()
+		if err != nil {
+			log.Print(err)
+		}
 		if myNotice["main_status_complete"] != "1" {
-			blockJs = "$('#block_id').html({$block_id});$('#block_id').css('color', '#ff0000');";
+			blockJs = "$('#block_id').html("+utils.Int64ToStr(blockId)+");$('#block_id').css('color', '#ff0000');";
 		} else {
-			blockJs = "$('#block_id').html({$block_id});$('#block_id').css('color', '#428BCA');";
+			blockJs = "$('#block_id').html("+utils.Int64ToStr(blockId)+");$('#block_id').css('color', '#428BCA');";
 		}
 		w.Write([]byte(`<script>
 								$( document ).ready(function() {
-								$('.lng_1').attr('href', '#{$tpl_name}/lang=1');
-								$('.lng_42').attr('href', '#{$tpl_name}/lang=42');
+								$('.lng_1').attr('href', '#`+tplName+`/lang=1');
+								$('.lng_42').attr('href', '#`+tplName+`/lang=42');
 								`+blockJs+`
 								});
 								</script>`))

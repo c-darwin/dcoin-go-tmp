@@ -419,6 +419,114 @@ func static_css_tooltipster_css() (*asset, error) {
 	return a, err
 }
 
+// static_fonts_fontawesome_otf reads file data from disk. It returns an error on failure.
+func static_fonts_fontawesome_otf() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/FontAwesome.otf"
+	name := "static/fonts/FontAwesome.otf"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_fonts_opensans_regular_ttf reads file data from disk. It returns an error on failure.
+func static_fonts_opensans_regular_ttf() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/OpenSans-Regular.ttf"
+	name := "static/fonts/OpenSans-Regular.ttf"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_fonts_fontawesome_webfont_eot reads file data from disk. It returns an error on failure.
+func static_fonts_fontawesome_webfont_eot() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/fontawesome-webfont.eot"
+	name := "static/fonts/fontawesome-webfont.eot"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_fonts_fontawesome_webfont_svg reads file data from disk. It returns an error on failure.
+func static_fonts_fontawesome_webfont_svg() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/fontawesome-webfont.svg"
+	name := "static/fonts/fontawesome-webfont.svg"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_fonts_fontawesome_webfont_ttf reads file data from disk. It returns an error on failure.
+func static_fonts_fontawesome_webfont_ttf() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/fontawesome-webfont.ttf"
+	name := "static/fonts/fontawesome-webfont.ttf"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_fonts_fontawesome_webfont_woff reads file data from disk. It returns an error on failure.
+func static_fonts_fontawesome_webfont_woff() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/fonts/fontawesome-webfont.woff"
+	name := "static/fonts/fontawesome-webfont.woff"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // static_img_alert_png reads file data from disk. It returns an error on failure.
 func static_img_alert_png() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/img/alert.png"
@@ -3011,10 +3119,10 @@ func static_templates_login_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_menu_tpl reads file data from disk. It returns an error on failure.
-func static_templates_menu_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/menu.tpl"
-	name := "static/templates/menu.tpl"
+// static_templates_menu_html reads file data from disk. It returns an error on failure.
+func static_templates_menu_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/menu.html"
+	name := "static/templates/menu.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3931,6 +4039,12 @@ var _bindata = map[string]func() (*asset, error){
 	"static/css/social-buttons.css": static_css_social_buttons_css,
 	"static/css/tooltipster-shadow.css": static_css_tooltipster_shadow_css,
 	"static/css/tooltipster.css": static_css_tooltipster_css,
+	"static/fonts/FontAwesome.otf": static_fonts_fontawesome_otf,
+	"static/fonts/OpenSans-Regular.ttf": static_fonts_opensans_regular_ttf,
+	"static/fonts/fontawesome-webfont.eot": static_fonts_fontawesome_webfont_eot,
+	"static/fonts/fontawesome-webfont.svg": static_fonts_fontawesome_webfont_svg,
+	"static/fonts/fontawesome-webfont.ttf": static_fonts_fontawesome_webfont_ttf,
+	"static/fonts/fontawesome-webfont.woff": static_fonts_fontawesome_webfont_woff,
 	"static/img/alert.png": static_img_alert_png,
 	"static/img/blank.png": static_img_blank_png,
 	"static/img/cf_blurb_img.png": static_img_cf_blurb_img_png,
@@ -4075,7 +4189,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/interface.tpl": static_templates_interface_tpl,
 	"static/templates/list_cf_projects.tpl": static_templates_list_cf_projects_tpl,
 	"static/templates/login.html": static_templates_login_html,
-	"static/templates/menu.tpl": static_templates_menu_tpl,
+	"static/templates/menu.html": static_templates_menu_html,
 	"static/templates/mining_menu.tpl": static_templates_mining_menu_tpl,
 	"static/templates/modal.html": static_templates_modal_html,
 	"static/templates/money_back.tpl": static_templates_money_back_tpl,
@@ -4213,6 +4327,20 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			"tooltipster-shadow.css": &_bintree_t{static_css_tooltipster_shadow_css, map[string]*_bintree_t{
 			}},
 			"tooltipster.css": &_bintree_t{static_css_tooltipster_css, map[string]*_bintree_t{
+			}},
+		}},
+		"fonts": &_bintree_t{nil, map[string]*_bintree_t{
+			"FontAwesome.otf": &_bintree_t{static_fonts_fontawesome_otf, map[string]*_bintree_t{
+			}},
+			"OpenSans-Regular.ttf": &_bintree_t{static_fonts_opensans_regular_ttf, map[string]*_bintree_t{
+			}},
+			"fontawesome-webfont.eot": &_bintree_t{static_fonts_fontawesome_webfont_eot, map[string]*_bintree_t{
+			}},
+			"fontawesome-webfont.svg": &_bintree_t{static_fonts_fontawesome_webfont_svg, map[string]*_bintree_t{
+			}},
+			"fontawesome-webfont.ttf": &_bintree_t{static_fonts_fontawesome_webfont_ttf, map[string]*_bintree_t{
+			}},
+			"fontawesome-webfont.woff": &_bintree_t{static_fonts_fontawesome_webfont_woff, map[string]*_bintree_t{
 			}},
 		}},
 		"img": &_bintree_t{nil, map[string]*_bintree_t{
@@ -4514,7 +4642,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"login.html": &_bintree_t{static_templates_login_html, map[string]*_bintree_t{
 			}},
-			"menu.tpl": &_bintree_t{static_templates_menu_tpl, map[string]*_bintree_t{
+			"menu.html": &_bintree_t{static_templates_menu_html, map[string]*_bintree_t{
 			}},
 			"mining_menu.tpl": &_bintree_t{static_templates_mining_menu_tpl, map[string]*_bintree_t{
 			}},

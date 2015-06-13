@@ -20,7 +20,7 @@ func main() {
 	// hash
 	txSlice = append(txSlice, []byte("1111111111"))
 	// type
-	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeArray(txType)))
+	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeInt(txType)))
 	// time
 	txSlice = append(txSlice, []byte(txTime))
 	// user_id

@@ -23,7 +23,7 @@ type page struct {
 	MyNotice map[string]string
 	PoolAdmin bool
 	UserId int64
-	CashRequests bool
+	CashRequests int64
 	ShowMap bool
 	BlockId int64
 	ConfirmedBlockId int64
@@ -59,7 +59,7 @@ func (c *Controller) Home() (string, error) {
 
 	var publicKey []byte
 	var poolAdmin bool
-	var cashRequests bool
+	var cashRequests int64
 	var showMap bool
 	if c.SessRestricted == 0 {
 		var err error
@@ -68,12 +68,9 @@ func (c *Controller) Home() (string, error) {
 			return "", err
 		}
 		publicKey = utils.BinToHex(publicKey)
-		count, err := c.Single("SELECT count(id) FROM cash_requests WHERE to_user_id  =  ? AND status  =  'pending' AND for_repaid_del_block_id  =  0 AND del_block_id  =  0", c.SessUserId).Int64()
+		cashRequests, err = c.Single("SELECT count(id) FROM cash_requests WHERE to_user_id  =  ? AND status  =  'pending' AND for_repaid_del_block_id  =  0 AND del_block_id  =  0", c.SessUserId).Int64()
 		if err != nil {
 			return "", err
-		}
-		if count > 0 {
-			cashRequests = true
 		}
 		show, err := c.Single("SELECT show_map FROM "+c.MyPrefix+"my_table").Int64()
 		if err != nil {

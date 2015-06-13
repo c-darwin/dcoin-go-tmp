@@ -1132,6 +1132,7 @@ func (db *DCDB) FormatQuery(q string) string {
 	case "sqlite":
 		newQ = strings.Replace(newQ, "[hex]", "?", -1)
 		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+		newQ = strings.Replace(newQ, "user,", "`user`,", -1)
 	case "postgresql":
 		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
 		newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
@@ -1155,6 +1156,7 @@ type DCAmounts struct {
 }
 
 func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []map[string]string, map[int]DCAmounts, error) {
+	log.Println("cash_request_time", cash_request_time)
 	var actualizationPromisedAmounts int64
 	var promisedAmountListAccepted []map[string]string
 	promisedAmountListGen := make(map[int]DCAmounts)
@@ -1171,7 +1173,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		if err != nil {
 			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
 		}
-		log.Println(currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
+		log.Println("GetPromisedAmounts: ", currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
 		// есть ли просроченные запросы
 		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
 		if err != nil {
@@ -1189,13 +1191,17 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		if del_block_id > 0 {
 			continue
 		}
+		log.Println("tdc", tdc)
 		if status == "mining" {
 			profit, err := db.CalcProfitGen(currency_id, amount+tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "mining")
+			log.Println("profit", profit)
 			if err != nil {
 				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
 			}
 			tdc+=profit
+			log.Println("tdc", tdc)
 			tdc = Round(tdc, 9)
+			log.Println("tdc", tdc)
 		} else if status == "repaid" {
 			profit, err := db.CalcProfitGen(currency_id, tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "repaid")
 			if err != nil {
@@ -1235,10 +1241,11 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		if len(pctStatus) == 0 {
 			pctStatus = "user"
 		}
-		pct, err := db.Single("SELECT "+pctStatus+" FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC", pctStatus, currency_id).Float64()
+		pct, err := db.Single(db.FormatQuery("SELECT "+pctStatus+" FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC"), currency_id).Float64()
 		if err != nil {
 			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
 		}
+		log.Println("pct", pct, "currency_id", currency_id, "pctStatus", pctStatus)
 		pct_sec := pct
 		pct = Round((math.Pow(1+pct, 3600*24*365)-1)*100, 2)
 		// тут accepted значит просто попало в блок

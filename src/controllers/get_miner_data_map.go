@@ -1,14 +1,14 @@
 package controllers
 import (
-
+	"utils"
 )
 
 
 func (c *Controller) GetMinerDataMap() (string, error) {
 
-	rows, err := c.Query(c.FormatQuery("SELECT user_id, latitude, longitude FROM miners_data WHERE status  =  'miner' AND user_id>7 AND user_id! = 106"))
+	rows, err := c.Query(c.FormatQuery("SELECT user_id, latitude, longitude FROM miners_data WHERE status  =  'miner' AND user_id>7 AND user_id != 106"))
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
 	defer rows.Close()
 	result:=""
@@ -16,7 +16,7 @@ func (c *Controller) GetMinerDataMap() (string, error) {
 		var user_id, latitude, longitude string
 		err = rows.Scan(&user_id, &latitude, &longitude)
 		if err != nil {
-			return "", err
+			return "", utils.ErrInfo(err)
 		}
 		result+="{\"user_id\": "+user_id+",\"longitude\": "+longitude+", \"latitude\": "+latitude+"},";
 	}

@@ -47,7 +47,7 @@ func main() {
 	// hash
 	txSlice = append(txSlice, []byte("22cb812e53e22ee539af4a1d39b4596d"))
 	// type
-	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeArray(txType)))
+	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeInt(txType)))
 	// time
 	txSlice = append(txSlice, []byte(txTime))
 	// user_id
@@ -57,7 +57,7 @@ func main() {
 	// amount
 	txSlice = append(txSlice, []byte(amount))
 
-	dataForSign := fmt.Sprintf("%v,%v,%s,%s,%s", utils.TypeArray(txType), txTime, userId, promised_amount_id, amount)
+	dataForSign := fmt.Sprintf("%v,%v,%s,%s,%s", utils.TypeInt(txType), txTime, userId, promised_amount_id, amount)
 
 	blockData := new(utils.BlockData)
 	blockData.BlockId = blockId

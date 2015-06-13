@@ -36,7 +36,7 @@ func main() {
 	// hash
 	txSlice = append(txSlice, []byte("22cb812e53e22ee539af4a1d39b4596d"))
 	// type
-	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeArray(txType)))
+	txSlice = append(txSlice,  utils.Int64ToByte(utils.TypeInt(txType)))
 	// time
 	txSlice = append(txSlice, []byte(txTime))
 	// user_id
@@ -44,7 +44,7 @@ func main() {
 	// newPctJson
 	txSlice = append(txSlice, []byte(newPctJson))
 
-	dataForSign := fmt.Sprintf("%v,%v,%s,%s", utils.TypeArray(txType), txTime, userId, newPctJson)
+	dataForSign := fmt.Sprintf("%v,%v,%s,%s", utils.TypeInt(txType), txTime, userId, newPctJson)
 
 	err := tests_utils.MakeFrontTest(txSlice, utils.StrToInt64(txTime), dataForSign, txType, utils.BytesToInt64(userId), "", blockId)
 	if err != nil {

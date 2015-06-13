@@ -48,7 +48,7 @@
 	<script type="text/javascript" src="static/js/mcrypt.js"></script>
 
 
-<script src="static/js/index.js?r=<?php echo rand()?>"></script>
+<script src="static/js/index.js"></script>
 
 
 	<script src="static/js/aes.js"></script>
@@ -378,8 +378,8 @@
 					})
 		{{else if .Key}}
 			$('#wrapper').spin();
-			$( "#dc_content" ).load( "content", { {{if .setLang}}"parameters": \{"lang":{{.}}\}{{end}} }, function() {
-			$("#modal_key").val("'.$key.'");
+			$( "#dc_content" ).load( "content", { {{if .setLang}}"parameters": \{"lang":{{.setLang}}\}{{end}} }, function() {
+			$("#modal_key").val("{{.Key}}");
 			save_key(); doSign('login');$('#wrapper').spin(false);
 			})
 			load_menu();
@@ -420,7 +420,7 @@
 
 		var str = e.target.hash;
 		var page_match = str.match(/#(\w+)/i);
-		if (page_match && typeof page_match[1]!='undefined' && page_match[1]!='tab1' && page_match[1]!='tab2' && page_match[1]!='tab3'  ) {
+		if (page_match && typeof page_match[1]!='undefined' && page_match[1]!='tab1' && page_match[1]!='tab2' && page_match[1]!='tab3'  && page_match[1]!='myModal'  ) {
 			var page = page_match[1];
 			var param_match = str.match(/\/\w+=\w+/gi);
 			var param_obj = {};
@@ -448,7 +448,7 @@
 			}
 		}
 
-		//console.log('dcNav end');
+		console.log('dcNav end');
 	}
 
 	window.addEventListener("click", dcNav);

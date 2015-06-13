@@ -1,7 +1,7 @@
 {{ define "home" }}
-<link rel="stylesheet" type="text/css" href="css/tooltipster.css" />
-<link rel="stylesheet" type="text/css" href="css/tooltipster-shadow.css" />
-<script type="text/javascript" src="js/jquery.tooltipster.min.js"></script>
+<link rel="stylesheet" type="text/css" href="static/css/tooltipster.css" />
+<link rel="stylesheet" type="text/css" href="static/css/tooltipster-shadow.css" />
+<script type="text/javascript" src="static/js/jquery.tooltipster.min.js"></script>
 <style>
 	@media (min-width: 1024px) {
 		.qtip-close{display: none}
@@ -72,7 +72,7 @@
 	.alert-info a:link{text-decoration: underline}
 	.page-header{margin-top: 10px}
 </style>
-<link href="css/cf.css" rel="stylesheet">
+<link href="static/css/cf.css" rel="stylesheet">
 {{ template "alert_success". }}
 
 <style>
@@ -240,7 +240,7 @@
 <div id="message"></div>
 <script>
 
-	console.log('intervalIdArray='+intervalIdArray);
+	//console.log('intervalIdArray='+intervalIdArray);
 	if (typeof intervalIdArray != "undefined") {
 		for (i=0; i<intervalIdArray.length; i++)
 			clearInterval(intervalIdArray[i]);
@@ -316,7 +316,7 @@
 		line-height: 25px;
 		padding: 4px 45px 4px 15px;
 		font-weight: bold;
-		background: url(img/us-ru.png) 95% 50% no-repeat;
+		background: url(static/img/us-ru.png) 95% 50% no-repeat;
 	}
 
 	.phoneytab {
@@ -384,7 +384,7 @@
 
 </style>
 
-<script src="js/infobubble.js"></script>
+<script src="static/js/infobubble.js"></script>
 <!--<script src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobubble/src/infobubble-compiled.js" type="text/javascript"></script>-->
 
 
@@ -576,7 +576,6 @@
 					$.get( 'ajax?controllerName=getMinerData&userId={{$minerId}}', function (data) {
 										get_img_home (0, {{$minerId}}, data.hosts, data.lnglat, data.html, data.counters, data.pct_sec, 1);
 									}, "json" );
-					}
 				{{end}}
 
 
@@ -844,7 +843,7 @@
 				</div>
 				<div class="col-xs-8 pv-lg">
 					<div class="dc_promised mt0" id="promised_currency_72">{{(index .PromisedAmountListGen 72).Tdc}}</div>
-					<div class="h4 mt0">{{(index .PromisedAmountListGen 72).PctSec}}&nbsp;USD</div>
+					<div class="h4 mt0">{{(index .PromisedAmountListGen 72).Amount}}&nbsp;USD</div>
 					
 					{{if gt (index .PromisedAmountListGen 72).PctSec 0.0}}
 						<script>dc_counter({{(index .PromisedAmountListGen 72).Tdc}}, {{(index .PromisedAmountListGen 72).PctSec}}, 'promised_currency_72', 8);</script>

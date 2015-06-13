@@ -5,9 +5,13 @@ import (
 	"html/template"
 	"bytes"
 	"strings"
+	"log"
+	"fmt"
 )
 
 type menuPage struct {
+	MyModalIdName string
+	SetupPassword bool
 	Lang map[string]string
 	LangInt int64
 	PoolAdmin bool
@@ -25,8 +29,12 @@ type menuPage struct {
 
 func (c *Controller) Menu() (string, error) {
 
+	log.Println("Menu")
+
 	if !c.dbInit || c.SessUserId==0 {
-		return "", nil
+		log.Println("c.dbInit", c.dbInit)
+		log.Println("c.SessUserId", c.SessUserId)
+		return "", utils.ErrInfo(fmt.Errorf("c.dbInit=%v c.SessUserId=%v", c.dbInit, c.SessUserId))
 	}
 
 	var name, avatar string
@@ -35,8 +43,8 @@ func (c *Controller) Menu() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
+		name, avatar = data["name"], data["avatar"]
 	}
-	name, avatar := data["name"], data["avatar"]
 
 	if len(name) == 0 {
 		miner, err := c.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", c.SessUserId).Int64()
@@ -87,9 +95,9 @@ func (c *Controller) Menu() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		if (scriptName == "my_lock") {
-			daemonsStatus = `<li title="`+c.Lang.daemons_status_off+`"><a href="#" id="start_daemons" style="color:#C90600"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
+			daemonsStatus = `<li title="`+c.Lang["daemons_status_off"]+`"><a href="#" id="start_daemons" style="color:#C90600"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
 		} else {
-			daemonsStatus = `<li title="`+c.Lang.daemons_status_on+`"><a href="#" id="stop_daemons" style="color:#009804"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
+			daemonsStatus = `<li title="`+c.Lang["daemons_status_on"]+`"><a href="#" id="stop_daemons" style="color:#009804"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
 		}
 	}
 
@@ -97,8 +105,16 @@ func (c *Controller) Menu() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	log.Println(string(data))
+	modal, err := static.Asset("static/templates/modal.html")
+	if err != nil {
+		return "", err
+	}
+
 	t := template.Must(template.New("template").Parse(string(data)))
+	t = template.Must(t.Parse(string(modal)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "menu", &menuPage{Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	t.ExecuteTemplate(b, "menu", &menuPage{SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	log.Println("b.String()", b.String())
 	return b.String(), nil
 }

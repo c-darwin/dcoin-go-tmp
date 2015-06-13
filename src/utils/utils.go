@@ -794,16 +794,22 @@ START:
 	return profit, nil
 }
 
-func round(num float64) int {
+func round(num float64) int64 {
+	log.Println("num", num)
 	//num += ROUND_FIX
 	//	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
-	return int(num + math.Copysign(0.5, num))
+	log.Println("num", num)
+	return int64(num + math.Copysign(0.5, num))
 }
 
 func Round(num float64, precision int) float64 {
 	num += consts.ROUND_FIX
+	log.Println("num", num)
 	//num = StrToFloat64(Float64ToStr(num))
+	log.Println("precision", precision)
+	log.Println("float64(precision)", float64(precision))
 	output := math.Pow(10, float64(precision))
+	log.Println("output", output)
 	return float64(round(num * output)) / output
 }
 
@@ -2016,12 +2022,12 @@ func MaxInSliceMap(m []map[int64]int64) (int64, int64) {
 func TypesToIds(arr []string) []int64 {
 	var result []int64
 	for _, v := range(arr) {
-		result = append(result, TypeArray(v))
+		result = append(result, TypeInt(v))
 	}
 	return result
 }
 
-func TypeArray (txType string) int64 {
+func TypeInt (txType string) int64 {
 	for k, v := range consts.TxTypes {
 		if v == txType {
 			return int64(k)
@@ -2087,4 +2093,8 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 		newResult = result
 	}
 	return newResult
+}
+
+func MakeLastTx() {
+
 }

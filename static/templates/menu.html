@@ -1,3 +1,4 @@
+{{ define "menu" }}
 <script>
 	$('#start_daemons').bind('click', function () {
 		$.post( 'ajax/start_daemons.php', { } ,
@@ -56,13 +57,13 @@
 		body{padding-top: 50px}
 	}
 
-	.dcoin-logo { background-image: url('img/logo.png'); width:182px; height: 40px; background-size:182px 40px}
+	.dcoin-logo { background-image: url('static/img/logo.png'); width:182px; height: 40px; background-size:182px 40px}
 	@media (max-width: 600px) {
-		.dcoin-logo { background-image: url('img/logo-small.png'); width:42px; height: 40px; background-size:42px 40px}
+		.dcoin-logo { background-image: url('static/img/logo-small.png'); width:42px; height: 40px; background-size:42px 40px}
 		#progress_status_text{display: none}
 	}
-	.flag_42{display:inline-block; background-image: url('img/us-ru.png'); background-position: 0px 0px; width: 22px; height: 16px}
-	.flag_1{display:inline-block; background-image: url('img/us-ru.png'); background-position: 0px 16px; width: 22px; height: 16px}
+	.flag_42{display:inline-block; background-image: url('static/img/us-ru.png'); background-position: 0px 0px; width: 22px; height: 16px}
+	.flag_1{display:inline-block; background-image: url('static/img/us-ru.png'); background-position: 0px 16px; width: 22px; height: 16px}
 
 	#last_block_id a:hover {background-color: inherit}
 </style>
@@ -96,7 +97,7 @@
 				<i class="fa fa-cog fa-fw" style="font-size: 20px"></i>
 			</a>
 			<ul class="dropdown-menu">
-				{{if or .PoolAdmin not .Community}}
+				{{if or .PoolAdmin (not .Community)}}
 				<li><a href="#change_node_key">{{.Lang.change_node_key}}</a></li>
 				{{end}}
 		{{if .PoolAdmin}}
@@ -237,7 +238,7 @@
 				<li id="settings_menu_left">
 					<a href="#"><i class="fa fa-cog fa-fw"></i> Settings<span class="fa arrow"></span></a>
 					<ul class="nav nav-second-level">
-						{{if or .PoolAdmin not .Community}}
+						{{if or .PoolAdmin (not .Community)}}
 							<li><a href="#change_node_key">{{.Lang.change_node_key}}</a></li>
 						{{end}}
 
@@ -253,7 +254,7 @@
 				</li>
 				<li><a href="#interface">{{.Lang.interface}}</a>
 				</li>
-				{{if or .PoolAdmin not .Community}}
+				{{if or .PoolAdmin (not .Community)}}
 					<li><a href="#node_config">{{.Lang.config_node}}</a></li>
 				{{end}}
 				<?php echo (defined('POOL_ADMIN') || !defined('COMMUNITY'))?'<li><a href="#node_config">'.lng['config_node'].'</a></li>':''?>
@@ -285,3 +286,5 @@
 	});
 </script>
 {{ template "modal". }}
+
+{{end}}

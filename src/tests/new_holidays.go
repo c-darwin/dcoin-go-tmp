@@ -33,7 +33,7 @@ type Data struct {
 	name [16]byte
 }
 
-func TypeArray (txType string) int32 {
+func TypeInt (txType string) int32 {
 	x := make([]string, 67)
 	// новый юзер
 	x[1] = "new_user"
@@ -78,7 +78,7 @@ func main() {
 	// hash
 	txSlice = append(txSlice, "22cb812e53e22ee539af4a1d39b4596d")
 	// type
-	txSlice = append(txSlice,  strconv.Itoa(int(TypeArray(txType))))
+	txSlice = append(txSlice,  strconv.Itoa(int(TypeInt(txType))))
 	// time
 	txSlice = append(txSlice, txTime)
 	// user_id
