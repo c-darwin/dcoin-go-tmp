@@ -2095,6 +2095,23 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 	return newResult
 }
 
-func MakeLastTx() {
-
+func MakeLastTx(lastTx []map[string]string, lng map[string]string) string {
+	result := `<h3>`+lng["transactions"]+`</h3><table class="table" style="width:500px;">`
+	result+=`<tr><th>`+lng["time"]+`</th><th>`+lng["result"]+`</th></tr>`
+	for _, data := range(lastTx) {
+		result+="<tr>"
+		result+="<td class='unixtime'>"+data["time_int"]+"</td>"
+		if len(data["block_id"]) > 0 {
+			result+="<td>"+lng["in_the_block"]+" "+data["block_id"]+"</td>"
+		} else if len(data["error"]) > 0 {
+			result+="<td>Error: "+data["error"]+"</td>"
+		} else if (len(data["queue_tx"]) == 0 && len(data["tx"]) == 0) || time.Now().Unix() - StrToInt64(data["time_int"]) > 7200  {
+			result+="<td>"+lng["lost"]+"</td>"
+		} else {
+			result+="<td>"+lng["status_pending"]+"</td>"
+		}
+		result+="</tr>"
+	}
+	result+="</table>"
+	return result
 }

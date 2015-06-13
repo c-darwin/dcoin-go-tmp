@@ -9,15 +9,35 @@ import (
 	"bytes"
 	"static"
 	"utils"
-	"strings"
+//	"strings"
 	"time"
-	"math"
-//	"log"
-	"consts"
+	//"math"
+	"log"
+	//"consts"
+	"encoding/json"
 )
 
 type walletsListPage struct {
+	Alert string
 	Lang map[string]string
+	CurrencyList map[int]string
+	Wallets []utils.DCAmounts
+	MyDcTransactions []map[string]string
+	UserTypeId int64
+	UserType string
+	ProjectTypeId int64
+	ProjectType string
+	Time int64
+	CurrentBlockId int64
+	ConfirmedBlockId int64
+	Community bool
+	MinerId int64
+	UserId int64
+	Config map[string]string
+	ConfigCommission map[string][]float64
+	LastTxFormatted string
+	ArbitrationTrustList map[string]map[string][]string
+	ShowSignData bool
 }
 
 func (c *Controller) WalletsList() (string, error) {
@@ -25,22 +45,36 @@ func (c *Controller) WalletsList() (string, error) {
 	fmt.Println("WalletsList")
 
 	// валюты
-	currencyList, err := c.GetCurrencyList(false)
+	currencyList, err := c.GetCurrencyList(true)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	log.Println("currencyList", currencyList)
 
+	var wallets []utils.DCAmounts
 	var myDcTransactions []map[string]string
 	if c.SessUserId > 0 {
-		wallets, err := c.GetBalances(c.SessUserId)
+		wallets, err = c.GetBalances(c.SessUserId)
 		if c.SessRestricted == 0 {
-			myDcTransactions, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_dc_transactions ORDER BY id DESC LIMIT 0, 100", 100)
+			myDcTransactions, err = c.GetAll("SELECT * FROM "+c.MyPrefix+"my_dc_transactions ORDER BY id DESC LIMIT 0, 100", 100)
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
 		}
 	}
 	userType := "sendDc";
 	projectType := "cfSendDc";
 	userTypeId := utils.TypeInt(userType)
 	projectTypeId := utils.TypeInt(projectType)
-	time := time.Now().Unix()
+	timeNow := time.Now().Unix()
 	currentBlockId, err := c.GetBlockId()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	confirmedBlockId, err := c.GetConfirmedBlockId()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 
 	names := make(map[string]string)
 	names["cash_request"] = c.Lang["cash"]
@@ -53,47 +87,73 @@ func (c *Controller) WalletsList() (string, error) {
 	names["cf_project"] = "Crowd funding"
 	names["cf_project_refund"] = "Crowd funding refund"
 
-	minerId, err := c.GetMyMinerId()
+	minerId, err := c.GetMyMinerId(c.SessUserId)
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
-
 
 	c.r.ParseForm()
 	// если юзер кликнул по кнопку "профинансировать" со страницы проекта
-	parameters := c.r.FormValue("parameters")
-	cfProjectId := utils.StrToInt64(parameters["project_id"])
+	//parameters := c.r.FormValue("parameters")
+	//cfProjectId := utils.StrToInt64(parameters["project_id"])
 
 	// нужна мин. комиссия на пуле для перевода монет
-	config := c.GetNodeConfig()
+	config, err := c.GetNodeConfig()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	configCommission := make(map[string][]float64)
+	if len(config["commission"]) > 0 {
+		err = json.Unmarshal([]byte(config["commission"]), &configCommission)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+	}
 
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
+	lastTxFormatted := ""
 	if len(last_tx)>0 {
-		last_tx_formatted := utils.MakeLastTx();
+		lastTxFormatted = utils.MakeLastTx(last_tx, c.Lang);
 	}
-	tpl["arbitrationTrustList"], err := c.GetMap("SELECT arbitrator_user_id, conditions FROM arbitration_trust_list LEFT JOIN arbitrator_conditions ON arbitrator_conditions?user_id  =  arbitration_trust_list?arbitrator_user_id WHERE arbitration_trust_list?user_id  =  ? ?, 'list', " []string("arbitrator_user_id", "conditions')", user_id).String()
+	arbitrationTrustList_, err := c.GetMap(`
+			SELECT arbitrator_user_id,
+					 	conditions
+			FROM arbitration_trust_list
+			LEFT JOIN arbitrator_conditions ON arbitrator_conditions.user_id = arbitration_trust_list.arbitrator_user_id
+			WHERE arbitration_trust_list.user_id = ?
+	`, "arbitrator_user_id", "conditions", c.SessUserId)
 	if err != nil {
-		return p.ErrInfo(err)
+		return "", utils.ErrInfo(err)
 	}
-	data, err := static.Asset("static/templates/home.html")
+	arbitrationTrustList :=make(map[string]map[string][]string)
+	var jsonMap map[string][]string
+	for arbitrator_user_id, conditions := range arbitrationTrustList_ {
+		err = json.Unmarshal([]byte(conditions), &jsonMap)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		arbitrationTrustList[arbitrator_user_id] = make(map[string][]string)
+		arbitrationTrustList[arbitrator_user_id] = jsonMap
+	}
+	log.Println("arbitrationTrustList", arbitrationTrustList)
+
+	data, err := static.Asset("static/templates/wallets_list.html")
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
 	alert_success, err := static.Asset("static/templates/alert_success.html")
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
 	signatures, err := static.Asset("static/templates/signatures.html")
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
-	funcMap := template.FuncMap{
-		"ReplaceCurrency": func(text, name string) string { return strings.Replace(text, "[currency]", name, -1) },
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+
+	t := template.Must(template.New("template").Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "home", &page{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: "", MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
+	t.ExecuteTemplate(b, "walletsList", &walletsListPage{Alert: "", Community: c.Community, ConfigCommission: configCommission, ProjectType: projectType, UserType: userType, UserId: c.SessUserId, Lang: c.Lang, CurrencyList: currencyList, Wallets: wallets, MyDcTransactions: myDcTransactions, UserTypeId: userTypeId, ProjectTypeId: projectTypeId, Time: timeNow, CurrentBlockId: currentBlockId, ConfirmedBlockId: confirmedBlockId, MinerId: minerId, Config: config, LastTxFormatted: lastTxFormatted, ArbitrationTrustList: arbitrationTrustList, ShowSignData: c.ShowSignData})
 	 return b.String(), nil
 }

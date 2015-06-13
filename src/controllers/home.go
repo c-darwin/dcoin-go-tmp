@@ -27,7 +27,7 @@ type page struct {
 	ShowMap bool
 	BlockId int64
 	ConfirmedBlockId int64
-	CurrencyList map[string]string
+	CurrencyList map[int]string
 	Assignments int64
 	SumPromisedAmount map[string]string
 	RandMiners []int64
