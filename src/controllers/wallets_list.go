@@ -33,6 +33,7 @@ type walletsListPage struct {
 	Community bool
 	MinerId int64
 	UserId int64
+	UserIdStr string
 	Config map[string]string
 	ConfigCommission map[string][]float64
 	LastTxFormatted string
@@ -59,6 +60,12 @@ func (c *Controller) WalletsList() (string, error) {
 			myDcTransactions, err = c.GetAll("SELECT * FROM "+c.MyPrefix+"my_dc_transactions ORDER BY id DESC LIMIT 0, 100", 100)
 			if err != nil {
 				return "", utils.ErrInfo(err)
+			}
+			for id, data := range myDcTransactions {
+				t := time.Unix(utils.StrToInt64(data["time"]), 0)
+				timeFormatted := t.Format(c.TimeFormat)
+				log.Println("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat )
+				myDcTransactions[id]["timeFormatted"] = timeFormatted
 			}
 		}
 	}
@@ -154,6 +161,6 @@ func (c *Controller) WalletsList() (string, error) {
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "walletsList", &walletsListPage{Alert: "", Community: c.Community, ConfigCommission: configCommission, ProjectType: projectType, UserType: userType, UserId: c.SessUserId, Lang: c.Lang, CurrencyList: currencyList, Wallets: wallets, MyDcTransactions: myDcTransactions, UserTypeId: userTypeId, ProjectTypeId: projectTypeId, Time: timeNow, CurrentBlockId: currentBlockId, ConfirmedBlockId: confirmedBlockId, MinerId: minerId, Config: config, LastTxFormatted: lastTxFormatted, ArbitrationTrustList: arbitrationTrustList, ShowSignData: c.ShowSignData})
+	t.ExecuteTemplate(b, "walletsList", &walletsListPage{UserIdStr: utils.Int64ToStr(c.SessUserId),Alert: "", Community: c.Community, ConfigCommission: configCommission, ProjectType: projectType, UserType: userType, UserId: c.SessUserId, Lang: c.Lang, CurrencyList: currencyList, Wallets: wallets, MyDcTransactions: myDcTransactions, UserTypeId: userTypeId, ProjectTypeId: projectTypeId, Time: timeNow, CurrentBlockId: currentBlockId, ConfirmedBlockId: confirmedBlockId, MinerId: minerId, Config: config, LastTxFormatted: lastTxFormatted, ArbitrationTrustList: arbitrationTrustList, ShowSignData: c.ShowSignData})
 	 return b.String(), nil
 }
