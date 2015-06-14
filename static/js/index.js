@@ -1,8 +1,10 @@
 
 function fc_navigate (page, parameters) {
 
+    var json = JSON.stringify(parameters);
+
     $('#wrapper').spin();
-    $.post("content?page="+page, { tpl_name: page, parameters: parameters },
+    $.post("content?page="+page, { tpl_name: page, parameters: json },
         function(data) {
             $("#wrapper").spin(false);
             //console.log('$("#wrapper").spin(false)');

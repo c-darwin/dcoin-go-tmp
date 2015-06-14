@@ -1,4 +1,4 @@
-{{ define "walletsList" }}
+{{define "walletsList"}}
 <style>
 	.table td {
 		vertical-align: middle;
@@ -447,11 +447,11 @@ function foattoupper(x) {
 	<div class="panel-body" style="padding: 0">
 		<!-- Nav tabs -->
 		<ul class="nav nav-tabs" id="myTab">
-			<li class="active"><a href="#wallets_list" data-toggle="tab">{{.Lang.send_to_wallet}}</a>
+			<li class="active"><a href="#walletsList" data-toggle="tab">{{.Lang.send_to_wallet}}</a>
 			</li>
 			<li class="" style="display:none" id="cf_tab"><a href="#send_to_cf" data-toggle="tab">{{.Lang.send_to_cf_project}}</a>
 			</li>
-			<li class=""><a href="#currency_exchange">{{.Lang.currency_exchange1}}</a>
+			<li class=""><a href="#currencyExchange">{{.Lang.currency_exchange1}}</a>
 			</li>
 			<li class=""><a href="#credits">{{.Lang.credits}}</a>
 			</li>
@@ -465,10 +465,12 @@ function foattoupper(x) {
 				<div>
 					<table class="table" style="max-width: 400px">
 						<tr><td>{{.Lang.currency}}</td><td>
+
 							<select id="currency_id" class="form-control">
 								{{if .Wallets}}
 									{{range $id, $data := .Wallets}}
-										<option value='{{$data.CurrencyId}}'>{{$data.CurrencyId}}{{index $.CurrencyList $data.CurrencyId}}({{$data.Amount}})</option>
+									/{{$data.CurrencyId}}/
+										<option value='{{$data.CurrencyId}}'>{{makeCurrencyName $data.CurrencyId}}{{index $.CurrencyList $data.CurrencyId}} ({{$data.Amount}})</option>
 									{{end}}
 								{{else}}
 									<option>{{.Lang.you_do_not_have_the_coins}}</option>
@@ -484,7 +486,8 @@ function foattoupper(x) {
 					<br><br>
 
 					{{if .Wallets}}
-						<h3>{{.Lang.balances}}</h3><table class="table" style="max-width:400px">
+						<h3>{{.Lang.balances}}</h3>
+						<table class="table" style="max-width:400px">
 						<tr><th>{{.Lang.currency}}</th><th>{{.Lang.amount}}</th></tr>
 						{{range $id, $data := .Wallets}}
 							<tr>
@@ -496,6 +499,7 @@ function foattoupper(x) {
 								<td>{{$data.Amount}}</td>
 							</tr>
 						{{end}}
+						</table>
 					{{end}}
 
 					<br><br>
@@ -530,14 +534,191 @@ function foattoupper(x) {
 					<tr><th></th><th>{{.Lang.time}}</th><th>{{.Lang.currency}}</th><th>{{.Lang.type}}</th><th>{{.Lang.recipient}}</th><th>{{.Lang.amount}}</th><th>{{.Lang.commission}}</th><th>{{.Lang.note}}</th><th>{{.Lang.status}}</th><th>Block_id</th><th>Confirmations</th></tr>
 					{{range $key, $data := .MyDcTransactions}}
 						<tr>
-							{{$data}}
-							{{if eq (index $data "to_user_id") $.UserIdStr}} <td>+</td> {{else}} <td>-</td> {{end}}
-							{{if (index $data "timeFormatted")}} <td>{{index $data "timeFormatted"}}</td> {{end}}
+							{{if eq ($data.to_user_id) $.UserIdStr}} <td>+</td> {{else}} <td>-</td> {{end}}
+							{{if ($data.timeFormatted)}} <td>{{$data.timeFormatted}}</td> {{else}} <td></td> {{end}}
+							<td>{{makeCurrencyName (strToInt64 ($data.currency_id))}}{{ index $.CurrencyList (strToInt64 ($data.currency_id)) }}</td>
+							<td>{{index $.Names ($data.type)}} ({{$data.type_id}})
+							{{if eq ($data.type) "cf_project"}}
+								<button class="btn" onclick="fc_navigate('del_cf_funding', {'del_id':'{{$data.to_user_id}}'})">Cancel</button>
+							{{end}}
+							</td><td>{{$data.to_user_id}}</td><td>{{$data.amount}}</td><td>
+							{{if ($data.commission)}} {{$data.commission}} {{end}}
+							</td>
+							{{if eq ($data.comment_status) "decrypted"}}
+								<td><div style="width: 100px; overflow: auto">{{$data.comment}}</div></td>
+							{{else}}
+								<td><div class="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment_0({{$data.id}})">{{$.Lang.decrypt}}</button></div></td>
+							{{end}}
+							<td>{{$data.status}}</td><td><a href="#block_explorer/block_id={{$data.block_id}}}">{{$data.block_id}}</a></td><td>{{$data.numBlocks}}</td></tr>
 					{{end}}
+					</table>
+					<p>{{.Lang.error_in_tx}}</p>
 
 				{{end}}
 
+			</div>
+			<div class="tab-pane fade" id="send_to_cf">
+				<br>
+				<div id="cf_prject_id">
+					<div class="form-group">
+						<label>{{.Lang.project_id}}</label>
+						<input class="form-control" style="width: 300px" id="project_id">
+					</div>
+					<div class="form-group">
+						<button id="cf_next_0" class="btn btn-outline btn-primary" type="button">{{.Lang.next}}</button>
+					</div>
+				</div>
 
-1111
+				<div style="display: none; overflow: auto" id="cf_prject_card">
+
+					<div class="well project-card" style="float:left; margin-right:20px">
+						<img id="blurb_img" style="width:200px; height:310px">
+						<div>
+							<div class="card-location" style="margin-top:10px;font-size: 13px;"><a href="#"><i class="fa  fa-map-marker  fa-fw"></i> <span id="location"></span></a></div>
+							<div class="progress" style="height:5px; margin-top:10px; margin-bottom:10px"><div class="progress-bar progress-bar-success" style="width: 0%;" id="cf_progress"></div></div>
+							<div class="card-bottom">
+								<div style="float:left; overflow:auto; padding-right:10px"><h5 id="cf_pct">0%</h5>funded</div>
+								<div style="float:left; overflow:auto; padding-right:10px"><h5 id="cf_pledged">0 </h5>pledged</div>
+								<div style="float:left; overflow:auto;"><h5 id="cf_days">0</h5>days to go</div>
+							</div>
+						</div>
+					</div>
+					<div style="overflow: auto">
+						<table class="table"  style="max-width: 400px">
+							<tr><td>{{.Lang.project_id}}</td><td><span id="project_id_info"></span></td></tr>
+							<tr><td>{{.Lang.available}}</td><td><span id="available_dc"></span></td></tr>
+							<tr><td>{{.Lang.amount}}</td><td><input class="form-control" type="text" id="cf_amount"></td></tr>
+							<tr><td>{{.Lang.commission}}</td><td><input class="form-control" type="text" id="cf_commission"  ></td></tr>
+							<tr><td>{{.Lang.note}}</td><td><input class="form-control" type="text" id="cf_comment"></td></tr>
+						</table>
+						<button id="cf_next" class="btn btn-outline btn-primary" type="button">{{.Lang.send}}</button>
+						<!--
+                        <div class="panel panel-success" style="margin-top: 20px; max-width: 400px">
+                            <div class="panel-heading">
+                                {{.Lang.where_get_dc}}
+                            </div>
+                            <div class="panel-body">
+                                <p>{{.Lang.where_get_dc_text}}</p>
+                            </div>
+                        </div>
+                        -->
+					</div>
+
+				</div>
+
+			</div>
+
+			<div class="tab-pane fade" id="forex">
+
+			</div>
+
+		</div>
+	</div>
+
+</div>
+
+<div id="wallets_confirm" style="margin: auto; max-width: 600px; display: none">
+	<h3>{{.Lang.check_data}}</h3>
+	<div style="float: left">
+		<table class="table confirm" style="width: 300px; margin-top: 20px">
+			<tbody>
+			<tr><td>{{.Lang.currency}}</td><td id="confirm_currency"></td></tr>
+			<tr><td>{{.Lang.to_account}}</td><td id="confirm_to_user_id"></td></tr>
+			<tr><td>{{.Lang.amount}}</td><td id="confirm_amount"></td></tr>
+			<tr><td>{{.Lang.commission}}</td><td id="confirm_commission"></td></tr>
+			<tr><td>{{.Lang.note}}</td><td id="confirm_comment"></td></tr>
+			<tr class="arbitration_tr" style="display: none"><td style="vert-align: middle">{{.Lang.arbitrator}}</td><td id="arbitration_trust_list_html"></td></tr>
+			<tr id="arbitrator_tr_commission" style="display: none"><td>{{.Lang.arbitrator_commission}}</td><td id="arbitrator_commission_html" class="arbitrator_commission"></td></tr>
+			<tr id="arbitration_imposible" style="display: none"><td colspan="2">{{.Lang.arbitration_imposible}}</td></tr>
+			</tbody>
+		</table>
+
+		<p id="arbitrator_link_add" style="display: none"><a href="#" id="add_arbitrator" style="margin-left: 8px">{{.Lang.add_arbitrator}}</a></p>
+
+	</div>
+	<div style="float: left; margin-left: 10px; display: none" id="seller_info_div">
+		<style>
+			.seller_info td {text-align: center; padding-left:5px; padding-right:5px}
+			.seller_info {margin:auto}
+			#seller_turnover, #seller_turnover_m, #buyers_count_m, #buyers_miners_count_m, #buyers_count, #buyers_miners_count{font-size: 30px}
+			.table_line_height{line-height: 20px}
+			.table_margin{display: block; margin-top:15px}
+		</style>
+		<h4 style="text-align: center">{{.Lang.seller_info}}</h4>
+		<table class="seller_info">
+
+			<tr><td colspan="2" style="font-weight: bold">{{.Lang.turnover}}</td></tr>
+			<tr><td>{{.Lang.month}}<br><span id="seller_turnover_m"></span></td><td>{{.Lang.entire}}<br><span id="seller_turnover"></span></td></tr>
+
+			<tr><td colspan="2" style="font-weight: bold; padding-top:10px">{{.Lang.number_of_customers}}</td></tr>
+			<tr>
+				<td>
+					{{.Lang.month}}<br>
+					<span class="table_line_height"><span id="buyers_count_m" class="table_margin"></span>{{.Lang.anonim}}</span><br>
+					<span class="table_line_height"><span id="buyers_miners_count_m" class="table_margin"></span>{{.Lang.pers}}</span>
+				</td>
+				<td>
+					{{.Lang.entire}}<br>
+					<span class="table_line_height"><span id="buyers_count" class="table_margin"></span>{{.Lang.anonim}}</span><br>
+					<span class="table_line_height"><span id="buyers_miners_count" class="table_margin"></span>{{.Lang.pers}}</span>
+				</td>
+			</tr>
+
+		</table>
+		<p style="margin-top: 10px">
+			{{.Lang.hold_for_money_back}}: <span id="hold_amount"></span> <span class="currency_name"></span><br>
+			{{.Lang.hold_back}}: <span id="seller_hold_back_pct"></span>% {{.Lang.for}} <span id="arbitration_days_refund"></span> {{.Lang.days}}<br>
+		</p>
+	</div>
+	<div class="clearfix"></div>
+	<div style="text-align: center; max-width: 550px; margin-top: 20px"><button type="button" class="btn btn-link" onclick="fc_navigate('wallets_list')">{{.Lang.back}}</button> <button id="next" class="btn btn-outline btn-primary" type="button" style="margin-left: 7px">{{.Lang.send_to_net}}</button></div>
+	<div class="clearfix"></div>
+</div>
+
+{{ template "signatures". }}
+
+<input type="hidden" id="comment_encrypted" value="">
+
+<style>
+	.stacktable { width: 100%; }
+	.st-head-row { padding-top: 1em;font-size: 2em; text-align: center }
+	.st-head-row.st-head-row-main { font-size: 1.5em; padding-top: 0; }
+	.st-key { width: 49%; text-align: right; padding-right: 1%; }
+	.st-val { width: 49%; padding-left: 1%; }
+
+	.stacktable.large-only { display: table; }
+	.stacktable.small-only { display: none; }
+
+	@media (max-width: 1000px) {
+		.stacktable.large-only { display: none; }
+		.stacktable.small-only { display: table; }
+	}
+
+</style>
+<script src="js/stacktable.js"></script>
+<script>
+
+	$('#my_dc_transactions').stacktable();
+
+	{{if .CfProjectId}}
+	{{with .CfProjectId}}
+
+		$('#myTab a[href="#send_to_cf"]').tab('show');
+
+		$("#cf_prject_id").css("display", "none");
+		$("#cf_prject_card").css("display", "block");
+		$("#project_id").val({{.}});
+
+		$.post( 'ajax/wallets_list_cf_project.php', {
+			'project_id' : {{.}}
+	}, function (data) {
+		fill_cf_card(data);
+	}, 'JSON');
+
+	{{end}}
+	{{end}}
+
+</script>
+<script src="static/js/unixtime.js"></script>
 
 {{end}}

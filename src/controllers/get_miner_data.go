@@ -60,7 +60,7 @@ func (c *Controller) GetMinerData() (string, error) {
 	promisedAmounts := ""
 	prognosis := make(map[int64]float64)
 	if data.Amount>1 {
-		promisedAmounts +=utils.Float64ToStr(utils.Round(data.Amount, 0))+" "+currencyList[int(data.CurrencyId)]+"<br>"
+		promisedAmounts +=utils.Float64ToStr(utils.Round(data.Amount, 0))+" "+currencyList[(data.CurrencyId)]+"<br>"
 		prognosis[int64(data.CurrencyId)] += (math.Pow(1 + data.PctSec, secs) - 1) * data.Amount
 	}
 
@@ -92,9 +92,9 @@ func (c *Controller) GetMinerData() (string, error) {
 	var countersIds []string
 	var pctSec float64
 	if data.Amount>0 {
-		counterId := "map-"+utils.Int64ToStr(userId)+"-"+utils.IntToStr(data.CurrencyId)
+		counterId := "map-"+utils.Int64ToStr(userId)+"-"+utils.Int64ToStr(data.CurrencyId)
 		countersIds = append(countersIds, counterId)
-		wallets = "<span class='dc_amount' id='"+counterId+"'>"+utils.Float64ToStr(data.Amount)+"</span> d"+currencyList[int(data.CurrencyId)]+"<br>"
+		wallets = "<span class='dc_amount' id='"+counterId+"'>"+utils.Float64ToStr(data.Amount)+"</span> d"+currencyList[(data.CurrencyId)]+"<br>"
 		// прогноз
 		prognosis[int64(data.CurrencyId)] += (math.Pow(1 + data.PctSec, secs) - 1) * data.Amount
 		pctSec = data.PctSec
@@ -116,7 +116,7 @@ func (c *Controller) GetMinerData() (string, error) {
 		} else {
 			amount = amount
 		}
-		prognosisHtml+="<span class='amount_1year'>"+utils.Float64ToStr(amount)+" d"+currencyList[int(currencyId)]+"</span><br>";
+		prognosisHtml+="<span class='amount_1year'>"+utils.Float64ToStr(amount)+" d"+currencyList[(currencyId)]+"</span><br>";
 	}
 	if len(prognosisHtml) > 0 {
 		prognosisHtml = prognosisHtml[:len(prognosisHtml)-4]+"<br> "+c.Lang["profit_forecast"]+" "+c.Lang["after_1_year"]

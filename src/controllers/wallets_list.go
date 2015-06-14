@@ -18,9 +18,10 @@ import (
 )
 
 type walletsListPage struct {
+	CfProjectId int64
 	Alert string
 	Lang map[string]string
-	CurrencyList map[int]string
+	CurrencyList map[int64]string
 	Wallets []utils.DCAmounts
 	MyDcTransactions []map[string]string
 	UserTypeId int64
@@ -39,6 +40,8 @@ type walletsListPage struct {
 	LastTxFormatted string
 	ArbitrationTrustList map[string]map[string][]string
 	ShowSignData bool
+	Names map[string]string
+	CountSignArr []int
 }
 
 func (c *Controller) WalletsList() (string, error) {
@@ -51,6 +54,11 @@ func (c *Controller) WalletsList() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	log.Println("currencyList", currencyList)
+
+	confirmedBlockId, err := c.GetConfirmedBlockId()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 
 	var wallets []utils.DCAmounts
 	var myDcTransactions []map[string]string
@@ -66,6 +74,11 @@ func (c *Controller) WalletsList() (string, error) {
 				timeFormatted := t.Format(c.TimeFormat)
 				log.Println("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat )
 				myDcTransactions[id]["timeFormatted"] = timeFormatted
+				myDcTransactions[id]["numBlocks"] = "0"
+				blockId := utils.StrToInt64(data["block_id"])
+				if blockId > 0 {
+					myDcTransactions[id]["numBlocks"] = utils.Int64ToStr(confirmedBlockId - blockId)
+				}
 			}
 		}
 	}
@@ -75,10 +88,6 @@ func (c *Controller) WalletsList() (string, error) {
 	projectTypeId := utils.TypeInt(projectType)
 	timeNow := time.Now().Unix()
 	currentBlockId, err := c.GetBlockId()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	confirmedBlockId, err := c.GetConfirmedBlockId()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -103,19 +112,6 @@ func (c *Controller) WalletsList() (string, error) {
 	// если юзер кликнул по кнопку "профинансировать" со страницы проекта
 	//parameters := c.r.FormValue("parameters")
 	//cfProjectId := utils.StrToInt64(parameters["project_id"])
-
-	// нужна мин. комиссия на пуле для перевода монет
-	config, err := c.GetNodeConfig()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	configCommission := make(map[string][]float64)
-	if len(config["commission"]) > 0 {
-		err = json.Unmarshal([]byte(config["commission"]), &configCommission)
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-	}
 
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
@@ -156,11 +152,46 @@ func (c *Controller) WalletsList() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
-	t := template.Must(template.New("template").Parse(string(data)))
+	funcMap := template.FuncMap{
+		"strToInt64": func(text string) int64 {
+			return utils.StrToInt64(text)
+		},
+		"makeCurrencyName": func(currencyId int64) string {
+			if currencyId >= 1000 {
+				return ""
+			} else {
+				return "d"
+			}
+		},
+	}
+	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "walletsList", &walletsListPage{UserIdStr: utils.Int64ToStr(c.SessUserId),Alert: "", Community: c.Community, ConfigCommission: configCommission, ProjectType: projectType, UserType: userType, UserId: c.SessUserId, Lang: c.Lang, CurrencyList: currencyList, Wallets: wallets, MyDcTransactions: myDcTransactions, UserTypeId: userTypeId, ProjectTypeId: projectTypeId, Time: timeNow, CurrentBlockId: currentBlockId, ConfirmedBlockId: confirmedBlockId, MinerId: minerId, Config: config, LastTxFormatted: lastTxFormatted, ArbitrationTrustList: arbitrationTrustList, ShowSignData: c.ShowSignData})
+	t.ExecuteTemplate(b, "walletsList", &walletsListPage{
+		CountSignArr: c.CountSignArr,
+		CfProjectId: 0,
+		Names: names,
+		UserIdStr: utils.Int64ToStr(c.SessUserId),
+		Alert: "",
+		Community: c.Community,
+		ConfigCommission: c.ConfigCommission,
+		ProjectType: projectType,
+		UserType: userType,
+		UserId: c.SessUserId,
+		Lang: c.Lang,
+		CurrencyList: currencyList,
+		Wallets: wallets,
+		MyDcTransactions: myDcTransactions,
+		UserTypeId: userTypeId,
+		ProjectTypeId: projectTypeId,
+		Time: timeNow,
+		CurrentBlockId: currentBlockId,
+		ConfirmedBlockId: confirmedBlockId,
+		MinerId: minerId,
+		Config: c.NodeConfig,
+		LastTxFormatted: 	lastTxFormatted,
+		ArbitrationTrustList: arbitrationTrustList,
+		ShowSignData: c.ShowSignData})
 	 return b.String(), nil
 }

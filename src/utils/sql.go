@@ -759,10 +759,23 @@ func (db *DCDB) CalcProfitGen(currencyId int64, amount float64, userId int64, la
 	return profit, nil
 }
 
-func (db *DCDB) GetCurrencyList(cf bool) (map[int]string, error) {
+func (db *DCDB) GetCurrencyListFullName() (map[int64]string, error) {
+	var result_ map[string]string
+	result := make(map[int64]string)
+	result_, err := db.GetMap("SELECT id, full_name FROM currency ORDER BY full_name", "id", "full_name")
+	if err != nil {
+		return result, err
+	}
+	for k, v := range result_ {
+		result[StrToInt64(k)] = v
+	}
+	return result, nil
+}
+
+func (db *DCDB) GetCurrencyList(cf bool) (map[int64]string, error) {
 
 	var result_ map[string]string
-	result := make(map[int]string)
+	result := make(map[int64]string)
 	result_, err := db.GetMap("SELECT id, name FROM currency ORDER BY name", "id", "name")
 	if err != nil {
 		return result, err
@@ -778,7 +791,7 @@ func (db *DCDB) GetCurrencyList(cf bool) (map[int]string, error) {
 		}
 	}
 	for k, v := range result_ {
-		result[StrToInt(k)] = v
+		result[StrToInt64(k)] = v
 	}
 	return result, nil
 }
@@ -854,7 +867,7 @@ func (db *DCDB) GetBalances(userId int64) ([]DCAmounts, error) {
 			return result, err
 		}
 		pct := Round( (math.Pow(1+pctSec, 3600*24*365)-1)*100, 2 )
-		result = append(result, DCAmounts{CurrencyId:int(currency_id), Amount:amount, Pct:pct, PctSec:pctSec})
+		result = append(result, DCAmounts{CurrencyId:(currency_id), Amount:amount, Pct:pct, PctSec:pctSec})
 	}
 	return result, err
 }
@@ -1127,7 +1140,7 @@ type DCAmounts struct {
 	Tdc float64
 	Amount float64
 	PctSec float64
-	CurrencyId int
+	CurrencyId int64
 	Pct float64
 }
 
@@ -1227,7 +1240,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		// тут accepted значит просто попало в блок
 		promisedAmountListAccepted = append(promisedAmountListAccepted, map[string]string{"pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "max_amount":Float64ToStr(maxAmount), "max_other_currencies":Int64ToStr(maxOtherCurrencies), "status_text":status_text, "tdc":Float64ToStr(tdc), "tdc_amount":Float64ToStr(tdc_amount), "status":status})
 		// для вывода на главную общей инфы
-		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc:tdc, Amount:amount, PctSec:pct_sec, CurrencyId:int(currency_id)}
+		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc:tdc, Amount:amount, PctSec:pct_sec, CurrencyId:(currency_id)}
 	}
 	return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, nil
 }

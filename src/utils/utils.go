@@ -1564,6 +1564,23 @@ func InterfaceToStr(i []interface {}) []string {
 	return str
 }
 
+func InterfaceToFloat64(i interface {}) float64 {
+	var result float64
+		switch i.(type) {
+		case int:
+			result = float64(i.(int))
+		case float64:
+			result = i.(float64)
+		case int64:
+			result = float64(i.(int64))
+		case string:
+			result = StrToFloat64(i.(string))
+		case []byte:
+			result = BytesToFloat64(i.([]byte))
+		}
+	return result
+}
+
 func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
 	var index int64
 	switch index_.(type) {

@@ -2201,10 +2201,10 @@ func static_templates_alert_success_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_arbitration_tpl reads file data from disk. It returns an error on failure.
-func static_templates_arbitration_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/arbitration.tpl"
-	name := "static/templates/arbitration.tpl"
+// static_templates_arbitration_html reads file data from disk. It returns an error on failure.
+func static_templates_arbitration_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/arbitration.html"
+	name := "static/templates/arbitration.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2633,10 +2633,10 @@ func static_templates_change_promised_amount_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_credits_tpl reads file data from disk. It returns an error on failure.
-func static_templates_credits_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/credits.tpl"
-	name := "static/templates/credits.tpl"
+// static_templates_credits_html reads file data from disk. It returns an error on failure.
+func static_templates_credits_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/credits.html"
+	name := "static/templates/credits.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2651,10 +2651,10 @@ func static_templates_credits_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_currency_exchange_tpl reads file data from disk. It returns an error on failure.
-func static_templates_currency_exchange_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/currency_exchange.tpl"
-	name := "static/templates/currency_exchange.tpl"
+// static_templates_currency_exchange_html reads file data from disk. It returns an error on failure.
+func static_templates_currency_exchange_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/currency_exchange.html"
+	name := "static/templates/currency_exchange.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4138,7 +4138,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/add_cf_project_data.tpl": static_templates_add_cf_project_data_tpl,
 	"static/templates/after_install.html": static_templates_after_install_html,
 	"static/templates/alert_success.html": static_templates_alert_success_html,
-	"static/templates/arbitration.tpl": static_templates_arbitration_tpl,
+	"static/templates/arbitration.html": static_templates_arbitration_html,
 	"static/templates/arbitration_arbitrator.tpl": static_templates_arbitration_arbitrator_tpl,
 	"static/templates/arbitration_buyer.tpl": static_templates_arbitration_buyer_tpl,
 	"static/templates/arbitration_seller.tpl": static_templates_arbitration_seller_tpl,
@@ -4162,8 +4162,8 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_node_key.tpl": static_templates_change_node_key_tpl,
 	"static/templates/change_primary_key.tpl": static_templates_change_primary_key_tpl,
 	"static/templates/change_promised_amount.tpl": static_templates_change_promised_amount_tpl,
-	"static/templates/credits.tpl": static_templates_credits_tpl,
-	"static/templates/currency_exchange.tpl": static_templates_currency_exchange_tpl,
+	"static/templates/credits.html": static_templates_credits_html,
+	"static/templates/currency_exchange.html": static_templates_currency_exchange_html,
 	"static/templates/currency_exchange_delete.tpl": static_templates_currency_exchange_delete_tpl,
 	"static/templates/db_info.tpl": static_templates_db_info_tpl,
 	"static/templates/del_cf_funding.tpl": static_templates_del_cf_funding_tpl,
@@ -4540,7 +4540,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"alert_success.html": &_bintree_t{static_templates_alert_success_html, map[string]*_bintree_t{
 			}},
-			"arbitration.tpl": &_bintree_t{static_templates_arbitration_tpl, map[string]*_bintree_t{
+			"arbitration.html": &_bintree_t{static_templates_arbitration_html, map[string]*_bintree_t{
 			}},
 			"arbitration_arbitrator.tpl": &_bintree_t{static_templates_arbitration_arbitrator_tpl, map[string]*_bintree_t{
 			}},
@@ -4588,9 +4588,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_promised_amount.tpl": &_bintree_t{static_templates_change_promised_amount_tpl, map[string]*_bintree_t{
 			}},
-			"credits.tpl": &_bintree_t{static_templates_credits_tpl, map[string]*_bintree_t{
+			"credits.html": &_bintree_t{static_templates_credits_html, map[string]*_bintree_t{
 			}},
-			"currency_exchange.tpl": &_bintree_t{static_templates_currency_exchange_tpl, map[string]*_bintree_t{
+			"currency_exchange.html": &_bintree_t{static_templates_currency_exchange_html, map[string]*_bintree_t{
 			}},
 			"currency_exchange_delete.tpl": &_bintree_t{static_templates_currency_exchange_delete_tpl, map[string]*_bintree_t{
 			}},

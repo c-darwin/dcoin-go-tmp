@@ -18,6 +18,7 @@ import (
 	"os"
 	"io/ioutil"
 	"static"
+	"encoding/json"
 )
 
 type Controller struct {
@@ -43,6 +44,8 @@ type Controller struct {
 	TimeFormat string
 	PoolAdmin bool
 	PoolAdminUserId int64
+	NodeConfig map[string]string
+	ConfigCommission map[string][]float64
 }
 
 var configIni map[string]string
@@ -183,6 +186,17 @@ func GetSessAdmin(sess session.SessionStore) int64 {
 
 func DelSessResctricted(sess session.SessionStore) {
 	sess.Delete("restricted")
+}
+
+func GetSessInt64(sessName string, sess session.SessionStore) int64 {
+	sess_ := sess.Get(sessName)
+	switch sess_.(type) {
+	default:
+		return 0
+	case int64:
+		return sess_.(int64)
+	}
+	return 0
 }
 
 func GetSessRestricted(sess session.SessionStore) int64 {
@@ -387,6 +401,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "text/html")
 
 	sess, _ := globalSessions.SessionStart(w, r)
+
+	sess_ := sess.Get("buy_currency_Id")
+	log.Println(sess_)
+
 	defer sess.SessionRelease(w)
 	sessUserId := GetSessUserId(sess)
 	sessRestricted := GetSessRestricted(sess)
@@ -471,7 +489,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c.Lang = globalLangReadOnly[lang]
 	c.LangInt = int64(lang)
-
+	if lang == 42 {
+		c.TimeFormat = "2006-01-02 15:04:05"
+	} else {
+		c.TimeFormat = "2006-02-01 15:04:05"
+	}
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
@@ -493,6 +515,20 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
+		// нужна мин. комиссия на пуле для перевода монет
+		config, err := c.GetNodeConfig()
+		if err != nil {
+			log.Print(err)
+		}
+		configCommission := make(map[string][]float64)
+		if len(config["commission"]) > 0 {
+			err = json.Unmarshal([]byte(config["commission"]), &configCommission)
+			if err != nil {
+				log.Print(err)
+			}
+		}
+		c.NodeConfig = config
+		c.ConfigCommission = configCommission
 	}
 
 
