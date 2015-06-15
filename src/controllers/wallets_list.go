@@ -18,6 +18,7 @@ import (
 )
 
 type walletsListPage struct {
+	SignData string
 	CfProjectId int64
 	Alert string
 	Lang map[string]string
@@ -38,7 +39,7 @@ type walletsListPage struct {
 	Config map[string]string
 	ConfigCommission map[string][]float64
 	LastTxFormatted string
-	ArbitrationTrustList map[string]map[string][]string
+	ArbitrationTrustList map[int64]map[int64][]string
 	ShowSignData bool
 	Names map[string]string
 	CountSignArr []int
@@ -128,15 +129,18 @@ func (c *Controller) WalletsList() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	arbitrationTrustList :=make(map[string]map[string][]string)
+	arbitrationTrustList :=make(map[int64]map[int64][]string)
 	var jsonMap map[string][]string
 	for arbitrator_user_id, conditions := range arbitrationTrustList_ {
 		err = json.Unmarshal([]byte(conditions), &jsonMap)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		arbitrationTrustList[arbitrator_user_id] = make(map[string][]string)
-		arbitrationTrustList[arbitrator_user_id] = jsonMap
+		uidInt := utils.StrToInt64(arbitrator_user_id)
+		arbitrationTrustList[uidInt] = make(map[int64][]string)
+		for currenycId, data:= range jsonMap{
+			arbitrationTrustList[uidInt][utils.StrToInt64(currenycId)] = data
+		}
 	}
 	log.Println("arbitrationTrustList", arbitrationTrustList)
 
@@ -192,6 +196,7 @@ func (c *Controller) WalletsList() (string, error) {
 		Config: c.NodeConfig,
 		LastTxFormatted: 	lastTxFormatted,
 		ArbitrationTrustList: arbitrationTrustList,
-		ShowSignData: c.ShowSignData})
+		ShowSignData: c.ShowSignData,
+		SignData: ""})
 	 return b.String(), nil
 }

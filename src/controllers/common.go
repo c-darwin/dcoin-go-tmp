@@ -396,14 +396,12 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 }
 
 func Content(w http.ResponseWriter, r *http.Request) {
+
 	var err error
 	log.Println("content")
 	w.Header().Set("Content-type", "text/html")
 
 	sess, _ := globalSessions.SessionStart(w, r)
-
-	sess_ := sess.Get("buy_currency_Id")
-	log.Println(sess_)
 
 	defer sess.SessionRelease(w)
 	sessUserId := GetSessUserId(sess)
@@ -416,6 +414,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c := new(Controller)
 	c.r = r
+	c.sess = sess
 	c.SessRestricted = sessRestricted
 	c.SessUserId = sessUserId
 	if sessAdmin==1 {

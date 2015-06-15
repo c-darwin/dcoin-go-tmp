@@ -1,7 +1,7 @@
 {{define "currencyExchange"}}
 <script>
 	$('#currency_ok').bind('click', function () {
-		fc_navigate ('currency_exchange', {'buy_currency_id': $('#buy_currency_id').val(), 'sell_currency_id': $('#sell_currency_id').val()} );
+		fc_navigate ('currencyExchange', {'buy_currency_id': $('#buy_currency_id').val(), 'sell_currency_id': $('#sell_currency_id').val()} );
 	});
 
 	var sell_currency_id = 0;
@@ -77,8 +77,15 @@
 			var currency_id = $("#"+currency_id).val();
 			if (currency_id>=1000)
 				currency_id=1000;
-			var commission_pct = Number(currency_commission[currency_id][0]);
-			var min_commission = Number(currency_commission[currency_id][1]);
+
+			console.log("currency_commission");
+			if (typeof currency_commission[currency_id] !== "undefined" && typeof currency_commission[currency_id] !== "undefined") {
+				var commission_pct = Number(currency_commission[currency_id][0]);
+				var min_commission = Number(currency_commission[currency_id][1]);
+			} else {
+				var commission_pct = 0.1
+				var min_commission = 0.01
+			}
 			console.log(commission_pct + '/' + min_commission);
 			var amount_ = '';
 			amount_ = parseFloat(amount.replace(",", "."));
@@ -144,7 +151,7 @@
 			'signature2': $('#signature2').val(),
 			'signature3': $('#signature3').val()
 		}, function(data) {
-			fc_navigate ('currency_exchange', {'alert': '{{.Lang.sent_to_the_net}}'} );
+			fc_navigate ('currencyExchange', {'alert': '{{.Lang.sent_to_the_net}}'} );
 		});
 
 	} );
@@ -258,7 +265,7 @@
 			<tbody>
 			{{if .BuyOrders}}
 				{{range $data := .BuyOrders}}
-					<tr><td>{{$data.id}}</td><td>{{$data.sell_currency_id}}</td><td>{{$data.sell_rate}}</td><td>{{$data.amount}}</td><td>{{$data.buy_currency_id}}</td><td>{{$data.commission}}</td><td><a href='#' onclick="fc_navigate('currency_exchange_delete', {'del_id':'{{$data.id}}'})">Del</a></td></tr>
+					<tr><td>{{$data.id}}</td><td>{{$data.sell_currency_id}}</td><td>{{$data.sell_rate}}</td><td>{{$data.amount}}</td><td>{{$data.buy_currency_id}}</td><td>{{$data.commission}}</td><td><a href='#' onclick="fc_navigate('currencyExchangeDelete', {'del_id':'{{$data.id}}'})">Del</a></td></tr>
 				{{end}}
 			{{end}}
 

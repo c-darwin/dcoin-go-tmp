@@ -29,6 +29,7 @@ var currency_list = [];
 var arbitration_trust_list = [];
 {{range $userId, $conditions0 := .ArbitrationTrustList}}
 	{{range $currencyId, $conditions := $conditions0}}
+arbitration_trust_list[{{$userId}}]=[];
 arbitration_trust_list[{{$userId}}][{{$currencyId}}]=[];
 arbitration_trust_list[{{$userId}}][{{$currencyId}}]['min_amount'] = '{{index $conditions 0}}';
 arbitration_trust_list[{{$userId}}][{{$currencyId}}]['max_amount'] = '{{index $conditions 1}}';
@@ -315,7 +316,7 @@ $('#send_to_net').bind('click', function () {
 		'signature2': $('#signature2').val(),
 		'signature3': $('#signature3').val()
 	}, function (data) {
-		fc_navigate ('wallets_list', {'alert': '{{.Lang.sent_to_the_net}}'} );
+		fc_navigate ('walletsList', {'alert': '{{.Lang.sent_to_the_net}}'} );
 	} );
 
 } );
@@ -361,8 +362,14 @@ $('#amount, #cf_amount, #currency_id').bind("keyup change", function(e) {
 		var currency_id = $("#currency_id").val();
 		if (currency_id>=1000)
 			currency_id=1000;
-		var commission_pct = Number(currency_commission[currency_id][0]);
-		var min_commission = Number(currency_commission[currency_id][1]);
+		console.log("currency_commission");
+		if (typeof currency_commission[currency_id] !== "undefined" && typeof currency_commission[currency_id] !== "undefined") {
+			var commission_pct = Number(currency_commission[currency_id][0]);
+			var min_commission = Number(currency_commission[currency_id][1]);
+		} else {
+			var commission_pct = 0.1
+			var min_commission = 0.01
+		}
 		console.log(commission_pct + '/' + min_commission);
 		var amount_ = '';
 		amount_ = parseFloat(amount.replace(",", "."));
@@ -442,7 +449,7 @@ function foattoupper(x) {
 <h1 class="page-header">{{.Lang.wallets_list_title}}</h1>
 
 <div id="wallets">
-	{{ template "alertSuccess". }}
+	{{template "alertSuccess".}}
 
 	<div class="panel-body" style="padding: 0">
 		<!-- Nav tabs -->
@@ -671,7 +678,7 @@ function foattoupper(x) {
 		</p>
 	</div>
 	<div class="clearfix"></div>
-	<div style="text-align: center; max-width: 550px; margin-top: 20px"><button type="button" class="btn btn-link" onclick="fc_navigate('wallets_list')">{{.Lang.back}}</button> <button id="next" class="btn btn-outline btn-primary" type="button" style="margin-left: 7px">{{.Lang.send_to_net}}</button></div>
+	<div style="text-align: center; max-width: 550px; margin-top: 20px"><button type="button" class="btn btn-link" onclick="fc_navigate('walletsList')">{{.Lang.back}}</button> <button id="next" class="btn btn-outline btn-primary" type="button" style="margin-left: 7px">{{.Lang.send_to_net}}</button></div>
 	<div class="clearfix"></div>
 </div>
 

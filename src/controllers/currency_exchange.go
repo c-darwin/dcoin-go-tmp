@@ -18,6 +18,7 @@ import (
 )
 
 type currencyExchangePage struct {
+	SignData string
 	ShowSignData bool
 	BuyCurrencyName string
 	SellCurrencyName string
@@ -43,6 +44,10 @@ type currencyExchangePage struct {
 func (c *Controller) CurrencyExchange() (string, error) {
 
 	fmt.Println("CurrencyExchange")
+
+	txType := "new_forex_order";
+	txTypeId := utils.TypeInt(txType)
+	timeNow := time.Now().Unix()
 
 	c.r.ParseForm()
 	parameters := make(map[string]string)
@@ -72,28 +77,19 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	}
 
 	var sellCurrencyId, buyCurrencyId int64
-	if len(parameters["buy_currency_Id"]) > 0 {
-		buyCurrencyId = utils.StrToInt64(parameters["buy_currency_Id"])
-		c.sess.Set("buy_currency_Id", buyCurrencyId)
+	if len(parameters["buy_currency_id"]) > 0 {
+		buyCurrencyId = utils.StrToInt64(parameters["buy_currency_id"])
+		c.sess.Set("buy_currency_id", buyCurrencyId)
 	}
-	if len(parameters["sell_currency_Id"]) > 0 {
-		sellCurrencyId = utils.StrToInt64(parameters["sell_currency_Id"])
-		c.sess.Set("sell_currency_Id", sellCurrencyId)
+	if len(parameters["sell_currency_id"]) > 0 {
+		sellCurrencyId = utils.StrToInt64(parameters["sell_currency_id"])
+		c.sess.Set("sell_currency_id", sellCurrencyId)
 	}
 	if buyCurrencyId == 0 {
-
-		sess_ := c.sess.Get("buy_currency_Id")
-		switch sess_.(type) {
-		default:
-			log.Println("0")
-		case int64:
-			log.Println(sess_.(int64))
-		}
-
-		buyCurrencyId = GetSessInt64("buy_currency_Id", c.sess)
+		buyCurrencyId = GetSessInt64("buy_currency_id", c.sess)
 	}
 	if sellCurrencyId == 0 {
-		sellCurrencyId = GetSessInt64("sell_currency_Id", c.sess)
+		sellCurrencyId = GetSessInt64("sell_currency_id", c.sess)
 	}
 	if buyCurrencyId == 0 {
 		buyCurrencyId = 1
@@ -105,9 +101,6 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	buyCurrencyName := currencyListName[buyCurrencyId]
 	sellCurrencyName := currencyListName[sellCurrencyId]
 
-	txType := "new_forex_order";
-	txTypeId := utils.TypeInt(txType)
-	timeNow := time.Now().Unix()
 
 	// валюты
 	currencyListFullName, err := c.GetCurrencyListFullName()
@@ -218,7 +211,9 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		SellOrders: sellOrders,
 		BuyOrders: buyOrders,
 		MyOrders: myOrders,
+		UserId: c.SessUserId,
 		TxType: txType,
-		TxTypeId: txTypeId})
+		TxTypeId: txTypeId,
+		SignData: ""})
 	return b.String(), nil
 }

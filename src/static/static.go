@@ -2669,10 +2669,10 @@ func static_templates_currency_exchange_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_currency_exchange_delete_tpl reads file data from disk. It returns an error on failure.
-func static_templates_currency_exchange_delete_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/currency_exchange_delete.tpl"
-	name := "static/templates/currency_exchange_delete.tpl"
+// static_templates_currency_exchange_delete_html reads file data from disk. It returns an error on failure.
+func static_templates_currency_exchange_delete_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/currency_exchange_delete.html"
+	name := "static/templates/currency_exchange_delete.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4164,7 +4164,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_promised_amount.tpl": static_templates_change_promised_amount_tpl,
 	"static/templates/credits.html": static_templates_credits_html,
 	"static/templates/currency_exchange.html": static_templates_currency_exchange_html,
-	"static/templates/currency_exchange_delete.tpl": static_templates_currency_exchange_delete_tpl,
+	"static/templates/currency_exchange_delete.html": static_templates_currency_exchange_delete_html,
 	"static/templates/db_info.tpl": static_templates_db_info_tpl,
 	"static/templates/del_cf_funding.tpl": static_templates_del_cf_funding_tpl,
 	"static/templates/del_cf_project.tpl": static_templates_del_cf_project_tpl,
@@ -4592,7 +4592,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"currency_exchange.html": &_bintree_t{static_templates_currency_exchange_html, map[string]*_bintree_t{
 			}},
-			"currency_exchange_delete.tpl": &_bintree_t{static_templates_currency_exchange_delete_tpl, map[string]*_bintree_t{
+			"currency_exchange_delete.html": &_bintree_t{static_templates_currency_exchange_delete_html, map[string]*_bintree_t{
 			}},
 			"db_info.tpl": &_bintree_t{static_templates_db_info_tpl, map[string]*_bintree_t{
 			}},
