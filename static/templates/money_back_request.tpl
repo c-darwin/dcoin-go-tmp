@@ -55,7 +55,7 @@
 <div id="main_div">
 	<h1 class="page-header"><?php echo $lng['arbitration']?></h1>
 	<ol class="breadcrumb">
-		<li><a href="#wallets_list"><?php echo $lng['wallets']?></a></li>
+		<li><a href="#walletsList"><?php echo $lng['wallets']?></a></li>
 		<li><a href="#arbitration"><?php echo $lng['arbitration']?></a></li>
 		<li class="active"><?php echo $lng['i_buyer']?></li>
 	</ol>

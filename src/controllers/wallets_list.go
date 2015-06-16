@@ -46,20 +46,14 @@ type walletsListPage struct {
 }
 
 func (c *Controller) WalletsList() (string, error) {
+	var err error
 
 	fmt.Println("WalletsList")
 
 	// валюты
-	currencyList, err := c.GetCurrencyList(true)
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	log.Println("currencyList", currencyList)
+	currencyList:=c.CurrencyListCf
 
-	confirmedBlockId, err := c.GetConfirmedBlockId()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
+	confirmedBlockId:=c.ConfirmedBlockId
 
 	var wallets []utils.DCAmounts
 	var myDcTransactions []map[string]string
@@ -117,7 +111,7 @@ func (c *Controller) WalletsList() (string, error) {
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(last_tx)>0 {
-		lastTxFormatted = utils.MakeLastTx(last_tx, c.Lang);
+		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang);
 	}
 	arbitrationTrustList_, err := c.GetMap(`
 			SELECT arbitrator_user_id,
@@ -172,12 +166,12 @@ func (c *Controller) WalletsList() (string, error) {
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "walletsList", &walletsListPage{
+	err = t.ExecuteTemplate(b, "walletsList", &walletsListPage{
 		CountSignArr: c.CountSignArr,
 		CfProjectId: 0,
 		Names: names,
 		UserIdStr: utils.Int64ToStr(c.SessUserId),
-		Alert: "",
+		Alert: c.Alert,
 		Community: c.Community,
 		ConfigCommission: c.ConfigCommission,
 		ProjectType: projectType,
@@ -198,5 +192,8 @@ func (c *Controller) WalletsList() (string, error) {
 		ArbitrationTrustList: arbitrationTrustList,
 		ShowSignData: c.ShowSignData,
 		SignData: ""})
-	 return b.String(), nil
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return b.String(), nil
 }

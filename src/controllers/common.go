@@ -18,7 +18,9 @@ import (
 	"os"
 	"io/ioutil"
 	"static"
+	"bytes"
 	"encoding/json"
+	"html/template"
 )
 
 type Controller struct {
@@ -38,6 +40,7 @@ type Controller struct {
 	SessRestricted int64
 	SessUserId int64
 	MyNotice map[string]string
+	Parameters map[string]string
 	Variables *utils.Variables
 	CountSign int
 	CountSignArr []int
@@ -46,6 +49,10 @@ type Controller struct {
 	PoolAdminUserId int64
 	NodeConfig map[string]string
 	ConfigCommission map[string][]float64
+	CurrencyList map[int64]string
+	CurrencyListCf map[int64]string
+	ConfirmedBlockId int64
+	MinerId int64
 }
 
 var configIni map[string]string
@@ -471,16 +478,56 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		//время последнего блока
 		lastBlockTime = blockData["lastBlockTime"]
 		fmt.Println("installProgress", installProgress, "configExists", configExists,  "lastBlockTime", lastBlockTime)
+
+		// валюты
+		currencyListCf, err := c.GetCurrencyList(true)
+		if err != nil {
+			log.Print(err)
+		}
+		c.CurrencyListCf = currencyListCf
+		currencyList, err := c.GetCurrencyList(false)
+		if err != nil {
+			log.Print(err)
+		}
+		c.CurrencyList = currencyList
+
+		confirmedBlockId, err := c.GetConfirmedBlockId()
+		if err != nil {
+			log.Print(err)
+		}
+		c.ConfirmedBlockId = confirmedBlockId
+
+		c.MinerId, err = c.GetMyMinerId(c.SessUserId)
+		if err != nil {
+			log.Print(err)
+		}
+
 	}
 	r.ParseForm()
 	tplName := r.FormValue("tpl_name")
+	parameters_ := make(map[string]interface {})
+	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
+	if err != nil {
+		log.Print(err)
+	}
+	fmt.Println("parameters_=",parameters_)
+	parameters := make(map[string]string)
+	for k, v := range parameters_ {
+		parameters[k] = utils.InterfaceToStr(v)
+	}
+	c.Parameters = parameters
+	fmt.Println("parameters=",parameters)
 	fmt.Println("tpl_name=",tplName)
 
 	// если в параметрах пришел язык, то установим его
-	newLang := utils.StrToInt(r.FormValue("parameters[lang]"))
+	newLang := utils.StrToInt(parameters["lang"])
 	if newLang > 0 {
 		fmt.Println("newLang", newLang)
 		SetLang(w, r, newLang)
+	}
+	// уведомления
+	if utils.CheckInputData(parameters["alert"], "alert") {
+		c.Alert = parameters["alert"]
 	}
 
 	lang:=GetLang(w, r)
@@ -642,11 +689,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 				c.ShowSignData = false
 			}
 		}
-		// уведомления
-		alert := r.FormValue("parameters[alert]")
-		if utils.CheckInputData(alert, "alert") {
-			c.Alert = alert
-		}
+
 		if dbInit && tplName !="updating_blockchain" {
 			html, err :=  CallController(c, "AlertMessage")
 			if err != nil {
@@ -709,4 +752,37 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	//sess.Set("username", 11111)
 
+}
+
+
+func makeTemplate(html, name string, tData interface {}) (string, error) {
+	data, err := static.Asset("static/templates/"+html+".html")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	signatures, err := static.Asset("static/templates/signatures.html")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	alert_success, err := static.Asset("static/templates/alert_success.html")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	funcMap := template.FuncMap{
+		"div": func(a, b interface{}) float64 {
+			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
+		},
+		"round": func(a float64, num int) float64 {
+			return utils.Round(a, num)
+		},
+	}
+	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+	t = template.Must(t.Parse(string(alert_success)))
+	t = template.Must(t.Parse(string(signatures)))
+	b := new(bytes.Buffer)
+	err = t.ExecuteTemplate(b, name, tData)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return b.String(), nil
 }

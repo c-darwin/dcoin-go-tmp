@@ -1545,7 +1545,23 @@ func BytesShift(str *[]byte, index int64) []byte {
 	return substr
 }
 
-func InterfaceToStr(i []interface {}) []string {
+func InterfaceToStr(v interface {}) string {
+	var str string
+	switch v.(type) {
+		case int:
+			str = IntToStr(v.(int))
+		case float64:
+			str = Float64ToStr(v.(float64))
+		case int64:
+			str = Int64ToStr(v.(int64))
+		case string:
+			str = v.(string)
+		case []byte:
+			str = string(v.([]byte))
+	}
+	return str
+}
+func InterfaceSliceToStr(i []interface {}) []string {
 	var str []string
 	for _, v := range i {
 		switch v.(type) {
@@ -2112,7 +2128,8 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 	return newResult
 }
 
-func MakeLastTx(lastTx []map[string]string, lng map[string]string) string {
+func MakeLastTx(lastTx []map[string]string, lng map[string]string) (string, map[int64]int64) {
+	pendingTx := make(map[int64]int64)
 	result := `<h3>`+lng["transactions"]+`</h3><table class="table" style="width:500px;">`
 	result+=`<tr><th>`+lng["time"]+`</th><th>`+lng["result"]+`</th></tr>`
 	for _, data := range(lastTx) {
@@ -2126,9 +2143,10 @@ func MakeLastTx(lastTx []map[string]string, lng map[string]string) string {
 			result+="<td>"+lng["lost"]+"</td>"
 		} else {
 			result+="<td>"+lng["status_pending"]+"</td>"
+			pendingTx[StrToInt64(data["type"])] = 1
 		}
 		result+="</tr>"
 	}
 	result+="</table>"
-	return result
+	return result, pendingTx
 }

@@ -1,0 +1,47 @@
+package controllers
+import (
+	"utils"
+	"time"
+	"log"
+)
+
+type delCreditPage struct {
+	SignData string
+	ShowSignData bool
+	TxType string
+	TxTypeId int64
+	TimeNow int64
+	UserId int64
+	Alert string
+	Lang map[string]string
+	CountSignArr []int
+	CreditId float64
+}
+
+func (c *Controller) DelCredit() (string, error) {
+
+	log.Println("DelCredit")
+
+	txType := "del_credit";
+	txTypeId := utils.TypeInt(txType)
+	timeNow := time.Now().Unix()
+
+	creditId := utils.Round(utils.StrToFloat64(c.Parameters["credit_id"]), 0)
+
+	TemplateStr, err := makeTemplate("del_credit", "delCredit", &delCreditPage{
+		Alert: c.Alert,
+		Lang: c.Lang,
+		CountSignArr: c.CountSignArr,
+		ShowSignData: c.ShowSignData,
+		UserId: c.SessUserId,
+		TimeNow: timeNow,
+		TxType: txType,
+		TxTypeId: txTypeId,
+		SignData: "",
+		CreditId: creditId})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return TemplateStr, nil
+}
+

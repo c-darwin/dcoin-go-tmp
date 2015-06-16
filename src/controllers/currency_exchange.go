@@ -195,7 +195,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "currencyExchange", &currencyExchangePage{
+	err = t.ExecuteTemplate(b, "currencyExchange", &currencyExchangePage{
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
@@ -215,5 +215,8 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		TxType: txType,
 		TxTypeId: txTypeId,
 		SignData: ""})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	return b.String(), nil
 }

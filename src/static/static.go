@@ -2219,10 +2219,10 @@ func static_templates_arbitration_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_arbitration_arbitrator_tpl reads file data from disk. It returns an error on failure.
-func static_templates_arbitration_arbitrator_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/arbitration_arbitrator.tpl"
-	name := "static/templates/arbitration_arbitrator.tpl"
+// static_templates_arbitration_arbitrator_html reads file data from disk. It returns an error on failure.
+func static_templates_arbitration_arbitrator_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/arbitration_arbitrator.html"
+	name := "static/templates/arbitration_arbitrator.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2237,10 +2237,10 @@ func static_templates_arbitration_arbitrator_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_arbitration_buyer_tpl reads file data from disk. It returns an error on failure.
-func static_templates_arbitration_buyer_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/arbitration_buyer.tpl"
-	name := "static/templates/arbitration_buyer.tpl"
+// static_templates_arbitration_buyer_html reads file data from disk. It returns an error on failure.
+func static_templates_arbitration_buyer_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/arbitration_buyer.html"
+	name := "static/templates/arbitration_buyer.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2255,10 +2255,10 @@ func static_templates_arbitration_buyer_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_arbitration_seller_tpl reads file data from disk. It returns an error on failure.
-func static_templates_arbitration_seller_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/arbitration_seller.tpl"
-	name := "static/templates/arbitration_seller.tpl"
+// static_templates_arbitration_seller_html reads file data from disk. It returns an error on failure.
+func static_templates_arbitration_seller_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/arbitration_seller.html"
+	name := "static/templates/arbitration_seller.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2417,10 +2417,10 @@ func static_templates_cf_start_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_arbitrator_conditions_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_arbitrator_conditions_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_arbitrator_conditions.tpl"
-	name := "static/templates/change_arbitrator_conditions.tpl"
+// static_templates_change_arbitrator_conditions_html reads file data from disk. It returns an error on failure.
+func static_templates_change_arbitrator_conditions_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_arbitrator_conditions.html"
+	name := "static/templates/change_arbitrator_conditions.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2489,10 +2489,10 @@ func static_templates_change_country_race_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_creditor_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_creditor_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_creditor.tpl"
-	name := "static/templates/change_creditor.tpl"
+// static_templates_change_creditor_html reads file data from disk. It returns an error on failure.
+func static_templates_change_creditor_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_creditor.html"
+	name := "static/templates/change_creditor.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2741,10 +2741,10 @@ func static_templates_del_cf_project_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_del_credit_tpl reads file data from disk. It returns an error on failure.
-func static_templates_del_credit_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/del_credit.tpl"
-	name := "static/templates/del_credit.tpl"
+// static_templates_del_credit_html reads file data from disk. It returns an error on failure.
+func static_templates_del_credit_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/del_credit.html"
+	name := "static/templates/del_credit.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3245,10 +3245,10 @@ func static_templates_new_cf_project_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_new_credit_tpl reads file data from disk. It returns an error on failure.
-func static_templates_new_credit_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/new_credit.tpl"
-	name := "static/templates/new_credit.tpl"
+// static_templates_new_credit_html reads file data from disk. It returns an error on failure.
+func static_templates_new_credit_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/new_credit.html"
+	name := "static/templates/new_credit.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3551,10 +3551,10 @@ func static_templates_reduction_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_repayment_credit_tpl reads file data from disk. It returns an error on failure.
-func static_templates_repayment_credit_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/repayment_credit.tpl"
-	name := "static/templates/repayment_credit.tpl"
+// static_templates_repayment_credit_html reads file data from disk. It returns an error on failure.
+func static_templates_repayment_credit_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/repayment_credit.html"
+	name := "static/templates/repayment_credit.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4139,9 +4139,9 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/after_install.html": static_templates_after_install_html,
 	"static/templates/alert_success.html": static_templates_alert_success_html,
 	"static/templates/arbitration.html": static_templates_arbitration_html,
-	"static/templates/arbitration_arbitrator.tpl": static_templates_arbitration_arbitrator_tpl,
-	"static/templates/arbitration_buyer.tpl": static_templates_arbitration_buyer_tpl,
-	"static/templates/arbitration_seller.tpl": static_templates_arbitration_seller_tpl,
+	"static/templates/arbitration_arbitrator.html": static_templates_arbitration_arbitrator_html,
+	"static/templates/arbitration_buyer.html": static_templates_arbitration_buyer_html,
+	"static/templates/arbitration_seller.html": static_templates_arbitration_seller_html,
 	"static/templates/block_explorer.tpl": static_templates_block_explorer_tpl,
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
 	"static/templates/cash_requests_in.tpl": static_templates_cash_requests_in_tpl,
@@ -4150,11 +4150,11 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/cf_page_preview.tpl": static_templates_cf_page_preview_tpl,
 	"static/templates/cf_project_change_category.tpl": static_templates_cf_project_change_category_tpl,
 	"static/templates/cf_start.tpl": static_templates_cf_start_tpl,
-	"static/templates/change_arbitrator_conditions.tpl": static_templates_change_arbitrator_conditions_tpl,
+	"static/templates/change_arbitrator_conditions.html": static_templates_change_arbitrator_conditions_html,
 	"static/templates/change_avatar.tpl": static_templates_change_avatar_tpl,
 	"static/templates/change_commission.tpl": static_templates_change_commission_tpl,
 	"static/templates/change_country_race.tpl": static_templates_change_country_race_tpl,
-	"static/templates/change_creditor.tpl": static_templates_change_creditor_tpl,
+	"static/templates/change_creditor.html": static_templates_change_creditor_html,
 	"static/templates/change_host.tpl": static_templates_change_host_tpl,
 	"static/templates/change_key_close.tpl": static_templates_change_key_close_tpl,
 	"static/templates/change_key_request.tpl": static_templates_change_key_request_tpl,
@@ -4168,7 +4168,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/db_info.tpl": static_templates_db_info_tpl,
 	"static/templates/del_cf_funding.tpl": static_templates_del_cf_funding_tpl,
 	"static/templates/del_cf_project.tpl": static_templates_del_cf_project_tpl,
-	"static/templates/del_credit.tpl": static_templates_del_credit_tpl,
+	"static/templates/del_credit.html": static_templates_del_credit_html,
 	"static/templates/for_repaid_fix.tpl": static_templates_for_repaid_fix_tpl,
 	"static/templates/geolocation.tpl": static_templates_geolocation_tpl,
 	"static/templates/holidays_delete.tpl": static_templates_holidays_delete_tpl,
@@ -4196,7 +4196,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/money_back_request.tpl": static_templates_money_back_request_tpl,
 	"static/templates/my_cf_projects.tpl": static_templates_my_cf_projects_tpl,
 	"static/templates/new_cf_project.tpl": static_templates_new_cf_project_tpl,
-	"static/templates/new_credit.tpl": static_templates_new_credit_tpl,
+	"static/templates/new_credit.html": static_templates_new_credit_html,
 	"static/templates/new_holidays.tpl": static_templates_new_holidays_tpl,
 	"static/templates/new_user.tpl": static_templates_new_user_tpl,
 	"static/templates/node_config.tpl": static_templates_node_config_tpl,
@@ -4213,7 +4213,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/promised_amount_list.tpl": static_templates_promised_amount_list_tpl,
 	"static/templates/promised_amount_mining.tpl": static_templates_promised_amount_mining_tpl,
 	"static/templates/reduction.tpl": static_templates_reduction_tpl,
-	"static/templates/repayment_credit.tpl": static_templates_repayment_credit_tpl,
+	"static/templates/repayment_credit.html": static_templates_repayment_credit_html,
 	"static/templates/restoring_access.tpl": static_templates_restoring_access_tpl,
 	"static/templates/rewrite_primary_key.tpl": static_templates_rewrite_primary_key_tpl,
 	"static/templates/sign_up_in_the_pool.tpl": static_templates_sign_up_in_the_pool_tpl,
@@ -4542,11 +4542,11 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"arbitration.html": &_bintree_t{static_templates_arbitration_html, map[string]*_bintree_t{
 			}},
-			"arbitration_arbitrator.tpl": &_bintree_t{static_templates_arbitration_arbitrator_tpl, map[string]*_bintree_t{
+			"arbitration_arbitrator.html": &_bintree_t{static_templates_arbitration_arbitrator_html, map[string]*_bintree_t{
 			}},
-			"arbitration_buyer.tpl": &_bintree_t{static_templates_arbitration_buyer_tpl, map[string]*_bintree_t{
+			"arbitration_buyer.html": &_bintree_t{static_templates_arbitration_buyer_html, map[string]*_bintree_t{
 			}},
-			"arbitration_seller.tpl": &_bintree_t{static_templates_arbitration_seller_tpl, map[string]*_bintree_t{
+			"arbitration_seller.html": &_bintree_t{static_templates_arbitration_seller_html, map[string]*_bintree_t{
 			}},
 			"block_explorer.tpl": &_bintree_t{static_templates_block_explorer_tpl, map[string]*_bintree_t{
 			}},
@@ -4564,7 +4564,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"cf_start.tpl": &_bintree_t{static_templates_cf_start_tpl, map[string]*_bintree_t{
 			}},
-			"change_arbitrator_conditions.tpl": &_bintree_t{static_templates_change_arbitrator_conditions_tpl, map[string]*_bintree_t{
+			"change_arbitrator_conditions.html": &_bintree_t{static_templates_change_arbitrator_conditions_html, map[string]*_bintree_t{
 			}},
 			"change_avatar.tpl": &_bintree_t{static_templates_change_avatar_tpl, map[string]*_bintree_t{
 			}},
@@ -4572,7 +4572,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_country_race.tpl": &_bintree_t{static_templates_change_country_race_tpl, map[string]*_bintree_t{
 			}},
-			"change_creditor.tpl": &_bintree_t{static_templates_change_creditor_tpl, map[string]*_bintree_t{
+			"change_creditor.html": &_bintree_t{static_templates_change_creditor_html, map[string]*_bintree_t{
 			}},
 			"change_host.tpl": &_bintree_t{static_templates_change_host_tpl, map[string]*_bintree_t{
 			}},
@@ -4600,7 +4600,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"del_cf_project.tpl": &_bintree_t{static_templates_del_cf_project_tpl, map[string]*_bintree_t{
 			}},
-			"del_credit.tpl": &_bintree_t{static_templates_del_credit_tpl, map[string]*_bintree_t{
+			"del_credit.html": &_bintree_t{static_templates_del_credit_html, map[string]*_bintree_t{
 			}},
 			"for_repaid_fix.tpl": &_bintree_t{static_templates_for_repaid_fix_tpl, map[string]*_bintree_t{
 			}},
@@ -4656,7 +4656,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"new_cf_project.tpl": &_bintree_t{static_templates_new_cf_project_tpl, map[string]*_bintree_t{
 			}},
-			"new_credit.tpl": &_bintree_t{static_templates_new_credit_tpl, map[string]*_bintree_t{
+			"new_credit.html": &_bintree_t{static_templates_new_credit_html, map[string]*_bintree_t{
 			}},
 			"new_holidays.tpl": &_bintree_t{static_templates_new_holidays_tpl, map[string]*_bintree_t{
 			}},
@@ -4690,7 +4690,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"reduction.tpl": &_bintree_t{static_templates_reduction_tpl, map[string]*_bintree_t{
 			}},
-			"repayment_credit.tpl": &_bintree_t{static_templates_repayment_credit_tpl, map[string]*_bintree_t{
+			"repayment_credit.html": &_bintree_t{static_templates_repayment_credit_html, map[string]*_bintree_t{
 			}},
 			"restoring_access.tpl": &_bintree_t{static_templates_restoring_access_tpl, map[string]*_bintree_t{
 			}},

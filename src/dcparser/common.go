@@ -1862,7 +1862,7 @@ func (p *Parser) pointsUpdateRollback(logId, userId int64) error {
 // не использовать для комментов
 func (p *Parser) selectiveLoggingAndUpd(fields []string , values_ []interface {}, table string, whereFields, whereValues []string) error {
 
-	values := utils.InterfaceToStr(values_)
+	values := utils.InterfaceSliceToStr(values_)
 
 	addSqlFields := ""
 	for _, field := range fields {
