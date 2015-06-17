@@ -50,6 +50,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	log.Println("txType_", txType_)
 
+	var data []byte
 	switch txType_ {
 	case "new_user":
 		publicKeyHex := c.r.FormValue("public_key")
@@ -75,7 +76,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(userId))...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(publicKey))...)
@@ -85,7 +86,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		projectId := []byte(c.r.FormValue("project_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
@@ -99,7 +100,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		langId := []byte(c.r.FormValue("lang_id"));
 		comment := []byte(c.r.FormValue("comment"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
@@ -112,7 +113,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "new_credit" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("to_user_id")))...)
@@ -126,7 +127,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "del_credit" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("credit_id")))...)
@@ -136,7 +137,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "repayment_credit" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("credit_id")))...)
@@ -147,7 +148,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_creditor" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("to_user_id")))...)
@@ -158,7 +159,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_credit_part" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("pct")))...)
@@ -171,7 +172,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		name := []byte(c.r.FormValue("name"));
 		avatar := []byte(c.r.FormValue("avatar"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(name)...)
@@ -184,7 +185,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		fundingId := []byte(c.r.FormValue("funding_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(fundingId)...)
@@ -197,7 +198,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		projectId := []byte(c.r.FormValue("project_id"));
 		categoryId := []byte(c.r.FormValue("category_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
@@ -216,7 +217,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		categoryId := []byte(c.r.FormValue("category_id"));
 		currencyName := []byte(c.r.FormValue("currency_name"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(currencyId)...)
@@ -244,7 +245,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		links := []byte(c.r.FormValue("links"));
 		hide := []byte(c.r.FormValue("hide"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
@@ -286,7 +287,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 		nodePublicKey = utils.HexToBin(nodePublicKey);
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(race)...)
@@ -334,7 +335,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(voteId)...)
@@ -359,7 +360,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(currencyId)...)
@@ -390,7 +391,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 		amount := []byte(c.r.FormValue("amount"));
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
@@ -403,7 +404,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 		amount := []byte(c.r.FormValue("amount"));
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
@@ -434,7 +435,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
@@ -465,7 +466,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(latitude)...)
@@ -479,7 +480,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
@@ -490,7 +491,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		orderId := []byte(c.r.FormValue("order_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(orderId)...)
@@ -588,7 +589,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			comment = utils.HexToBin(comment);
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(toUserId)...)
@@ -664,7 +665,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			comment = utils.HexToBin(comment);
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
@@ -736,7 +737,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(toUserId)...)
@@ -752,7 +753,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		cashRequestId := []byte(c.r.FormValue("cash_request_id"));
 		code := []byte(c.r.FormValue("code"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(cashRequestId)...)
@@ -777,7 +778,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		if ( num > 0 ) {
 			return "", utils.ErrInfo(err)
 		}
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(abuses)...)
@@ -788,7 +789,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		usersIds := []byte(c.r.FormValue("users_ids"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(usersIds)...)
@@ -800,7 +801,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		usersIds := []byte(c.r.FormValue("users_ids"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(usersIds)...)
@@ -812,7 +813,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		variables := []byte(c.r.FormValue("variables"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(variables)...)
@@ -827,7 +828,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		tolerances := []byte(c.r.FormValue("tolerances"));
 		compatibility := []byte(c.r.FormValue("compatibility"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(exampleSpots)...)
@@ -843,7 +844,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		message := []byte(c.r.FormValue("message"));
 		currencyList := []byte(c.r.FormValue("currency_list"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(message)...)
@@ -907,7 +908,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		binPublicKeyPack = append(binPublicKeyPack, utils.EncodeLengthPlusData(bin_public_key_2)...)
 		binPublicKeyPack = append(binPublicKeyPack, utils.EncodeLengthPlusData(bin_public_key_3)...)
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(binPublicKeyPack)...)
@@ -939,7 +940,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(publicKey))...)
@@ -951,7 +952,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		jsonData := []byte(c.r.FormValue("json_data"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(jsonData)...)
@@ -985,7 +986,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(startTime)...)
@@ -995,7 +996,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "new_miner_update" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
@@ -1017,7 +1018,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		maxPromisedAmount := []byte(c.r.FormValue("max_promised_amount"));
 		maxOtherCurrencies := []byte(c.r.FormValue("max_other_currencies"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(currencyName)...)
@@ -1039,7 +1040,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(softType)...)
@@ -1055,7 +1056,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		softType := []byte(c.r.FormValue("soft_type"));
 		version := []byte(c.r.FormValue("version"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(softType)...)
@@ -1069,7 +1070,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		title := []byte(c.r.FormValue("title"));
 		message := []byte(c.r.FormValue("message"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(title)...)
@@ -1107,7 +1108,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		encryptedMessage = utils.HexToBin(encryptedMessage);
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(encryptedMessage)...)
@@ -1125,7 +1126,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		encryptedMessage = utils.HexToBin(encryptedMessage);
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(toUserId)...)
@@ -1203,7 +1204,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				}
 
 				// создаем новую транзакцию - подверждение, что фото скопировано и проверено.
-				data := utils.DecToBin(txType, 1)
+				data = utils.DecToBin(txType, 1)
 				data = append(data, utils.DecToBin(timeNow, 4)...)
 				data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(uId))...)
 				data = append(data, utils.EncodeLengthPlusData(host)...)
@@ -1227,7 +1228,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		buyCurrencyId := []byte(c.r.FormValue("buy_currency_id"));
 		commission := []byte(c.r.FormValue("commission"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(sellCurrencyId)...)
@@ -1241,7 +1242,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "for_repaid_fix" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
@@ -1250,7 +1251,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "actualization_promised_amounts" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
@@ -1279,32 +1280,32 @@ func (c *Controller) SaveQueue() (string, error) {
 		}
 		for currencyId, data := range commissionDecode {
 			if !utils.CheckInputData(currencyId, "bigint") {
-				return "", error.New("incorrect currencyId")
+				return "", errors.New("incorrect currencyId")
 			}
 			// % от 0 до 10
 			if !utils.CheckInputData(data[0], "currency_commission")  || data[0] > 10{
-				return "", error.New("incorrect pct")
+				return "", errors.New("incorrect pct")
 			}
 			// минимальная комиссия от 0. При 0% будет = 0
 			if !utils.CheckInputData(data[1], "currency_commission") {
-				return "", error.New("incorrect currency_min_commission")
+				return "", errors.New("incorrect currency_min_commission")
 			}
 			// макс. комиссия. 0 - значит, считается по %
 			if !utils.CheckInputData(data[2], "currency_commission") {
-				return "", error.New("incorrect currency_max_commission")
+				return "", errors.New("incorrect currency_max_commission")
 			}
-			if data[1] > data[2] && data[2] {
-				return "", error.New("incorrect currency_max_commission")
+			if data[1] > data[2] && data[2]>0 {
+				return "", errors.New("incorrect currency_max_commission")
 			}
 			// и если в пуле, то
 			if len(poolCommission) > 0 {
 				// нельзя допустить, чтобы блок подписал майнер, у которого комиссия больше той, что разрешана в пуле,
 				// т.к. это приведет к попаднию в блок некорректной тр-ии, что приведет к сбою пула
 				if len(poolCommission[currencyId]) > 0 && data[0] > poolCommission[currencyId][0] {
-					return "", error.New("incorrect commission")
+					return "", errors.New("incorrect commission")
 				}
 				if len(poolCommission[currencyId]) > 0 && data[1] > poolCommission[currencyId][1] {
-					return "", error.New("incorrect commission")
+					return "", errors.New("incorrect commission")
 				}
 			}
 		}
@@ -1330,7 +1331,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(commission)...)
@@ -1339,9 +1340,9 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_key_active" :
 
-		secret = utils.HexToBin(c.r.FormValue("secret"));
+		secret := utils.HexToBin([]byte(c.r.FormValue("secret")));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(secret)...)
@@ -1351,7 +1352,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_key_close" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
@@ -1362,7 +1363,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		toUserId := []byte(c.r.FormValue("to_user_id"));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(toUserId)...)
@@ -1373,9 +1374,9 @@ func (c *Controller) SaveQueue() (string, error) {
 	case "admin_change_primary_key" :
 
 		forUserId := []byte(c.r.FormValue("for_user_id"));
-		new_public_key = utils.HexToBin(c.r.FormValue("new_public_key"));
+		newPublicKey := utils.HexToBin([]byte(c.r.FormValue("new_public_key")));
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(forUserId)...)
@@ -1386,7 +1387,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_arbitrator_list" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("arbitration_trust_list")))...)
@@ -1402,23 +1403,23 @@ func (c *Controller) SaveQueue() (string, error) {
 			return fmt.Sprintf("%q", err), err
 		}
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("order_id")))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(arbitratorEncText[0]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(arbitratorEncText[1]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(arbitratorEncText[2]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(arbitratorEncText[3]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(arbitratorEncText[4]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(c.r.FormValue("seller_enc_text")))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[0])))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[1])))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[2])))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[3])))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[4])))...)
+		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(c.r.FormValue("seller_enc_text"))))...)
 		data = append(data, binSignatures...)
 
 
 
 	case "change_seller_hold_back" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("arbitration_days_refund")))...)
@@ -1429,7 +1430,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "money_back" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("order_id")))...)
@@ -1440,7 +1441,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_arbitrator_conditions" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("conditions")))...)
@@ -1451,7 +1452,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_money_back_time" :
 
-		data := utils.DecToBin(txType, 1)
+		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("order_id")))...)
