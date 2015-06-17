@@ -75,7 +75,7 @@ $('#add_promised_amount').bind('click', function () {
 
 $('#send_to_net').bind('click', function () {
 
-		$.post( 'ajax/save_queue.php', {
+		$.post( 'ajax?controllerName=saveQueue', {
 				'type' : '<?php echo $tpl['data']['type']?>',
 				'time' : '<?php echo $tpl['data']['time']?>',
 				'user_id' : '<?php echo $tpl['data']['user_id']?>',

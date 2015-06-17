@@ -443,6 +443,29 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 }
 
 
+func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
+	if sessRestricted==0 && sessUserId<=0 {
+		return false, nil
+	}
+	community, err := db.GetCommunityUsers()
+	if err != nil {
+		return false, ErrInfo(err)
+	}
+	if len(community) > 0 {
+		pool_admin_user_id, err := db.GetPoolAdminUserId()
+		if err != nil {
+			return false, ErrInfo(err)
+		}
+		if sessUserId == pool_admin_user_id {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	} else {
+		return true, nil
+	}
+}
+
 func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interface{}) (int64, error) {
 	var lastId int64
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)

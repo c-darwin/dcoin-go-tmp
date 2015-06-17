@@ -259,9 +259,11 @@ func CheckLang(lang int) bool {
 	}
 	return false
 }
-func GetLang(w http.ResponseWriter, r *http.Request) int {
+
+
+func GetLang(w http.ResponseWriter, r *http.Request, parameters map[string]string) int {
 	var lang int = 1
-	lang = utils.StrToInt(r.FormValue("parameters[lang]"))
+	lang = utils.StrToInt(parameters["lang"])
 	if !CheckLang(lang) {
 		if langCookie, err := r.Cookie("lang"); err==nil {
 			lang, _ = strconv.Atoi(langCookie.Value)
@@ -334,8 +336,20 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	}
 	c.dbInit = dbInit
 	c.SessUserId = sessUserId
+	parameters_ := make(map[string]interface {})
+	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
+	if err != nil {
+		log.Print(err)
+	}
+	fmt.Println("parameters_=",parameters_)
+	parameters := make(map[string]string)
+	for k, v := range parameters_ {
+		parameters[k] = utils.InterfaceToStr(v)
+	}
+	c.Parameters = parameters
+	fmt.Println("parameters=",parameters)
 
-	lang:=GetLang(w, r)
+	lang:=GetLang(w, r, parameters)
 	fmt.Println("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
 	c.LangInt = int64(lang)
@@ -401,6 +415,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(html))
 }
+
 
 func Content(w http.ResponseWriter, r *http.Request) {
 
@@ -530,7 +545,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		c.Alert = parameters["alert"]
 	}
 
-	lang:=GetLang(w, r)
+	lang:=GetLang(w, r, parameters)
 	fmt.Println("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]

@@ -57,7 +57,7 @@ $('#goto_confirm').bind('click', function () {
 		$("#arbitrator_link_add").css("display", "");
 
 		// шлем запрос, чтобы получить список арбитров, с кем работает магазин
-		$.post( 'ajax/get_seller_data.php', {
+		$.post( 'ajax?controllerName=getSellerData', {
 			'user_id' : to_user_id,
 			'currency_id' : $("#currency_id").val()
 		}, function (data) {
@@ -299,8 +299,10 @@ $('#send_to_net').bind('click', function () {
 		var comment = $('#cf_comment').val();
 	}
 
+	var json_global_arbitrators_array = JSON.stringify(global_arbitrators_array);
+	var json_global_arbitrators_commissions_array2 = JSON.stringify(global_arbitrators_commissions_array2);
 
-	$.post( 'ajax/save_queue.php', {
+	$.post( 'ajax?controllerName=saveQueue', {
 		'type' : tx_type,
 		'time' : '{{.Time}}',
 		'user_id' : '{{.UserId}}',
@@ -308,8 +310,8 @@ $('#send_to_net').bind('click', function () {
 		'currency_id' : $('#currency_id').val(),
 		'amount' : amount,
 		'commission' : commission,
-		'arbitrators' : global_arbitrators_array,
-		'arbitrators_commissions' : global_arbitrators_commissions_array2,
+		'arbitrators' : json_global_arbitrators_array,
+		'arbitrators_commissions' : json_global_arbitrators_commissions_array2,
 		'comment' : $('#comment_encrypted').val(),
 		'comment_text' : comment,
 		'signature1': $('#signature1').val(),

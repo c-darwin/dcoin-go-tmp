@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"strings"
 	"static"
+	"encoding/json"
+	"utils"
+	"log"
 )
 
 type index struct {
@@ -24,7 +27,17 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Index")
 	fmt.Println(r.URL.RawQuery)
 
-	lang := GetLang(w, r)
+	parameters_ := make(map[string]interface {})
+	err := json.Unmarshal([]byte(r.PostFormValue("parameters")), &parameters_)
+	if err != nil {
+		log.Print(err)
+	}
+	fmt.Println("parameters_=",parameters_)
+	parameters := make(map[string]string)
+	for k, v := range parameters_ {
+		parameters[k] = utils.InterfaceToStr(v)
+	}
+	lang := GetLang(w, r, parameters)
 
 	sess, _ := globalSessions.SessionStart(w, r)
 	defer sess.SessionRelease(w)

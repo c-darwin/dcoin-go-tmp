@@ -138,7 +138,7 @@
 
 	$('#send_to_net').bind('click', function () {
 
-		$.post( 'ajax/save_queue.php', {
+		$.post( 'ajax?controllerName=saveQueue', {
 			'type' : '{{.TxType}}',
 			'time' : '{{.TimeNow}}',
 			'user_id' : '{{.UserId}}',

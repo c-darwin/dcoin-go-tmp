@@ -851,6 +851,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case []byte:
 		data = string(data_.([]byte))
 	}
+	log.Println("CheckInputData_:"+data)
 	switch dataType {
 	case "arbitration_trust_list":
 		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok{
@@ -859,6 +860,12 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case "votes_comment", "cf_comment":
 		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
 			return true
+		}
+	case "type":
+		if ok, _ := regexp.MatchString(`^[\w]+$`, data); ok{
+			if StrToInt(data) <= 30 {
+				return true
+			}
 		}
 	case "referral":
 		if ok, _ := regexp.MatchString(`^[0-9]{1,2}$`, data); ok{
@@ -1102,6 +1109,9 @@ func StrToInt(s string) int {
 }
 func Float64ToStr(f float64) string {
 	return strconv.FormatFloat(f,'f', 13, 64)
+}
+func Float64ToBytes(f float64) []byte {
+	return []byte(strconv.FormatFloat(f,'f', 13, 64))
 }
 func Float64ToStrPct(f float64) string {
 	return strconv.FormatFloat(f,'f', 2, 64)
@@ -1503,6 +1513,11 @@ func IntToStr(num int) string {
 	return strconv.Itoa(num)
 }
 
+func DecToBin(dec, sizeBytes int64) []byte {
+	Hex := fmt.Sprintf("%0"+Int64ToStr(sizeBytes*2)+"x", dec)
+	//fmt.Println("Hex", Hex)
+	return HexToBin([]byte(Hex))
+}
 func BinToHex(bin []byte) []byte {
 	return []byte(fmt.Sprintf("%x", bin))
 }
