@@ -12,7 +12,7 @@ import (
     "encoding/json"
 	"utils"
 	//"time"
-	//"log"
+	"log"
 //	"math"
 	//"time"
 	"errors"
@@ -29,9 +29,9 @@ func (c *Controller) EncryptComment() (string, error) {
 	txType := c.r.FormValue("type")
 	var toId int64
 	var toIds []int64
-	toIds_ := c.r.FormValue("toIds")
+	toIds_ := c.r.FormValue("to_ids")
 	if len (toIds_) == 0 {
-		toId = utils.StrToInt64(c.r.FormValue("toId"))
+		toId = utils.StrToInt64(c.r.FormValue("to_id"))
 	} else {
 		err = json.Unmarshal([]byte(toIds_), &toIds)
 		if err != nil {
@@ -41,7 +41,7 @@ func (c *Controller) EncryptComment() (string, error) {
 
 	comment := c.r.FormValue("comment")
 	if len(comment) > 1024 {
-		return `incorrect comment`, errors.New("incorrect comment")
+		return "", errors.New("incorrect comment")
 	}
 
 	var toUserId int64
@@ -58,10 +58,13 @@ func (c *Controller) EncryptComment() (string, error) {
 		toIds = []int64{toUserId}
 	}
 
-	enc := make(map[int]string)
+	log.Println("toId:", toId)
+	log.Println("toIds:", toIds)
+	log.Println("toUserId:", toUserId)
+	enc := make(map[int][]byte)
 	for i:=0; i < len(toIds); i++ {
 		if toIds[i] == 0 {
-			enc[i] = "0"
+			enc[i] = []byte("0")
 			continue
 		}
 		// если получатель майнер, тогда шифруем нодовским ключем
@@ -79,13 +82,19 @@ func (c *Controller) EncryptComment() (string, error) {
 			}
 		}
 
-		enc[i], err = rsa.EncryptPKCS1v15(rand.Reader, publicKey, comment)
+		pub, err := utils.BinToRsaPubKey([]byte(publicKey))
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
+		enc_, err := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte(comment))
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		enc[i] = utils.BinToHex(enc_)
 	}
+	log.Println("enc:", enc)
 	if txType != "arbitration_arbitrators" {
-		return enc[0], nil
+		return string(enc[0]), nil
 	} else {
 		result, err := json.Marshal(enc)
 		if err != nil {

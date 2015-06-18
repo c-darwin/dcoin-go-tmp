@@ -40,7 +40,7 @@ $('#next').bind('click', function () {
 		$("#message").html( '<div class="alert alert-success"><button type="button" class="close" data-dismiss="alert">&times;</button>'+error_message+'</div>' );
 	}
 	else {
-		$.post( 'ajax/encrypt_comment.php', {
+		$.post( 'ajax?controllerName=encryptComment', {
 
 			'to_user_id' : to_user_id,
 			'type' : 'cash_request',

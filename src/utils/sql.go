@@ -442,6 +442,47 @@ func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	return nil
 }
 
+func (db *DCDB) CountMinerAttempt(userId int64, vType string) (int64, error) {
+	count, err := db.Single("SELECT count(user_id) FROM votes_miners WHERE user_id = ? AND type = ?", userId, vType).Int64()
+	if err != nil {
+		return 0, ErrInfo(err)
+	}
+	return count, nil
+}
+
+func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, levelUp string) (map[string]string, error) {
+	var err error
+	result := make(map[string]string)
+
+	// и картинка для обложки
+	data, err := db.OneRow("SELECT blurb_img, lang_id FROM cf_projects_data WHERE project_id  =  ? AND lang_id  =  ? ORDER BY id ASC", id, langId).String()
+	if err != nil {
+		return result, ErrInfo(err)
+	}
+	result["blurb_img"] = data["blurb_img"]
+	result["lang_id"] = data["lang_id"]
+	if len(result["blurb_img"]) == 0 {
+		result["blurb_img"] = levelUp+"img/cf_blurb_img.png"
+	}
+	// сколько собрано
+	funding_amount, err := db.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", id).Float64()
+	if err != nil {
+		return result, ErrInfo(err)
+	}
+	result["funding_amount"] = Float64ToStrPct(funding_amount)
+	// % собрано
+	result["pct"] = Float64ToStrPct(Round((funding_amount / amount * 100), 0))
+	result["funding_amount"] = Float64ToStrPct(math.Floor(funding_amount))
+
+	// дней до окончания
+	days_ := Round(float64(endTime - time.Now().Unix()) / 86400, 0)
+	if days_ < 0 {
+		result["days"] = "0"
+	} else {
+		result["days"] = Float64ToStr(days_)
+	}
+	return result, nil
+}
 
 func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
 	if sessRestricted==0 && sessUserId<=0 {

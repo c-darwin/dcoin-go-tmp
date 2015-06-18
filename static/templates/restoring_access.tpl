@@ -12,7 +12,7 @@ $('#save').bind('click', function () {
 		<?php echo !defined('SHOW_SIGN_DATA')?'$("#send_to_net").trigger("click");':'' ?>
 	}
 	else {
-		$.post( 'ajax/encrypt_comment.php', {
+		$.post( 'ajax?controllerName=encryptComment', {
 
 			'to_user_id' : <?php echo $tpl['admin_user_id']?>,
 			'type' : 'restoring_access',

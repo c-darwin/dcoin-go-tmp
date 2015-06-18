@@ -180,7 +180,7 @@ $('#next, #cf_next').bind('click', function () {
 
 	if (to_id) {
 
-		$.post( 'ajax/encrypt_comment.php', {
+		$.post( 'ajax?controllerName=encryptComment', {
 
 			'to_id' : to_id,
 			'type' : type,

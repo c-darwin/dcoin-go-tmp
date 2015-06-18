@@ -1090,6 +1090,15 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	return false
 }
 
+func Time() int64 {
+	return time.Now().Unix()
+}
+
+func ValidateEmail(email string) bool {
+	Re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	return Re.MatchString(email)
+}
+
 // без проверки на ошибки т.к. тут ошибки не могут навредить
 func StrToInt64(s string) int64 {
 	int64, _ := strconv.ParseInt(s, 10, 64)
@@ -1746,6 +1755,28 @@ func MakeAsn1(hex_n, hex_e []byte) []byte {
 	//fmt.Println(b64)
 }
 
+
+
+func BinToRsaPubKey(publicKey []byte) (*rsa.PublicKey, error) {
+	key := base64.StdEncoding.EncodeToString(publicKey)
+	key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
+	//fmt.Printf("%x\n", publicKeys[i])
+	log.Println("key", key)
+	block, _ := pem.Decode([]byte(key))
+	if block == nil {
+		return nil, ErrInfo(fmt.Errorf("incorrect key"))
+	}
+	re, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	pub := re.(*rsa.PublicKey)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	return pub, nil
+}
+
 func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
 
 	log.Println("forSign", forSign)
@@ -1773,7 +1804,7 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		log.Println("publicKeys[i]", string(publicKeys[i]))
+		/*log.Println("publicKeys[i]", string(publicKeys[i]))
 		key := base64.StdEncoding.EncodeToString(publicKeys[i])
 		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
 		//fmt.Printf("%x\n", publicKeys[i])
@@ -1789,6 +1820,10 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		pub := re.(*rsa.PublicKey)
 		if err != nil {
 			return false,  ErrInfo(err)
+		}*/
+		pub, err := BinToRsaPubKey(publicKeys[i])
+		if err != nil {
+			return false,  ErrInfo(err)
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
@@ -1798,7 +1833,7 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			log.Println("HashSha1(forSign)", string(HashSha1(forSign)))
 			log.Println("forSign", forSign)
 			log.Printf("sign: %x\n", signsSlice[i])
-			return false, ErrInfoFmt("incorrect sign: key = %s ; hash = %x; forSign = %v", key, HashSha1(forSign), forSign)
+			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v",  HashSha1(forSign), forSign)
 		}
 	}
 	return true, nil

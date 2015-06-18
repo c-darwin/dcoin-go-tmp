@@ -5,7 +5,7 @@
 
 	$('#next').bind('click', function () {
 
-		$.post( 'ajax/encrypt_comment.php', {
+		$.post( 'ajax?controllerName=encryptComment', {
 			'to_id' : {<?php echo "'0':{$tpl['order']['arbitrator0']},'1':{$tpl['order']['arbitrator1']},'2':{$tpl['order']['arbitrator2']},'3':{$tpl['order']['arbitrator3']},'4':{$tpl['order']['arbitrator4']}"?>},
 			'type' : 'arbitration_arbitrators',
 			'comment' :  $("#comment").val()
@@ -13,7 +13,7 @@
 
 			arbitrator_enc_text = arbitrator_enc_text_;
 
-				$.post( 'ajax/encrypt_comment.php', {
+				$.post( 'ajax?controllerName=encryptComment', {
 					'to_id' : <?php echo $tpl['order']['seller']?>,
 					'type' : 'arbitration_seller',
 					'comment' :  $("#comment").val()

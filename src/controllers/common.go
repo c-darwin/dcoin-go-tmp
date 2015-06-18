@@ -32,6 +32,7 @@ type Controller struct {
 	Lang map[string]string
 	LangInt int64
 	Community bool
+	CommunityUsers []int64
 	ShowSignData bool
 	MyPrefix string
 	Alert string
@@ -320,6 +321,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
+		c.CommunityUsers = communityUsers
 		if len(communityUsers) > 0 {
 			c.Community = true
 		}
@@ -374,6 +376,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	html, err :=  CallController(c, controllerName)
 	if err != nil {
 		log.Print(err)
+		html = fmt.Sprintf("%s", err)
 	}
 	w.Write([]byte(html))
 }

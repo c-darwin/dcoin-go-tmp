@@ -1221,13 +1221,7 @@ func (p *Parser) limitRequestsRollback(txType string) error {
 	return nil
 }
 
-func (p *Parser) countMinerAttempt(userId, vType string) (int64, error) {
-	count, err := p.DCDB.Single("SELECT count(user_id) FROM votes_miners WHERE user_id = ? AND type = ?", userId, vType).Int64()
-	if err != nil {
-		return 0, utils.ErrInfo(err)
-	}
-	return count, nil
-}
+
 // откатываем ID на кол-во затронутых строк
 func (p *Parser) rollbackAI(table string, num int64) (error) {
 

@@ -89,7 +89,7 @@ func (p *Parser) NewMinerFront() (error) {
 	}
 
 	// проверим, не кончились ли попытки стать майнером у данного юзера
-	count, err := p.countMinerAttempt(string(p.TxMap["user_id"]), "user_voting")
+	count, err := p.CountMinerAttempt(p.TxUserID, "user_voting")
 	if count >= p.Variables.Int64["miner_votes_attempt"] {
 		return utils.ErrInfoFmt("miner_votes_attempt")
 	}

@@ -45,7 +45,7 @@
 				message_id = message_id_;
 				comment = '{"parent_id":"'+$('#parent_id').val()+'","message_id":"'+message_id+'","subject":"'+subject+'","message":"'+$("#message").val()+'","type":"0","subtype":"'+subtype+'"}';
 
-				$.post( 'ajax/encrypt_comment.php', {
+				$.post( 'ajax?controllerName=encryptComment', {
 
 					'to_user_id' : 1,
 					'type' : 'bug_reporting',

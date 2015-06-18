@@ -43,7 +43,7 @@
 	});
 
 	$('#save_shop_data').bind('click', function () {
-		$.post( 'ajax/save_shop_data.php', {
+		$.post( 'ajax?controllerName=saveShopData', {
 					'shop_callback_url' : $('#shop_callback_url').val(),
 					'shop_secret_key' : $('#shop_secret_key').val()
 				},

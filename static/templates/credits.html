@@ -15,7 +15,7 @@
 
 		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#credit_part").val());
 		doSign();
-		{{if .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 	});
 
 	$('#send_to_net').bind('click', function () {

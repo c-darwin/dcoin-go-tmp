@@ -1,0 +1,66 @@
+{{define "signUpInThePool"}}
+<script language="JavaScript" type="text/javascript">
+
+	check_key_and_show_modal();
+
+	$('#send').bind('click', function () {
+
+		var key = $("#key").text();
+		var pass = $("#password").text();
+
+		iv = CryptoJS.enc.Hex.parse(Generate_key());
+		var e_n_sign = get_e_n_sign(key, pass, iv.toString(), '', 'modal_alert');
+
+		// шлем подпись на сервер на проверку
+		$.post( 'ajax?controllerName=signUpInPool', {
+			'email': $('#email').val(),
+			'n' : e_n_sign['modulus'],
+			'e': e_n_sign['exp']
+		}, function (data) {
+			console.log(data);
+			if (data.success)
+				fc_navigate('mining_menu');
+			else
+				$('#alerts').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
+		}, 'JSON');
+	});
+
+</script>
+
+<h1 class="page-header">{{.Lang.mining}}</h1>
+
+<div class="panel panel-primary">
+	<div class="panel-heading">
+		{{.Lang.insufficient_privileges}}
+	</div>
+	<div class="panel-body">
+		<div class="form-horizontal">
+			<fieldset>
+
+				<!-- Form Name -->
+				<legend>{{.Lang.register_key_at_the_pool}}</legend>
+				<div id="alerts"></div>
+				<!-- Text input-->
+				<div class="form-group">
+					<label class="col-md-4 control-label" for="textinput">E-mail</label>
+					<div class="col-md-4">
+						<input id="email" name="email" placeholder="" class="form-control input-md" type="text">
+						<span class="help-block">{{.Lang.enter_your_email}}</span>
+					</div>
+				</div>
+
+				<!-- Button -->
+				<div class="form-group">
+					<label class="col-md-4 control-label" for="singlebutton"></label>
+					<div class="col-md-4">
+						<button id="send" name="send" class="btn btn-primary">{{.Lang.send}}</button>
+					</div>
+				</div>
+
+			</fieldset>
+		</div>
+
+	</div>
+</div>
+
+{{end}}
