@@ -2,7 +2,7 @@
 
 <h1 class="page-header">{{.Lang.upgrade_title}}</h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu">{{.Lang.mining}}</a></li>
+	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
 	<li class="active">{{.Lang.upgrade_title}}</li>
 </ol>
 
@@ -28,7 +28,7 @@
 
 {{if and (ne .Result "ok")  (ne .Result "pending")  (ne .Result "users_pending")  (ne .Result "nodes_pending")}}
 <button class="btn btn-success" onclick="fc_navigate('upgrade_0')">{{.Lang.begin_upgrade}}</button>
-<p>{{.Lang.attempts_remaining}} {{.Miner_votes_attempt}}</p>
+<p>{{.Lang.attempts_remaining}} {{.MinerVotesAttempt}}</p>
 <p>{{.Lang.purpose_of_inspections}}</p><br>
 {{end}}
 

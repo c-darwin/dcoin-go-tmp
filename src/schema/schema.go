@@ -2692,6 +2692,11 @@ schema.printSchema()
 func  (schema *SchemaStruct) typeMysql() {
 	var result string
 	for table_name, v := range schema.s {
+		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
+			if schema.PrefixUserId > 0 {
+				continue;
+			}
+		}
 		AI := ""
 		AI_START := "1"
 		schema.replMy(&table_name)
@@ -2769,6 +2774,11 @@ func  (schema *SchemaStruct) typeMysql() {
 func  (schema *SchemaStruct)  typePostgresql() {
 	var result string
 	for table_name, v := range schema.s {
+		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
+			if schema.PrefixUserId > 0 {
+				continue;
+			}
+		}
 		result = ""
 		schema.replMy(&table_name)
 		primaryKey := ""
@@ -2878,8 +2888,14 @@ func  (schema *SchemaStruct) replMy(table_name *string) {
 func  (schema *SchemaStruct) typeSqlite() {
 	var result string
 	for table_name, v := range schema.s {
+		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
+			if schema.PrefixUserId > 0 {
+				continue;
+			}
+		}
 		result = ""
 		schema.replMy(&table_name)
+
 		result+=fmt.Sprintf("DROP TABLE IF EXISTS \"%[1]s\"; CREATE TABLE \"%[1]s\" (\n", table_name)
 		//var tableComment string
 		primaryKey := ""

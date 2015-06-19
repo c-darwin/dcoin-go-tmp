@@ -34,7 +34,7 @@ type currencyExchangePage struct {
 	SellOrders []map[string]string
 	BuyOrders []map[string]string
 	MyOrders []map[string]string
-	ConfigCommission map[string][]float64
+	ConfigCommission map[int64][]float64
 	BuyCurrencyId int64
 	SellCurrencyId int64
 	WalletsAmounts map[int64]float64

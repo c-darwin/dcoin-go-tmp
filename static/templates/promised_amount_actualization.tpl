@@ -11,15 +11,15 @@ $('#send_to_net').bind('click', function () {
 			'signature2': $('#signature2').val(),
 			'signature3': $('#signature3').val()
 			}, function (data) {
-				fc_navigate ('promised_amount_list', {'alert': '<?php echo $lng['sent_to_the_net'] ?>'} );
+				fc_navigate ('promisedAmountList', {'alert': '<?php echo $lng['sent_to_the_net'] ?>'} );
 			} );
 } );
 
 </script>
 <h1 class="page-header"><?php echo $lng['actualization_promised_amounts']?></h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu"><?php echo $lng['mining'] ?></a></li>
-	<li><a href="#promised_amount_list"><?php echo $lng['promised_amount_title'] ?></a></li>
+	<li><a href="#miningMenu"><?php echo $lng['mining'] ?></a></li>
+	<li><a href="#promisedAmountList"><?php echo $lng['promised_amount_title'] ?></a></li>
 	<li class="active"><?php echo $lng['actualization_promised_amounts'] ?></li>
 </ol>
 

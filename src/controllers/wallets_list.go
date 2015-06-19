@@ -37,7 +37,7 @@ type walletsListPage struct {
 	UserId int64
 	UserIdStr string
 	Config map[string]string
-	ConfigCommission map[string][]float64
+	ConfigCommission map[int64][]float64
 	LastTxFormatted string
 	ArbitrationTrustList map[int64]map[int64][]string
 	ShowSignData bool

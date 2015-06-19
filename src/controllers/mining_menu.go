@@ -17,9 +17,11 @@ type miningMenuPage struct {
 	CountSignArr []int
 	CreditId float64
 	CurrencyList map[int64]string
+	LastTxFormatted string
+	MyComments []map[string]string
+	MinerVotesAttempt int64
+	Host string
 }
-
-
 
 func (c *Controller) MiningMenu() (string, error) {
 
@@ -39,15 +41,19 @@ func (c *Controller) MiningMenu() (string, error) {
 		}
 	}
 
-	checkCommission := func() {
+	var result string
+	checkCommission := func() error {
 		// установлена ли комиссия
 		commission, err := c.Single("SELECT commission FROM commission WHERE user_id  =  ?", c.SessUserId).String()
 		if err != nil {
-			return "", utils.ErrInfo(err)
+			return utils.ErrInfo(err)
 		}
 		if len(commission) == 0 {
 			// возможно юзер уже отправил запрос на добавление комиссии
 			last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_commission"}), 1, c.TimeFormat)
+			if err != nil {
+				return  utils.ErrInfo(err)
+			}
 			if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0))  {
 				// авансом выдаем полное майнерское меню
 				result = "full_mining_menu"
@@ -55,7 +61,7 @@ func (c *Controller) MiningMenu() (string, error) {
 				// возможно юзер нажал кнопку "пропустить"
 				hideFirstCommission, err := c.Single("SELECT hide_first_commission FROM "+c.MyPrefix+"my_table").Int64()
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					return utils.ErrInfo(err)
 				}
 				if hideFirstCommission == 0 {
 					result = "need_commission"
@@ -66,13 +72,13 @@ func (c *Controller) MiningMenu() (string, error) {
 		} else {
 			result = "full_mining_menu"
 		}
+		return nil
 	}
 
 	hostTpl := ""
-	result := ""
 	// чтобы при добавлении общенных сумм, смены комиссий редиректило сюда
 	navigate := "miningMenu"
-	if c.SessRestricted == 0 {
+	if c.SessRestricted != 0 {
 		result = "need_email"
 	} else {
 		myMinerId, err := c.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", c.SessUserId).Int64()
@@ -135,7 +141,10 @@ func (c *Controller) MiningMenu() (string, error) {
 				last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount"}), 1, c.TimeFormat)
 				if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0))  {
 					// установлена ли комиссия
-					result = checkCommission()
+					err = checkCommission()
+					if err != nil {
+						return "", utils.ErrInfo(err)
+					}
 				} else {
 					// возможно юзер нажал кнопку "пропустить"
 					hideFirstPromisedAmount, err := c.Single("SELECT hide_first_promised_amount FROM "+c.MyPrefix+"my_table").Int64()
@@ -145,29 +154,51 @@ func (c *Controller) MiningMenu() (string, error) {
 					if hideFirstPromisedAmount == 0 {
 						result = "need_promised_amount"
 					} else {
-						result = checkCommission()
+						err = checkCommission()
+						if err != nil {
+							return "", utils.ErrInfo(err)
+						}
 					}
 				}
 			} else {
 				// установлена ли комиссия
-				result = checkCommission()
+				err = checkCommission()
+				if err != nil {
+					return "", utils.ErrInfo(err)
+				}
 			}
 		}
 	}
 
+	var minerVotesAttempt int64
+	var myComments []map[string]string
+	c.Navigate = navigate
 	lastTxFormatted := ""
 	tplName := ""
+	tplTitle := ""
+	log.Println("result:", result)
 	if result == "null" {
 		tplName = "upgrade_0"
+		tplTitle= "upgrade0"
+		return c.Upgrade0()
 	} else if result == "need_email" {
 		tplName = "sign_up_in_the_pool"
+		tplTitle= "signUpInThePool"
 	} else if result == "need_promised_amount" {
 		tplName = "promised_amount_add"
+		tplTitle= "upgrade"
+		return c.NewPromisedAmount()
 	} else if result == "need_commission" {
 		tplName = "change_commission"
+		tplTitle= "changeCommission"
+		return c.ChangeCommission()
 	} else if result == "full_mining_menu" {
 		tplName = "mining_menu"
+		tplTitle= "miningMenu"
 		last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_user", "new_miner", "new_promised_amount", "change_promised_amount", "votes_miner", "change_geolocation", "votes_promised_amount", "del_promised_amount", "cash_request_out", "cash_request_in", "votes_complex", "for_repaid_fix", "new_holidays", "actualization_promised_amounts", "mining", "new_miner_update", "change_host", "change_commission"}), 3, c.TimeFormat)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 		if len(last_tx) > 0 {
 			lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)
 		}
@@ -177,25 +208,26 @@ func (c *Controller) MiningMenu() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		miner_votes_attempt := c.Variables.Int64["miner_votes_attempt"] - countAttempt
+		minerVotesAttempt = c.Variables.Int64["miner_votes_attempt"] - countAttempt
 
 		// комментарии проголосовавших
-		myComments, err := c.GetAll(`SELECT * FROM `+c.MyPrefix+`my_comments WHERE comment != 'null' AND type NOT IN ('arbitrator','seller')`)
+		myComments, err = c.GetAll(`SELECT * FROM `+c.MyPrefix+`my_comments WHERE comment != 'null' AND type NOT IN ('arbitrator','seller')`, -1)
 		tplName = "upgrade"
+		tplTitle = "upgrade"
 	}
 
-	TemplateStr, err := makeTemplate(tplName, "MiningMenu", &MiningMenuPage{
+	TemplateStr, err := makeTemplate(tplName, tplTitle, &miningMenuPage{
 		Alert: c.Alert,
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
 		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
 		SignData: "",
-		CreditId: creditId,
-		CurrencyList: c.CurrencyList})
+		CurrencyList: c.CurrencyList,
+		LastTxFormatted: lastTxFormatted,
+		MyComments: myComments,
+		MinerVotesAttempt: minerVotesAttempt,
+		Host: hostTpl})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -193,7 +193,7 @@ $("#main_div textarea").width( 170 );
 <div id="main_div">
 <h1 class="page-header"><?php echo $lng['cash_request_out_title']?></h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu"><?php echo $lng['mining'] ?></a></li>
+	<li><a href="#miningMenu"><?php echo $lng['mining'] ?></a></li>
 	<li class="active"><?php echo $lng['cash_request_out_title'] ?></li>
 </ol>
 

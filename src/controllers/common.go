@@ -31,6 +31,8 @@ type Controller struct {
 	sess session.SessionStore
 	Lang map[string]string
 	LangInt int64
+	Navigate string
+	Periods map[int64]string
 	Community bool
 	CommunityUsers []int64
 	ShowSignData bool
@@ -49,7 +51,7 @@ type Controller struct {
 	PoolAdmin bool
 	PoolAdminUserId int64
 	NodeConfig map[string]string
-	ConfigCommission map[string][]float64
+	ConfigCommission map[int64][]float64
 	CurrencyList map[int64]string
 	CurrencyListCf map[int64]string
 	ConfirmedBlockId int64
@@ -558,6 +560,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else {
 		c.TimeFormat = "2006-02-01 15:04:05"
 	}
+
+	c.Periods = map[int64]string{86400 : "1"+c.Lang["day"], 604800 : "1"+c.Lang["week"], 31536000 : "1"+c.Lang["year"], 2592000 : "1"+c.Lang["month"], 1209600 : "2"+c.Lang["weeks"], }
+
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
@@ -584,12 +589,16 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
-		configCommission := make(map[string][]float64)
+		configCommission_ := make(map[string][]float64)
 		if len(config["commission"]) > 0 {
-			err = json.Unmarshal([]byte(config["commission"]), &configCommission)
+			err = json.Unmarshal([]byte(config["commission"]), &configCommission_)
 			if err != nil {
 				log.Print(err)
 			}
+		}
+		configCommission := make(map[int64][]float64)
+		for k, v := range configCommission_{
+			configCommission[utils.StrToInt64(k)] = v
 		}
 		c.NodeConfig = config
 		c.ConfigCommission = configCommission
@@ -792,6 +801,23 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		},
 		"round": func(a float64, num int) float64 {
 			return utils.Round(a, num)
+		},
+		"minus": func(a, b interface{}) float64 {
+			return utils.InterfaceToFloat64(a)-utils.InterfaceToFloat64(b)
+		},
+		"append": func(args ...interface{}) string {
+			var result string
+			for _, value := range args {
+				switch value.(type) {
+				case int64:
+					result+=utils.Int64ToStr(value.(int64))
+				case float64:
+					result+=utils.Float64ToStr(value.(float64))
+				case string:
+					result+=value.(string)
+				}
+			}
+			return result
 		},
 	}
 	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))

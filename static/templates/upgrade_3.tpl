@@ -8,7 +8,7 @@
 
 <h1 class="page-header"><?php echo $lng['upgrade_title']?></h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu"><?php echo $lng['mining'] ?></a></li>
+	<li><a href="#miningMenu"><?php echo $lng['mining'] ?></a></li>
 	<li class="active"><?php echo $lng['upgrade_title'] ?></li>
 </ol>
 	

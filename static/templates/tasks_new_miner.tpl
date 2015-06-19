@@ -232,7 +232,7 @@ check_key_and_show_modal();
 </script>
 <h1 class="page-header"><?php echo $lng['tasks_title_new_miner']?></h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu"><?php echo $lng['mining'] ?></a></li>
+	<li><a href="#miningMenu"><?php echo $lng['mining'] ?></a></li>
 	<li><a href="#tasks"><?php echo $lng['tasks_title'] ?></a></li>
 	<li id="task_title_li"><?php echo $lng['tasks_new_miner_spots']?></li>
 </ol>

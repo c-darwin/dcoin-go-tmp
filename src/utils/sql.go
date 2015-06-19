@@ -1208,36 +1208,50 @@ type DCAmounts struct {
 	Pct float64
 }
 
-func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []map[string]string, map[int]DCAmounts, error) {
+type PromisedAmounts struct {
+	Id int64
+	Pct float64
+	PctSec float64
+	CurrencyId int64
+	Amount float64
+	MaxAmount float64
+	MaxOtherCurrencies int64
+	StatusText string
+	Tdc float64
+	TdcAmount float64
+	Status string
+}
+
+func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []PromisedAmounts, map[int]DCAmounts, error) {
 	log.Println("cash_request_time", cash_request_time)
 	var actualizationPromisedAmounts int64
-	var promisedAmountListAccepted []map[string]string
+	var promisedAmountListAccepted []PromisedAmounts
 	promisedAmountListGen := make(map[int]DCAmounts)
-	rows, err := db.Query(db.FormatQuery("SELECT currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update FROM promised_amount WHERE user_id = ?"), userId)
+	rows, err := db.Query(db.FormatQuery("SELECT id, currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update FROM promised_amount WHERE user_id = ?"), userId)
 	if err != nil {
-		return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+		return 0, nil, nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var currency_id, del_block_id, tdc_amount_update int64
+		var id, currency_id, del_block_id, tdc_amount_update int64
 		var tdc_amount, amount float64
 		var status string
-		err = rows.Scan(&currency_id, &status, &tdc_amount, &amount, &del_block_id, &tdc_amount_update)
+		err = rows.Scan(&id, &currency_id, &status, &tdc_amount, &amount, &del_block_id, &tdc_amount_update)
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		log.Println("GetPromisedAmounts: ", currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
 		// есть ли просроченные запросы
 		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		if len(cashRequestPending) > 0 && currency_id > 1 && status == "mining" {
 			status = "for_repaid"
 			// и заодно проверим, можно ли делать актуализацию обещанных сумм
-			actualizationPromisedAmounts, err := db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix() - cash_request_time).Int64()
+			actualizationPromisedAmounts, err = db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix() - cash_request_time).Int64()
 			if err != nil {
-				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+				return 0, nil, nil, err
 			}
 		}
 		tdc := tdc_amount
@@ -1249,7 +1263,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 			profit, err := db.CalcProfitGen(currency_id, amount+tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "mining")
 			log.Println("profit", profit)
 			if err != nil {
-				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+				return 0, nil, nil, err
 			}
 			tdc+=profit
 			log.Println("tdc", tdc)
@@ -1258,7 +1272,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		} else if status == "repaid" {
 			profit, err := db.CalcProfitGen(currency_id, tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "repaid")
 			if err != nil {
-				return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+				return 0, nil, nil, err
 			}
 			tdc+=profit
 			tdc = Round(tdc, 9)
@@ -1269,11 +1283,11 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		status_text := "status_text"
 		maxAmount, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currency_id  =  ? ORDER BY block_id DESC", currency_id).Float64()
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		maxOtherCurrencies, err := db.Single("SELECT max_other_currencies FROM currency WHERE id  =  ?", currency_id).Int64()
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		// для WOC amount не учитывается. Вместо него берется max_promised_amount
 		if currency_id == 1 {
@@ -1289,20 +1303,20 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []ma
 		// последний статус юзера
 		pctStatus, err := db.Single("SELECT status FROM points_status WHERE user_id  =  ? ORDER BY time_start DESC", userId).String()
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		if len(pctStatus) == 0 {
 			pctStatus = "user"
 		}
 		pct, err := db.Single(db.FormatQuery("SELECT "+pctStatus+" FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC"), currency_id).Float64()
 		if err != nil {
-			return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, err
+			return 0, nil, nil, err
 		}
 		log.Println("pct", pct, "currency_id", currency_id, "pctStatus", pctStatus)
 		pct_sec := pct
 		pct = Round((math.Pow(1+pct, 3600*24*365)-1)*100, 2)
 		// тут accepted значит просто попало в блок
-		promisedAmountListAccepted = append(promisedAmountListAccepted, map[string]string{"pct":Float64ToStr(pct), "pct_sec":Float64ToStr(pct_sec), "currency_id":Int64ToStr(currency_id), "amount":Float64ToStr(amount), "max_amount":Float64ToStr(maxAmount), "max_other_currencies":Int64ToStr(maxOtherCurrencies), "status_text":status_text, "tdc":Float64ToStr(tdc), "tdc_amount":Float64ToStr(tdc_amount), "status":status})
+		promisedAmountListAccepted = append(promisedAmountListAccepted, PromisedAmounts{Id: id, Pct:pct, PctSec:pct_sec, CurrencyId:currency_id, Amount:amount, MaxAmount:maxAmount, MaxOtherCurrencies:maxOtherCurrencies, StatusText:status_text, Tdc:tdc, TdcAmount:tdc_amount, Status:status})
 		// для вывода на главную общей инфы
 		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc:tdc, Amount:amount, PctSec:pct_sec, CurrencyId:(currency_id)}
 	}
@@ -1599,6 +1613,10 @@ func (db *DCDB) InsertIntoMyKey(prefix string, publicKey []byte, curBlockId stri
 	return nil
 }
 
+
+func (db *DCDB) GetPaymentSystems() (map[string]string, error) {
+	return db.GetMap(`SELECT id, name FROM payment_systems ORDER BY name`, "id", "name")
+}
 func (db *DCDB) GetInfoBlock() (map[string]string, error) {
 	var result map[string]string
 	result, err := db.OneRow("SELECT * FROM info_block").String()

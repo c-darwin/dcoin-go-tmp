@@ -3,6 +3,7 @@ import (
 	"utils"
 	"errors"
 	"encoding/json"
+	"schema"
 )
 
 func (c *Controller) SignUpInPool() (string, error) {
@@ -22,13 +23,15 @@ func (c *Controller) SignUpInPool() (string, error) {
 		return "", errors.New(string(result))
 	}
 
+	publicKey := utils.MakeAsn1([]byte(n), []byte(e))
+
 	// если мест в пуле нет, то просто запишем юзера в очередь
 	pool_max_users, err := c.Single("SELECT pool_max_users FROM config").Int()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	if len(c.CommunityUsers) >= pool_max_users {
-		err = c.ExecSql("INSERT IGNORE INTO pool_waiting_list ( email, time, user_id ) VALUES ( ?, ?, ? )", email, utils.Time(), c.SessUserId)
+		err = c.ExecSql("INSERT INTO pool_waiting_list ( email, time, user_id ) VALUES ( ?, ?, ? )", email, utils.Time(), c.SessUserId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -51,5 +54,24 @@ func (c *Controller) SignUpInPool() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	return "ok", nil
+	schema_ := &schema.SchemaStruct{}
+	schema_.DCDB = c.DCDB
+	schema_.DbType = c.ConfigIni["db_type"]
+	schema_.PrefixUserId = int(c.SessUserId)
+	schema_.GetSchema()
+
+	prefix := utils.Int64ToStr(c.SessUserId)+"_"
+	err = c.ExecSql("INSERT IGNORE INTO "+prefix+"my_table ( user_id, email ) VALUES ( ?, ? )", c.SessUserId, email)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	err = c.ExecSql("INSERT IGNORE INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", publicKey)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	c.sess.Delete("restricted")
+
+	result, _ := json.Marshal(map[string]string{"success": c.Lang["pool_sign_up_success"]})
+	return string(result), nil
 }

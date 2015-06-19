@@ -6,7 +6,7 @@ $("#main_div button").addClass( "btn-outline btn-primary" );
 <div id="main_div">
 <h1 class="page-header"><?php echo $lng['holidays_title']?></h1>
 <ol class="breadcrumb">
-	<li><a href="#mining_menu"><?php echo $lng['mining'] ?></a></li>
+	<li><a href="#miningMenu"><?php echo $lng['mining'] ?></a></li>
 	<li class="active"><?php echo $lng['holidays_title'] ?></li>
 </ol>
 
