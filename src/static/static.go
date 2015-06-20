@@ -2309,10 +2309,10 @@ func static_templates_bug_reporting_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cash_requests_in_tpl reads file data from disk. It returns an error on failure.
-func static_templates_cash_requests_in_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cash_requests_in.tpl"
-	name := "static/templates/cash_requests_in.tpl"
+// static_templates_cash_request_out_html reads file data from disk. It returns an error on failure.
+func static_templates_cash_request_out_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cash_request_out.html"
+	name := "static/templates/cash_request_out.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2327,10 +2327,10 @@ func static_templates_cash_requests_in_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cash_requests_out_tpl reads file data from disk. It returns an error on failure.
-func static_templates_cash_requests_out_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cash_requests_out.tpl"
-	name := "static/templates/cash_requests_out.tpl"
+// static_templates_cash_requests_in_tpl reads file data from disk. It returns an error on failure.
+func static_templates_cash_requests_in_tpl() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cash_requests_in.tpl"
+	name := "static/templates/cash_requests_in.tpl"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2813,24 +2813,6 @@ func static_templates_geolocation_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_holidays_delete_tpl reads file data from disk. It returns an error on failure.
-func static_templates_holidays_delete_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/holidays_delete.tpl"
-	name := "static/templates/holidays_delete.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
 // static_templates_holidays_list_tpl reads file data from disk. It returns an error on failure.
 func static_templates_holidays_list_tpl() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/holidays_list.tpl"
@@ -2853,24 +2835,6 @@ func static_templates_holidays_list_tpl() (*asset, error) {
 func static_templates_home_html() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/home.html"
 	name := "static/templates/home.html"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_templates_home0_html reads file data from disk. It returns an error on failure.
-func static_templates_home0_html() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/home0.html"
-	name := "static/templates/home0.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4054,8 +4018,8 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/arbitration_seller.html": static_templates_arbitration_seller_html,
 	"static/templates/block_explorer.tpl": static_templates_block_explorer_tpl,
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
+	"static/templates/cash_request_out.html": static_templates_cash_request_out_html,
 	"static/templates/cash_requests_in.tpl": static_templates_cash_requests_in_tpl,
-	"static/templates/cash_requests_out.tpl": static_templates_cash_requests_out_tpl,
 	"static/templates/cf_catalog.tpl": static_templates_cf_catalog_tpl,
 	"static/templates/cf_page_preview.tpl": static_templates_cf_page_preview_tpl,
 	"static/templates/cf_project_change_category.tpl": static_templates_cf_project_change_category_tpl,
@@ -4082,10 +4046,8 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/del_promised_amount.html": static_templates_del_promised_amount_html,
 	"static/templates/for_repaid_fix.html": static_templates_for_repaid_fix_html,
 	"static/templates/geolocation.tpl": static_templates_geolocation_tpl,
-	"static/templates/holidays_delete.tpl": static_templates_holidays_delete_tpl,
 	"static/templates/holidays_list.tpl": static_templates_holidays_list_tpl,
 	"static/templates/home.html": static_templates_home_html,
-	"static/templates/home0.html": static_templates_home0_html,
 	"static/templates/index.html": static_templates_index_html,
 	"static/templates/index_cf.tpl": static_templates_index_cf_tpl,
 	"static/templates/information.tpl": static_templates_information_tpl,
@@ -4457,9 +4419,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"bug_reporting.tpl": &_bintree_t{static_templates_bug_reporting_tpl, map[string]*_bintree_t{
 			}},
-			"cash_requests_in.tpl": &_bintree_t{static_templates_cash_requests_in_tpl, map[string]*_bintree_t{
+			"cash_request_out.html": &_bintree_t{static_templates_cash_request_out_html, map[string]*_bintree_t{
 			}},
-			"cash_requests_out.tpl": &_bintree_t{static_templates_cash_requests_out_tpl, map[string]*_bintree_t{
+			"cash_requests_in.tpl": &_bintree_t{static_templates_cash_requests_in_tpl, map[string]*_bintree_t{
 			}},
 			"cf_catalog.tpl": &_bintree_t{static_templates_cf_catalog_tpl, map[string]*_bintree_t{
 			}},
@@ -4513,13 +4475,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"geolocation.tpl": &_bintree_t{static_templates_geolocation_tpl, map[string]*_bintree_t{
 			}},
-			"holidays_delete.tpl": &_bintree_t{static_templates_holidays_delete_tpl, map[string]*_bintree_t{
-			}},
 			"holidays_list.tpl": &_bintree_t{static_templates_holidays_list_tpl, map[string]*_bintree_t{
 			}},
 			"home.html": &_bintree_t{static_templates_home_html, map[string]*_bintree_t{
-			}},
-			"home0.html": &_bintree_t{static_templates_home0_html, map[string]*_bintree_t{
 			}},
 			"index.html": &_bintree_t{static_templates_index_html, map[string]*_bintree_t{
 			}},

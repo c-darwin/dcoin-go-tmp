@@ -157,6 +157,9 @@ func (c *Controller) CurrencyExchange() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		profit, err := c.CalcProfitGen(currency_id, amount, c.SessUserId, last_update, timeNow, "wallets")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 		amount+=profit
 		amount = utils.Round(amount, 2)
 		forex_orders_amount, err := c.Single("SELECT sum(amount) FROM forex_orders WHERE user_id = ? AND sell_currency_id = ? AND del_block_id = 0", c.SessUserId, currency_id).Float64()

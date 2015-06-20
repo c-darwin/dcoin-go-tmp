@@ -54,6 +54,7 @@ type Controller struct {
 	ConfigCommission map[int64][]float64
 	CurrencyList map[int64]string
 	CurrencyListCf map[int64]string
+	PaymentSystems map[string]string
 	ConfirmedBlockId int64
 	MinerId int64
 }
@@ -522,6 +523,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 		}
 
+		paymentSystems, err := c.GetPaymentSystems()
+		if err != nil {
+			log.Print(err)
+		}
+		c.PaymentSystems = paymentSystems
 	}
 	r.ParseForm()
 	tplName := r.FormValue("tpl_name")
