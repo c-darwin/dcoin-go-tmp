@@ -2309,10 +2309,10 @@ func static_templates_bug_reporting_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cash_request_out_html reads file data from disk. It returns an error on failure.
-func static_templates_cash_request_out_html() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cash_request_out.html"
-	name := "static/templates/cash_request_out.html"
+// static_templates_cash_request_in_html reads file data from disk. It returns an error on failure.
+func static_templates_cash_request_in_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cash_request_in.html"
+	name := "static/templates/cash_request_in.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2327,10 +2327,10 @@ func static_templates_cash_request_out_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cash_requests_in_tpl reads file data from disk. It returns an error on failure.
-func static_templates_cash_requests_in_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cash_requests_in.tpl"
-	name := "static/templates/cash_requests_in.tpl"
+// static_templates_cash_request_out_html reads file data from disk. It returns an error on failure.
+func static_templates_cash_request_out_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cash_request_out.html"
+	name := "static/templates/cash_request_out.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3281,10 +3281,10 @@ func static_templates_pct_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_points_tpl reads file data from disk. It returns an error on failure.
-func static_templates_points_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/points.tpl"
-	name := "static/templates/points.tpl"
+// static_templates_points_html reads file data from disk. It returns an error on failure.
+func static_templates_points_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/points.html"
+	name := "static/templates/points.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3785,10 +3785,10 @@ func static_templates_upgrade_resend_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_vote_for_me_tpl reads file data from disk. It returns an error on failure.
-func static_templates_vote_for_me_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/vote_for_me.tpl"
-	name := "static/templates/vote_for_me.tpl"
+// static_templates_vote_for_me_html reads file data from disk. It returns an error on failure.
+func static_templates_vote_for_me_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/vote_for_me.html"
+	name := "static/templates/vote_for_me.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4018,8 +4018,8 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/arbitration_seller.html": static_templates_arbitration_seller_html,
 	"static/templates/block_explorer.tpl": static_templates_block_explorer_tpl,
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
+	"static/templates/cash_request_in.html": static_templates_cash_request_in_html,
 	"static/templates/cash_request_out.html": static_templates_cash_request_out_html,
-	"static/templates/cash_requests_in.tpl": static_templates_cash_requests_in_tpl,
 	"static/templates/cf_catalog.tpl": static_templates_cf_catalog_tpl,
 	"static/templates/cf_page_preview.tpl": static_templates_cf_page_preview_tpl,
 	"static/templates/cf_project_change_category.tpl": static_templates_cf_project_change_category_tpl,
@@ -4072,7 +4072,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/node_config.tpl": static_templates_node_config_tpl,
 	"static/templates/notifications.tpl": static_templates_notifications_tpl,
 	"static/templates/pct.tpl": static_templates_pct_tpl,
-	"static/templates/points.tpl": static_templates_points_tpl,
+	"static/templates/points.html": static_templates_points_html,
 	"static/templates/pool_admin.tpl": static_templates_pool_admin_tpl,
 	"static/templates/pool_tech_works.tpl": static_templates_pool_tech_works_tpl,
 	"static/templates/progress.tpl": static_templates_progress_tpl,
@@ -4100,7 +4100,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/upgrade_6.tpl": static_templates_upgrade_6_tpl,
 	"static/templates/upgrade_7.tpl": static_templates_upgrade_7_tpl,
 	"static/templates/upgrade_resend.tpl": static_templates_upgrade_resend_tpl,
-	"static/templates/vote_for_me.tpl": static_templates_vote_for_me_tpl,
+	"static/templates/vote_for_me.html": static_templates_vote_for_me_html,
 	"static/templates/voting.tpl": static_templates_voting_tpl,
 	"static/templates/wallets_list.html": static_templates_wallets_list_html,
 }
@@ -4419,9 +4419,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"bug_reporting.tpl": &_bintree_t{static_templates_bug_reporting_tpl, map[string]*_bintree_t{
 			}},
-			"cash_request_out.html": &_bintree_t{static_templates_cash_request_out_html, map[string]*_bintree_t{
+			"cash_request_in.html": &_bintree_t{static_templates_cash_request_in_html, map[string]*_bintree_t{
 			}},
-			"cash_requests_in.tpl": &_bintree_t{static_templates_cash_requests_in_tpl, map[string]*_bintree_t{
+			"cash_request_out.html": &_bintree_t{static_templates_cash_request_out_html, map[string]*_bintree_t{
 			}},
 			"cf_catalog.tpl": &_bintree_t{static_templates_cf_catalog_tpl, map[string]*_bintree_t{
 			}},
@@ -4527,7 +4527,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"pct.tpl": &_bintree_t{static_templates_pct_tpl, map[string]*_bintree_t{
 			}},
-			"points.tpl": &_bintree_t{static_templates_points_tpl, map[string]*_bintree_t{
+			"points.html": &_bintree_t{static_templates_points_html, map[string]*_bintree_t{
 			}},
 			"pool_admin.tpl": &_bintree_t{static_templates_pool_admin_tpl, map[string]*_bintree_t{
 			}},
@@ -4583,7 +4583,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"upgrade_resend.tpl": &_bintree_t{static_templates_upgrade_resend_tpl, map[string]*_bintree_t{
 			}},
-			"vote_for_me.tpl": &_bintree_t{static_templates_vote_for_me_tpl, map[string]*_bintree_t{
+			"vote_for_me.html": &_bintree_t{static_templates_vote_for_me_html, map[string]*_bintree_t{
 			}},
 			"voting.tpl": &_bintree_t{static_templates_voting_tpl, map[string]*_bintree_t{
 			}},

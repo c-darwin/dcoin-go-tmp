@@ -16,6 +16,7 @@ type cashRequestOutPage struct {
 	Lang map[string]string
 	CountSignArr []int
 	CurrencyList map[int64]string
+	CashRequestsStatus map[string]string
 	JsonCurrencyWallets string
 	PaymentSystems map[string]string
 	MinPromisedAmount int64
@@ -34,10 +35,12 @@ func (c *Controller) CashRequestOut() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
+	cashRequestsStatus := map[string]string{"my_pending": c.Lang["local_pending"], "pending": c.Lang["pending"], "approved": c.Lang["approved"], "rejected": c.Lang["rejected"]}
+
 	jsonCurrencyWallets := ""
 	var availableCurrency []int64
 	// список отравленных нами запросов
-	myCashRequests, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_cash_request WHERE to_user_id != ?", -1, c.SessUserId)
+	myCashRequests, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_cash_requests WHERE to_user_id != ?", -1, c.SessUserId)
 	// получаем список кошельков, на которых есть FC
 	rows, err := c.Query(c.FormatQuery("SELECT amount, currency_id, last_update FROM wallets WHERE user_id = ? AND currency_id < 1000"), c.SessUserId)
 	if err != nil {
@@ -59,10 +62,12 @@ func (c *Controller) CashRequestOut() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		amount+=profit
-		jsonCurrencyWallets += fmt.Sprintf(`"%d":["%s","%s"],`, currency_id, c.CurrencyList[currency_id], amount)
+		jsonCurrencyWallets += fmt.Sprintf(`"%d":["%s","%v"],`, currency_id, c.CurrencyList[currency_id], amount)
 		availableCurrency = append(availableCurrency, currency_id)
 	}
 	jsonCurrencyWallets = jsonCurrencyWallets[:len(jsonCurrencyWallets)-1]
+	//jsonCurrencyWallets = "\""
+	log.Println("jsonCurrencyWallets", jsonCurrencyWallets)
 	code := utils.Md5(utils.RandSeq(50))
 	hashCode := utils.DSha256(utils.RandSeq(50))
 
@@ -79,6 +84,7 @@ func (c *Controller) CashRequestOut() (string, error) {
 		CurrencyList : c.CurrencyList,
 		PaymentSystems: c.PaymentSystems,
 		JsonCurrencyWallets: jsonCurrencyWallets,
+		CashRequestsStatus: cashRequestsStatus,
 		AvailableCurrency: availableCurrency,
 		MinPromisedAmount: c.Variables.Int64["min_promised_amount"],
 		MyCashRequests: myCashRequests,

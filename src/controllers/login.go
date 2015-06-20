@@ -21,9 +21,7 @@ type loginStruct struct {
 	PoolTechWorks int
 	SetupPassword bool
 }
-func Noescape(s string) template.HTML {
-	return template.HTML(s)
-}
+
 func (c *Controller) Login() (string, error) {
 	var pool_tech_works int
 	fmt.Println("login")

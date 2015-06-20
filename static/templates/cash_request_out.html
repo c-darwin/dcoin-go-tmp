@@ -91,9 +91,9 @@
 	var currency_id;
 	var payment_system;
 	var min;
-	var currency_data = '{{.JsonCurrencyWallets}}';
+	var currency_data = '{ {{.JsonCurrencyWallets}} }';
 	currency_data = JSON.parse(currency_data);
-
+	console.log(currency_data)
 	$('#show_map').bind('click', function () {
 
 		$("#amount,#total_amount,#total_amount_text,#to_user_id").text(0);

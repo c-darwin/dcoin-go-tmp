@@ -811,6 +811,12 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"minus": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)-utils.InterfaceToFloat64(b)
 		},
+		"noescape": func(s string) template.HTML {
+			return template.HTML(s)
+		},
+		"strToInt64": func(text string) int64 {
+			return utils.StrToInt64(text)
+		},
 		"append": func(args ...interface{}) string {
 			var result string
 			for _, value := range args {
