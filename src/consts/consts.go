@@ -3,6 +3,9 @@ import (
 	//"fmt"
 )
 
+// чтобы не выдавать одно и тоже голосование
+const ASSIGN_TIME = 86400
+
 const DAY = 3600*24
 const DAY2 = 3600*24*2
 

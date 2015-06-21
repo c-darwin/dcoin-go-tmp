@@ -540,6 +540,51 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 	return lastId, nil
 }
 
+type exampleSpots struct {
+	Face map[string][]interface {} `json:"face"`
+	Profile map[string][]interface {} `json:"profile"`
+}
+
+func (db *DCDB) GetPoints(lng map[string]string) (map[string]string, error) {
+
+	result := make(map[string]string)
+	result["face"] = "";
+	result["profile"] = "";
+
+	exampleSpots_, err := db.Single("SELECT example_spots FROM spots_compatibility").String()
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	exampleSpots := make(map[string]map[string][]interface {})
+	err = json.Unmarshal([]byte(exampleSpots_), &exampleSpots)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	for pType, data := range exampleSpots {
+		for i:=1; i <= len(data); i++ {
+			arr := data[IntToStr(i)]
+			id := IntToStr(i)
+			result[pType] += fmt.Sprintf(`[%v, %v, '%v. %s']`, arr[0], arr[1], id, lng["points-"+pType+"-"+id]);
+			switch arr[2].(type) {
+			case []interface {}:
+				result[pType] += fmt.Sprintf(`, [%v, %v,`, StrToInt(arr[3].(string))-1, StrToInt(arr[4].(string))-1)
+				for j:=0; j < len(arr[2].([]interface {})); j++ {
+					result[pType] += fmt.Sprintf(`'%v'`, arr[2].([]interface {})[j])
+					if j != len(arr[2].([]interface {}))-1 {
+						result[pType] += ","
+					}
+				}
+				result[pType] += "] ]"
+			case string:
+				result[pType] += "]"
+			}
+			result[pType] += ",\n"
+		}
+		result[pType] = result[pType][0:len(result[pType])-2]
+	}
+	return result, nil
+}
+
 func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface {}) {
 	var newArgs []interface {}
 	newQ := q

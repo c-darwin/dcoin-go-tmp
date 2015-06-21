@@ -2138,6 +2138,26 @@ func JoinInts(arr map[int]int, sep string) string {
 	return strings.Join(arrStr, sep)
 }
 
+func TimeLeft(sec int64, lang map[string]string) string {
+	result := ""
+	if sec > 0 {
+		days := int64(math.Floor(float64(sec / 86400)))
+		sec -= days*86400
+		result += fmt.Sprintf(`%d %s `, days, lang["time_days"])
+	}
+	if sec > 0 {
+		hours := int64(math.Floor(float64(sec / 3600)))
+		sec -= hours*3600
+		result += fmt.Sprintf(`%d %s `, hours, lang["time_hours"])
+	}
+	if sec > 0 {
+		minutes := int64(math.Floor(float64(sec / 60)))
+		sec -= minutes*3600
+		result += fmt.Sprintf(`%d %s `, minutes, lang["time_minutes"])
+	}
+	return result
+}
+
 func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[int]int {
 	ctx:=StrToInt(ctx0)
 	maxMinerId:=StrToInt(maxMinerId0)

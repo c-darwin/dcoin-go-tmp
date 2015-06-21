@@ -89,7 +89,7 @@
 						{{.Lang.inbox}}
 					</div>
 					<div class="panel-body">
-						<p>{{.Lang.mining_menu_inbox_text}}</p>
+						<p>{{noescape .Lang.mining_menu_inbox_text}}</p>
 					</div>
 					<div class="panel-footer">
 						<a href="#cashRequestIn">{{.Lang.goto}}</a>
@@ -108,7 +108,7 @@
 						<p>{{.Lang.mining_menu_tasks_text}}</p>
 					</div>
 					<div class="panel-footer">
-						<a href="#" onclick="map_navigate('tasks')">{{.Lang.goto}}</a>
+						<a href="#" onclick="map_navigate('assignments')">{{.Lang.goto}}</a>
 					</div>
 				</div>
 			</div>

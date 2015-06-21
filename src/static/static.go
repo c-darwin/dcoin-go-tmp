@@ -2273,6 +2273,60 @@ func static_templates_arbitration_seller_html() (*asset, error) {
 	return a, err
 }
 
+// static_templates_assignments_html reads file data from disk. It returns an error on failure.
+func static_templates_assignments_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/assignments.html"
+	name := "static/templates/assignments.html"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_templates_assignments_new_miner_html reads file data from disk. It returns an error on failure.
+func static_templates_assignments_new_miner_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/assignments_new_miner.html"
+	name := "static/templates/assignments_new_miner.html"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_templates_assignments_promised_amount_html reads file data from disk. It returns an error on failure.
+func static_templates_assignments_promised_amount_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/assignments_promised_amount.html"
+	name := "static/templates/assignments_promised_amount.html"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // static_templates_block_explorer_tpl reads file data from disk. It returns an error on failure.
 func static_templates_block_explorer_tpl() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/block_explorer.tpl"
@@ -3551,60 +3605,6 @@ func static_templates_statistic_voting_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_tasks_tpl reads file data from disk. It returns an error on failure.
-func static_templates_tasks_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/tasks.tpl"
-	name := "static/templates/tasks.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_templates_tasks_new_miner_tpl reads file data from disk. It returns an error on failure.
-func static_templates_tasks_new_miner_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/tasks_new_miner.tpl"
-	name := "static/templates/tasks_new_miner.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_templates_tasks_promised_amount_tpl reads file data from disk. It returns an error on failure.
-func static_templates_tasks_promised_amount_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/tasks_promised_amount.tpl"
-	name := "static/templates/tasks_promised_amount.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
 // static_templates_updating_blockchain_html reads file data from disk. It returns an error on failure.
 func static_templates_updating_blockchain_html() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/updating_blockchain.html"
@@ -4016,6 +4016,9 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/arbitration_arbitrator.html": static_templates_arbitration_arbitrator_html,
 	"static/templates/arbitration_buyer.html": static_templates_arbitration_buyer_html,
 	"static/templates/arbitration_seller.html": static_templates_arbitration_seller_html,
+	"static/templates/assignments.html": static_templates_assignments_html,
+	"static/templates/assignments_new_miner.html": static_templates_assignments_new_miner_html,
+	"static/templates/assignments_promised_amount.html": static_templates_assignments_promised_amount_html,
 	"static/templates/block_explorer.tpl": static_templates_block_explorer_tpl,
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
 	"static/templates/cash_request_in.html": static_templates_cash_request_in_html,
@@ -4087,9 +4090,6 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/signatures.html": static_templates_signatures_html,
 	"static/templates/statistic.tpl": static_templates_statistic_tpl,
 	"static/templates/statistic_voting.tpl": static_templates_statistic_voting_tpl,
-	"static/templates/tasks.tpl": static_templates_tasks_tpl,
-	"static/templates/tasks_new_miner.tpl": static_templates_tasks_new_miner_tpl,
-	"static/templates/tasks_promised_amount.tpl": static_templates_tasks_promised_amount_tpl,
 	"static/templates/updating_blockchain.html": static_templates_updating_blockchain_html,
 	"static/templates/upgrade.html": static_templates_upgrade_html,
 	"static/templates/upgrade_0.html": static_templates_upgrade_0_html,
@@ -4415,6 +4415,12 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"arbitration_seller.html": &_bintree_t{static_templates_arbitration_seller_html, map[string]*_bintree_t{
 			}},
+			"assignments.html": &_bintree_t{static_templates_assignments_html, map[string]*_bintree_t{
+			}},
+			"assignments_new_miner.html": &_bintree_t{static_templates_assignments_new_miner_html, map[string]*_bintree_t{
+			}},
+			"assignments_promised_amount.html": &_bintree_t{static_templates_assignments_promised_amount_html, map[string]*_bintree_t{
+			}},
 			"block_explorer.tpl": &_bintree_t{static_templates_block_explorer_tpl, map[string]*_bintree_t{
 			}},
 			"bug_reporting.tpl": &_bintree_t{static_templates_bug_reporting_tpl, map[string]*_bintree_t{
@@ -4556,12 +4562,6 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			"statistic.tpl": &_bintree_t{static_templates_statistic_tpl, map[string]*_bintree_t{
 			}},
 			"statistic_voting.tpl": &_bintree_t{static_templates_statistic_voting_tpl, map[string]*_bintree_t{
-			}},
-			"tasks.tpl": &_bintree_t{static_templates_tasks_tpl, map[string]*_bintree_t{
-			}},
-			"tasks_new_miner.tpl": &_bintree_t{static_templates_tasks_new_miner_tpl, map[string]*_bintree_t{
-			}},
-			"tasks_promised_amount.tpl": &_bintree_t{static_templates_tasks_promised_amount_tpl, map[string]*_bintree_t{
 			}},
 			"updating_blockchain.html": &_bintree_t{static_templates_updating_blockchain_html, map[string]*_bintree_t{
 			}},

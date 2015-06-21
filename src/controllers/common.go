@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"strings"
 )
 
 type Controller struct {
@@ -57,6 +58,7 @@ type Controller struct {
 	PaymentSystems map[string]string
 	ConfirmedBlockId int64
 	MinerId int64
+	Races map[int64]string
 }
 
 var configIni map[string]string
@@ -569,6 +571,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c.Periods = map[int64]string{86400 : "1"+c.Lang["day"], 604800 : "1"+c.Lang["week"], 31536000 : "1"+c.Lang["year"], 2592000 : "1"+c.Lang["month"], 1209600 : "2"+c.Lang["weeks"], }
 
+	c.Races = map[int64]string{1: c.Lang["race_1"], 2: c.Lang["race_2"], 3: c.Lang["race_3"]}
+
 	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
@@ -813,6 +817,12 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		},
 		"noescape": func(s string) template.HTML {
 			return template.HTML(s)
+		},
+		"js": func(s string) template.JS {
+			return template.JS(s)
+		},
+		"join": func(s []string, sep string) string {
+			return strings.Join(s, sep)
 		},
 		"strToInt64": func(text string) int64 {
 			return utils.StrToInt64(text)
