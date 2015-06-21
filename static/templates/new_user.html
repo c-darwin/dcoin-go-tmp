@@ -1,0 +1,169 @@
+<script>
+	$('#new_user').bind('click', function () {
+
+		$.post( 'ajax?controllerName=generateNewPrimaryKey', function (data) {
+			$("#div_new_user_0").css("display", "none");
+			{{if .ShowSignData}}$("#div_new_user_1").css("display", "block");{{end}}
+			$("#public_key").val( data.public_key );
+			$("#private_key").val( data.private_key );
+			$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#public_key").val());
+			doSign();
+			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+			}, 'json' );
+
+		} );
+
+		$('#next').bind('click', function () {
+			$("#div_new_user_1").css("display", "none");
+			$("#sign").css("display", "block");
+		} );
+
+		$('#send_to_net').bind('click', function () {
+
+			$.post( 'ajax?controllerName=saveQueue', {
+						'type' : '{{.TxType}}',
+						'time' : '{{.TimeNow}}',
+						'user_id' : '{{.UserId}}',
+						'public_key' : $('#public_key').val(),
+						'private_key' : $('#private_key').val(),
+						'signature1': $('#signature1').val(),
+						'signature2': $('#signature2').val(),
+						'signature3': $('#signature3').val()
+					}, function (data) {
+						fc_navigate ('newUser', {'alert': '{{.Lang.sent_to_the_net}}'} );
+					}
+			);
+		} );
+
+		function get_img_refs (i, user_id, urls) {
+			if (typeof urls == 'undefined' )
+				return 0;
+			var image = new Image();
+			if (typeof urls[i] != 'undefined' && urls[i]!='' && urls[i]!='0') {
+				console.log('TRY '+urls[i]+"/public/"+user_id+"_user_face.jpg"+"\ni="+i);
+				image.src = urls[i]+"/public/"+user_id+"_user_face.jpg";
+				image.onload = function(){
+					console.log('OK '+urls[i]);
+					image=null;
+					$('.img_'+user_id).css("background", 'url('+urls[i]+'/public/'+user_id+'_user_face.jpg)  50% 50%');
+					$('.img_'+user_id).css("background-size", "60px Auto");
+				};
+				// handle failure
+				image.onerror = function(){
+					image=null;
+					console.log('error '+urls[i]);
+					var bg = $('.img_'+user_id).css("background-image");
+					if (typeof bg == 'undefined' || bg.length<10)
+						get_img_refs (i+1, user_id, urls);
+				};
+				setTimeout
+				(
+						function()
+						{
+							if ( image!=null && (!image.complete || !image.naturalWidth) )
+							{
+								var bg = $('.img_'+user_id).css("background-image");
+								image = null;
+								console.log('error');
+								if (typeof bg == 'undefined' || bg.length<10)
+									get_img_refs (i+1, user_id, urls);
+							}
+						},
+						2000
+				);
+			}
+		}
+</script>
+<style>
+	.ref .fa{margin-right: 5px;margin-left: 5px;}
+</style>
+
+<h1 class="page-header">{{.Lang.reg_users}}</h1>
+<ol class="breadcrumb">
+	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
+	<li class="active">{{.Lang.reg_users}}</li>
+</ol>
+
+{{template "alertSuccess".}}
+
+
+<div id="div_new_user_0">
+	<button id="new_user" type="button" class="btn btn-outline btn-primary">new user</button><br><br>
+	{{if .MyRefs}}
+		<table class="table table-striped table-bordered table-hover" style="max-width:600px">
+		<thead>
+		<tr>
+			<th>User ID</th>
+			<th>{{.Lang.profit}}</th>
+			<th>{{.Lang.action}}</th>
+		</tr>
+		</thead>
+		{{range $refUserId, $data := .MyRefs}}
+			<tr>
+			{{if $data.hosts}}
+				<td style='text-align:center;vertical-align:middle'><div class='img_{{$refUserId}}' style='width:60px;height:60px; border-radius:50%;margin:auto'></div>user_id: {{$refUserId}}</td>
+			{{else}}
+				<td style='text-align:center;vertical-align:middle'>user_id: {{$refUserId}}</td>
+			{{end}}
+			<td style='vertical-align:middle'>
+			{{if $data.amounts}}
+				{{range $currency_id, $amount := $data.amounts}}
+					{{$amount}} d{{index $.CurrencyList $currency_id}}<br>
+				{{end}}
+			{{else}}
+				0
+			{{end}}
+			</td>
+			{{if not $data.key}}
+				<td>{{.Lang.key_has_been_changed}}</td>
+			{{else}}
+				<td style='font-size: 25px' class='ref'><a href='{{$data.keyUrl}}.png' target='_blank'><i class='fa fa-download'></i></a> <a href='{{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-file-text-o'></i></a> <a href='https://www.facebook.com/sharer/sharer.php?u={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-facebook-square'></i></a> <a href='https://twitter.com/home?status={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-twitter-square'></i></a> <a href='http://vkontakte.ru/share.php?url={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-vk'></i></a> <a href='mailto:?subject=Dcoin&amp;body={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-envelope-o'></i></a></td></tr>
+			{{end}}
+		{{end}}
+		</tbody>
+		</table>
+	{{end}}
+
+</div>
+
+<div id="div_new_user_1" style="display: none">
+		<textarea id="public_key" style="width: 700px; height: 300px; display: none" class="form-control"></textarea><br>
+		<textarea id="private_key" style="width: 730px; height: 300px" class="form-control"></textarea><br>
+		<button class="btn" id="next">{{.Lang.next}}</button>
+</div>
+
+{{template "signatures".}}
+
+<div class="clearfix"></div>
+{{.last_tx_formatted}}
+<script src="static/js/unixtime.js"></script>
+
+{{if .GlobalRefs}}
+	<h3>{{.Lang.leaders_dcoin}}</h3>
+	<table class="table table-striped table-bordered table-hover" style="max-width:400px">
+	<thead>
+	<tr>
+		<th style="width:100px">Miner</th>
+		<th>{{.Lang.profit}}</th>
+	</tr>
+	</thead>
+	<tbody>
+	{{range $refUserId, $data := .GlobalRefs}}
+		<tr><td style='text-align:center;vertical-align:middle'><div class='img_{{$refUserId}}' style='width:60px;height:60px; border-radius:50%;margin:auto'></div>user_id: {{$refUserId}}</td>
+		<td style='vertical-align:middle'>
+		{{range $k, $refData := $data.amounts}}
+			{{$refData.amount}} d{{index $.Currency_list $refData.currency_id}}<br>
+		{{end}}
+		</td></tr>
+	{{end}}
+	</tbody>
+	</table>
+{{end}}
+
+<script>
+	<?php
+			foreach ($ref_photos as $user_id=>$hosts) {
+		echo "get_img_refs (0, {$user_id}, {$hosts});\n";
+	}
+	?>
+</script>

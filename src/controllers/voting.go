@@ -3,15 +3,32 @@ import (
 	"utils"
 	"log"
 	"strings"
+	"fmt"
 )
 
 type VotingPage struct {
-	Alert string
 	SignData string
 	ShowSignData bool
+	TxType string
+	TxTypeId int64
+	TimeNow int64
 	UserId int64
+	Alert string
 	Lang map[string]string
 	CountSignArr []int
+	PromisedAmountCurrencyList map[int64]map[string]string
+	MaxOtherCurrenciesCount []int
+	RefsNums []int
+	Refs []string
+	Referral map[string]int64
+	MinerNewbie string
+	MaxCurrencyId int64
+	AllMaxPromisedAmount []int64
+	AllPct [391]map[string]string
+	LastTxFormatted string
+	WaitVoting map[int64]string
+	CurrencyList map[int64]string
+	JsPct string
 }
 
 func (c *Controller) Voting() (string, error) {
@@ -23,6 +40,7 @@ func (c *Controller) Voting() (string, error) {
 	timeNow := utils.Time()
 
 	waitVoting := make(map[int64]string)
+	promisedAmountCurrencyList := make(map[int64]map[string]string)
 
 	// голосовать майнер может только после того, как пройдет  miner_newbie_time сек
 	regTime, err := c.Single("SELECT reg_time FROM miners_data WHERE user_id  =  ?", c.SessUserId).Int64()
@@ -59,7 +77,7 @@ func (c *Controller) Voting() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			// после добавления обещанной суммы должно пройти не менее min_hold_time_promise_amount сек, чтобы за неё можно было голосовать
-			if start_time > utils.Time() - c.Variables["min_hold_time_promise_amount"] {
+			if start_time > utils.Time() - c.Variables.Int64["min_hold_time_promise_amount"] {
 				waitVoting[currency_id] = strings.Replace(c.Lang["hold_time_wait"], "[sec]", utils.TimeLeft(c.Variables.Int64["min_hold_time_promise_amount"] - (utils.Time() - start_time), c.Lang), -1)
 				continue
 			}
@@ -73,21 +91,111 @@ func (c *Controller) Voting() (string, error) {
 								 currency_id = ? AND
 								 del_block_id = 0
 					GROUP BY  user_id
-					`, currency_id).Int64()
+					`, utils.Time()-c.Variables.Int64["min_hold_time_promise_amount"], currency_id).Int64()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
+			if countMiners < c.Variables.Int64["min_miners_of_voting"] {
+				waitVoting[currency_id] = strings.Replace(c.Lang["min_miners_count"], "[miners_count]", utils.Int64ToStr(c.Variables.Int64["min_miners_of_voting"]), -1)
+				waitVoting[currency_id] = strings.Replace(waitVoting[currency_id], "[remaining]", utils.Int64ToStr(c.Variables.Int64["min_miners_of_voting"]-countMiners), -1)
+				continue
+			}
+			// голосовать можно не чаще 1 раза в 2 недели
+			voteTime, err := c.Single("SELECT time FROM log_time_votes_complex WHERE user_id  =  ? AND time > ?", c.SessUserId, utils.Time()-c.Variables.Int64["limit_votes_complex_period"]).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			if voteTime > 0 {
+				waitVoting[currency_id] = strings.Replace(c.Lang["wait_voting"], "[sec]", utils.TimeLeft(c.Variables.Int64["limit_votes_complex_period"] - (utils.Time() - voteTime), c.Lang), -1)
+				continue
+			}
+
+			// получим наши предыдущие голоса
+			votesUserPct, err := c.Single("SELECT pct FROM votes_user_pct WHERE user_id  =  ? AND currency_id  =  ?", c.SessUserId, currency_id).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+
+			votesMinerPct, err := c.Single("SELECT pct FROM votes_miner_pct WHERE user_id  =  ? AND currency_id  =  ?", c.SessUserId, currency_id).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+
+			votesMaxOtherCurrencies, err := c.Single("SELECT count FROM votes_max_other_currencies WHERE user_id  =  ? AND currency_id  =  ?", c.SessUserId, currency_id).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+
+			votesMaxPromisedAmount, err := c.Single("SELECT amount FROM votes_max_promised_amount WHERE user_id  =  ? AND currency_id  =  ?", c.SessUserId, currency_id).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			promisedAmountCurrencyList[currency_id] = make(map[string]string)
+			promisedAmountCurrencyList[currency_id]["votes_user_pct"] = utils.Int64ToStr(votesUserPct)
+			promisedAmountCurrencyList[currency_id]["votes_miner_pct"] = utils.Int64ToStr(votesMinerPct)
+			promisedAmountCurrencyList[currency_id]["votes_max_other_currencies"] = utils.Int64ToStr(votesMaxOtherCurrencies)
+			promisedAmountCurrencyList[currency_id]["votes_max_promised_amount"] = utils.Int64ToStr(votesMaxPromisedAmount)
+			promisedAmountCurrencyList[currency_id]["name"] = name
 		}
 	}
 
+	referral, err := c.OneRow("SELECT first, second, third FROM votes_referral WHERE user_id  =  ?", c.SessUserId).Int64()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	if len(referral) == 0 {
+		referral["first"] = int64(utils.RandInt(0, 30))
+		referral["second"] = int64(utils.RandInt(0, 30))
+		referral["third"] = int64(utils.RandInt(0, 30))
+	}
 
-	TemplateStr, err := makeTemplate("voting", "Voting", &VotingPage{
+	maxCurrencyId, err := c.Single("SELECT max(id) FROM currency").Int64()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	allMaxPromisedAmount := []int64{1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000,200000,500000,1000000,2000000,5000000,10000000,20000000,50000000,100000000,200000000,500000000,1000000000}
+
+	allPct := utils.GetPctArray()
+	pctArray := utils.GetPctArray()
+	jsPct := "{"
+	for year, sec := range pctArray {
+		jsPct += fmt.Sprintf(`%v: '%v',`, year, sec)
+	}
+	jsPct = jsPct[:len(jsPct)-1] + "}"
+
+	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"votes_complex"}), 1, c.TimeFormat)
+	lastTxFormatted := ""
+	if len(lastTx) > 0 {
+		lastTxFormatted, _ = utils.MakeLastTx(lastTx, c.Lang)
+	}
+
+	refs := []string{"first", "second", "third"}
+	refsNums := []int{0,5,10,15,20,25,30}
+
+	TemplateStr, err := makeTemplate("voting", "voting", &VotingPage{
 		Alert: c.Alert,
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
 		UserId: c.SessUserId,
-		SignData: ""})
+		TimeNow: timeNow,
+		TxType: txType,
+		TxTypeId: txTypeId,
+		SignData: "",
+		PromisedAmountCurrencyList: promisedAmountCurrencyList,
+		MaxOtherCurrenciesCount: []int{0,1,2,3,4},
+		RefsNums: refsNums,
+		Referral: referral,
+		MinerNewbie: minerNewbie,
+		MaxCurrencyId: maxCurrencyId,
+		AllMaxPromisedAmount: allMaxPromisedAmount,
+		AllPct: allPct,
+		LastTxFormatted: lastTxFormatted,
+		WaitVoting: waitVoting,
+		CurrencyList: c.CurrencyList,
+		JsPct: jsPct,
+		Refs: refs})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

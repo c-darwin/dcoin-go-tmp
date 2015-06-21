@@ -812,6 +812,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"round": func(a float64, num int) float64 {
 			return utils.Round(a, num)
 		},
+		"sum": func(a, b interface{}) float64 {
+			return utils.InterfaceToFloat64(a)+utils.InterfaceToFloat64(b)
+		},
 		"minus": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)-utils.InterfaceToFloat64(b)
 		},
