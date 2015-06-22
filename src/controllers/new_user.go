@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 	"os"
+	"io/ioutil"
 )
 
 type newUserPage struct {
@@ -16,10 +17,12 @@ type newUserPage struct {
 	Alert string
 	Lang map[string]string
 	CountSignArr []int
-	MyRefs map[int64]myRefs
-	GlobalRefs map[int64]globalRefs
+	MyRefs map[int64]myRefsType
+	GlobalRefs map[int64]globalRefsType
 	CurrencyList map[int64]string
 	PoolUrl string
+	RefPhotos map[int64][]string
+	LastTxFormatted string
 }
 
 func (c *Controller) NewUser() (string, error) {
@@ -30,12 +33,13 @@ func (c *Controller) NewUser() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
-	param := map[string]string{"x": 176, "y": 100, "width": 100, "bg_path": "static/img/k_bg.png"}
+	param := utils.ParamType{X: 176, Y: 100, Width: 100, Bg_path: "static/img/k_bg.png"}
 
-	myRefsKeys := make(map[string]string)
+	refPhotos := make(map[int64][]string)
+	myRefsKeys := make(map[int64]map[string]string)
 	if c.SessRestricted == 0 {
 		rows, err := c.Query(c.FormatQuery(`
-				SELECT user_id,	private_key,  log_id
+				SELECT users.user_id,	private_key,  log_id
 				FROM `+c.MyPrefix+`my_new_users
 				LEFT JOIN users ON users.user_id = `+c.MyPrefix+`my_new_users.user_id
 				WHERE status = 'approved'
@@ -52,10 +56,11 @@ func (c *Controller) NewUser() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			// проверим, не сменил ли уже юзер свой ключ
-			if log_id > 0 {
-				myRefsKeys[user_id] = map[string]string{"user_id": user_id}
+			StrUserId:=utils.Int64ToStr(user_id)
+			if log_id == 0 {
+				myRefsKeys[user_id] = map[string]string{"user_id": StrUserId}
 			} else {
-				myRefsKeys[user_id] =  map[string]string{"user_id": user_id, "private_key": private_key}
+				myRefsKeys[user_id] =  map[string]string{"user_id": StrUserId, "private_key": private_key}
 				md5:=string(utils.Md5(private_key))
 				kPath := "public/"+md5[0:16]
 				kPathPng := kPath+".png"
@@ -63,6 +68,14 @@ func (c *Controller) NewUser() (string, error) {
 				if _, err := os.Stat(kPathPng); os.IsNotExist(err) {
 					privKey := strings.Replace(private_key, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
 					privKey = strings.Replace(privKey, "-----END RSA PRIVATE KEY-----", "", -1)
+					err = utils.KeyToImg(privKey, kPathPng, user_id, c.TimeFormat, param)
+					if err != nil {
+						return "", utils.ErrInfo(err)
+					}
+					err := ioutil.WriteFile(kPathTxt, []byte(privKey), 0644)
+					if err != nil {
+						return "", utils.ErrInfo(err)
+					}
 					/*$gd = key_to_img($private_key, $param, $row['user_id']);
 				imagepng($gd, $k_path_png);
 				file_put_contents($k_path_txt, trim($private_key));*/
@@ -93,7 +106,7 @@ func (c *Controller) NewUser() (string, error) {
 		refs[referral] = map[int64]float64{currency_id:amount}
 	}
 
-	myRefsAmounts := make(map[int64]myRefs)
+	myRefsAmounts := make(map[int64]myRefsType)
 	for refUserId, refData := range refs {
 		data, err := c.OneRow("SELECT * FROM miners_data WHERE user_id  =  ?", refUserId).String()
 		if err != nil {
@@ -109,25 +122,25 @@ func (c *Controller) NewUser() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
-			myRefsAmounts[refUserId] = myRefs{amounts: refData, hosts: hosts}
+			myRefsAmounts[refUserId] = myRefsType{Amounts: refData, Hosts: hosts}
+			refPhotos[refUserId] = hosts
 		}
 	}
-	myRefs := make(map[int64]myRefs)
+	myRefs := make(map[int64]myRefsType)
 	for refUserId, refData := range myRefsAmounts {
 		myRefs[refUserId] = refData
 	}
 	for refUserId, refData := range myRefsKeys {
-		myRefs[refUserId].key = refData["private_key"]
 		md5 := string(utils.Md5(refData["private_key"]))
-		myRefs[refUserId].keyUrl = c.NodeConfig["pool_url"] + "public/"+md5[0:16]
+		myRefs[refUserId] = myRefsType{Key: refData["private_key"], KeyUrl: c.NodeConfig["pool_url"] + "public/"+md5[0:16]}
 	}
 
 	/*
 	 * Общая стата по рефам
 	 */
-	globalRefs := make(map[int64]globalRefs)
+	globalRefs := make(map[int64]globalRefsType)
 	// берем лидеров по USD
-	rows, err := c.Query(c.FormatQuery(`
+	rows, err = c.Query(c.FormatQuery(`
 			SELECT user_id, sum(amount) as amount
 			FROM referral_stats
 			WHERE currency_id = 72
@@ -166,7 +179,8 @@ func (c *Controller) NewUser() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		globalRefs[user_id] = globalRefs{amounts: refAmounts, hosts: hosts}
+		globalRefs[user_id] = globalRefsType{Amounts: refAmounts, Hosts: hosts}
+		refPhotos[user_id] = hosts
 	}
 
 	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_user"}), 1, c.TimeFormat)
@@ -185,9 +199,11 @@ func (c *Controller) NewUser() (string, error) {
 		TxType: txType,
 		TxTypeId: txTypeId,
 		SignData: "",
+		LastTxFormatted: lastTxFormatted,
 		MyRefs: myRefs,
 		GlobalRefs: globalRefs,
 		CurrencyList: c.CurrencyList,
+		RefPhotos: refPhotos,
 		PoolUrl: c.NodeConfig["pool_url"]})
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -195,14 +211,14 @@ func (c *Controller) NewUser() (string, error) {
 	return TemplateStr, nil
 }
 
-type myRefs struct {
-	amounts map[int64]float64
-	hosts []string
-	key string
-	keyUrl string
+type myRefsType struct {
+	Amounts map[int64]float64
+	Hosts []string
+	Key string
+	KeyUrl string
 }
 
-type globalRefs struct {
-	amounts []map[string]string
-	hosts []string
+type globalRefsType struct {
+	Amounts []map[string]string
+	Hosts []string
 }

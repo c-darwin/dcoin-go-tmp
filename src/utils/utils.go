@@ -1,44 +1,35 @@
 package utils
 
 import (
+	"image/draw"
+	"image"
+	"image/color"
+	"image/png"
+	"log"
+	"time"
+	"os"
+	"encoding/base64"
+	"code.google.com/p/freetype-go/freetype"
+	"static"
 	"fmt"
 	_ "github.com/lib/pq"
-	//"time"
 	"strings"
-	//"database/sql"
 	"runtime"
 	"path/filepath"
 	"strconv"
 	"errors"
-	//"encoding/json"
-	//"crypto/x509"
-	//"encoding/pem"
 	"crypto"
 	"consts"
-	//"crypto/rand"
-	//"crypto/rsa"
-	//"strings"
 	"math"
-	//math_rand "math/rand"
 	"crypto/sha256"
-	//"crypto/md5"
 	"encoding/hex"
 	"crypto/rsa"
-	//"bufio"
-	//"os"
-	//"errors"
-	//"io/ioutil"*/
 	"reflect"
 	"regexp"
-	//"fmt"
-	"os"
 	"net/http"
 	"io"
-	"time"
-	"log"
 	"math/big"
 	"crypto/x509"
-	"encoding/base64"
 	"math/rand"
 	"encoding/pem"
 )
@@ -68,6 +59,124 @@ func Sleep(sec float64) {
 	time.Sleep(time.Duration(sec) * 1000 * time.Millisecond)
 }
 
+
+func getImageDimension(imagePath string) (int, int) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+	}
+	defer file.Close()
+	image, _, err := image.DecodeConfig(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", imagePath, err)
+	}
+	return image.Width, image.Height
+}
+
+type ParamType struct {
+	X, Y, Width, Height int64
+	Bg_path string
+}
+
+func KeyToImg(key, resultPath string, userId int64, timeFormat string, param ParamType) error {
+
+	keyBin, _ := base64.StdEncoding.DecodeString(key)
+	keyHex := append(BinToHex(keyBin), []byte("00000000")...)
+	keyBin = HexToBin(keyHex)
+
+	w, h := getImageDimension(param.Bg_path)
+	fSrc, err := os.Open(param.Bg_path)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	defer fSrc.Close()
+	src, err := png.Decode(fSrc)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	white := image.NewUniform(color.White)
+	black := image.NewUniform(color.Black)
+	draw.Draw(dst, dst.Bounds(), src, image.Point{0,0}, draw.Src)
+
+	x :=param.X
+	y := param.Y
+	var color *image.Uniform
+	for i:=0; i < len(keyBin); i++ {
+		b:= fmt.Sprintf("%08b ", keyBin[i])
+		for j:=0; j < 8; j++{
+			if b[j:j+1] == "0" {
+				color = black
+			} else {
+				color = white
+			}
+			dst.Set(int(x), int(y), color)
+			x++
+			if (x + 1 - param.X) % param.Width == 0 {
+				x = param.X
+				y++
+			}
+		}
+	}
+	param.Height = y - param.Y + 1
+
+	x = 0
+	// теперь пишем инфу, где искать квадрат
+	info := fmt.Sprintf("%016s", strconv.FormatInt(param.X, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Y, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Width, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Height, 2))
+	for i:=0; i < len(info); i++ {
+		if info[i:i+1] == "0" {
+			color = black
+		} else {
+			color = white
+		}
+		dst.Set(int(x), 0, color)
+		x++
+	}
+
+	fontBytes, err := static.Asset("static/fonts/luxisr.ttf")
+	if err != nil {
+		return ErrInfo(err)
+	}
+	font, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	c := freetype.NewContext()
+	c.SetDPI(72)
+	c.SetFont(font)
+	c.SetFontSize(15)
+	c.SetClip(dst.Bounds())
+	c.SetDst(dst)
+	c.SetSrc(image.Black)
+
+	// Draw the text.
+	pt := freetype.Pt(13, 300)
+	_, err = c.DrawString("User ID: "+Int64ToStr(userId), pt)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	t := time.Unix(time.Now().Unix(), 0)
+	txTime := t.Format(timeFormat)
+	pt = freetype.Pt(300, 300)
+	_, err = c.DrawString(txTime, pt)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	fDst, err := os.Create(resultPath)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	defer fDst.Close()
+	err = png.Encode(fDst, dst)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
+}
 
 func  ParseBlockHeader(binaryBlock *[]byte) (*BlockData) {
 	result := new(BlockData)

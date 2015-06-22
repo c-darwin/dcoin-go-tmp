@@ -1,3 +1,4 @@
+{{define "newUser"}}
 <script>
 	$('#new_user').bind('click', function () {
 
@@ -100,24 +101,24 @@
 		</thead>
 		{{range $refUserId, $data := .MyRefs}}
 			<tr>
-			{{if $data.hosts}}
+			{{if $data.Hosts}}
 				<td style='text-align:center;vertical-align:middle'><div class='img_{{$refUserId}}' style='width:60px;height:60px; border-radius:50%;margin:auto'></div>user_id: {{$refUserId}}</td>
 			{{else}}
 				<td style='text-align:center;vertical-align:middle'>user_id: {{$refUserId}}</td>
 			{{end}}
 			<td style='vertical-align:middle'>
-			{{if $data.amounts}}
-				{{range $currency_id, $amount := $data.amounts}}
+			{{if $data.Amounts}}
+				{{range $currency_id, $amount := $data.Amounts}}
 					{{$amount}} d{{index $.CurrencyList $currency_id}}<br>
 				{{end}}
 			{{else}}
 				0
 			{{end}}
 			</td>
-			{{if not $data.key}}
-				<td>{{.Lang.key_has_been_changed}}</td>
+			{{if not $data.Key}}
+				<td>{{$.Lang.key_has_been_changed}}</td>
 			{{else}}
-				<td style='font-size: 25px' class='ref'><a href='{{$data.keyUrl}}.png' target='_blank'><i class='fa fa-download'></i></a> <a href='{{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-file-text-o'></i></a> <a href='https://www.facebook.com/sharer/sharer.php?u={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-facebook-square'></i></a> <a href='https://twitter.com/home?status={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-twitter-square'></i></a> <a href='http://vkontakte.ru/share.php?url={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-vk'></i></a> <a href='mailto:?subject=Dcoin&amp;body={{$data.keyUrl}}.txt' target='_blank'><i class='fa fa-envelope-o'></i></a></td></tr>
+				<td style='font-size: 25px' class='ref'><a href='{{$data.KeyUrl}}.png' target='_blank'><i class='fa fa-download'></i></a> <a href='{{$data.KeyUrl}}.txt' target='_blank'><i class='fa fa-file-text-o'></i></a> <a href='https://www.facebook.com/sharer/sharer.php?u={{$data.KeyUrl}}.txt' target='_blank'><i class='fa fa-facebook-square'></i></a> <a href='https://twitter.com/home?status={{$data.KeyUrl}}.txt' target='_blank'><i class='fa fa-twitter-square'></i></a> <a href='http://vkontakte.ru/share.php?url={{$data.KeyUrl}}.txt' target='_blank'><i class='fa fa-vk'></i></a> <a href='mailto:?subject=Dcoin&amp;body={{$data.KeyUrl}}.txt' target='_blank'><i class='fa fa-envelope-o'></i></a></td></tr>
 			{{end}}
 		{{end}}
 		</tbody>
@@ -135,7 +136,7 @@
 {{template "signatures".}}
 
 <div class="clearfix"></div>
-{{.last_tx_formatted}}
+{{.LastTxFormatted}}
 <script src="static/js/unixtime.js"></script>
 
 {{if .GlobalRefs}}
@@ -151,8 +152,8 @@
 	{{range $refUserId, $data := .GlobalRefs}}
 		<tr><td style='text-align:center;vertical-align:middle'><div class='img_{{$refUserId}}' style='width:60px;height:60px; border-radius:50%;margin:auto'></div>user_id: {{$refUserId}}</td>
 		<td style='vertical-align:middle'>
-		{{range $k, $refData := $data.amounts}}
-			{{$refData.amount}} d{{index $.Currency_list $refData.currency_id}}<br>
+		{{range $k, $refData := $data.Amounts}}
+			{{$refData.amount}} d{{index $.CurrencyList (strToInt64 $refData.currency_id)}}<br>
 		{{end}}
 		</td></tr>
 	{{end}}
@@ -161,9 +162,13 @@
 {{end}}
 
 <script>
-	<?php
-			foreach ($ref_photos as $user_id=>$hosts) {
-		echo "get_img_refs (0, {$user_id}, {$hosts});\n";
-	}
-	?>
+	{{range $userId, $hosts := .RefPhotos}}
+		var hosts = []
+		{{range $k, $host := $hosts}}
+			hosts.push({{$host}})
+		{{end}}
+		get_img_refs (0, {{$userId}}, hosts)
+	{{end}}
 </script>
+
+{{end}}
