@@ -5,10 +5,11 @@ $(function() {
             var time_val =$(this).text();
             if (time_val) {
                 var time = Number($(this).text() + '000');
-                var d = new Date(time);
-                //console.log(time);
-                //console.log('d='+d);
-                $(this).text(d);
+                /*var d = new Date(time);
+                $(this).text(d);*/
+                var d = new Date();
+                d.setTime(time);
+                $(this).text(d.toLocaleString());
             }
         });
     }

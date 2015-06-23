@@ -15,6 +15,8 @@ import (
 	"consts"
 	"sync"
 	"math"
+	"net/smtp"
+	"github.com/jordan-wright/email"
 //	"sync/atomic"
 //	"os"
 	//"dcparser"
@@ -484,25 +486,51 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	return result, nil
 }
 
+func (db *DCDB) SendMail(message, subject string, To string, mailData map[string]string) error {
+
+	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
+		e := email.NewEmail()
+		e.From = "Dcoin <"+mailData["smtp_username"]+">"
+		e.To = []string{To}
+		e.Subject = subject
+		//e.Text = []byte(message)
+		e.HTML = []byte(message)
+		log.Println(mailData["smtp_server"]+":"+mailData["smtp_port"])
+		log.Println(mailData["smtp_username"])
+		log.Println(mailData["smtp_password"])
+		log.Println(mailData["smtp_server"])
+		err := e.Send(mailData["smtp_server"]+":"+mailData["smtp_port"], smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
-	if sessRestricted==0 && sessUserId<=0 {
+	if sessRestricted!=0 || sessUserId<=0 {
+		log.Println("NodeAdminAccess1")
 		return false, nil
 	}
 	community, err := db.GetCommunityUsers()
 	if err != nil {
+		log.Println("NodeAdminAccess2")
 		return false, ErrInfo(err)
 	}
 	if len(community) > 0 {
 		pool_admin_user_id, err := db.GetPoolAdminUserId()
 		if err != nil {
+			log.Println("NodeAdminAccess3")
 			return false, ErrInfo(err)
 		}
 		if sessUserId == pool_admin_user_id {
 			return true, nil
 		} else {
+			log.Println("NodeAdminAccess4")
 			return false, nil
 		}
 	} else {
+		log.Println("NodeAdminAccess0")
 		return true, nil
 	}
 }

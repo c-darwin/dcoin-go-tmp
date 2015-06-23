@@ -2399,10 +2399,10 @@ func static_templates_cash_request_out_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cf_catalog_tpl reads file data from disk. It returns an error on failure.
-func static_templates_cf_catalog_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cf_catalog.tpl"
-	name := "static/templates/cf_catalog.tpl"
+// static_templates_cf_catalog_html reads file data from disk. It returns an error on failure.
+func static_templates_cf_catalog_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cf_catalog.html"
+	name := "static/templates/cf_catalog.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2547,6 +2547,24 @@ func static_templates_change_country_race_tpl() (*asset, error) {
 func static_templates_change_creditor_html() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/change_creditor.html"
 	name := "static/templates/change_creditor.html"
+	bytes, err := bindata_read(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// static_templates_change_geolocation_html reads file data from disk. It returns an error on failure.
+func static_templates_change_geolocation_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_geolocation.html"
+	name := "static/templates/change_geolocation.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2849,28 +2867,10 @@ func static_templates_for_repaid_fix_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_geolocation_tpl reads file data from disk. It returns an error on failure.
-func static_templates_geolocation_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/geolocation.tpl"
-	name := "static/templates/geolocation.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// static_templates_holidays_list_tpl reads file data from disk. It returns an error on failure.
-func static_templates_holidays_list_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/holidays_list.tpl"
-	name := "static/templates/holidays_list.tpl"
+// static_templates_holidays_list_html reads file data from disk. It returns an error on failure.
+func static_templates_holidays_list_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/holidays_list.html"
+	name := "static/templates/holidays_list.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3227,10 +3227,10 @@ func static_templates_new_credit_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_new_holidays_tpl reads file data from disk. It returns an error on failure.
-func static_templates_new_holidays_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/new_holidays.tpl"
-	name := "static/templates/new_holidays.tpl"
+// static_templates_new_holidays_html reads file data from disk. It returns an error on failure.
+func static_templates_new_holidays_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/new_holidays.html"
+	name := "static/templates/new_holidays.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3299,10 +3299,10 @@ func static_templates_node_config_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_notifications_tpl reads file data from disk. It returns an error on failure.
-func static_templates_notifications_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/notifications.tpl"
-	name := "static/templates/notifications.tpl"
+// static_templates_notifications_html reads file data from disk. It returns an error on failure.
+func static_templates_notifications_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/notifications.html"
+	name := "static/templates/notifications.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4023,7 +4023,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
 	"static/templates/cash_request_in.html": static_templates_cash_request_in_html,
 	"static/templates/cash_request_out.html": static_templates_cash_request_out_html,
-	"static/templates/cf_catalog.tpl": static_templates_cf_catalog_tpl,
+	"static/templates/cf_catalog.html": static_templates_cf_catalog_html,
 	"static/templates/cf_page_preview.tpl": static_templates_cf_page_preview_tpl,
 	"static/templates/cf_project_change_category.tpl": static_templates_cf_project_change_category_tpl,
 	"static/templates/cf_start.tpl": static_templates_cf_start_tpl,
@@ -4032,6 +4032,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_commission.html": static_templates_change_commission_html,
 	"static/templates/change_country_race.tpl": static_templates_change_country_race_tpl,
 	"static/templates/change_creditor.html": static_templates_change_creditor_html,
+	"static/templates/change_geolocation.html": static_templates_change_geolocation_html,
 	"static/templates/change_host.tpl": static_templates_change_host_tpl,
 	"static/templates/change_key_close.tpl": static_templates_change_key_close_tpl,
 	"static/templates/change_key_request.tpl": static_templates_change_key_request_tpl,
@@ -4048,8 +4049,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/del_credit.html": static_templates_del_credit_html,
 	"static/templates/del_promised_amount.html": static_templates_del_promised_amount_html,
 	"static/templates/for_repaid_fix.html": static_templates_for_repaid_fix_html,
-	"static/templates/geolocation.tpl": static_templates_geolocation_tpl,
-	"static/templates/holidays_list.tpl": static_templates_holidays_list_tpl,
+	"static/templates/holidays_list.html": static_templates_holidays_list_html,
 	"static/templates/home.html": static_templates_home_html,
 	"static/templates/index.html": static_templates_index_html,
 	"static/templates/index_cf.tpl": static_templates_index_cf_tpl,
@@ -4069,11 +4069,11 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/my_cf_projects.tpl": static_templates_my_cf_projects_tpl,
 	"static/templates/new_cf_project.tpl": static_templates_new_cf_project_tpl,
 	"static/templates/new_credit.html": static_templates_new_credit_html,
-	"static/templates/new_holidays.tpl": static_templates_new_holidays_tpl,
+	"static/templates/new_holidays.html": static_templates_new_holidays_html,
 	"static/templates/new_promised_amount.html": static_templates_new_promised_amount_html,
 	"static/templates/new_user.html": static_templates_new_user_html,
 	"static/templates/node_config.tpl": static_templates_node_config_tpl,
-	"static/templates/notifications.tpl": static_templates_notifications_tpl,
+	"static/templates/notifications.html": static_templates_notifications_html,
 	"static/templates/pct.tpl": static_templates_pct_tpl,
 	"static/templates/points.html": static_templates_points_html,
 	"static/templates/pool_admin.tpl": static_templates_pool_admin_tpl,
@@ -4429,7 +4429,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"cash_request_out.html": &_bintree_t{static_templates_cash_request_out_html, map[string]*_bintree_t{
 			}},
-			"cf_catalog.tpl": &_bintree_t{static_templates_cf_catalog_tpl, map[string]*_bintree_t{
+			"cf_catalog.html": &_bintree_t{static_templates_cf_catalog_html, map[string]*_bintree_t{
 			}},
 			"cf_page_preview.tpl": &_bintree_t{static_templates_cf_page_preview_tpl, map[string]*_bintree_t{
 			}},
@@ -4446,6 +4446,8 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			"change_country_race.tpl": &_bintree_t{static_templates_change_country_race_tpl, map[string]*_bintree_t{
 			}},
 			"change_creditor.html": &_bintree_t{static_templates_change_creditor_html, map[string]*_bintree_t{
+			}},
+			"change_geolocation.html": &_bintree_t{static_templates_change_geolocation_html, map[string]*_bintree_t{
 			}},
 			"change_host.tpl": &_bintree_t{static_templates_change_host_tpl, map[string]*_bintree_t{
 			}},
@@ -4479,9 +4481,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"for_repaid_fix.html": &_bintree_t{static_templates_for_repaid_fix_html, map[string]*_bintree_t{
 			}},
-			"geolocation.tpl": &_bintree_t{static_templates_geolocation_tpl, map[string]*_bintree_t{
-			}},
-			"holidays_list.tpl": &_bintree_t{static_templates_holidays_list_tpl, map[string]*_bintree_t{
+			"holidays_list.html": &_bintree_t{static_templates_holidays_list_html, map[string]*_bintree_t{
 			}},
 			"home.html": &_bintree_t{static_templates_home_html, map[string]*_bintree_t{
 			}},
@@ -4521,7 +4521,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"new_credit.html": &_bintree_t{static_templates_new_credit_html, map[string]*_bintree_t{
 			}},
-			"new_holidays.tpl": &_bintree_t{static_templates_new_holidays_tpl, map[string]*_bintree_t{
+			"new_holidays.html": &_bintree_t{static_templates_new_holidays_html, map[string]*_bintree_t{
 			}},
 			"new_promised_amount.html": &_bintree_t{static_templates_new_promised_amount_html, map[string]*_bintree_t{
 			}},
@@ -4529,7 +4529,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"node_config.tpl": &_bintree_t{static_templates_node_config_tpl, map[string]*_bintree_t{
 			}},
-			"notifications.tpl": &_bintree_t{static_templates_notifications_tpl, map[string]*_bintree_t{
+			"notifications.html": &_bintree_t{static_templates_notifications_html, map[string]*_bintree_t{
 			}},
 			"pct.tpl": &_bintree_t{static_templates_pct_tpl, map[string]*_bintree_t{
 			}},

@@ -51,6 +51,7 @@ type Controller struct {
 	TimeFormat string
 	PoolAdmin bool
 	PoolAdminUserId int64
+	NodeAdmin bool
 	NodeConfig map[string]string
 	ConfigCommission map[int64][]float64
 	CurrencyList map[int64]string
@@ -311,6 +312,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		dbInit = true
 	}
 
+	c.SessUserId = sessUserId
 	if dbInit {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
@@ -340,9 +342,12 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 				c.PoolAdminUserId = poolAdminUserId
 			}
 		}
+		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
+		if err != nil {
+			log.Print(err)
+		}
 	}
 	c.dbInit = dbInit
-	c.SessUserId = sessUserId
 	parameters_ := make(map[string]interface {})
 	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
@@ -612,6 +617,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		c.NodeConfig = config
 		c.ConfigCommission = configCommission
+
+		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
+		if err != nil {
+			log.Print(err)
+		}
 	}
 
 
@@ -812,6 +822,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"round": func(a float64, num int) float64 {
 			return utils.Round(a, num)
 		},
+		"len": func(s []map[string]string) int {
+			return len(s)
+		},
 		"sum": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)+utils.InterfaceToFloat64(b)
 		},
@@ -844,6 +857,13 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 			}
 			return result
 		},
+		"cfCategoryLang": func(lang map[string]string, name string) string {
+			return lang["cf_category_"+name]
+		},
+		"notificationsLang": func(lang map[string]string, name string) string {
+			return lang["notifications_"+name]
+		},
+
 	}
 	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))
