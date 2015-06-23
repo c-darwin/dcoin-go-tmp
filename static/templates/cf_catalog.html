@@ -42,7 +42,7 @@
 		{{if .Projects}}
 		{{range $project_id, $data := .Projects}}
 			<div class="well project-card" style="float:left; margin-right:20px">
-			{{if gt .UserId 0}}
+			{{if gt $.UserId 0}}
 					<a href="#" onclick="fc_navigate('cfPagePreview', {'only_project_id':{{$project_id}}{{if ne $data.lang_id "0"}}, 'lang_id':{{$data.lang_id}}{{end}}})">
 			{{else}}
 				<a href='?id-{{$project_id}}	{{if ne $data.lang_id "0"}}-{{$data.lang_id}}{{end}}	'>
@@ -54,8 +54,8 @@
 				<div class="progress" style="height:5px; margin-top:10px; margin-bottom:10px"><div class="progress-bar progress-bar-success" style="width: {{$data.pct}}%;"></div></div>
 				<div class="card-bottom">
 					<div style="float:left; overflow:auto; padding-right:10px"><h5>{{$data.pct}}%</h5>funded</div>
-					<div style="float:left; overflow:auto; padding-right:10px"><h5>{{$data.funding_amount}} D{{.Currency_list $data.currency_id}} </h5>pledged</div>
-					<div style="float:left; overflow:auto;"><h5>{{$data.days}}</h5>days to go</div>
+					<div style="float:left; overflow:auto; padding-right:10px"><h5>{{$data.funding_amount}} D{{index $.CurrencyList (strToInt64 $data.currency_id)}} </h5>pledged</div>
+					<div style="float:left; overflow:auto;"><h5>{{round $data.days 1}}</h5>days to go</div>
 				</div>
 			</div>
 			</div>

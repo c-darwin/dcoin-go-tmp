@@ -2,7 +2,7 @@ package controllers
 import (
 	"utils"
 	"log"
-//	"sort"
+	"sort"
 )
 
 type cfCatalogPage struct {
@@ -14,6 +14,18 @@ type cfCatalogPage struct {
 	Projects map[string]map[string]string
 	UserId int64
 	CategoryId string
+}
+
+type SortCfCatalog []map[string]string
+
+func (s SortCfCatalog) Len() int {
+	return len(s)
+}
+func (s SortCfCatalog) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s SortCfCatalog) Less(i, j int) bool {
+	return s[i]["name"] < s[j]["name"]
 }
 
 func (c *Controller) CfCatalog() (string, error) {
@@ -34,7 +46,7 @@ func (c *Controller) CfCatalog() (string, error) {
 
 	projects := make(map[string]map[string]string)
 	cfProjects, err := c.GetAll(`
-			SELECT cf_projects.id, lang_id, blurb_img, country, city, pct, funding_amount, currency_id, days, end_time
+			SELECT cf_projects.id, lang_id, blurb_img, country, city, currency_id, end_time
 			FROM cf_projects
 			LEFT JOIN cf_projects_data ON  cf_projects_data.project_id = cf_projects.id
 			WHERE del_block_id = 0 AND
@@ -44,6 +56,9 @@ func (c *Controller) CfCatalog() (string, error) {
 			ORDER BY funders DESC
 			LIMIT 100
 			`, 100, utils.Time(), c.LangInt)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	for _, data := range cfProjects {
 		CfProjectData, err := c.GetCfProjectData(utils.StrToInt64(data["id"]), utils.StrToInt64(data["end_time"]), c.LangInt, utils.StrToFloat64(data["end_time"]), cfUrl)
 		if err != nil {
@@ -59,7 +74,7 @@ func (c *Controller) CfCatalog() (string, error) {
 	for i:=0; i < 18; i++ {
 		cfCategory = append(cfCategory, map[string]string{"id": utils.IntToStr(i), "name": c.Lang["cf_category_"+utils.IntToStr(i)]})
 	}
-	//sort.Strings(cfCategory)
+	sort.Sort(SortCfCatalog(cfCategory))
 
 	TemplateStr, err := makeTemplate("cf_catalog", "cfCatalog", &cfCatalogPage{
 		Lang: c.Lang,

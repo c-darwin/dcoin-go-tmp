@@ -313,6 +313,10 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	return &singleResult{result, nil}
 }
 
+func (db *DCDB) GetAllCfLng() (map[string]string, error) {
+	return db.GetMap(`SELECT id, name FROM cf_lang ORDER BY name`, "id", "name")
+}
+
 func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (map[string]string, error) {
 	result := make(map[string]string)
 	all, err := db.GetAll(query, -1, args ...)
