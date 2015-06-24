@@ -192,7 +192,6 @@ func (c *Controller) CfPagePreview() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	// сколько дней осталось
-	log.p
 	days := utils.Round( (utils.StrToFloat64(project["end_time"]) - float64(utils.Time())) / 86400, 0)
 	if days <= 0 {
 		days = 0

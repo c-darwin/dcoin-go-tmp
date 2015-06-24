@@ -325,16 +325,18 @@ func (db *DCDB) GetCfAuthorInfo(userId, levelUp string) (map[string]string, erro
 	}
 
 	// сколько проектов создал
-	data["created"], err = db.Single("SELECT count(id) FROM cf_projects WHERE user_id  =  ?", userId).String()
+	created, err := db.Single("SELECT count(id) FROM cf_projects WHERE user_id  =  ?", userId).Int64()
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
+	data["created"] = Int64ToStr(created)
 
 	// сколько проектов профинансировал
-	data["backed"], err = db.Single("SELECT count(project_id) FROM cf_funding WHERE user_id  =  ? GROUP BY project_id", userId).String()
+	backed, err := db.Single("SELECT count(project_id) FROM cf_funding WHERE user_id  =  ? GROUP BY project_id", userId).Int64()
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
+	data["backed"] = Int64ToStr(backed)
 
 	return data, nil
 }

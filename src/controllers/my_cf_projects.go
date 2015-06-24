@@ -42,7 +42,7 @@ func (c *Controller) MyCfProjects() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	for _, data := range cfProjects {
-		CfProjectData, err := c.GetCfProjectData(utils.StrToInt64(data["id"]), utils.StrToInt64(data["end_time"]), c.LangInt, utils.StrToFloat64(data["end_time"]), "")
+		CfProjectData, err := c.GetCfProjectData(utils.StrToInt64(data["id"]), utils.StrToInt64(data["end_time"]), c.LangInt, utils.StrToFloat64(data["amount"]), "")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

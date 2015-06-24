@@ -50,7 +50,7 @@ func (c *Controller) CfCatalog() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	for _, data := range cfProjects {
-		CfProjectData, err := c.GetCfProjectData(utils.StrToInt64(data["id"]), utils.StrToInt64(data["end_time"]), c.LangInt, utils.StrToFloat64(data["end_time"]), cfUrl)
+		CfProjectData, err := c.GetCfProjectData(utils.StrToInt64(data["id"]), utils.StrToInt64(data["end_time"]), c.LangInt, utils.StrToFloat64(data["amount"]), cfUrl)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

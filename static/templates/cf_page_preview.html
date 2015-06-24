@@ -221,7 +221,7 @@
 				{{if eq $.UserId 0}}
 					<a href='?id-{{.ProjectId}}-{{.LangId}}-{{$pageType}}'>
 				{{else}}
-					<a href="#" onclick="fc_navigate('cf_page_preview', {'only_project_id':{{$.ProjectId}}}, 'lang_id':{{$.LangId}}}, 'page':'{{$pageType}}'})">
+					<a href="#" onclick="fc_navigate('cfPagePreview', {'onlyProjectId':{{$.ProjectId}}, 'lang_id':{{$.LangId}}, 'page':'{{$pageType}}'})">
 				{{end}}
 				{{cfPageTypeLang $.Lang $pageType}}{{$counter}}</a></li>
 			{{end}}
@@ -257,7 +257,7 @@
 						{{end}}
 						{{if ne $.LangId (strToInt64 $langId)}}
 							{{if gt $.UserId 0}}
-								<li><a href="#" onclick="fc_navigate('cf_page_preview', {'only_project_id':{{$.ProjectId}}, 'lang_id':{{$.LangId}}, 'page':'{{$.Page}}'})">{{index $.CfLng $langId}}</a>{{$num}}</li>
+								<li><a href="#" onclick="fc_navigate('cfPagePreview', {'onlyProjectId':{{$.ProjectId}}, 'lang_id':{{$langId}}, 'page':'{{$.Page}}'})">{{index $.CfLng $langId}}</a>{{$num}}</li>
 							{{else}}
 								<li><a href='?id-{{$.ProjectId}}-{{$langId}}-{{$.Page}}'>{{index $.CfLng $langId}}</a>{{$num}}</li>
 							{{end}}
@@ -284,12 +284,12 @@
 					{{else if eq .Page "news"}}
 						<img src="{{.NewsImg}}?r={{rand}}" width="620">
 					{{else if eq .Page "funders"}}
-						{{range $k, $data := .Funders}}
+						{{range $k, $data := .ProjectFunders}}
 							<div style="overflow: hidden;padding: 15px 15px 15px 0;border-bottom: 1px solid #D9D9DE;"><img src="{{$data.avatar}}" style="width: 80px; height: 80px; float:left; margin: 0 15px"><div><p><strong>{{$data.name}}</strong></p><p>{{$data.time}}</p></div></div>
 						{{end}}
 					{{else if eq .Page "comments"}}
 						<div id="main_comment_div">
-						{{if and (not $.Project.funder) (ne $.Project.user_id $.Userid)}}
+						{{if and (not $.Project.funder) (ne (strToInt64 $.Project.user_id) $.UserId)}}
 							<div class="alert alert-info">{{$.Lang.comments_only_for_funders}}</div>
 						{{else}}
 							<div id="comment_div"><div class="alert alert-info"><strong>{{$.Lang.limits}}:</strong> {{$.Lang.comments_limits}}</div><div><textarea id="comment" class="form-control" rows="3" maxlength="140"></textarea></div><div><button type="button" class="btn btn-outline btn-primary btn-lg btn-block" style="margin-bottom: 20px; margin-top: 5px" id="send_comment">{{$.Lang.send}}</button></div></div>
@@ -299,7 +299,7 @@
 						{{end}}
 						</div>
 
-						{{range $k, $data := .Comments}}
+						{{range $k, $data := .ProjectComments}}
 							{{$bd := ""}}{{$name := $data.name}}
 							{{if eq $.Project.user_id $data.user_id}}{{$bd := "background-color:#E8F6FF;"}}
 								{{$name := (append $data.name " <span style='color: #ff0000'>(Creator)</span> ")}}
@@ -314,11 +314,11 @@
 
 				<div id="project-info" style="overflow:auto;">
 					<div style="margin-left:18px">
-						<h1>{{.Project.funding}}</h1>
-						<p>{{.Lang.cf_page_preview_pledged_of}} {{.Project.amount}} D{{.Project.currency}} {{.Lang.cf_page_preview_goal}} </p>
-						<h1>{{.Project.days}}</h1>
+						<h1>{{.ProjectFunding}}</h1>
+						<p>{{.Lang.cfPagePreview_pledged_of}} {{.Project.amount}} D{{.Project.currency}} {{.Lang.cfPagePreview_goal}} </p>
+						<h1>{{round .Project.days 0}}</h1>
 						<p>{{.Lang.days_to_go}}</p>
-						<p style="font-weight: normal">{{.Lang.start_date}} {{.Project.startDate}}</p>
+						<p style="font-weight: normal">{{.Lang.start_date}} {{.Project.start_date}}</p>
 
 						{{if eq .Project.ended "0"}}
 							{{if gt .UserId 0}}

@@ -37,7 +37,7 @@ func (c *Controller) WalletsListCfProject() (string, error) {
 	}
 
 	//id, endTime, langId int64, amount float64, levelUp string
-	CfProjectData, err := c.GetCfProjectData(projectId, utils.StrToInt64(cfProject["end_time"]), c.LangInt, utils.StrToFloat64(cfProject["end_time"]), "")
+	CfProjectData, err := c.GetCfProjectData(projectId, utils.StrToInt64(cfProject["end_time"]), c.LangInt, utils.StrToFloat64(cfProject["amount"]), "")
 	for k, v := range CfProjectData {
 		cfProject[k] = v
 	}
