@@ -2,7 +2,7 @@ package controllers
 import (
 	"utils"
 	"log"
-	"sort"
+//	"sort"
 )
 
 type cfCatalogPage struct {
@@ -16,17 +16,7 @@ type cfCatalogPage struct {
 	CategoryId string
 }
 
-type SortCfCatalog []map[string]string
 
-func (s SortCfCatalog) Len() int {
-	return len(s)
-}
-func (s SortCfCatalog) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s SortCfCatalog) Less(i, j int) bool {
-	return s[i]["name"] < s[j]["name"]
-}
 
 func (c *Controller) CfCatalog() (string, error) {
 
@@ -70,11 +60,7 @@ func (c *Controller) CfCatalog() (string, error) {
 		projects[data["id"]] = data
 	}
 
-	var cfCategory []map[string]string
-	for i:=0; i < 18; i++ {
-		cfCategory = append(cfCategory, map[string]string{"id": utils.IntToStr(i), "name": c.Lang["cf_category_"+utils.IntToStr(i)]})
-	}
-	sort.Sort(SortCfCatalog(cfCategory))
+	cfCategory := utils.MakeCfCategories(c.Lang)
 
 	TemplateStr, err := makeTemplate("cf_catalog", "cfCatalog", &cfCatalogPage{
 		Lang: c.Lang,

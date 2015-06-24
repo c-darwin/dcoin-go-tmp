@@ -2,41 +2,41 @@ package controllers
 import (
 	"utils"
 	"log"
-	"sort"
+//	"sort"
 )
 
 type MyCfProjectsPage struct {
+	Alert string
+	SignData string
+	ShowSignData bool
+	TxType string
+	TxTypeId int64
+	TimeNow int64
+	CountSignArr []int
 	Lang map[string]string
-	CfLng string
+	CfLng map[string]string
 	CurrencyList map[int64]string
 	Projects map[string]map[string]string
 	UserId int64
 	ProjectsLang map[string]map[string]string
 }
 
-type SortMyCfProjects []map[string]string
-
-func (s SortMyCfProjects) Len() int {
-	return len(s)
-}
-func (s SortMyCfProjects) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s SortMyCfProjects) Less(i, j int) bool {
-	return s[i]["name"] < s[j]["name"]
-}
 
 func (c *Controller) MyCfProjects() (string, error) {
 
 	var err error
 	log.Println("MyCfProjects")
 
+	txType := "NewCfProject";
+	txTypeId := utils.TypeInt(txType)
+	timeNow := utils.Time()
+
 	projectsLang := make(map[string]map[string]string)
 	projects := make(map[string]map[string]string)
 	cfProjects, err := c.GetAll(`
-			SELECT cf_projects.id, lang_id, blurb_img, country, city, currency_id, end_time
+			SELECT id, category_id, project_currency_name, country, city, currency_id, end_time
 			FROM cf_projects
-			WHERE user_id = ? AND del_block_id = ?
+			WHERE user_id = ? AND del_block_id = 0
 			`, -1, c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -51,17 +51,23 @@ func (c *Controller) MyCfProjects() (string, error) {
 		}
 		projects[data["id"]] = data
 		lang, err:=c.GetMap(`SELECT id, lang_id FROM cf_projects_data WHERE project_id = ?`, "id", "lang_id", data["id"])
-		projectsLang[data["id"]] = map[string]string{lang}
+		projectsLang[data["id"]] = lang
 	}
 
 	cfLng, err := c.GetAllCfLng()
 
-	TemplateStr, err := makeTemplate("cf_catalog", "MyCfProjects", &MyCfProjectsPage{
+	TemplateStr, err := makeTemplate("my_cf_projects", "myCfProjects", &MyCfProjectsPage{
+		Alert: c.Alert,
 		Lang: c.Lang,
+		CountSignArr: c.CountSignArr,
+		ShowSignData: c.ShowSignData,
+		UserId: c.SessUserId,
+		TimeNow: timeNow,
+		TxType: txType,
+		TxTypeId: txTypeId,
 		CfLng: cfLng,
 		CurrencyList: c.CurrencyList,
 		Projects: projects,
-		UserId: c.SessUserId,
 		ProjectsLang: projectsLang})
 	if err != nil {
 		return "", utils.ErrInfo(err)

@@ -825,6 +825,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"len": func(s []map[string]string) int {
 			return len(s)
 		},
+		"lenMap": func(s map[string]string) int {
+			return len(s)
+		},
 		"sum": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)+utils.InterfaceToFloat64(b)
 		},
@@ -843,6 +846,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"strToInt64": func(text string) int64 {
 			return utils.StrToInt64(text)
 		},
+		"rand": func() int {
+			return utils.RandInt(0, 99999999)
+		},
 		"append": func(args ...interface{}) string {
 			var result string
 			for _, value := range args {
@@ -857,8 +863,21 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 			}
 			return result
 		},
+		"replaceCurrencyName": func(text, name string) string {
+			return strings.Replace(text, "[currency]", "D"+name, -1)
+		},
 		"cfCategoryLang": func(lang map[string]string, name string) string {
 			return lang["cf_category_"+name]
+		},
+		"checkProjectPs": func(ProjectPs map[string]string, id string) bool {
+			if len(ProjectPs["ps"+id]) > 0 {
+				return true
+			} else {
+				return false
+			}
+		},
+		"cfPageTypeLang": func(lang map[string]string, name string) string {
+			return lang["cf_"+name]
 		},
 		"notificationsLang": func(lang map[string]string, name string) string {
 			return lang["notifications_"+name]

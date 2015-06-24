@@ -25,7 +25,7 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 
 	log.Println("ArbitrationArbitrator")
 
-	txType := "money_back_request";
+	txType := "MoneyBackRequest";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

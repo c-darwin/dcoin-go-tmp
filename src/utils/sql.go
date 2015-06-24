@@ -108,12 +108,11 @@ func (db *DCDB) GetConfigIni(name string) string {
 	return db.ConfigIni[name]
 }
 
+func (db *DCDB) GetCfUrl() (string, error) {
+	return db.Single("SELECT cf_url FROM config").String()
+}
 func (db *DCDB) GetMainLockName() (string, error) {
-	name, err := db.Single("SELECT script_name FROM main_lock").String()
-	if err != nil {
-		return "", err
-	}
-	return name, nil
+	return db.Single("SELECT script_name FROM main_lock").String()
 }
 
 func (db *DCDB) GetAllTables() ([]string, error) {
@@ -313,6 +312,33 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	return &singleResult{result, nil}
 }
 
+func (db *DCDB) GetCfAuthorInfo(userId, levelUp string) (map[string]string, error) {
+	data, err := db.OneRow("SELECT name, avatar FROM users WHERE user_id  =  ?", userId).String()
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	if len(data["avatar"]) == 0 {
+		data["avatar"] = levelUp + "static/img/noavatar.png"
+	}
+	if len(data["name"]) == 0 {
+		data["name"] = "Noname"
+	}
+
+	// сколько проектов создал
+	data["created"], err = db.Single("SELECT count(id) FROM cf_projects WHERE user_id  =  ?", userId).String()
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+
+	// сколько проектов профинансировал
+	data["backed"], err = db.Single("SELECT count(project_id) FROM cf_funding WHERE user_id  =  ? GROUP BY project_id", userId).String()
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+
+	return data, nil
+}
+
 func (db *DCDB) GetAllCfLng() (map[string]string, error) {
 	return db.GetMap(`SELECT id, name FROM cf_lang ORDER BY name`, "id", "name")
 }
@@ -343,6 +369,7 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 	}
 	return &listResult{result, nil}
 }
+
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[string]string, error) {
 	if db.ConfigIni["db_type"] == "postgresql" {

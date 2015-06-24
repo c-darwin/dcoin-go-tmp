@@ -32,6 +32,7 @@ import (
 	"crypto/x509"
 	"math/rand"
 	"encoding/pem"
+	"sort"
 )
 
 type BlockData struct {
@@ -58,7 +59,25 @@ type prevBlockType struct {
 func Sleep(sec float64) {
 	time.Sleep(time.Duration(sec) * 1000 * time.Millisecond)
 }
+type SortCfCatalog []map[string]string
 
+func (s SortCfCatalog) Len() int {
+	return len(s)
+}
+func (s SortCfCatalog) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s SortCfCatalog) Less(i, j int) bool {
+	return s[i]["name"] < s[j]["name"]
+}
+func MakeCfCategories(lang map[string]string) []map[string]string {
+	var cfCategory []map[string]string
+	for i:=0; i < 18; i++ {
+		cfCategory = append(cfCategory, map[string]string{"id": IntToStr(i), "name": lang["cf_category_"+IntToStr(i)]})
+	}
+	sort.Sort(SortCfCatalog(cfCategory))
+	return cfCategory
+}
 
 func getImageDimension(imagePath string) (int, int) {
 	file, err := os.Open(imagePath)
