@@ -314,7 +314,7 @@
 
 				<div id="project-info" style="overflow:auto;">
 					<div style="margin-left:18px">
-						<h1>{{.ProjectFunding}}</h1>
+						<h1>{{round .ProjectFunding 1}}</h1>
 						<p>{{.Lang.cfPagePreview_pledged_of}} {{.Project.amount}} D{{.Project.currency}} {{.Lang.cfPagePreview_goal}} </p>
 						<h1>{{round .Project.days 0}}</h1>
 						<p>{{.Lang.days_to_go}}</p>
@@ -322,11 +322,11 @@
 
 						{{if eq .Project.ended "0"}}
 							{{if gt .UserId 0}}
-								<button type="button" class="btn btn-success" style="width:240px; height:50px" onclick="fc_navigate('wallets_list', {'project_id':{{.Project.id}}})"><strong>{{.Lang.contribute_now}}</strong></button>
+								<button type="button" class="btn btn-success" style="width:240px; height:50px" onclick="fc_navigate('walletsList', {'projectId':{{.Project.id}}})"><strong>{{.Lang.contribute_now}}</strong></button>
 							{{else if .ProjectPs}}
 								<button type="button" class="btn btn-success" style="width:240px; height:50px" id="contribute_now"><strong>{{.Lang.contribute_now}}</strong></button>
 							{{else}}
-								<button type="button" class="btn btn-success" style="width:240px; height:50px" onclick="fc_navigate('cf_start')"><strong>{{.Lang.contribute_now}}</strong></button>
+								<button type="button" class="btn btn-success" style="width:240px; height:50px" onclick="fc_navigate('cfStart')"><strong>{{.Lang.contribute_now}}</strong></button>
 							{{end}}
 						{{end}}
 					</div>

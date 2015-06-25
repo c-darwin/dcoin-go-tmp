@@ -36,7 +36,7 @@ func (c *Controller) CfCatalog() (string, error) {
 
 	projects := make(map[string]map[string]string)
 	cfProjects, err := c.GetAll(`
-			SELECT cf_projects.id, lang_id, blurb_img, country, city, currency_id, end_time
+			SELECT cf_projects.id, lang_id, blurb_img, country, city, currency_id, end_time, amount
 			FROM cf_projects
 			LEFT JOIN cf_projects_data ON  cf_projects_data.project_id = cf_projects.id
 			WHERE del_block_id = 0 AND

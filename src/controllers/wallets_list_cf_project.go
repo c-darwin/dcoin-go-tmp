@@ -31,7 +31,7 @@ func (c *Controller) WalletsListCfProject() (string, error) {
 	if projectId == 0 {
 		return "", errors.New("projectId == 0")
 	}
-	cfProject, err := c.OneRow("SELECT amount, currency_id, end_time FROM cf_projects WHERE del_block_id = 0 AND id  =  ?", projectId).String()
+	cfProject, err := c.OneRow("SELECT id, amount, currency_id, end_time FROM cf_projects WHERE del_block_id = 0 AND id  =  ?", projectId).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

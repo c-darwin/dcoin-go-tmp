@@ -108,94 +108,94 @@ var Countries = []string{"Afghanistan","Albania","Algeria","American Samoa","And
 
 var TxTypes = map[int]string {
 	// новый юзер
-	1 : "NewUser",//
+	1 : "NewUser",
 	// новый майнер
-	2 : "NewMiner",//
+	2 : "NewMiner",
 	// Добавление новой обещанной суммы
-	3 : "NewPromisedAmount",//
-	4 : "ChangePromisedAmount",//
+	3 : "NewPromisedAmount",
+	4 : "ChangePromisedAmount",
 	// голос за претендента на майнера
-	5 : "VotesMiner",//
-	6 : "NewForexOrder",//
-	7 : "DelForexOrder",//
+	5 : "VotesMiner",
+	6 : "NewForexOrder",
+	7 : "DelForexOrder",
 	//  новый набор max_other_currencies от нода-генератора блока
-	8 : "NewMaxOtherCurrencies",//
+	8 : "NewMaxOtherCurrencies",
 	// geolocation. Майнер изменил свои координаты
 	9 : "ChangeGeolocation",
 	// votes_promised_amount.
-	10 : "VotesPromisedAmount",//
+	10 : "VotesPromisedAmount",
 	// del_promised_amount. Удаление обещанной суммы
-	11 : "DelPromisedAmount",//
+	11 : "DelPromisedAmount",
 	// send_dc
-	12 : "SendDc",//
-	13 : "CashRequestOut",//
-	14 : "CashRequestIn",//
+	12 : "SendDc",
+	13 : "CashRequestOut",
+	14 : "CashRequestIn",
 	// набор голосов по разным валютам
-	15 : "VotesComplex",//
-	16 : "ChangePrimaryKey",//
-	17 : "ChangeNodeKey",//
-	18 : "ForRepaidFix",//
+	15 : "VotesComplex",
+	16 : "ChangePrimaryKey",
+	17 : "ChangeNodeKey",
+	18 : "ForRepaidFix",
 	// занесение в БД данных из первого блока
 	19 : "Admin1Block", //
 	// админ разжаловал майнеров в юзеры
-	20 : "AdminBanMiners",//
+	20 : "AdminBanMiners",
 	// админ изменил variables
-	21 : "AdminVariables",//
+	21 : "AdminVariables",
 	// админ обновил набор точек для проверки лиц
-	22 : "AdminSpots",//
+	22 : "AdminSpots",
 	// юзер создал кредит
-	23 : "NewCredit",//
+	23 : "NewCredit",
 	// админ вернул майнерам звание "майнер"
-	24 : "AdminUnbanMiners",//
+	24 : "AdminUnbanMiners",
 	// админ отправил alert message
-	25 : "AdminMessage",//
+	25 : "AdminMessage",
 	// майнер хочет, чтобы указаные им майнеры были разжалованы в юзеры
 	26 : "Abuses",
 	// майнер хочет, чтобы в указанные дни ему не приходили запросы на обмен DC
-	27 : "NewHolidays",//
+	27 : "NewHolidays",
 	28 : "ActualizationPromisedAmounts",
-	29 : "Mining",//
+	29 : "Mining",
 	// Голосование нода за фото нового майнера
-	30 : "VotesNodeNewMiner",//
+	30 : "VotesNodeNewMiner",
 	// Юзер исправил проблему с отдачей фото и шлет повторный запрос на получение статуса "майнер"
 	31 : "NewMinerUpdate",
 	//  новый набор max_promised_amount от нода-генератора блока
-	32 : "NewMaxPromisedAmounts",//
+	32 : "NewMaxPromisedAmounts",
 	//  новый набор % от нода-генератора блока
-	33 : "NewPct",//
+	33 : "NewPct",
 	// добавление новой валюты
-	34 : "AdminAddCurrency",//
-	35 : "NewCfProject",//
+	34 : "AdminAddCurrency",
+	35 : "NewCfProject",
 	// новая версия, которая кладется каждому в диру public
-	36 : "AdminNewVersion",//
+	36 : "AdminNewVersion",
 	// после того, как новая версия протестируется, выдаем сообщение, что необходимо обновиться
-	37 : "AdminNewVersionAlert",//
+	37 : "AdminNewVersionAlert",
 	// баг репорты
-	38 : "MessageToAdmin",//
+	38 : "MessageToAdmin",
 	// админ может ответить юзеру
-	39 : "AdminAnswer",//
-	40 : "CfProjectData",//
+	39 : "AdminAnswer",
+	40 : "CfProjectData",
 	// блог админа
-	41 : "AdminBlog",//
+	41 : "AdminBlog",
 	// майнер меняет свой хост
-	42 : "ChangeHost",//
+	42 : "ChangeHost",
 	// майнер меняет комиссию, которую он хочет получать с тр-ий
-	43 : "ChangeCommission",//
-	44 : "DelCfFunding",//
+	43 : "ChangeCommission",
+	44 : "DelCfFunding",
 	// запуск урезания на основе голосования. генерит нод-генератор блока
-	45 : "NewReduction",//
-	46 : "DelCfProject",//
-	47 : "CfComment",//
-	48 : "CfSendDc",//
-	49 : "UserAvatar",//
-	50 : "CfProjectChangeCategory",//
-	51 : "ChangeCreditor",//
-	52 : "DelCredit",//
-	53 : "RepaymentCredit",//
-	54 : "ChangeCreditPart",//
+	45 : "NewReduction",
+	46 : "DelCfProject",
+	47 : "CfComment",
+	48 : "CfSendDc",
+	49 : "UserAvatar",
+	50 : "CfProjectChangeCategory",
+	51 : "ChangeCreditor",
+	52 : "DelCredit",
+	53 : "RepaymentCredit",
+	54 : "ChangeCreditPart",
 	55 : "NewAdmin",
 	// по истечении 30 дней после поступления запроса о восстановлении утерянного ключа, админ может изменить ключ юзера
-	56 : "AdminChangePrimaryKey",//
+	56 : "AdminChangePrimaryKey",
 	// юзер разрешает или отменяет разрешение на смену своего ключа админом
 	57 : "ChangeKeyActive",
 	// юзер отменяет запрос на смену ключа

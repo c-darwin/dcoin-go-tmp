@@ -506,15 +506,21 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	}
 	result["funding_amount"] = Float64ToStrPct(funding_amount)
 	// % собрано
-	result["pct"] = Float64ToStrPct(Round((funding_amount / amount * 100), 0))
-	result["funding_amount"] = Float64ToStrPct(math.Floor(funding_amount))
+	log.Println("funding_amount", funding_amount)
+	log.Println("amount", amount)
+	if amount > 0 {
+		result["pct"] = Float64ToStrPct(Round((funding_amount/amount*100), 0))
+	} else {
+		result["pct"] = "0"
+	}
+	result["funding_amount"] = Float64ToStrPct(Round(funding_amount, 1))
 
 	// дней до окончания
-	days_ := Round(float64(endTime - time.Now().Unix()) / 86400, 0)
+	days_ := int64(Round(float64(endTime - time.Now().Unix()) / 86400, 0))
 	if days_ < 0 {
 		result["days"] = "0"
 	} else {
-		result["days"] = Float64ToStr(days_)
+		result["days"] = Int64ToStr(days_)
 	}
 	return result, nil
 }

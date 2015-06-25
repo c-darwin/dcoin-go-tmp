@@ -34,7 +34,7 @@ func (c *Controller) MyCfProjects() (string, error) {
 	projectsLang := make(map[string]map[string]string)
 	projects := make(map[string]map[string]string)
 	cfProjects, err := c.GetAll(`
-			SELECT id, category_id, project_currency_name, country, city, currency_id, end_time
+			SELECT id, category_id, project_currency_name, country, city, currency_id, end_time, amount
 			FROM cf_projects
 			WHERE user_id = ? AND del_block_id = 0
 			`, -1, c.SessUserId)

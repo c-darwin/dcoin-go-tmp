@@ -276,7 +276,7 @@ $('#cf_next_0').bind('click', function () {
 	$("#cf_prject_id").css("display", "none");
 	$("#cf_prject_card").css("display", "block");
 
-	$.post( 'ajax/wallets_list_cf_project.php', {
+	$.post( 'ajax?controllerName=walletsListCfProject', {
 		'project_id' : $('#project_id').val()
 	}, function (data) {
 		fill_cf_card(data);
@@ -318,8 +318,12 @@ $('#send_to_net').bind('click', function () {
 		'signature2': $('#signature2').val(),
 		'signature3': $('#signature3').val()
 	}, function (data) {
-		fc_navigate ('walletsList', {'alert': '{{.Lang.sent_to_the_net}}'} );
-	} );
+		var qAlert = '{{.Lang.sent_to_the_net}}'
+		if (data.error != "null") {
+			qAlert = data.error
+		}
+		fc_navigate ('walletsList', {'alert': qAlert} );
+	}, 'JSON' );
 
 } );
 
@@ -501,7 +505,7 @@ function foattoupper(x) {
 						{{range $id, $data := .Wallets}}
 							<tr>
 								{{if ge $data.CurrencyId 1000}}
-									<td><a href="#cf_page_preview/only_cf_currency_name={{index $.CurrencyList $data.CurrencyId}}">{{index $.CurrencyList $data.CurrencyId}}</a></td>
+									<td><a href="#cfPagePreview/onlyCfCurrencyName={{index $.CurrencyList $data.CurrencyId}}">{{index $.CurrencyList $data.CurrencyId}}</a></td>
 								{{else}}
 									<td>d{{index $.CurrencyList $data.CurrencyId}}</td>
 								{{end}}
@@ -718,7 +722,7 @@ function foattoupper(x) {
 		$("#cf_prject_card").css("display", "block");
 		$("#project_id").val({{.}});
 
-		$.post( 'ajax/wallets_list_cf_project.php', {
+		$.post( 'ajax?controllerName=walletsListCfProject', {
 			'project_id' : {{.}}
 	}, function (data) {
 		fill_cf_card(data);

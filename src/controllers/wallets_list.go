@@ -77,8 +77,8 @@ func (c *Controller) WalletsList() (string, error) {
 			}
 		}
 	}
-	userType := "sendDc";
-	projectType := "cfSendDc";
+	userType := "SendDc";
+	projectType := "CfSendDc";
 	userTypeId := utils.TypeInt(userType)
 	projectTypeId := utils.TypeInt(projectType)
 	timeNow := time.Now().Unix()
@@ -106,7 +106,7 @@ func (c *Controller) WalletsList() (string, error) {
 	c.r.ParseForm()
 	// если юзер кликнул по кнопку "профинансировать" со страницы проекта
 	//parameters := c.r.FormValue("parameters")
-	//cfProjectId := utils.StrToInt64(parameters["project_id"])
+	cfProjectId := int64(utils.StrToFloat64(c.Parameters["projectId"]))
 
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
@@ -168,7 +168,7 @@ func (c *Controller) WalletsList() (string, error) {
 	b := new(bytes.Buffer)
 	err = t.ExecuteTemplate(b, "walletsList", &walletsListPage{
 		CountSignArr: c.CountSignArr,
-		CfProjectId: 0,
+		CfProjectId: cfProjectId,
 		Names: names,
 		UserIdStr: utils.Int64ToStr(c.SessUserId),
 		Alert: c.Alert,

@@ -37,7 +37,7 @@ type CfPagePreviewPage struct {
 	ImgBlank string
 	Project map[string]string
 	ProjectLang map[string]string
-	ProjectFunding int64
+	ProjectFunding float64
 	ProjectCountFunders int64
 	ProjectFunders []map[string]string
 	ProjectComments []map[string]string
@@ -65,7 +65,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 	}
 
 	showHeaders := false
-	if len(c.Parameters["blurb_img"]) > 0 {
+	if len(c.r.FormValue("blurb_img")) > 0 {
 		showHeaders = true
 	}
 
@@ -84,6 +84,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 	projectId := int64(utils.StrToFloat64(c.Parameters["onlyProjectId"]))
 
 	var blurbImg, headImg, descriptionImg, picture, videoType, videoUrlId, newsImg string
+	imgBlank := cfUrl + "static/img/blank.png"
 
 	var links [][]string
 	if projectId > 0 || len(cfCurrencyName) > 0 {
@@ -133,37 +134,40 @@ func (c *Controller) CfPagePreview() (string, error) {
 			}
 		}
 	} else {
-		if !utils.CheckInputData(c.Parameters["project_id"], "int") {
+		log.Println("FormValue", c.r.Form)
+
+		blurbImg = c.r.FormValue("blurb_img")
+		headImg = c.r.FormValue("head_img")
+		descriptionImg = c.r.FormValue("description_img")
+		picture = c.r.FormValue("blurb_img")
+		videoType = c.r.FormValue("video_type")
+		videoUrlId = c.r.FormValue("video_url_id")
+		newsImg = c.r.FormValue("news_img")
+
+		if !utils.CheckInputData(c.r.FormValue("project_id"), "int") {
 			return "", errors.New("Incorrect project_id")
 		}
-		if !utils.CheckInputData(c.Parameters["blurb_img"], "img_url") {
-			return "", errors.New("Incorrect blurb_img")
+		if !utils.CheckInputData(blurbImg, "img_url") {
+			blurbImg = imgBlank
 		}
-		if !utils.CheckInputData(c.Parameters["head_img"], "img_url") {
-			return "", errors.New("Incorrect head_img")
+		if !utils.CheckInputData(headImg, "img_url") {
+			headImg = imgBlank
 		}
-		if !utils.CheckInputData(c.Parameters["description_img"], "img_url") {
-			return "", errors.New("Incorrect description_img")
+		if !utils.CheckInputData(descriptionImg, "img_url") {
+			descriptionImg = imgBlank
 		}
-		if !utils.CheckInputData(c.Parameters["picture"], "img_url") {
-			return "", errors.New("Incorrect picture")
+		if !utils.CheckInputData(picture, "img_url") {
+			picture = imgBlank
 		}
-		if !utils.CheckInputData(c.Parameters["news_img"], "img_url") {
-			return "", errors.New("Incorrect news_img")
+		if !utils.CheckInputData(newsImg, "img_url") {
+			newsImg = imgBlank
 		}
-		if !utils.CheckInputData(c.Parameters["video_type"], "video_type") {
-			return "", errors.New("Incorrect video_type")
+		if !utils.CheckInputData(videoType, "video_type") {
+			videoType = ""
 		}
-		if !utils.CheckInputData(c.Parameters["video_url_id"], "video_url_id") {
-			return "", errors.New("Incorrect video_url_id")
+		if !utils.CheckInputData(videoUrlId, "video_url_id") {
+			videoUrlId = ""
 		}
-		blurbImg = c.Parameters["blurb_img"]
-		headImg = c.Parameters["head_img"]
-		descriptionImg = c.Parameters["description_img"]
-		picture = c.Parameters["blurb_img"]
-		videoType = c.Parameters["video_type"]
-		videoUrlId = c.Parameters["video_url_id"]
-		newsImg = c.Parameters["news_img"]
 
 		if len(c.Parameters["links"]) > 0 {
 			var links_ [][]interface{}
@@ -185,7 +189,6 @@ func (c *Controller) CfPagePreview() (string, error) {
 		}
 	}
 
-	imgBlank := cfUrl + "static/img/blank.png"
 
 	project, err := c.OneRow("SELECT * FROM cf_projects WHERE id = ?", projectId).String()
 	if err != nil {
@@ -197,7 +200,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 		days = 0
 	}
 	project["days"] = utils.Float64ToStr(days)
-	if len(project["close_block_id"]) > 0 || len(project["del_block_id"]) > 0 {
+	if project["close_block_id"] !="0" || project["del_block_id"] !="0" {
 		project["ended"] = "1"
 	} else {
 		project["ended"] = "0"
@@ -219,7 +222,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 	projectLang, err := c.GetMap(`SELECT id, lang_id FROM cf_projects_data WHERE project_id = ? `+addSql, "id", "lang_id", projectId)
 
 	// сколько собрано средств
-	projectFunding, err := c.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", projectId).Int64()
+	projectFunding, err := c.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", projectId).Float64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

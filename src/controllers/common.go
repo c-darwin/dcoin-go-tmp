@@ -386,7 +386,8 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	html, err :=  CallController(c, controllerName)
 	if err != nil {
 		log.Print(err)
-		html = fmt.Sprintf("%s", err)
+		html = fmt.Sprintf(`{"error":%q}`, err)
+		log.Println(html)
 	}
 	w.Write([]byte(html))
 }
@@ -559,9 +560,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		SetLang(w, r, newLang)
 	}
 	// уведомления
-	if utils.CheckInputData(parameters["alert"], "alert") {
+	//if utils.CheckInputData(parameters["alert"], "alert") {
 		c.Alert = parameters["alert"]
-	}
+	//}
 
 	lang:=GetLang(w, r, parameters)
 	fmt.Println("lang", lang)

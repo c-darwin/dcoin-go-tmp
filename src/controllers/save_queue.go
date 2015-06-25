@@ -610,7 +610,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "cf_send_dc" :
+	case "CfSendDc" :
 
 		projectId := []byte(c.r.FormValue("to_id"));
 		amount := []byte(c.r.FormValue("amount"));
@@ -626,7 +626,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		currencyId, err := c.Single(`SELECT currency_id
 					FROM cf_projects
-					WHERE id = ?'`, projectId).Int64()
+					WHERE id = ?`, projectId).Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -1485,7 +1485,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	return "ok", nil
+	return `{"error":"null"}`, nil
 }
 
 func CheckInputData(data map[string]string) (error) {

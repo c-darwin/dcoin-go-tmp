@@ -76,7 +76,7 @@
 			<div class="card-bottom">
 				<div style="float:left; overflow:auto; padding-right:10px"><h5>{{$data.pct}}%</h5>funded</div>
 				<div style="float:left; overflow:auto; padding-right:10px"><h5>{{$data.funding_amount}} D{{index $.CurrencyList (strToInt64 $data.currency_id)}} </h5>pledged</div>
-				<div style="float:left; overflow:auto;"><h5>{{round $data.days 1}}</h5>days to go</div>
+				<div style="float:left; overflow:auto;"><h5>{{round $data.days 0}}</h5>days to go</div>
 			</div>
 		</div>
 		<div class="clearfix"></div>
