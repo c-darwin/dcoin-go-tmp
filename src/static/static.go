@@ -2453,10 +2453,10 @@ func static_templates_cf_project_change_category_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_cf_start_tpl reads file data from disk. It returns an error on failure.
-func static_templates_cf_start_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/cf_start.tpl"
-	name := "static/templates/cf_start.tpl"
+// static_templates_cf_start_html reads file data from disk. It returns an error on failure.
+func static_templates_cf_start_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/cf_start.html"
+	name := "static/templates/cf_start.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2777,10 +2777,10 @@ func static_templates_db_info_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_del_cf_funding_tpl reads file data from disk. It returns an error on failure.
-func static_templates_del_cf_funding_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/del_cf_funding.tpl"
-	name := "static/templates/del_cf_funding.tpl"
+// static_templates_del_cf_funding_html reads file data from disk. It returns an error on failure.
+func static_templates_del_cf_funding_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/del_cf_funding.html"
+	name := "static/templates/del_cf_funding.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2921,10 +2921,10 @@ func static_templates_index_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_index_cf_tpl reads file data from disk. It returns an error on failure.
-func static_templates_index_cf_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/index_cf.tpl"
-	name := "static/templates/index_cf.tpl"
+// static_templates_index_cf_html reads file data from disk. It returns an error on failure.
+func static_templates_index_cf_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/index_cf.html"
+	name := "static/templates/index_cf.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4026,7 +4026,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/cf_catalog.html": static_templates_cf_catalog_html,
 	"static/templates/cf_page_preview.html": static_templates_cf_page_preview_html,
 	"static/templates/cf_project_change_category.html": static_templates_cf_project_change_category_html,
-	"static/templates/cf_start.tpl": static_templates_cf_start_tpl,
+	"static/templates/cf_start.html": static_templates_cf_start_html,
 	"static/templates/change_arbitrator_conditions.html": static_templates_change_arbitrator_conditions_html,
 	"static/templates/change_avatar.tpl": static_templates_change_avatar_tpl,
 	"static/templates/change_commission.html": static_templates_change_commission_html,
@@ -4044,7 +4044,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/currency_exchange.html": static_templates_currency_exchange_html,
 	"static/templates/currency_exchange_delete.html": static_templates_currency_exchange_delete_html,
 	"static/templates/db_info.tpl": static_templates_db_info_tpl,
-	"static/templates/del_cf_funding.tpl": static_templates_del_cf_funding_tpl,
+	"static/templates/del_cf_funding.html": static_templates_del_cf_funding_html,
 	"static/templates/del_cf_project.html": static_templates_del_cf_project_html,
 	"static/templates/del_credit.html": static_templates_del_credit_html,
 	"static/templates/del_promised_amount.html": static_templates_del_promised_amount_html,
@@ -4052,7 +4052,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/holidays_list.html": static_templates_holidays_list_html,
 	"static/templates/home.html": static_templates_home_html,
 	"static/templates/index.html": static_templates_index_html,
-	"static/templates/index_cf.tpl": static_templates_index_cf_tpl,
+	"static/templates/index_cf.html": static_templates_index_cf_html,
 	"static/templates/information.tpl": static_templates_information_tpl,
 	"static/templates/install_step_0.html": static_templates_install_step_0_html,
 	"static/templates/install_step_1.html": static_templates_install_step_1_html,
@@ -4435,7 +4435,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"cf_project_change_category.html": &_bintree_t{static_templates_cf_project_change_category_html, map[string]*_bintree_t{
 			}},
-			"cf_start.tpl": &_bintree_t{static_templates_cf_start_tpl, map[string]*_bintree_t{
+			"cf_start.html": &_bintree_t{static_templates_cf_start_html, map[string]*_bintree_t{
 			}},
 			"change_arbitrator_conditions.html": &_bintree_t{static_templates_change_arbitrator_conditions_html, map[string]*_bintree_t{
 			}},
@@ -4471,7 +4471,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"db_info.tpl": &_bintree_t{static_templates_db_info_tpl, map[string]*_bintree_t{
 			}},
-			"del_cf_funding.tpl": &_bintree_t{static_templates_del_cf_funding_tpl, map[string]*_bintree_t{
+			"del_cf_funding.html": &_bintree_t{static_templates_del_cf_funding_html, map[string]*_bintree_t{
 			}},
 			"del_cf_project.html": &_bintree_t{static_templates_del_cf_project_html, map[string]*_bintree_t{
 			}},
@@ -4487,7 +4487,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"index.html": &_bintree_t{static_templates_index_html, map[string]*_bintree_t{
 			}},
-			"index_cf.tpl": &_bintree_t{static_templates_index_cf_tpl, map[string]*_bintree_t{
+			"index_cf.html": &_bintree_t{static_templates_index_cf_html, map[string]*_bintree_t{
 			}},
 			"information.tpl": &_bintree_t{static_templates_information_tpl, map[string]*_bintree_t{
 			}},

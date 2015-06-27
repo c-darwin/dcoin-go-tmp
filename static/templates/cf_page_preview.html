@@ -114,7 +114,7 @@
 			$("#payment_method").css("display", "block");
 		}
 		else if ($('input[name=mode]:checked').val()=='2') {
-			fc_navigate('cf_start');
+			fc_navigate('cfStart');
 		}
 	});
 
@@ -219,7 +219,7 @@
 				{{end}}
 				<li {{if eq $pageType $.Page}}id="cf_active_menu">{{else}}>{{end}}
 				{{if eq $.UserId 0}}
-					<a href='?id-{{.ProjectId}}-{{.LangId}}-{{$pageType}}'>
+					<a href='?id-{{$.ProjectId}}-{{$.LangId}}-{{$pageType}}'>
 				{{else}}
 					<a href="#" onclick="fc_navigate('cfPagePreview', {'onlyProjectId':{{$.ProjectId}}, 'lang_id':{{$.LangId}}, 'page':'{{$pageType}}'})">
 				{{end}}

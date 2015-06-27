@@ -82,7 +82,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 
 	langId := int64(utils.StrToFloat64(c.Parameters["lang_id"]))
 	projectId := int64(utils.StrToFloat64(c.Parameters["onlyProjectId"]))
-
+	log.Println("projectId:", projectId)
 	var blurbImg, headImg, descriptionImg, picture, videoType, videoUrlId, newsImg string
 	imgBlank := cfUrl + "static/img/blank.png"
 

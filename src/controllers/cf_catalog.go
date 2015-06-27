@@ -16,8 +16,6 @@ type cfCatalogPage struct {
 	CategoryId string
 }
 
-
-
 func (c *Controller) CfCatalog() (string, error) {
 
 	var err error
