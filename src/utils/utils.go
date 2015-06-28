@@ -2145,7 +2145,7 @@ func MaxInMap(m map[int64]int64) (int64, int64) {
 }
 
 // время выполнения - 0,01сек на 1000. т.е. на 100 валют майнеру и юзеру уйдет 2 сек.
-func GetMaxVote(array  []map[int64]int64, min, max, step int64) int64 {
+func GetMaxVote(array []map[int64]int64, min, max, step int64) int64 {
 
 	// если <=10 то тупо берем максимальное кол-во голосов
 	var maxPct int64

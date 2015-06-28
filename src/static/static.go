@@ -3587,10 +3587,10 @@ func static_templates_statistic_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_statistic_voting_tpl reads file data from disk. It returns an error on failure.
-func static_templates_statistic_voting_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/statistic_voting.tpl"
-	name := "static/templates/statistic_voting.tpl"
+// static_templates_statistic_voting_html reads file data from disk. It returns an error on failure.
+func static_templates_statistic_voting_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/statistic_voting.html"
+	name := "static/templates/statistic_voting.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4089,7 +4089,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/sign_up_in_the_pool.html": static_templates_sign_up_in_the_pool_html,
 	"static/templates/signatures.html": static_templates_signatures_html,
 	"static/templates/statistic.tpl": static_templates_statistic_tpl,
-	"static/templates/statistic_voting.tpl": static_templates_statistic_voting_tpl,
+	"static/templates/statistic_voting.html": static_templates_statistic_voting_html,
 	"static/templates/updating_blockchain.html": static_templates_updating_blockchain_html,
 	"static/templates/upgrade.html": static_templates_upgrade_html,
 	"static/templates/upgrade_0.html": static_templates_upgrade_0_html,
@@ -4561,7 +4561,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"statistic.tpl": &_bintree_t{static_templates_statistic_tpl, map[string]*_bintree_t{
 			}},
-			"statistic_voting.tpl": &_bintree_t{static_templates_statistic_voting_tpl, map[string]*_bintree_t{
+			"statistic_voting.html": &_bintree_t{static_templates_statistic_voting_html, map[string]*_bintree_t{
 			}},
 			"updating_blockchain.html": &_bintree_t{static_templates_updating_blockchain_html, map[string]*_bintree_t{
 			}},
