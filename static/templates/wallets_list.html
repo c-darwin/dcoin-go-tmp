@@ -562,7 +562,7 @@ function foattoupper(x) {
 							{{else}}
 								<td><div class="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment_0({{$data.id}})">{{$.Lang.decrypt}}</button></div></td>
 							{{end}}
-							<td>{{$data.status}}</td><td><a href="#block_explorer/block_id={{$data.block_id}}}">{{$data.block_id}}</a></td><td>{{$data.numBlocks}}</td></tr>
+							<td>{{$data.status}}</td><td><a href="#blockExplorer/blockId={{$data.block_id}}}">{{$data.block_id}}</a></td><td>{{$data.numBlocks}}</td></tr>
 					{{end}}
 					</table>
 					<p>{{.Lang.error_in_tx}}</p>

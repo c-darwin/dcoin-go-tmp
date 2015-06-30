@@ -1222,6 +1222,11 @@ func Time() int64 {
 	return time.Now().Unix()
 }
 
+func TimeF(timeFormat string) string {
+	t := time.Unix(time.Now().Unix(), 0)
+	return t.Format(timeFormat)
+}
+
 func ValidateEmail(email string) bool {
 	Re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return Re.MatchString(email)

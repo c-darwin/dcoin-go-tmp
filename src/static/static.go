@@ -2129,10 +2129,10 @@ func static_nodes_inc() (*asset, error) {
 	return a, err
 }
 
-// static_templates_abuse_tpl reads file data from disk. It returns an error on failure.
-func static_templates_abuse_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/abuse.tpl"
-	name := "static/templates/abuse.tpl"
+// static_templates_abuse_html reads file data from disk. It returns an error on failure.
+func static_templates_abuse_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/abuse.html"
+	name := "static/templates/abuse.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2327,10 +2327,10 @@ func static_templates_assignments_promised_amount_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_block_explorer_tpl reads file data from disk. It returns an error on failure.
-func static_templates_block_explorer_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/block_explorer.tpl"
-	name := "static/templates/block_explorer.tpl"
+// static_templates_block_explorer_html reads file data from disk. It returns an error on failure.
+func static_templates_block_explorer_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/block_explorer.html"
+	name := "static/templates/block_explorer.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2759,10 +2759,10 @@ func static_templates_currency_exchange_delete_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_db_info_tpl reads file data from disk. It returns an error on failure.
-func static_templates_db_info_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/db_info.tpl"
-	name := "static/templates/db_info.tpl"
+// static_templates_db_info_html reads file data from disk. It returns an error on failure.
+func static_templates_db_info_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/db_info.html"
+	name := "static/templates/db_info.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2939,10 +2939,10 @@ func static_templates_index_cf_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_information_tpl reads file data from disk. It returns an error on failure.
-func static_templates_information_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/information.tpl"
-	name := "static/templates/information.tpl"
+// static_templates_information_html reads file data from disk. It returns an error on failure.
+func static_templates_information_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/information.html"
+	name := "static/templates/information.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3011,10 +3011,10 @@ func static_templates_install_step_2_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_interface_tpl reads file data from disk. It returns an error on failure.
-func static_templates_interface_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/interface.tpl"
-	name := "static/templates/interface.tpl"
+// static_templates_interface_html reads file data from disk. It returns an error on failure.
+func static_templates_interface_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/interface.html"
+	name := "static/templates/interface.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3569,10 +3569,10 @@ func static_templates_signatures_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_statistic_tpl reads file data from disk. It returns an error on failure.
-func static_templates_statistic_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/statistic.tpl"
-	name := "static/templates/statistic.tpl"
+// static_templates_statistic_html reads file data from disk. It returns an error on failure.
+func static_templates_statistic_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/statistic.html"
+	name := "static/templates/statistic.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4008,7 +4008,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/lang/locale_en-US.ini": static_lang_locale_en_us_ini,
 	"static/lang/locale_ru-RU.ini": static_lang_locale_ru_ru_ini,
 	"static/nodes.inc": static_nodes_inc,
-	"static/templates/abuse.tpl": static_templates_abuse_tpl,
+	"static/templates/abuse.html": static_templates_abuse_html,
 	"static/templates/add_cf_project_data.html": static_templates_add_cf_project_data_html,
 	"static/templates/after_install.html": static_templates_after_install_html,
 	"static/templates/alert_success.html": static_templates_alert_success_html,
@@ -4019,7 +4019,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/assignments.html": static_templates_assignments_html,
 	"static/templates/assignments_new_miner.html": static_templates_assignments_new_miner_html,
 	"static/templates/assignments_promised_amount.html": static_templates_assignments_promised_amount_html,
-	"static/templates/block_explorer.tpl": static_templates_block_explorer_tpl,
+	"static/templates/block_explorer.html": static_templates_block_explorer_html,
 	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
 	"static/templates/cash_request_in.html": static_templates_cash_request_in_html,
 	"static/templates/cash_request_out.html": static_templates_cash_request_out_html,
@@ -4043,7 +4043,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/credits.html": static_templates_credits_html,
 	"static/templates/currency_exchange.html": static_templates_currency_exchange_html,
 	"static/templates/currency_exchange_delete.html": static_templates_currency_exchange_delete_html,
-	"static/templates/db_info.tpl": static_templates_db_info_tpl,
+	"static/templates/db_info.html": static_templates_db_info_html,
 	"static/templates/del_cf_funding.html": static_templates_del_cf_funding_html,
 	"static/templates/del_cf_project.html": static_templates_del_cf_project_html,
 	"static/templates/del_credit.html": static_templates_del_credit_html,
@@ -4053,11 +4053,11 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/home.html": static_templates_home_html,
 	"static/templates/index.html": static_templates_index_html,
 	"static/templates/index_cf.html": static_templates_index_cf_html,
-	"static/templates/information.tpl": static_templates_information_tpl,
+	"static/templates/information.html": static_templates_information_html,
 	"static/templates/install_step_0.html": static_templates_install_step_0_html,
 	"static/templates/install_step_1.html": static_templates_install_step_1_html,
 	"static/templates/install_step_2.html": static_templates_install_step_2_html,
-	"static/templates/interface.tpl": static_templates_interface_tpl,
+	"static/templates/interface.html": static_templates_interface_html,
 	"static/templates/list_cf_projects.tpl": static_templates_list_cf_projects_tpl,
 	"static/templates/login.html": static_templates_login_html,
 	"static/templates/menu.html": static_templates_menu_html,
@@ -4088,7 +4088,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/rewrite_primary_key.tpl": static_templates_rewrite_primary_key_tpl,
 	"static/templates/sign_up_in_the_pool.html": static_templates_sign_up_in_the_pool_html,
 	"static/templates/signatures.html": static_templates_signatures_html,
-	"static/templates/statistic.tpl": static_templates_statistic_tpl,
+	"static/templates/statistic.html": static_templates_statistic_html,
 	"static/templates/statistic_voting.html": static_templates_statistic_voting_html,
 	"static/templates/updating_blockchain.html": static_templates_updating_blockchain_html,
 	"static/templates/upgrade.html": static_templates_upgrade_html,
@@ -4399,7 +4399,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 		"nodes.inc": &_bintree_t{static_nodes_inc, map[string]*_bintree_t{
 		}},
 		"templates": &_bintree_t{nil, map[string]*_bintree_t{
-			"abuse.tpl": &_bintree_t{static_templates_abuse_tpl, map[string]*_bintree_t{
+			"abuse.html": &_bintree_t{static_templates_abuse_html, map[string]*_bintree_t{
 			}},
 			"add_cf_project_data.html": &_bintree_t{static_templates_add_cf_project_data_html, map[string]*_bintree_t{
 			}},
@@ -4421,7 +4421,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"assignments_promised_amount.html": &_bintree_t{static_templates_assignments_promised_amount_html, map[string]*_bintree_t{
 			}},
-			"block_explorer.tpl": &_bintree_t{static_templates_block_explorer_tpl, map[string]*_bintree_t{
+			"block_explorer.html": &_bintree_t{static_templates_block_explorer_html, map[string]*_bintree_t{
 			}},
 			"bug_reporting.tpl": &_bintree_t{static_templates_bug_reporting_tpl, map[string]*_bintree_t{
 			}},
@@ -4469,7 +4469,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"currency_exchange_delete.html": &_bintree_t{static_templates_currency_exchange_delete_html, map[string]*_bintree_t{
 			}},
-			"db_info.tpl": &_bintree_t{static_templates_db_info_tpl, map[string]*_bintree_t{
+			"db_info.html": &_bintree_t{static_templates_db_info_html, map[string]*_bintree_t{
 			}},
 			"del_cf_funding.html": &_bintree_t{static_templates_del_cf_funding_html, map[string]*_bintree_t{
 			}},
@@ -4489,7 +4489,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"index_cf.html": &_bintree_t{static_templates_index_cf_html, map[string]*_bintree_t{
 			}},
-			"information.tpl": &_bintree_t{static_templates_information_tpl, map[string]*_bintree_t{
+			"information.html": &_bintree_t{static_templates_information_html, map[string]*_bintree_t{
 			}},
 			"install_step_0.html": &_bintree_t{static_templates_install_step_0_html, map[string]*_bintree_t{
 			}},
@@ -4497,7 +4497,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"install_step_2.html": &_bintree_t{static_templates_install_step_2_html, map[string]*_bintree_t{
 			}},
-			"interface.tpl": &_bintree_t{static_templates_interface_tpl, map[string]*_bintree_t{
+			"interface.html": &_bintree_t{static_templates_interface_html, map[string]*_bintree_t{
 			}},
 			"list_cf_projects.tpl": &_bintree_t{static_templates_list_cf_projects_tpl, map[string]*_bintree_t{
 			}},
@@ -4559,7 +4559,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"signatures.html": &_bintree_t{static_templates_signatures_html, map[string]*_bintree_t{
 			}},
-			"statistic.tpl": &_bintree_t{static_templates_statistic_tpl, map[string]*_bintree_t{
+			"statistic.html": &_bintree_t{static_templates_statistic_html, map[string]*_bintree_t{
 			}},
 			"statistic_voting.html": &_bintree_t{static_templates_statistic_voting_html, map[string]*_bintree_t{
 			}},

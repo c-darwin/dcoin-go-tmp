@@ -57,7 +57,7 @@
 		{{range $currencyId, $data := .MaxOtherCurrenciesVotes}}
 		<tr>
 			<td>d{{index $.CurrencyList $currencyId}}</td>
-			<td><div class='demo-container-plot'><div id='max_other_currencies_votes_{{$currencyId}}' class='demo-placeholder'></div></div></td>";
+			<td><div class='demo-container-plot'><div id='max_other_currencies_votes_{{$currencyId}}' class='demo-placeholder'></div></div></td>
 			<td>{{index $.NewMaxOtherCurrencies $currencyId}}</td>
 		</tr>
 		{{end}}

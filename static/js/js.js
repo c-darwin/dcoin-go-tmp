@@ -53,7 +53,7 @@ function send_video (file_id, progress, type) {
 }
 
 function show_profile (user_id) {
-    $.post( 'ajax/profile.php', {
+    $.post( 'ajax?controllerName=profile', {
         'user_id' : user_id
     }, function (data) {
         $("#profile_abuses").html(data.abuses);
@@ -67,7 +67,7 @@ function show_profile (user_id) {
 }
 
 function reload_photo(user_id, face_id) {
-    $.post( 'ajax/new_photo.php', {
+    $.post( 'ajax?controllerName=newPhoto', {
         'user_id' : user_id
     }, function (data) {
         $('#'+face_id).attr('src', ''+data.face+'');
