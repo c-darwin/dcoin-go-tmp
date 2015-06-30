@@ -7,6 +7,8 @@ import (
 	"image/png"
 	"log"
 	"time"
+	"bytes"
+//	"bufio"
 	"os"
 	"encoding/base64"
 	"code.google.com/p/freetype-go/freetype"
@@ -33,6 +35,9 @@ import (
 	"math/rand"
 	"encoding/pem"
 	"sort"
+	crand "crypto/rand"
+	"crypto/aes"
+	"crypto/cipher"
 )
 
 type BlockData struct {
@@ -97,7 +102,7 @@ type ParamType struct {
 	Bg_path string
 }
 
-func KeyToImg(key, resultPath string, userId int64, timeFormat string, param ParamType) error {
+func KeyToImg(key, resultPath string, userId int64, timeFormat string, param ParamType) (*bytes.Buffer, error) {
 
 	keyBin, _ := base64.StdEncoding.DecodeString(key)
 	keyHex := append(BinToHex(keyBin), []byte("00000000")...)
@@ -106,12 +111,12 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	w, h := getImageDimension(param.Bg_path)
 	fSrc, err := os.Open(param.Bg_path)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 	defer fSrc.Close()
 	src, err := png.Decode(fSrc)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -155,11 +160,11 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 
 	fontBytes, err := static.Asset("static/fonts/luxisr.ttf")
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 	font, err := freetype.ParseFont(fontBytes)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
 	c := freetype.NewContext()
@@ -174,7 +179,7 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	pt := freetype.Pt(13, 300)
 	_, err = c.DrawString("User ID: "+Int64ToStr(userId), pt)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
 	t := time.Unix(time.Now().Unix(), 0)
@@ -182,19 +187,27 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	pt = freetype.Pt(300, 300)
 	_, err = c.DrawString(txTime, pt)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
-	fDst, err := os.Create(resultPath)
-	if err != nil {
-		return ErrInfo(err)
+	if len(resultPath) > 0 {
+		fDst, err := os.Create(resultPath)
+		if err != nil {
+			return nil, ErrInfo(err)
+		}
+		defer fDst.Close()
+		err = png.Encode(fDst, dst)
+		if err != nil {
+			return nil, ErrInfo(err)
+		}
 	}
-	defer fDst.Close()
-	err = png.Encode(fDst, dst)
+	buffer := new(bytes.Buffer)
+	err = png.Encode(buffer, dst)
 	if err != nil {
-		return ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
-	return nil
+
+	return buffer, nil
 }
 
 func  ParseBlockHeader(binaryBlock *[]byte) (*BlockData) {
@@ -2352,4 +2365,35 @@ func MakeLastTx(lastTx []map[string]string, lng map[string]string) (string, map[
 	}
 	result+="</table>"
 	return result, pendingTx
+}
+
+
+func GenKeys() (string, string) {
+	privatekey, _ := rsa.GenerateKey(crand.Reader, 2048)
+	var pemkey = &pem.Block{Type : "RSA PRIVATE KEY", Bytes : x509.MarshalPKCS1PrivateKey(privatekey)}
+	PrivBytes0 := pem.EncodeToMemory(&pem.Block{Type:  "RSA PRIVATE KEY", Bytes: pemkey.Bytes})
+
+	PubASN1, _ := x509.MarshalPKIXPublicKey(&privatekey.PublicKey)
+	pubBytes := pem.EncodeToMemory(&pem.Block{Type:  "RSA PUBLIC KEY", Bytes: PubASN1})
+	s := strings.Replace(string(pubBytes),"-----BEGIN RSA PUBLIC KEY-----","",-1)
+	s = strings.Replace(s,"-----END RSA PUBLIC KEY-----","",-1)
+	sDec, _ := base64.StdEncoding.DecodeString(s)
+
+	return string(PrivBytes0), fmt.Sprintf("%x", sDec)
+}
+
+func Encrypt(key, text []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	b := base64.StdEncoding.EncodeToString(text)
+	ciphertext := make([]byte, aes.BlockSize+len(b))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(crand.Reader, iv); err != nil {
+		return nil, err
+	}
+	cfb := cipher.NewCFBEncrypter(block, iv)
+	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
+	return ciphertext, nil
 }

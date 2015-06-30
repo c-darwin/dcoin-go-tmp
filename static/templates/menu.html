@@ -98,7 +98,7 @@
 			</a>
 			<ul class="dropdown-menu">
 				{{if or .PoolAdmin (not .Community)}}
-				<li><a href="#change_node_key">{{.Lang.change_node_key}}</a></li>
+				<li><a href="#changeNodeKey">{{.Lang.change_node_key}}</a></li>
 				{{end}}
 		{{if .PoolAdmin}}
 		<li><a href="#pool_admin">Pool admin</a></li>
@@ -106,7 +106,7 @@
 		{{end}}
 		<li><a href="#notifications">{{.Lang.sms_and_email_notifications}}</a>
 		</li>
-		<li><a href="#change_primary_key">{{.Lang.change_master_key}}</a>
+		<li><a href="#changePrimaryKey">{{.Lang.change_master_key}}</a>
 		</li>
 		<li><a href="#restoring_access">{{.Lang.restoring_access}}</a>
 		</li>
@@ -239,7 +239,7 @@
 					<a href="#"><i class="fa fa-cog fa-fw"></i> Settings<span class="fa arrow"></span></a>
 					<ul class="nav nav-second-level">
 						{{if or .PoolAdmin (not .Community)}}
-							<li><a href="#change_node_key">{{.Lang.change_node_key}}</a></li>
+							<li><a href="#changeNodeKey">{{.Lang.change_node_key}}</a></li>
 						{{end}}
 
 				{{if .PoolAdmin}}

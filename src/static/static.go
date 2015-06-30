@@ -2651,10 +2651,10 @@ func static_templates_change_money_back_time_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_node_key_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_node_key_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_node_key.tpl"
-	name := "static/templates/change_node_key.tpl"
+// static_templates_change_node_key_html reads file data from disk. It returns an error on failure.
+func static_templates_change_node_key_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_node_key.html"
+	name := "static/templates/change_node_key.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2669,10 +2669,10 @@ func static_templates_change_node_key_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_primary_key_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_primary_key_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_primary_key.tpl"
-	name := "static/templates/change_primary_key.tpl"
+// static_templates_change_primary_key_html reads file data from disk. It returns an error on failure.
+func static_templates_change_primary_key_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_primary_key.html"
+	name := "static/templates/change_primary_key.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4037,8 +4037,8 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_key_close.tpl": static_templates_change_key_close_tpl,
 	"static/templates/change_key_request.tpl": static_templates_change_key_request_tpl,
 	"static/templates/change_money_back_time.tpl": static_templates_change_money_back_time_tpl,
-	"static/templates/change_node_key.tpl": static_templates_change_node_key_tpl,
-	"static/templates/change_primary_key.tpl": static_templates_change_primary_key_tpl,
+	"static/templates/change_node_key.html": static_templates_change_node_key_html,
+	"static/templates/change_primary_key.html": static_templates_change_primary_key_html,
 	"static/templates/change_promised_amount.html": static_templates_change_promised_amount_html,
 	"static/templates/credits.html": static_templates_credits_html,
 	"static/templates/currency_exchange.html": static_templates_currency_exchange_html,
@@ -4457,9 +4457,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_money_back_time.tpl": &_bintree_t{static_templates_change_money_back_time_tpl, map[string]*_bintree_t{
 			}},
-			"change_node_key.tpl": &_bintree_t{static_templates_change_node_key_tpl, map[string]*_bintree_t{
+			"change_node_key.html": &_bintree_t{static_templates_change_node_key_html, map[string]*_bintree_t{
 			}},
-			"change_primary_key.tpl": &_bintree_t{static_templates_change_primary_key_tpl, map[string]*_bintree_t{
+			"change_primary_key.html": &_bintree_t{static_templates_change_primary_key_html, map[string]*_bintree_t{
 			}},
 			"change_promised_amount.html": &_bintree_t{static_templates_change_promised_amount_html, map[string]*_bintree_t{
 			}},

@@ -68,7 +68,7 @@ func (c *Controller) NewUser() (string, error) {
 				if _, err := os.Stat(kPathPng); os.IsNotExist(err) {
 					privKey := strings.Replace(private_key, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
 					privKey = strings.Replace(privKey, "-----END RSA PRIVATE KEY-----", "", -1)
-					err = utils.KeyToImg(privKey, kPathPng, user_id, c.TimeFormat, param)
+					_, err = utils.KeyToImg(privKey, kPathPng, user_id, c.TimeFormat, param)
 					if err != nil {
 						return "", utils.ErrInfo(err)
 					}
