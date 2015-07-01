@@ -2383,17 +2383,41 @@ func GenKeys() (string, string) {
 }
 
 func Encrypt(key, text []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+	/*block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	b := base64.StdEncoding.EncodeToString(text)
+	//b := base64.StdEncoding.EncodeToString(text)
+	b := text
 	ciphertext := make([]byte, aes.BlockSize+len(b))
 	iv := ciphertext[:aes.BlockSize]
+	//iv, _ := base64.StdEncoding.DecodeString("AAAAAAAAAAAAAAAAAAAAAA==")
+
 	if _, err := io.ReadFull(crand.Reader, iv); err != nil {
 		return nil, err
 	}
 	cfb := cipher.NewCFBEncrypter(block, iv)
 	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
+	return ciphertext, nil*/
+	plaintext := []byte(strpad(string(text)))
+	ivtext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := ivtext[:aes.BlockSize]
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	cfbdec := cipher.NewCBCEncrypter(c, iv)
+	ciphertext := make([]byte, len(plaintext))
+	cfbdec.CryptBlocks(ciphertext, plaintext)
+	//crypt1 := base64.StdEncoding.EncodeToString((ciphertext))
 	return ciphertext, nil
+}
+
+
+func strpad(text string) string {
+	length := aes.BlockSize - (len(text) % aes.BlockSize)
+	for i := 0; i < length; i++ {
+		text += "0"
+	}
+	return text
 }

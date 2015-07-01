@@ -227,6 +227,6 @@ func (c *Controller) Home() (string, error) {
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
 	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "home", &page{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: "", MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
+	t.ExecuteTemplate(b, "home", &page{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: c.Alert, MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"]})
 	 return b.String(), nil
 }

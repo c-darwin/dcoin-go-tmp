@@ -3497,10 +3497,10 @@ func static_templates_repayment_credit_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_restoring_access_tpl reads file data from disk. It returns an error on failure.
-func static_templates_restoring_access_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/restoring_access.tpl"
-	name := "static/templates/restoring_access.tpl"
+// static_templates_restoring_access_html reads file data from disk. It returns an error on failure.
+func static_templates_restoring_access_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/restoring_access.html"
+	name := "static/templates/restoring_access.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4084,7 +4084,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/promised_amount_list.html": static_templates_promised_amount_list_html,
 	"static/templates/reduction.tpl": static_templates_reduction_tpl,
 	"static/templates/repayment_credit.html": static_templates_repayment_credit_html,
-	"static/templates/restoring_access.tpl": static_templates_restoring_access_tpl,
+	"static/templates/restoring_access.html": static_templates_restoring_access_html,
 	"static/templates/rewrite_primary_key.tpl": static_templates_rewrite_primary_key_tpl,
 	"static/templates/sign_up_in_the_pool.html": static_templates_sign_up_in_the_pool_html,
 	"static/templates/signatures.html": static_templates_signatures_html,
@@ -4551,7 +4551,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"repayment_credit.html": &_bintree_t{static_templates_repayment_credit_html, map[string]*_bintree_t{
 			}},
-			"restoring_access.tpl": &_bintree_t{static_templates_restoring_access_tpl, map[string]*_bintree_t{
+			"restoring_access.html": &_bintree_t{static_templates_restoring_access_html, map[string]*_bintree_t{
 			}},
 			"rewrite_primary_key.tpl": &_bintree_t{static_templates_rewrite_primary_key_tpl, map[string]*_bintree_t{
 			}},
