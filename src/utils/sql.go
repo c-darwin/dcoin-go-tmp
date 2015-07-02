@@ -374,25 +374,28 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[string]string, error) {
+
+	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
+
 	if db.ConfigIni["db_type"] == "postgresql" {
 		query = ReplQ(query)
 	}
 	var result []map[string]string
 	// Execute the query
 	//fmt.Println("query", query)
-	rows, err := db.Query(query, args...)
+	rows, err := db.Query(newQuery, newArgs...)
 	if err != nil {
-		return result, fmt.Errorf("%s in query %s %s", err, query, args)
+		return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	defer rows.Close()
 
 	if db.ConfigIni["log"]=="1" {
-		log.Printf("SQL: %s / %v", query, args)
+		log.Printf("SQL: %s / %v", newQuery, newArgs)
 	}
 	// Get column names
 	columns, err := rows.Columns()
 	if err != nil {
-		return result, fmt.Errorf("%s in query %s %s", err, query, args)
+		return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	//fmt.Println("columns", columns)
 
@@ -415,7 +418,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 		// get RawBytes from data
 		err = rows.Scan(scanArgs...)
 		if err != nil {
-			return result, fmt.Errorf("%s in query %s %s", err, query, args)
+			return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 		}
 
 		// Now do something with the data.
@@ -439,7 +442,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return result, fmt.Errorf("%s in query %s %s", err, query, args)
+		return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 	}
 	//fmt.Println(result)
 	return result, nil
@@ -691,6 +694,15 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
 		newArgs = args
 	}
+
+	if dbType == "postgresql" || dbType == "sqlite" {
+		r, _ := regexp.Compile(`(?:INTO|UPDATE|FROM)\s*([\w]+)`)
+		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
+		for i := len(indexArr)-1; i >= 0; i-- {
+			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
+		}
+	}
+
 	return newQ, newArgs
 }
 
@@ -1292,6 +1304,7 @@ func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 }
 
 func (db *DCDB) FormatQuery(q string) string {
+
 	newQ := q
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
@@ -1304,10 +1317,17 @@ func (db *DCDB) FormatQuery(q string) string {
 		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
 		newQ = ReplQ(newQ)
 		newQ = strings.Replace(newQ, "delete", `"delete"`, -1)
-
 	case "mysql":
 		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
 		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	}
+
+	if db.ConfigIni["db_type"] == "postgresql" || db.ConfigIni["db_type"] == "sqlite" {
+		r, _ := regexp.Compile(`(?:INTO|UPDATE|FROM)\s*([\w]+)`)
+		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
+		for i := len(indexArr)-1; i >= 0; i-- {
+			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
+		}
 	}
 	return newQ
 }

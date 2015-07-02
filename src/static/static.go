@@ -2345,10 +2345,10 @@ func static_templates_block_explorer_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_bug_reporting_tpl reads file data from disk. It returns an error on failure.
-func static_templates_bug_reporting_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/bug_reporting.tpl"
-	name := "static/templates/bug_reporting.tpl"
+// static_templates_bug_reporting_html reads file data from disk. It returns an error on failure.
+func static_templates_bug_reporting_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/bug_reporting.html"
+	name := "static/templates/bug_reporting.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2597,10 +2597,10 @@ func static_templates_change_host_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_key_close_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_key_close_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_key_close.tpl"
-	name := "static/templates/change_key_close.tpl"
+// static_templates_change_key_close_html reads file data from disk. It returns an error on failure.
+func static_templates_change_key_close_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_key_close.html"
+	name := "static/templates/change_key_close.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2615,10 +2615,10 @@ func static_templates_change_key_close_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_key_request_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_key_request_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_key_request.tpl"
-	name := "static/templates/change_key_request.tpl"
+// static_templates_change_key_request_html reads file data from disk. It returns an error on failure.
+func static_templates_change_key_request_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_key_request.html"
+	name := "static/templates/change_key_request.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2633,10 +2633,10 @@ func static_templates_change_key_request_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_money_back_time_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_money_back_time_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_money_back_time.tpl"
-	name := "static/templates/change_money_back_time.tpl"
+// static_templates_change_money_back_time_html reads file data from disk. It returns an error on failure.
+func static_templates_change_money_back_time_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_money_back_time.html"
+	name := "static/templates/change_money_back_time.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3137,10 +3137,10 @@ func static_templates_modal_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_money_back_tpl reads file data from disk. It returns an error on failure.
-func static_templates_money_back_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/money_back.tpl"
-	name := "static/templates/money_back.tpl"
+// static_templates_money_back_html reads file data from disk. It returns an error on failure.
+func static_templates_money_back_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/money_back.html"
+	name := "static/templates/money_back.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3155,10 +3155,10 @@ func static_templates_money_back_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_money_back_request_tpl reads file data from disk. It returns an error on failure.
-func static_templates_money_back_request_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/money_back_request.tpl"
-	name := "static/templates/money_back_request.tpl"
+// static_templates_money_back_request_html reads file data from disk. It returns an error on failure.
+func static_templates_money_back_request_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/money_back_request.html"
+	name := "static/templates/money_back_request.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3281,10 +3281,10 @@ func static_templates_new_user_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_node_config_tpl reads file data from disk. It returns an error on failure.
-func static_templates_node_config_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/node_config.tpl"
-	name := "static/templates/node_config.tpl"
+// static_templates_node_config_html reads file data from disk. It returns an error on failure.
+func static_templates_node_config_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/node_config.html"
+	name := "static/templates/node_config.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3353,10 +3353,10 @@ func static_templates_points_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_pool_admin_tpl reads file data from disk. It returns an error on failure.
-func static_templates_pool_admin_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/pool_admin.tpl"
-	name := "static/templates/pool_admin.tpl"
+// static_templates_pool_admin_html reads file data from disk. It returns an error on failure.
+func static_templates_pool_admin_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/pool_admin.html"
+	name := "static/templates/pool_admin.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4020,7 +4020,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/assignments_new_miner.html": static_templates_assignments_new_miner_html,
 	"static/templates/assignments_promised_amount.html": static_templates_assignments_promised_amount_html,
 	"static/templates/block_explorer.html": static_templates_block_explorer_html,
-	"static/templates/bug_reporting.tpl": static_templates_bug_reporting_tpl,
+	"static/templates/bug_reporting.html": static_templates_bug_reporting_html,
 	"static/templates/cash_request_in.html": static_templates_cash_request_in_html,
 	"static/templates/cash_request_out.html": static_templates_cash_request_out_html,
 	"static/templates/cf_catalog.html": static_templates_cf_catalog_html,
@@ -4034,9 +4034,9 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_creditor.html": static_templates_change_creditor_html,
 	"static/templates/change_geolocation.html": static_templates_change_geolocation_html,
 	"static/templates/change_host.tpl": static_templates_change_host_tpl,
-	"static/templates/change_key_close.tpl": static_templates_change_key_close_tpl,
-	"static/templates/change_key_request.tpl": static_templates_change_key_request_tpl,
-	"static/templates/change_money_back_time.tpl": static_templates_change_money_back_time_tpl,
+	"static/templates/change_key_close.html": static_templates_change_key_close_html,
+	"static/templates/change_key_request.html": static_templates_change_key_request_html,
+	"static/templates/change_money_back_time.html": static_templates_change_money_back_time_html,
 	"static/templates/change_node_key.html": static_templates_change_node_key_html,
 	"static/templates/change_primary_key.html": static_templates_change_primary_key_html,
 	"static/templates/change_promised_amount.html": static_templates_change_promised_amount_html,
@@ -4064,19 +4064,19 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/mining_menu.html": static_templates_mining_menu_html,
 	"static/templates/mining_promised_amount.html": static_templates_mining_promised_amount_html,
 	"static/templates/modal.html": static_templates_modal_html,
-	"static/templates/money_back.tpl": static_templates_money_back_tpl,
-	"static/templates/money_back_request.tpl": static_templates_money_back_request_tpl,
+	"static/templates/money_back.html": static_templates_money_back_html,
+	"static/templates/money_back_request.html": static_templates_money_back_request_html,
 	"static/templates/my_cf_projects.html": static_templates_my_cf_projects_html,
 	"static/templates/new_cf_project.html": static_templates_new_cf_project_html,
 	"static/templates/new_credit.html": static_templates_new_credit_html,
 	"static/templates/new_holidays.html": static_templates_new_holidays_html,
 	"static/templates/new_promised_amount.html": static_templates_new_promised_amount_html,
 	"static/templates/new_user.html": static_templates_new_user_html,
-	"static/templates/node_config.tpl": static_templates_node_config_tpl,
+	"static/templates/node_config.html": static_templates_node_config_html,
 	"static/templates/notifications.html": static_templates_notifications_html,
 	"static/templates/pct.tpl": static_templates_pct_tpl,
 	"static/templates/points.html": static_templates_points_html,
-	"static/templates/pool_admin.tpl": static_templates_pool_admin_tpl,
+	"static/templates/pool_admin.html": static_templates_pool_admin_html,
 	"static/templates/pool_tech_works.tpl": static_templates_pool_tech_works_tpl,
 	"static/templates/progress.tpl": static_templates_progress_tpl,
 	"static/templates/progress_bar.html": static_templates_progress_bar_html,
@@ -4423,7 +4423,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"block_explorer.html": &_bintree_t{static_templates_block_explorer_html, map[string]*_bintree_t{
 			}},
-			"bug_reporting.tpl": &_bintree_t{static_templates_bug_reporting_tpl, map[string]*_bintree_t{
+			"bug_reporting.html": &_bintree_t{static_templates_bug_reporting_html, map[string]*_bintree_t{
 			}},
 			"cash_request_in.html": &_bintree_t{static_templates_cash_request_in_html, map[string]*_bintree_t{
 			}},
@@ -4451,11 +4451,11 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_host.tpl": &_bintree_t{static_templates_change_host_tpl, map[string]*_bintree_t{
 			}},
-			"change_key_close.tpl": &_bintree_t{static_templates_change_key_close_tpl, map[string]*_bintree_t{
+			"change_key_close.html": &_bintree_t{static_templates_change_key_close_html, map[string]*_bintree_t{
 			}},
-			"change_key_request.tpl": &_bintree_t{static_templates_change_key_request_tpl, map[string]*_bintree_t{
+			"change_key_request.html": &_bintree_t{static_templates_change_key_request_html, map[string]*_bintree_t{
 			}},
-			"change_money_back_time.tpl": &_bintree_t{static_templates_change_money_back_time_tpl, map[string]*_bintree_t{
+			"change_money_back_time.html": &_bintree_t{static_templates_change_money_back_time_html, map[string]*_bintree_t{
 			}},
 			"change_node_key.html": &_bintree_t{static_templates_change_node_key_html, map[string]*_bintree_t{
 			}},
@@ -4511,9 +4511,9 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"modal.html": &_bintree_t{static_templates_modal_html, map[string]*_bintree_t{
 			}},
-			"money_back.tpl": &_bintree_t{static_templates_money_back_tpl, map[string]*_bintree_t{
+			"money_back.html": &_bintree_t{static_templates_money_back_html, map[string]*_bintree_t{
 			}},
-			"money_back_request.tpl": &_bintree_t{static_templates_money_back_request_tpl, map[string]*_bintree_t{
+			"money_back_request.html": &_bintree_t{static_templates_money_back_request_html, map[string]*_bintree_t{
 			}},
 			"my_cf_projects.html": &_bintree_t{static_templates_my_cf_projects_html, map[string]*_bintree_t{
 			}},
@@ -4527,7 +4527,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"new_user.html": &_bintree_t{static_templates_new_user_html, map[string]*_bintree_t{
 			}},
-			"node_config.tpl": &_bintree_t{static_templates_node_config_tpl, map[string]*_bintree_t{
+			"node_config.html": &_bintree_t{static_templates_node_config_html, map[string]*_bintree_t{
 			}},
 			"notifications.html": &_bintree_t{static_templates_notifications_html, map[string]*_bintree_t{
 			}},
@@ -4535,7 +4535,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"points.html": &_bintree_t{static_templates_points_html, map[string]*_bintree_t{
 			}},
-			"pool_admin.tpl": &_bintree_t{static_templates_pool_admin_tpl, map[string]*_bintree_t{
+			"pool_admin.html": &_bintree_t{static_templates_pool_admin_html, map[string]*_bintree_t{
 			}},
 			"pool_tech_works.tpl": &_bintree_t{static_templates_pool_tech_works_tpl, map[string]*_bintree_t{
 			}},

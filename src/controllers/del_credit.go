@@ -15,7 +15,7 @@ type delCreditPage struct {
 	Alert string
 	Lang map[string]string
 	CountSignArr []int
-	CreditId float64
+	CreditId int64
 }
 
 func (c *Controller) DelCredit() (string, error) {
@@ -26,7 +26,7 @@ func (c *Controller) DelCredit() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	creditId := utils.Round(utils.StrToFloat64(c.Parameters["credit_id"]), 0)
+	creditId := int64(utils.StrToFloat64(c.Parameters["credit_id"]))
 
 	TemplateStr, err := makeTemplate("del_credit", "delCredit", &delCreditPage{
 		Alert: c.Alert,

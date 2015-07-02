@@ -123,7 +123,13 @@ func CallController(c *Controller, name string)  (string, error) {
 	a[0] = unicode.ToUpper(a[0])
 	name = string(a)
 	fmt.Println("Controller", name)
-	return CallMethod(c, name)
+	html, err := CallMethod(c, name)
+	if err != nil {
+		log.Print(err)
+		html = fmt.Sprintf(`{"error":%q}`, err)
+		log.Println(html)
+	}
+	return html, err
 }
 
 
@@ -341,6 +347,9 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 				c.PoolAdmin = true
 				c.PoolAdminUserId = poolAdminUserId
 			}
+			c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
+		} else {
+			c.PoolAdmin = true
 		}
 		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
 		if err != nil {
@@ -386,12 +395,9 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	html, err :=  CallController(c, controllerName)
 	if err != nil {
 		log.Print(err)
-		html = fmt.Sprintf(`{"error":%q}`, err)
-		log.Println(html)
 	}
 	w.Write([]byte(html))
 }
-
 
 
 func Tools(w http.ResponseWriter, r *http.Request) {
@@ -700,9 +706,21 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if tplName == "login" {
 			tplName = "home"
 		}
+
 		if dbInit && len(communityUsers) > 0 {
 			c.Community = true
+			poolAdminUserId, err := c.GetPoolAdminUserId()
+			if err != nil {
+				log.Print(err)
+			}
+			if c.SessUserId == poolAdminUserId {
+				c.PoolAdmin = true
+				c.PoolAdminUserId = poolAdminUserId
+			}
+		} else {
+			c.PoolAdmin = true
 		}
+
 		if dbInit {
 			// проверим, не идут ли тех. работы на пуле
 			config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
@@ -846,6 +864,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		},
 		"strToInt64": func(text string) int64 {
 			return utils.StrToInt64(text)
+		},
+		"bin2hex": func(text string) string {
+			return string(utils.BinToHex([]byte(text)))
 		},
 		"int64ToStr": func(text int64) string {
 			return utils.Int64ToStr(text)
