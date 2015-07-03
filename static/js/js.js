@@ -4,7 +4,7 @@ function file_upload (file_id, progress, type, script) {
         $f = $('#'+file_id),
         $p = $('#'+progress),
         up = new uploader($f.get(0), {
-            url:'ajax/'+script,
+            url:'ajax?controllerName='+script,
             prefix:'file',
             type:type,
             progress:function(ev){ $p.html(((ev.loaded/ev.total)*100)+'%'); $p.css('width',$p.html()); },

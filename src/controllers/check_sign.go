@@ -26,7 +26,6 @@ func (c *Controller) Check_sign() (string, error) {
 	fmt.Println("Check_sign")
 
 	c.r.ParseForm()
-	fmt.Println(c.r.Form)
 	n := []byte(c.r.FormValue("n"))
 	e := []byte(c.r.FormValue("e"))
 	sign := []byte(c.r.FormValue("sign"))

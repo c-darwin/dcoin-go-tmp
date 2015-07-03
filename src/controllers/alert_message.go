@@ -1,14 +1,15 @@
 package controllers
 import (
 	"utils"
-	"log"
+//	"log"
 	"errors"
 	"regexp"
 	"encoding/json"
 	"strings"
+	"math"
 )
 
-func (c *Controller) GenerateNewPrimaryKey() (string, error) {
+func (c *Controller) AlertMessage() (string, error) {
 
 	if c.SessRestricted!=0 {
 		return "", errors.New("Permission denied")
@@ -32,8 +33,8 @@ func (c *Controller) GenerateNewPrimaryKey() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if len(message[c.LangInt]) {
-			adminMessage = message[c.LangInt]
+		if len(message[utils.Int64ToStr(c.LangInt)]) > 0 {
+			adminMessage = message[utils.Int64ToStr(c.LangInt)]
 		} else {
 			adminMessage = message["gen"]
 		}
@@ -61,7 +62,7 @@ func (c *Controller) GenerateNewPrimaryKey() (string, error) {
 			</script>
 			 <div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			 <h4>Warning!</h4>
-			    `+data["message"]+`
+			    `+adminMessage+`
 			  </div>`
 	}
 
@@ -73,16 +74,16 @@ func (c *Controller) GenerateNewPrimaryKey() (string, error) {
 
 	// возможны 2 сценария:
 	// 1. информация о новой версии есть в блоках
-	newVer, err := c.GetMap("SELECT version FROM new_version WHERE alert  =  1").String()
+	newVer, err := c.GetList("SELECT version FROM new_version WHERE alert  =  1").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	newMaxVer := "0"
 	for i:=0; i < len(newVer); i++ {
-		if VersionOrdinal(newVer[i]) > VersionOrdinal(myVer) && newMaxVer == "0" {
+		if utils.VersionOrdinal(newVer[i]) > utils.VersionOrdinal(myVer) && newMaxVer == "0" {
 			newMaxVer = newVer[i]
 		}
-		if VersionOrdinal(newVer[i]) > VersionOrdinal(newMaxVer) && newMaxVer != "0" {
+		if utils.VersionOrdinal(newVer[i]) > utils.VersionOrdinal(newMaxVer) && newMaxVer != "0" {
 			newMaxVer = newVer[i]
 		}
 	}
@@ -114,15 +115,100 @@ func (c *Controller) GenerateNewPrimaryKey() (string, error) {
 
 			<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			    <h4>Warning!</h4>
-			   <div id='new_version_text'>`+c.Lang["new_version"]+`</div>
+			   <div id='new_version_text'>`+newVersion+`</div>
 			 </div>`
 	}
 
-	if c.SessRestricted == 0 && !c.Community {
-		
+	if c.SessRestricted == 0 && (!c.Community || c.PoolAdmin) {
+		myMinerId, err := c.GetMyMinerId(c.SessUserId)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		// если юзер уже майнер, то у него должно быть настроено точное время
+		if myMinerId > 0 {
+			networkTime, err := utils.GetNetworkTime()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
+			if diff > c.Variables.Int64["alert_error_time"] {
+				alertTime := strings.Replace(c.Lang["alert_time"], "[sec]", utils.Int64ToStr(diff), -1)
+				result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				     <h4>Warning!</h4>
+				     <div>`+alertTime+`</div>
+				     </div>`
+			}
+		}
 	}
 
-		log.Println(json)
-	return string(json), nil
-}
+	if c.SessRestricted == 0 {
+		// после обнуления таблиц my_node_key будет пуст
+		// получим время из последнего блока
+		myNodeKey, err := c.GetNodePrivateKey(c.MyPrefix)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		myMinerId, err := c.GetMyMinerId(c.SessUserId)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if len(myNodeKey) == 0 && myMinerId > 0 {
+			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				     <h4>Warning!</h4>
+				     <div>`+c.Lang["alert_change_node_key"]+`</div>
+				     </div>`
+		}
+	}
 
+	// просто информируем, что в данном разделе у юзера нет прав
+	skipCommunity := []string{"nodeConfig", "nulling", "startStop"}
+	skipRestrictedUsers := []string{"nodeConfig", "changeNodeKey", "nulling", "startStop", "cashRequestsIn", "cashRequestsOut", "upgrade", "notifications", "interface"}
+	if (!c.NodeAdmin && utils.InSliceString(c.TplName, skipCommunity)) || (c.SessRestricted!=0 && utils.InSliceString(c.TplName, skipRestrictedUsers)) {
+		result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+			  <h4>Warning!</h4>
+			  <div>`+c.Lang["permission_denied"]+`</div>
+			  </div>`
+	}
+
+	// информируем, что у юзера нет прав и нужно стать майнером
+	minersOnly := []string{"myCfProjects", "newCfProject","cashRequestsIn", "cashRequestsOut", "changeNodeKey", "voting", "geolocation", "promisedAmountList", "promisedAmountAdd", "holidaysList", "newHolidays", "points", "tasks", "changeHost", "newUser", "changeCommission"}
+	if utils.InSliceString(c.TplName, minersOnly) {
+		minerId, err := c.Single("SELECT miner_id FROM users LEFT JOIN miners_data ON users.user_id  =  miners_data.user_id WHERE users.user_id  =  ?", c.SessUserId).Int64()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if minerId == 0 {
+			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				 <h4>Warning!</h4>
+				 <div>`+c.Lang["only_for_miners"]+`</div>
+				 </div>`
+		}
+	}
+
+	// информируем, что необходимо вначале сменить праймари-ключ
+	logId, err := c.Single("SELECT log_id FROM users WHERE user_id  =  ?", c.SessUserId).Int64()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	if logId == 0 {
+		text := ""
+		// проверим, есть ли запросы на смену в тр-ях
+		lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"changePrimaryKey"}), 1, c.TimeFormat)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if len(lastTx) == 0 { // юзер еще не начинал смену ключа
+			text = c.Lang["alert_change_primary_key"]
+		} else if len(lastTx[0]["error"]) > 0 || len(lastTx[0]["queue_tx"]) > 0 || len(lastTx[0]["tx"]) > 0 || utils.Time() - utils.StrToInt64(lastTx[0]["time_int"]) > 3600 {
+			text = c.Lang["please_try_again_change_key"]
+		} else {
+			text = c.Lang["please_wait_changing_key"]
+		}
+		result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				  <h4>`+c.Lang["warning"]+`</h4>
+				  <div>`+text+`</div>
+				  </div>`
+	}
+
+	return result, nil
+}

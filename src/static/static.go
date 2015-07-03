@@ -2579,10 +2579,10 @@ func static_templates_change_geolocation_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_host_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_host_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_host.tpl"
-	name := "static/templates/change_host.tpl"
+// static_templates_change_host_html reads file data from disk. It returns an error on failure.
+func static_templates_change_host_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_host.html"
+	name := "static/templates/change_host.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3515,10 +3515,10 @@ func static_templates_restoring_access_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_rewrite_primary_key_tpl reads file data from disk. It returns an error on failure.
-func static_templates_rewrite_primary_key_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/rewrite_primary_key.tpl"
-	name := "static/templates/rewrite_primary_key.tpl"
+// static_templates_rewrite_primary_key_html reads file data from disk. It returns an error on failure.
+func static_templates_rewrite_primary_key_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/rewrite_primary_key.html"
+	name := "static/templates/rewrite_primary_key.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3659,10 +3659,10 @@ func static_templates_upgrade_0_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_upgrade_1_and_2_tpl reads file data from disk. It returns an error on failure.
-func static_templates_upgrade_1_and_2_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/upgrade_1_and_2.tpl"
-	name := "static/templates/upgrade_1_and_2.tpl"
+// static_templates_upgrade_1_and_2_html reads file data from disk. It returns an error on failure.
+func static_templates_upgrade_1_and_2_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/upgrade_1_and_2.html"
+	name := "static/templates/upgrade_1_and_2.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4033,7 +4033,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/change_country_race.tpl": static_templates_change_country_race_tpl,
 	"static/templates/change_creditor.html": static_templates_change_creditor_html,
 	"static/templates/change_geolocation.html": static_templates_change_geolocation_html,
-	"static/templates/change_host.tpl": static_templates_change_host_tpl,
+	"static/templates/change_host.html": static_templates_change_host_html,
 	"static/templates/change_key_close.html": static_templates_change_key_close_html,
 	"static/templates/change_key_request.html": static_templates_change_key_request_html,
 	"static/templates/change_money_back_time.html": static_templates_change_money_back_time_html,
@@ -4085,7 +4085,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/reduction.tpl": static_templates_reduction_tpl,
 	"static/templates/repayment_credit.html": static_templates_repayment_credit_html,
 	"static/templates/restoring_access.html": static_templates_restoring_access_html,
-	"static/templates/rewrite_primary_key.tpl": static_templates_rewrite_primary_key_tpl,
+	"static/templates/rewrite_primary_key.html": static_templates_rewrite_primary_key_html,
 	"static/templates/sign_up_in_the_pool.html": static_templates_sign_up_in_the_pool_html,
 	"static/templates/signatures.html": static_templates_signatures_html,
 	"static/templates/statistic.html": static_templates_statistic_html,
@@ -4093,7 +4093,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/updating_blockchain.html": static_templates_updating_blockchain_html,
 	"static/templates/upgrade.html": static_templates_upgrade_html,
 	"static/templates/upgrade_0.html": static_templates_upgrade_0_html,
-	"static/templates/upgrade_1_and_2.tpl": static_templates_upgrade_1_and_2_tpl,
+	"static/templates/upgrade_1_and_2.html": static_templates_upgrade_1_and_2_html,
 	"static/templates/upgrade_3.tpl": static_templates_upgrade_3_tpl,
 	"static/templates/upgrade_4.tpl": static_templates_upgrade_4_tpl,
 	"static/templates/upgrade_5.tpl": static_templates_upgrade_5_tpl,
@@ -4449,7 +4449,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_geolocation.html": &_bintree_t{static_templates_change_geolocation_html, map[string]*_bintree_t{
 			}},
-			"change_host.tpl": &_bintree_t{static_templates_change_host_tpl, map[string]*_bintree_t{
+			"change_host.html": &_bintree_t{static_templates_change_host_html, map[string]*_bintree_t{
 			}},
 			"change_key_close.html": &_bintree_t{static_templates_change_key_close_html, map[string]*_bintree_t{
 			}},
@@ -4553,7 +4553,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"restoring_access.html": &_bintree_t{static_templates_restoring_access_html, map[string]*_bintree_t{
 			}},
-			"rewrite_primary_key.tpl": &_bintree_t{static_templates_rewrite_primary_key_tpl, map[string]*_bintree_t{
+			"rewrite_primary_key.html": &_bintree_t{static_templates_rewrite_primary_key_html, map[string]*_bintree_t{
 			}},
 			"sign_up_in_the_pool.html": &_bintree_t{static_templates_sign_up_in_the_pool_html, map[string]*_bintree_t{
 			}},
@@ -4569,7 +4569,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"upgrade_0.html": &_bintree_t{static_templates_upgrade_0_html, map[string]*_bintree_t{
 			}},
-			"upgrade_1_and_2.tpl": &_bintree_t{static_templates_upgrade_1_and_2_tpl, map[string]*_bintree_t{
+			"upgrade_1_and_2.html": &_bintree_t{static_templates_upgrade_1_and_2_html, map[string]*_bintree_t{
 			}},
 			"upgrade_3.tpl": &_bintree_t{static_templates_upgrade_3_tpl, map[string]*_bintree_t{
 			}},

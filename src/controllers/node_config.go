@@ -31,22 +31,9 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		return "", utils.ErrInfo(errors.New("access denied"))
 	}
 
-	scriptName, err := c.Single("SELECT script_name FROM main_lock").String()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	myStatus := "ON"
-	if scriptName == "my_lock" {
-		myStatus = "OFF"
-	}
-	myMode := "Single";
-	if c.Community {
-		myMode = "Pool"
-	}
-
 	log.Println("c.Parameters", c.Parameters)
 	if _, ok := c.Parameters["save_config"]; ok {
-		err = c.ExecSql("UPDATE config SET in_connections_ip_limit = ?, in_connections = ?, out_connections = ?, cf_url = ?, pool_url = ?, pool_admin_user_id = ?, exchange_api_url = ?, auto_reload = ?", c.Parameters["in_connections_ip_limit"], c.Parameters["in_connections"], c.Parameters["out_connections"] , c.Parameters["cf_url"], c.Parameters["pool_url"], c.Parameters["pool_admin_user_id"], c.Parameters["exchange_api_url"],  c.Parameters["auto_reload"])
+		err := c.ExecSql("UPDATE config SET in_connections_ip_limit = ?, in_connections = ?, out_connections = ?, cf_url = ?, pool_url = ?, pool_admin_user_id = ?, exchange_api_url = ?, auto_reload = ?", c.Parameters["in_connections_ip_limit"], c.Parameters["in_connections"], c.Parameters["out_connections"] , c.Parameters["cf_url"], c.Parameters["pool_url"], c.Parameters["pool_admin_user_id"], c.Parameters["exchange_api_url"],  c.Parameters["auto_reload"])
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -89,7 +76,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			if len(backup_community) > 0 {
-				err := c.ExecSql("UPDATE data SET backup_community = ?", jsonData)
+				err := c.ExecSql("UPDATE backup_community SET data = ?", jsonData)
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -106,13 +93,24 @@ func (c *Controller) NodeConfigControl() (string, error) {
 					return "", utils.ErrInfo(err)
 				}
 			}
-			err = c.ExecSql("TRUNCATE TABLE community")
+			err = c.ExecSql("DELETE FROM community")
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
 		}
 	}
-
+	scriptName, err := c.Single("SELECT script_name FROM main_lock").String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	myStatus := "ON"
+	if scriptName == "my_lock" {
+		myStatus = "OFF"
+	}
+	myMode := "Single";
+	if c.Community {
+		myMode = "Pool"
+	}
 	configIni, err := ioutil.ReadFile("config.ini")
 	if err != nil {
 		return "", utils.ErrInfo(err)

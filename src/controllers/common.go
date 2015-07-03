@@ -31,6 +31,7 @@ type Controller struct {
 	w http.ResponseWriter
 	sess session.SessionStore
 	Lang map[string]string
+	TplName string
 	LangInt int64
 	Navigate string
 	Periods map[int64]string
@@ -706,6 +707,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if tplName == "login" {
 			tplName = "home"
 		}
+
+		c.TplName = tplName
 
 		if dbInit && len(communityUsers) > 0 {
 			c.Community = true

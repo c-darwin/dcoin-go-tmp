@@ -8,6 +8,7 @@ import (
 	"log"
 	"time"
 	"bytes"
+	"net"
 //	"bufio"
 	"os"
 	"encoding/base64"
@@ -2451,4 +2452,67 @@ func VersionOrdinal(version string) string {
 		vo[j]++
 	}
 	return string(vo)
+}
+
+
+func GetNetworkTime() (*time.Time, error) {
+
+	ntpAddr := []string{"0.pool.ntp.org", "europe.pool.ntp.org", "asia.pool.ntp.org", "oceania.pool.ntp.org", "north-america.pool.ntp.org", "south-america.pool.ntp.org", "africa.pool.ntp.org"}
+	for i:=0; i < len(ntpAddr); i++ {
+		host := ntpAddr[i]
+		fmt.Println(host)
+		raddr, err := net.ResolveUDPAddr("udp", host+":123")
+		if err != nil {
+			continue
+		}
+
+		data := make([]byte, 48)
+		data[0] = 3<<3|3
+
+		con, err := net.DialUDP("udp", nil, raddr)
+		if err != nil {
+			continue
+		}
+
+		defer con.Close()
+
+		_, err = con.Write(data)
+		if err != nil {
+			continue
+		}
+
+		con.SetDeadline(time.Now().Add(5 * time.Second))
+
+		_, err = con.Read(data)
+		if err != nil {
+			continue
+		}
+
+		var sec, frac uint64
+		sec = uint64(data[43])|uint64(data[42])<<8|uint64(data[41])<<16|uint64(data[40])<<24
+		frac = uint64(data[47])|uint64(data[46])<<8|uint64(data[45])<<16|uint64(data[44])<<24
+
+		nsec := sec * 1e9
+		nsec += (frac*1e9)>>32
+
+		t := time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(nsec)).Local()
+		return &t, nil
+	}
+	return nil, errors.New("unable connect to NTP")
+
+}
+
+
+func MakeUpgradeMenu(cur int) string {
+	result := ""
+	for i:=0; i <=7; i++ {
+		active := ""
+		if i == cur {
+			active = ` class="active"`
+		} else {
+			active = ``
+		}
+		result += `<li`+active+`><a href="#upgrade`+IntToStr(i)+`">Step `+IntToStr(i)+`</a></li> `;
+	}
+	return result
 }

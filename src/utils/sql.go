@@ -696,7 +696,7 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 	}
 
 	if dbType == "postgresql" || dbType == "sqlite" {
-		r, _ := regexp.Compile(`(?:INTO|UPDATE|FROM)\s*([\w]+)`)
+		r, _ := regexp.Compile(`\s*([0-9]+_[\w]+)(?:\.|\s|\)|$)`)
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
 		for i := len(indexArr)-1; i >= 0; i-- {
 			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
@@ -1323,12 +1323,13 @@ func (db *DCDB) FormatQuery(q string) string {
 	}
 
 	if db.ConfigIni["db_type"] == "postgresql" || db.ConfigIni["db_type"] == "sqlite" {
-		r, _ := regexp.Compile(`(?:INTO|UPDATE|FROM)\s*([\w]+)`)
+		r, _ := regexp.Compile(`\s*([0-9]+_[\w]+)(?:\.|\s|\)|$)`)
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
 		for i := len(indexArr)-1; i >= 0; i-- {
 			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
 		}
 	}
+	log.Println(newQ)
 	return newQ
 }
 
