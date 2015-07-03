@@ -15,10 +15,11 @@ type upgrade3Page struct {
 	Lang map[string]string
 	SaveAndGotoStep string
 	UpgradeMenu string
-	Step string
-	NextStep string
-	PhotoType string
-	Photo string
+	FaceCoords string
+	ProfileCoords string
+	UserProfile string
+	UserFace string
+	ExamplePoints map[string]string
 }
 
 func (c *Controller) Upgrade3() (string, error) {
@@ -30,21 +31,32 @@ func (c *Controller) Upgrade3() (string, error) {
 
 	if _, err := os.Stat(userProfile); os.IsNotExist(err) {
 		userProfile = ""
+	} else {
+		userProfile = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg?r="+utils.IntToStr(utils.RandInt(0, 99999))
 	}
 	if _, err := os.Stat(userFace); os.IsNotExist(err) {
 		userFace = ""
+	} else {
+		userFace = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg?r="+utils.IntToStr(utils.RandInt(0, 99999))
 	}
 
 	// текущий набор точек для шаблонов
-	examplePoints := c.GetPoints(c.Lang)
+	examplePoints, err := c.GetPoints(c.Lang)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 
 	// точки, которые юзер уже отмечал
-
-
-	step := "2"
-	nextStep := "3"
-	photoType := "profile"
-	photo := userProfile
+	data, err := c.OneRow("SELECT face_coords, profile_coords FROM "+c.MyPrefix+"my_table").String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	faceCoords := ""
+	profileCoords := ""
+	if len(data["face_coords"]) > 0 {
+		faceCoords = data["face_coords"]
+		profileCoords = data["profile_coords"]
+	}
 
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "4", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(3)
@@ -57,10 +69,11 @@ func (c *Controller) Upgrade3() (string, error) {
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		UserId: c.SessUserId,
-		PhotoType: photoType,
-		Photo: photo,
-		Step: step,
-		NextStep: nextStep})
+		FaceCoords: faceCoords,
+		ProfileCoords: profileCoords,
+		UserProfile: userProfile,
+		UserFace: userFace,
+		ExamplePoints: examplePoints})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

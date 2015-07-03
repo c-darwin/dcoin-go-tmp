@@ -634,7 +634,7 @@ func (db *DCDB) GetPoints(lng map[string]string) (map[string]string, error) {
 		for i:=1; i <= len(data); i++ {
 			arr := data[IntToStr(i)]
 			id := IntToStr(i)
-			result[pType] += fmt.Sprintf(`[%v, %v, '%v. %s']`, arr[0], arr[1], id, lng["points-"+pType+"-"+id]);
+			result[pType] += fmt.Sprintf(`[%v, %v, '%v. %s'`, arr[0], arr[1], id, lng["points-"+pType+"-"+id]);
 			switch arr[2].(type) {
 			case []interface {}:
 				result[pType] += fmt.Sprintf(`, [%v, %v,`, StrToInt(arr[3].(string))-1, StrToInt(arr[4].(string))-1)

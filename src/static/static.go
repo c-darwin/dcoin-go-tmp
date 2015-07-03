@@ -3677,10 +3677,10 @@ func static_templates_upgrade_1_and_2_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_upgrade_3_tpl reads file data from disk. It returns an error on failure.
-func static_templates_upgrade_3_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/upgrade_3.tpl"
-	name := "static/templates/upgrade_3.tpl"
+// static_templates_upgrade_3_html reads file data from disk. It returns an error on failure.
+func static_templates_upgrade_3_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/upgrade_3.html"
+	name := "static/templates/upgrade_3.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4094,7 +4094,7 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/upgrade.html": static_templates_upgrade_html,
 	"static/templates/upgrade_0.html": static_templates_upgrade_0_html,
 	"static/templates/upgrade_1_and_2.html": static_templates_upgrade_1_and_2_html,
-	"static/templates/upgrade_3.tpl": static_templates_upgrade_3_tpl,
+	"static/templates/upgrade_3.html": static_templates_upgrade_3_html,
 	"static/templates/upgrade_4.tpl": static_templates_upgrade_4_tpl,
 	"static/templates/upgrade_5.tpl": static_templates_upgrade_5_tpl,
 	"static/templates/upgrade_6.tpl": static_templates_upgrade_6_tpl,
@@ -4571,7 +4571,7 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"upgrade_1_and_2.html": &_bintree_t{static_templates_upgrade_1_and_2_html, map[string]*_bintree_t{
 			}},
-			"upgrade_3.tpl": &_bintree_t{static_templates_upgrade_3_tpl, map[string]*_bintree_t{
+			"upgrade_3.html": &_bintree_t{static_templates_upgrade_3_html, map[string]*_bintree_t{
 			}},
 			"upgrade_4.tpl": &_bintree_t{static_templates_upgrade_4_tpl, map[string]*_bintree_t{
 			}},

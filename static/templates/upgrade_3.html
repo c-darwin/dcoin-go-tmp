@@ -14,7 +14,7 @@
 </ol>
 
 <ul class="nav nav-tabs">
-	{{.UpgradeMenu}}
+	{{noescape .UpgradeMenu}}
 </ul>
 
 <h3>{{.Lang.put_points_on_photo}}</h3>
@@ -24,11 +24,11 @@
 	<div id="comment-face" style="font-weight:bold;">1</div>
 
 	<div style="width: 350px; position: relative; float: left">
-		<canvas id="example_face" style="position: absolute; background-image: url('img/face.jpg'); background-size: 350px;" width="350" height="500"></canvas>
+		<canvas id="example_face" style="position: absolute; background-image: url('static/img/face.jpg'); background-size: 350px;" width="350" height="500"></canvas>
 		<canvas style="position: relative; top:0px; left:0px;" width="350" height="500"></canvas>
 	</div>
 	<div style="width: 350px; position: relative; float: left; text-align: center">
-		<canvas  id="face_coords_mouse" style=" top:0px; left:0px; position: absolute; background-image: url('<?php echo tpl['user_face'].'?r='.rand(0, getrandmax())?>'); background-size: 350px;" width="350" height="500"></canvas>
+		<canvas  id="face_coords_mouse" style=" top:0px; left:0px; position: absolute; background-image: url('{{.UserFace}}'); background-size: 350px;" width="350" height="500"></canvas>
 		<canvas id="face" style="position: relative; top:0px; left:0px; height:500px" width="350" height="500"></canvas>
 		<br>
 		<button onclick="fclear('face')"  type="button" class="btn btn-warning">{{.Lang.clean}}</button><br><br>
@@ -38,11 +38,11 @@
 
 	<div id="comment-profile" style="font-weight:bold;">2</div>
 	<div style="width: 350px; position: relative; float: left">
-		<canvas id="example_profile" style="position: absolute; background-image: url('img/profile.jpg?r=<?php echo rand(0, getrandmax())?>'); background-size: 350px;" width="350" height="500"></canvas>
+		<canvas id="example_profile" style="position: absolute; background-image: url('static/img/profile.jpg'); background-size: 350px;" width="350" height="500"></canvas>
 		<canvas style="position: relative; top:0px; left:0px;" width="350" height="500"></canvas>
 	</div>
 	<div style="width: 350px; position: relative; float: left; text-align: center">
-		<canvas  id="profile_coords_mouse" style=" top:0px; left:0px; position: absolute; background-image: url('<?php echo tpl['user_profile'].'?r='.rand(0, getrandmax())?>'); background-size: 350px;" width="350" height="500"></canvas>
+		<canvas  id="profile_coords_mouse" style=" top:0px; left:0px; position: absolute; background-image: url('{{.UserProfile}}'); background-size: 350px;" width="350" height="500"></canvas>
 		<canvas id="profile" style="position: relative; top:0px; left:0px; height:500px" width="350" height="500"></canvas>
 		<br><button onclick="fclear('profile')"  type="button" class="btn btn-warning">{{.Lang.clean}}</button><br><br>
 	</div>
@@ -59,10 +59,10 @@
 			main_area : "face",
 			type : "face",
 			line_color : "#593AE0",
-		<?php echo ( tpl['face_coords'] ) ? "user_coords: {tpl['face_coords']}," : "" ?>
+		{{if .FaceCoords}}user_coords: {{js .FaceCoords}},{{end}}
 
 		example_coords : [
-		<?php echo tpl['example_points']['face'] ; ?>
+			{{js .ExamplePoints.face}}
 		]
 
 		});
@@ -74,10 +74,11 @@
 			main_area : "profile",
 			type : "profile",
 			line_color : "#593AE0",
-		<?php echo ( tpl['profile_coords'] ) ? "user_coords: {tpl['profile_coords']}," : "" ?>
+		{{if .ProfileCoords}}user_coords: {{js .ProfileCoords}},{{end}}
+
 
 		example_coords : [
-		<?php echo tpl['example_points']['profile'] ; ?>
+			{{js .ExamplePoints.profile}}
 		]
 		});
 
@@ -92,14 +93,11 @@
 </div>
 <br><br>
 
-<button class="btn btn-success" onclick="user_webcam_navigate('upgrade_4')"><?php echo str_replace('[num]', '4',lng['save_and_goto_step'])?></button>
-
-
-
-
+<button class="btn btn-success" onclick="user_webcam_navigate('upgrade4')">{{.SaveAndGotoStep}}</button>
 
 <br><br><br><br><br><br><br>
 
 
 <div class="for-signature"></div>
        
+{{end}}

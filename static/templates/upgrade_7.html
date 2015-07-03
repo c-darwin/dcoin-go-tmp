@@ -1,0 +1,93 @@
+{{define "upgrade7"}}
+<script>
+	$(document).ready(function() {
+		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
+	});
+</script>
+<script>
+	$('#send_to_net').bind('click', function () {
+
+		if ($('#agree').is(':checked')) {
+			$.post('ajax?controllerName=saveQueue', {
+				'type': '{{.TxType}}',
+				'time': '{{.TimeNow}}',
+				'user_id': '{{.UserId}}',
+				'race': '{{.Data.race}}',
+				'country': '{{.Data.country}}',
+				'latitude': '{{.Latitude}}',
+				'longitude': '{{.Longitude}}',
+				'host': '{{.Data.host}}',
+				'face_hash': '{{.FaceHash}}',
+				'profile_hash': '{{.ProfileHash}}',
+				'face_coords': '{{.Data.faceCoords}}',
+				'profile_coords': '{{.Data.profileCoords}}',
+				'video_type': '{{.Data.videoType}}',
+				'video_url_id': '{{.Data.videoUrlId}}',
+				'node_public_key': '{{.NodePublicKey}}',
+				'signature1': $('#signature1').val(),
+				'signature2': $('#signature2').val(),
+				'signature3': $('#signature3').val()
+			}, function (data) {
+				if (!data)
+					var my_alert = '{{.Lang.sent_to_the_net}}';
+				else
+					var my_alert = data;
+				fc_navigate('miningMenu', {'alert': my_alert});
+			});
+		}
+		else {
+			$('#errors').html('<div class="alert alert-danger">{{.Lang.do_not_check_the_agreement}}</div>');
+		}
+	} );
+
+	{{if not .ShowSignData}}$("#sign_data").css("display", "none");{{end}}
+
+	doSign();
+
+	$("#main_div textarea").addClass( "form-control" );
+		
+</script>
+
+<div id="main_div">
+	<h1 class="page-header">{{.Lang.upgrade_title}}</h1>
+	<ol class="breadcrumb">
+		<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
+		<li class="active">{{.Lang.upgrade_title}}</li>
+	</ol>
+
+	<ul class="nav nav-tabs">
+		{{noescape .UpgradeMenu}}
+	</ul>
+
+	<h3>{{.Lang.sending_data_to_net}}</h3>
+
+	<div id="main_data">
+
+		{{if not .Data.race}}
+			<div class='alert alert-danger'>{{.Lang.empty_race}}</div>
+		{{else if not .Data.country}}
+			<div class='alert alert-danger'>{{.Lang.empty_country}}</div>
+		{{else if not .Data.face_hash}}
+			<div class='alert alert-danger'>{{.Lang.empty_photo}}</div>
+		{{else if not .Data.profile_hash}}
+			<div class='alert alert-danger'>{{.Lang.empty_photo2}}</div>
+		{{else if or (not .Data.face_coords) (not .Data.profile_coords)}}
+			<div class='alert alert-danger'>{{.Lang.empty_points}}</div>
+		{{else if and (or (eq .Data.video_url_id "null") (eq .Data.video_type "null")) .NoExistsMp4}}
+			<div class='alert alert-danger'>{{.Lang.empty_video}}</div>
+		{{else if not .Data.host}}
+			<div class='alert alert-danger'>{{.Lang.empty_node}}</div>
+		{{else if or (not .Data.latitude) (not .Data.longitude)}}
+			<div class='alert alert-danger'>{{.Lang.empty_geolocation}}</div>
+		{{else}}
+			{{template "signatures".}}
+			<div id="errors"></div>
+			<input id="agree" type="checkbox"> {{.Lang.i_realize_that_my_photos}}<br><br>
+			<button class="btn btn-success" id="send_to_net">{{.Lang.send_to_net}}</button>
+		{{end}}
+
+</div>
+
+</div>
+
+{{end}}

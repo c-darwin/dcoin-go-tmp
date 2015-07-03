@@ -1,0 +1,52 @@
+{{define "upgrade5"}}
+<script>
+	$(document).ready(function() {
+		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
+	});
+</script>
+<h1 class="page-header">{{.Lang.upgrade_title}}</h1>
+<ol class="breadcrumb">
+	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
+	<li class="active">{{.Lang.upgrade_title}}</li>
+</ol>
+
+<ul class="nav nav-tabs">
+	{{noescape .UpgradeMenu}}
+</ul>
+
+<h3>Host</h3>
+
+{{.Lang.your_host}}
+<br>
+<div class="alert alert-error" id="alert" style="display: none">{{.Lang.invalid_host}}</div>
+
+{{if .Community}}
+	<div id='node_host'><input type='hidden' id='host' value='{{.Host}}'><p><strong>{{.Host}}</strong><br>[<a href='#' id='change_node_host'>change</a>]</p></div>
+{{else}}
+	<input class="form-control" style="width:300px" type="text" id="host" value="{{.Host}}"><br>{{.Lang.host_example}}
+{{end}}
+
+<script>
+	$('#change_node_host').bind('click', function () {
+		$('#node_host').html('<input class="form-control" style="width:300px" type="text" id="host" value="{{.Host}}"><br>{{.Lang.host_example}}');
+	});
+
+	$('#save').bind('click', function () {
+		$('#alert').css("display", "none");
+		$.post( 'ajax?controllerName=saveHost', { 'host' : $('#host').val() } ,
+				function (data) {
+					if (data.error) {
+						$('#alert').css("display", "block");
+					}
+					else {
+						map_navigate('upgrade6');
+					}
+				}, "JSON");
+	});
+</script>
+<button class="btn btn-success" id="save">{{.SaveAndGotoStep}}</button>
+
+
+<br><br><br><br><br><br><br>
+
+{{end}}

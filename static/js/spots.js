@@ -401,9 +401,11 @@ coords.fc.prototype = {
 			
 			// если это последний клик, то шлем все точки в БД			
 			if ( this.example_coords.length == this.arr_i[ this.main_area ] ) {
-			
-				$.post( 'ajax/save_user_coords.php',
-                    {'type' : this.main_area, 'coords' : this.coords_array[this.main_area] },
+
+				var json = JSON.stringify(this.coords_array[this.main_area]);
+
+				$.post( 'ajax?controllerName=saveUserCoords',
+                    {'type' : this.main_area, 'coords_json' : json },
                     function (data) {
                         alert('Saved');
                     }
