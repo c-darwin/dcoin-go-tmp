@@ -17,7 +17,7 @@
 		else {
 			$("#wallets").css("display", "none");
 			$("#sign").css("display", "block");
-			$("#for-signature").val( '<?php echo "{{.TxTypeId}},{{.TimeNow}},{{.UserId}}"?>,'+$('#cash_request_id').val()+','+$('#code').val());
+			$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$('#cash_request_id').val()+','+$('#code').val());
 			doSign();
 			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 			}

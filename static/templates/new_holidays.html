@@ -6,7 +6,7 @@
 
 		$("#add_holidays").css("display", "none");
 		$("#sign").css("display", "block");
-		$("#for-signature").val( '<?php echo "{{.TxTypeId}},{{.TimeNow}},{{.UserId}}"?>,'+startDateTextBox.datetimepicker("getDate").getTime() / 1000+','+endDateTextBox.datetimepicker("getDate").getTime() / 1000 );
+		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+startDateTextBox.datetimepicker("getDate").getTime() / 1000+','+endDateTextBox.datetimepicker("getDate").getTime() / 1000 );
 		doSign();
 		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 

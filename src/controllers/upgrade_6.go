@@ -26,7 +26,7 @@ func (c *Controller) Upgrade6() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	if len(geolocation) > 0 {
-		x := strings.Split(geolocation, ",")
+		x := strings.Split(geolocation, ", ")
 		if len(x) == 2 {
 			geolocationLat = x[0]
 			geolocationLon = x[1]

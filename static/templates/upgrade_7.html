@@ -5,7 +5,19 @@
 	});
 </script>
 <script>
+
+	$('#next').bind('click', function () {
+
+		$("#main_data").css("display", "none");
+		$("#sign").css("display", "block");
+
+		doSign();
+
+	});
+
 	$('#send_to_net').bind('click', function () {
+
+		doSign();
 
 		if ($('#agree').is(':checked')) {
 			$.post('ajax?controllerName=saveQueue', {
@@ -40,10 +52,6 @@
 		}
 	} );
 
-	{{if not .ShowSignData}}$("#sign_data").css("display", "none");{{end}}
-
-	doSign();
-
 	$("#main_div textarea").addClass( "form-control" );
 		
 </script>
@@ -63,30 +71,33 @@
 
 	<div id="main_data">
 
-		{{if not .Data.race}}
-			<div class='alert alert-danger'>{{.Lang.empty_race}}</div>
-		{{else if not .Data.country}}
-			<div class='alert alert-danger'>{{.Lang.empty_country}}</div>
-		{{else if not .Data.face_hash}}
-			<div class='alert alert-danger'>{{.Lang.empty_photo}}</div>
-		{{else if not .Data.profile_hash}}
-			<div class='alert alert-danger'>{{.Lang.empty_photo2}}</div>
-		{{else if or (not .Data.face_coords) (not .Data.profile_coords)}}
-			<div class='alert alert-danger'>{{.Lang.empty_points}}</div>
+		{{if eq .Data.race "0"}}
+			<div class='alert alert-danger'>{{.Lang.empty_race}}</div></div>
+		{{else if eq .Data.country "0"}}
+			<div class='alert alert-danger'>{{.Lang.empty_country}}</div></div>
+		{{else if eq .FaceHash ""}}
+			<div class='alert alert-danger'>{{.Lang.empty_photo}}</div></div>
+		{{else if eq .ProfileHash ""}}
+			<div class='alert alert-danger'>{{.Lang.empty_photo2}}</div></div>
+		{{else if or (eq .Data.face_coords "") (eq .Data.profile_coords "")}}
+			<div class='alert alert-danger'>{{.Lang.empty_points}}</div></div>
 		{{else if and (or (eq .Data.video_url_id "null") (eq .Data.video_type "null")) .NoExistsMp4}}
-			<div class='alert alert-danger'>{{.Lang.empty_video}}</div>
-		{{else if not .Data.host}}
-			<div class='alert alert-danger'>{{.Lang.empty_node}}</div>
-		{{else if or (not .Data.latitude) (not .Data.longitude)}}
-			<div class='alert alert-danger'>{{.Lang.empty_geolocation}}</div>
+			<div class='alert alert-danger'>{{.Lang.empty_video}}</div></div>
+		{{else if eq .Data.host ""}}
+			<div class='alert alert-danger'>{{.Lang.empty_node}}</div></div>
+		{{else if or (eq .Latitude "0") (eq .Longitude "0")}}
+			<div class='alert alert-danger'>{{.Lang.empty_geolocation}}</div></div>
 		{{else}}
-			{{template "signatures".}}
 			<div id="errors"></div>
 			<input id="agree" type="checkbox"> {{.Lang.i_realize_that_my_photos}}<br><br>
-			<button class="btn btn-success" id="send_to_net">{{.Lang.send_to_net}}</button>
+			{{if .ShowSignData}}
+				<button class="btn btn-success" id="next">{{.Lang.next}}</button>
+			{{else}}
+				<button class="btn btn-success" id="send_to_net">{{.Lang.send_to_net}}</button>
+			{{end}}
+			</div>
+			{{template "signatures".}}
 		{{end}}
-
-</div>
 
 </div>
 

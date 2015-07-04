@@ -81,8 +81,8 @@
 
 <h3>{{.Lang.upload_face_video}}</h3>
 
-{{.Lang.upload_face_video_rules}}
-{{.Lang.upload_face_video_rules2}}
+{{noescape .Lang.upload_face_video_rules}}
+{{noescape .Lang.upload_face_video_rules2}}
 
 <p><a href="#" id="from_webcam_show">{{.Lang.from_webcam}}{{.Lang.from_file}}</a> {{.Lang.or}} <a href="#" id="from_file_show">{{.Lang.from_file}}</a></p>
 <div id="from_webcam">
@@ -130,19 +130,19 @@
 </div>
 
 <script>
-	{{if .UserVideoMp4}}
+	{{if ne .UserVideoMp4 ""}}
 		$('#video_mp4_ok').css("display", "block");
+		$('#video_mp4_ok').html('{{.Lang.file_successfully_downloaded}}');
+		$('#del_mp4').css("display", "block");
+		$('#video').css("display", "block");
 	{{end}}
-	$('#video_mp4_ok').html('{{.Lang.file_successfully_downloaded}}');
-	$('#del_mp4').css("display", "block");
-	$('#video').css("display", "block");
 
-	{{if or .UserVideoWebm .UserVideoOgg}}
+	{{if or (ne .UserVideoWebm "") (ne .UserVideoOgg "")}}
 		$('#video_webm_ogg_ok').css("display", "block");
+		$('#video_webm_ogg_ok').html('{{.Lang.file_successfully_downloaded}}');
+		$('#del_webm_ogg').css("display", "block");
+		$('#video').css("display", "block");
 	{{end}}
-	$('#video_webm_ogg_ok').html('{{.Lang.file_successfully_downloaded}}');
-	$('#del_webm_ogg').css("display", "block");
-	$('#video').css("display", "block");
 </script>
 
 <br>

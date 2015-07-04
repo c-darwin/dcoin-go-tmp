@@ -607,6 +607,12 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
+		if len(communityUsers) == 0 {
+			c.MyPrefix = "";
+		} else {
+			c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
+			c.Community = true
+		}
 		// нужна мин. комиссия на пуле для перевода монет
 		config, err := c.GetNodeConfig()
 		if err != nil {
@@ -663,10 +669,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	// кол-во ключей=подписей у юзера
 	var countSign int
 	var userId int64
-	var myUserId int64
+//	var myUserId int64
 	if sessUserId > 0 && dbInit && installProgress == "complete" {
 		userId = sessUserId
-		myUserId = sessUserId
+	//	myUserId = sessUserId
 		countSign = 1
 		pk, err := c.DCDB.OneRow("SELECT public_key_1, public_key_2 FROM users WHERE user_id=?", userId).String()
 		if err != nil {
@@ -680,7 +686,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		userId = 0
-		myUserId = 0
+		//myUserId = 0
 	}
 	c.UserId = userId
 	var CountSignArr []int
@@ -689,7 +695,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	c.CountSign = countSign
 	c.CountSignArr = CountSignArr
-	fmt.Println(countSign, userId, myUserId ,countSign)
+
+	log.Println("tplName::", tplName, sessUserId, installProgress)
 
 	if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
@@ -710,8 +717,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 		c.TplName = tplName
 
+		log.Println("communityUsers:", communityUsers)
 		if dbInit && len(communityUsers) > 0 {
-			c.Community = true
 			poolAdminUserId, err := c.GetPoolAdminUserId()
 			if err != nil {
 				log.Print(err)
@@ -732,11 +739,6 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			}
 			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
 				tplName = "pool_tech_works"
-			}
-			if len(communityUsers) == 0 {
-				c.MyPrefix = "";
-			} else {
-				c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
 			}
 			// Если у юзера только 1 праймари ключ, то выдавать форму, где показываются данные для подписи и форма ввода подписи не нужно.
 			// Только если он сам не захочет, указав это в my_table

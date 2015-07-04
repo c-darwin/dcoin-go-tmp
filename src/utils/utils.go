@@ -1266,6 +1266,9 @@ func StrToInt(s string) int {
 func Float64ToStr(f float64) string {
 	return strconv.FormatFloat(f,'f', 13, 64)
 }
+func Float64ToStrGeo(f float64) string {
+	return strconv.FormatFloat(f,'f', 5, 64)
+}
 func Float64ToBytes(f float64) []byte {
 	return []byte(strconv.FormatFloat(f,'f', 13, 64))
 }

@@ -12,13 +12,12 @@ type upgrade5Page struct {
 	Host string
 	SaveAndGotoStep string
 	UpgradeMenu string
+	Community bool
 }
 
 func (c *Controller) Upgrade5() (string, error) {
 
 	log.Println("Upgrade5")
-
-	videoUrl := ""
 
 	host, err := c.Single("SELECT host FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
@@ -26,7 +25,7 @@ func (c *Controller) Upgrade5() (string, error) {
 	}
 
 	if c.Community && len(host) == 0 {
-		host, err := c.Single("SELECT host FROM miners_data WHERE user_id  =  ?", c.PoolAdminUserId).Int64()
+		host, err = c.Single("SELECT host FROM miners_data WHERE user_id  =  ?", c.PoolAdminUserId).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -41,6 +40,7 @@ func (c *Controller) Upgrade5() (string, error) {
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		Host: host,
+		Community: c.Community,
 		UserId: c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)

@@ -52,19 +52,20 @@ func (c *Controller) Login() (string, error) {
 	b := new(bytes.Buffer)
 
 	// есть ли установочный пароль и был ли начально записан ключ
-	setupPassword_, err := c.Single("SELECT setup_password FROM config").String()
-	if err != nil {
-		return "", err
-	}
-	myKey, err := c.GetMyPublicKey("")
-	if err != nil {
-		return "", err
-	}
 	var setupPassword bool
-	if len(myKey) == 0 && len(setupPassword_) > 0 {
-		setupPassword = true
+	if !c.Community {
+		setupPassword_, err := c.Single("SELECT setup_password FROM config").String()
+		if err != nil {
+			return "", err
+		}
+		myKey, err := c.GetMyPublicKey(c.MyPrefix)
+		if err != nil {
+			return "", err
+		}
+		if len(myKey) == 0 && len(setupPassword_) > 0 {
+			setupPassword = true
+		}
 	}
-
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле
 	config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()

@@ -21,7 +21,7 @@ func (c *Controller) DeleteVideo() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		err := os.Remove("public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm")
+		err = os.Remove("public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

@@ -12,6 +12,9 @@ type upgrade4Page struct {
 	VideoUrl string
 	SaveAndGotoStep string
 	UpgradeMenu string
+	UserVideoMp4 string
+	UserVideoWebm string
+	UserVideoOgg string
 }
 
 func (c *Controller) Upgrade4() (string, error) {
@@ -21,7 +24,7 @@ func (c *Controller) Upgrade4() (string, error) {
 	videoUrl := ""
 
 	// есть ли загруженное видео.
-	data, err := c.Single("SELECT video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
+	data, err := c.OneRow("SELECT video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -34,7 +37,7 @@ func (c *Controller) Upgrade4() (string, error) {
 		videoUrl = "http://www.youku.com/embed/"+data["video_url_id"]
 	}
 
-	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "5", -1)
+	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "4", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(4)
 
 
@@ -44,6 +47,9 @@ func (c *Controller) Upgrade4() (string, error) {
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		VideoUrl: videoUrl,
+		UserVideoMp4: "",
+		UserVideoWebm: "",
+		UserVideoOgg: "",
 		UserId: c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)

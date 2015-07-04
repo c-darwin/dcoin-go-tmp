@@ -27,6 +27,7 @@ type upgrade7Page struct {
 	FaceHash string
 	MyTable map[string]string
 	NoExistsMp4 bool
+	Data map[string]string
 }
 
 func (c *Controller) Upgrade7() (string, error) {
@@ -53,17 +54,17 @@ func (c *Controller) Upgrade7() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	faceHash := utils.DSha256(file)
-	file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
+	faceHash := string(utils.DSha256(file))
+	file, err = ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	profileHash := utils.DSha256(file)
+	profileHash := string(utils.DSha256(file))
 
-	latitude := ""
-	longitude := ""
+	latitude := "0"
+	longitude := "0"
 	if len(myTable["geolocation"]) > 0 {
-		x := strings.Split(myTable["geolocation"], ",")
+		x := strings.Split(myTable["geolocation"], ", ")
 		latitude = x[0]
 		longitude = x[1]
 	}
@@ -86,14 +87,14 @@ func (c *Controller) Upgrade7() (string, error) {
 	}
 
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
-	upgradeMenu := utils.MakeUpgradeMenu(6)
+	upgradeMenu := utils.MakeUpgradeMenu(7)
 
-	var noExistsMp4
+	var noExistsMp4 bool
 	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
 		noExistsMp4 = true
 	}
 
-	TemplateStr, err := makeTemplate("upgrade_6", "upgrade7", &upgrade7Page {
+	TemplateStr, err := makeTemplate("upgrade_7", "upgrade7", &upgrade7Page {
 		Alert: c.Alert,
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,
@@ -103,7 +104,7 @@ func (c *Controller) Upgrade7() (string, error) {
 		TxType: txType,
 		TxTypeId: txTypeId,
 		NoExistsMp4: noExistsMp4,
-		SignData: fmt.Sprintf("?,?,?,?,?,?,?,?,?,?,?,?,?,?,?", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],myTable["latitude"],myTable["longitude"],myTable["host"],myTable["face_hash"],myTable["profile_hash"],myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],myTable["node_public_key"]),
+		SignData: fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],latitude,longitude,myTable["host"],faceHash,profileHash,myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],nodePublicKey),
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		Latitude: latitude,
@@ -111,8 +112,8 @@ func (c *Controller) Upgrade7() (string, error) {
 		NodePublicKey: nodePublicKey,
 		ProfileHash: profileHash,
 		FaceHash: faceHash,
-		MyTable: myTable,
-		UserId: c.SessUserId})
+		Data: myTable,
+		MyTable: myTable})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
