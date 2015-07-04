@@ -552,7 +552,7 @@ function foattoupper(x) {
 							<td>{{makeCurrencyName (strToInt64 ($data.currency_id))}}{{ index $.CurrencyList (strToInt64 ($data.currency_id)) }}</td>
 							<td>{{index $.Names ($data.type)}} ({{$data.type_id}})
 							{{if eq ($data.type) "cf_project"}}
-								<button class="btn" onclick="fc_navigate('del_cf_funding', {'del_id':'{{$data.to_user_id}}'})">Cancel</button>
+								<button class="btn" onclick="fc_navigate('delCfFunding', {'del_id':'{{$data.to_user_id}}'})">Cancel</button>
 							{{end}}
 							</td><td>{{$data.to_user_id}}</td><td>{{$data.amount}}</td><td>
 							{{if ($data.commission)}} {{$data.commission}} {{end}}

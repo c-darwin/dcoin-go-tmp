@@ -1,3 +1,5 @@
+{{ define "installStep2" }}
+
 <style>
 	#page-wrapper{
 		margin: 0px 10% 0px 10%;
@@ -13,9 +15,9 @@
 <div style="max-width: 600px; margin: auto; margin-top: 50px">
 
 	<ul class="nav nav-tabs">
-		<li><a href="#install_step_0">Step 0</a></li>
-		<li><a href="#install_step_1">Step 1</a></li>
-		<li class="active"><a href="#install_step_2">Step 2</a></li>
+		<li><a href="#installStep0">Step 0</a></li>
+		<li><a href="#installStep1">Step 1</a></li>
+		<li class="active"><a href="#installStep2">Step 2</a></li>
 	</ul>
 
 	{{.Lang.install_compete}}<br><br>
@@ -23,3 +25,5 @@
 	<a href="#" role="button" onclick="location.reload();">Next</a>
 
 </div>
+
+{{end}}

@@ -1,10 +1,12 @@
+{{ define "installStep0" }}
+
 <script>
 	$('#lang-select').bind('change', function () {
 		$('#lang').val($(this).val());
 	});
 
 	$('#next').bind('click', function () {
-		fc_navigate('install_step_1',  {'lang':$('#lang').val()});
+		fc_navigate('installStep1',  {'lang':$('#lang').val()});
 	});
 
 </script>
@@ -31,3 +33,5 @@
 		<button class="btn btn-outline btn-primary" id="next">{{.Lang.next}}</button>
 
 </div>
+
+{{end}}

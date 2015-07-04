@@ -2489,10 +2489,10 @@ func static_templates_change_arbitrator_conditions_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_avatar_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_avatar_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_avatar.tpl"
-	name := "static/templates/change_avatar.tpl"
+// static_templates_change_avatar_html reads file data from disk. It returns an error on failure.
+func static_templates_change_avatar_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_avatar.html"
+	name := "static/templates/change_avatar.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -2525,10 +2525,10 @@ func static_templates_change_commission_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_change_country_race_tpl reads file data from disk. It returns an error on failure.
-func static_templates_change_country_race_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/change_country_race.tpl"
-	name := "static/templates/change_country_race.tpl"
+// static_templates_change_country_race_html reads file data from disk. It returns an error on failure.
+func static_templates_change_country_race_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/change_country_race.html"
+	name := "static/templates/change_country_race.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3029,24 +3029,6 @@ func static_templates_interface_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_list_cf_projects_tpl reads file data from disk. It returns an error on failure.
-func static_templates_list_cf_projects_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/list_cf_projects.tpl"
-	name := "static/templates/list_cf_projects.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
 // static_templates_login_html reads file data from disk. It returns an error on failure.
 func static_templates_login_html() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/login.html"
@@ -3317,24 +3299,6 @@ func static_templates_notifications_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_pct_tpl reads file data from disk. It returns an error on failure.
-func static_templates_pct_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/pct.tpl"
-	name := "static/templates/pct.tpl"
-	bytes, err := bindata_read(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
 // static_templates_points_html reads file data from disk. It returns an error on failure.
 func static_templates_points_html() (*asset, error) {
 	path := "/home/z/IdeaProjects/static/templates/points.html"
@@ -3371,10 +3335,10 @@ func static_templates_pool_admin_html() (*asset, error) {
 	return a, err
 }
 
-// static_templates_pool_tech_works_tpl reads file data from disk. It returns an error on failure.
-func static_templates_pool_tech_works_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/pool_tech_works.tpl"
-	name := "static/templates/pool_tech_works.tpl"
+// static_templates_pool_tech_works_html reads file data from disk. It returns an error on failure.
+func static_templates_pool_tech_works_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/pool_tech_works.html"
+	name := "static/templates/pool_tech_works.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -3389,10 +3353,10 @@ func static_templates_pool_tech_works_tpl() (*asset, error) {
 	return a, err
 }
 
-// static_templates_progress_tpl reads file data from disk. It returns an error on failure.
-func static_templates_progress_tpl() (*asset, error) {
-	path := "/home/z/IdeaProjects/static/templates/progress.tpl"
-	name := "static/templates/progress.tpl"
+// static_templates_progress_html reads file data from disk. It returns an error on failure.
+func static_templates_progress_html() (*asset, error) {
+	path := "/home/z/IdeaProjects/static/templates/progress.html"
+	name := "static/templates/progress.html"
 	bytes, err := bindata_read(path, name)
 	if err != nil {
 		return nil, err
@@ -4028,9 +3992,9 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/cf_project_change_category.html": static_templates_cf_project_change_category_html,
 	"static/templates/cf_start.html": static_templates_cf_start_html,
 	"static/templates/change_arbitrator_conditions.html": static_templates_change_arbitrator_conditions_html,
-	"static/templates/change_avatar.tpl": static_templates_change_avatar_tpl,
+	"static/templates/change_avatar.html": static_templates_change_avatar_html,
 	"static/templates/change_commission.html": static_templates_change_commission_html,
-	"static/templates/change_country_race.tpl": static_templates_change_country_race_tpl,
+	"static/templates/change_country_race.html": static_templates_change_country_race_html,
 	"static/templates/change_creditor.html": static_templates_change_creditor_html,
 	"static/templates/change_geolocation.html": static_templates_change_geolocation_html,
 	"static/templates/change_host.html": static_templates_change_host_html,
@@ -4058,7 +4022,6 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/install_step_1.html": static_templates_install_step_1_html,
 	"static/templates/install_step_2.html": static_templates_install_step_2_html,
 	"static/templates/interface.html": static_templates_interface_html,
-	"static/templates/list_cf_projects.tpl": static_templates_list_cf_projects_tpl,
 	"static/templates/login.html": static_templates_login_html,
 	"static/templates/menu.html": static_templates_menu_html,
 	"static/templates/mining_menu.html": static_templates_mining_menu_html,
@@ -4074,11 +4037,10 @@ var _bindata = map[string]func() (*asset, error){
 	"static/templates/new_user.html": static_templates_new_user_html,
 	"static/templates/node_config.html": static_templates_node_config_html,
 	"static/templates/notifications.html": static_templates_notifications_html,
-	"static/templates/pct.tpl": static_templates_pct_tpl,
 	"static/templates/points.html": static_templates_points_html,
 	"static/templates/pool_admin.html": static_templates_pool_admin_html,
-	"static/templates/pool_tech_works.tpl": static_templates_pool_tech_works_tpl,
-	"static/templates/progress.tpl": static_templates_progress_tpl,
+	"static/templates/pool_tech_works.html": static_templates_pool_tech_works_html,
+	"static/templates/progress.html": static_templates_progress_html,
 	"static/templates/progress_bar.html": static_templates_progress_bar_html,
 	"static/templates/promised_amount_actualization.tpl": static_templates_promised_amount_actualization_tpl,
 	"static/templates/promised_amount_list.html": static_templates_promised_amount_list_html,
@@ -4439,11 +4401,11 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"change_arbitrator_conditions.html": &_bintree_t{static_templates_change_arbitrator_conditions_html, map[string]*_bintree_t{
 			}},
-			"change_avatar.tpl": &_bintree_t{static_templates_change_avatar_tpl, map[string]*_bintree_t{
+			"change_avatar.html": &_bintree_t{static_templates_change_avatar_html, map[string]*_bintree_t{
 			}},
 			"change_commission.html": &_bintree_t{static_templates_change_commission_html, map[string]*_bintree_t{
 			}},
-			"change_country_race.tpl": &_bintree_t{static_templates_change_country_race_tpl, map[string]*_bintree_t{
+			"change_country_race.html": &_bintree_t{static_templates_change_country_race_html, map[string]*_bintree_t{
 			}},
 			"change_creditor.html": &_bintree_t{static_templates_change_creditor_html, map[string]*_bintree_t{
 			}},
@@ -4499,8 +4461,6 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"interface.html": &_bintree_t{static_templates_interface_html, map[string]*_bintree_t{
 			}},
-			"list_cf_projects.tpl": &_bintree_t{static_templates_list_cf_projects_tpl, map[string]*_bintree_t{
-			}},
 			"login.html": &_bintree_t{static_templates_login_html, map[string]*_bintree_t{
 			}},
 			"menu.html": &_bintree_t{static_templates_menu_html, map[string]*_bintree_t{
@@ -4531,15 +4491,13 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"notifications.html": &_bintree_t{static_templates_notifications_html, map[string]*_bintree_t{
 			}},
-			"pct.tpl": &_bintree_t{static_templates_pct_tpl, map[string]*_bintree_t{
-			}},
 			"points.html": &_bintree_t{static_templates_points_html, map[string]*_bintree_t{
 			}},
 			"pool_admin.html": &_bintree_t{static_templates_pool_admin_html, map[string]*_bintree_t{
 			}},
-			"pool_tech_works.tpl": &_bintree_t{static_templates_pool_tech_works_tpl, map[string]*_bintree_t{
+			"pool_tech_works.html": &_bintree_t{static_templates_pool_tech_works_html, map[string]*_bintree_t{
 			}},
-			"progress.tpl": &_bintree_t{static_templates_progress_tpl, map[string]*_bintree_t{
+			"progress.html": &_bintree_t{static_templates_progress_html, map[string]*_bintree_t{
 			}},
 			"progress_bar.html": &_bintree_t{static_templates_progress_bar_html, map[string]*_bintree_t{
 			}},

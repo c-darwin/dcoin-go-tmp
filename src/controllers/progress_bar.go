@@ -5,11 +5,14 @@ import (
 	"static"
 	"html/template"
 	"bytes"
+	"log"
 )
 
 type progressBarPage struct {
 	ProgressPct int64
 	Lang map[string]string
+	ProgressBar map[string]int64
+	ProgressBarPct map[string]int64
 }
 
 func (c *Controller) ProgressBar() (string, error) {
@@ -41,9 +44,12 @@ func (c *Controller) ProgressBar() (string, error) {
 	// сменил ли юзер ключ
 	changeKey, err := c.Single("SELECT log_id FROM users WHERE user_id  =  ?", c.SessUserId).Int64()
 	if err != nil {
-		return "", nil
+		return "", utils.ErrInfo(err)
 	}
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_primary_key"}), 1, c.TimeFormat)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0)) || changeKey>0  {
 		progressBar["change_key"] = 1
 	}
@@ -52,7 +58,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	if c.Community {
 		tables, err := c.GetAllTables()
 		if err != nil {
-			return "", nil
+			return "", utils.ErrInfo(err)
 		}
 		if utils.InSliceString(utils.Int64ToStr(c.SessUserId)+"_my_table", tables) {
 			progressBar["my_table"] = 1
@@ -169,12 +175,25 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 	progressBar["begin"] = 1
 
-	data, err := static.Asset("static/templates/progress_bar.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
+	log.Println("ProgressBar end")
+	if !c.ContentInc {
+		data, err := static.Asset("static/templates/progress_bar.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		t := template.Must(template.New("template").Parse(string(data)))
+		b := new(bytes.Buffer)
+		t.ExecuteTemplate(b, "progressBar", &progressBarPage{Lang:  c.Lang, ProgressPct: progressPct})
+		return b.String(), nil
+	} else {
+		TemplateStr, err := makeTemplate("progress", "progress", &progressBarPage{
+			Lang:  c.Lang,
+			ProgressBar: progressBar,
+			ProgressBarPct: progressBarPct,
+			ProgressPct: progressPct})
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		return TemplateStr, nil
 	}
-	t := template.Must(template.New("template").Parse(string(data)))
-	b := new(bytes.Buffer)
-	t.ExecuteTemplate(b, "progressBar", &progressBarPage{Lang:  c.Lang, ProgressPct: progressPct})
-	return b.String(), nil
 }

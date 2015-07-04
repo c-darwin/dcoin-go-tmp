@@ -34,6 +34,7 @@ type Controller struct {
 	TplName string
 	LangInt int64
 	Navigate string
+	ContentInc bool
 	Periods map[int64]string
 	Community bool
 	CommunityUsers []int64
@@ -463,9 +464,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	if sessAdmin==1 {
 		c.Admin = true
 	}
-	if err != nil {
-		log.Print(err)
-	}
+	c.ContentInc = true
+
 
 	var installProgress, configExists string
 	var lastBlockTime int64
@@ -492,6 +492,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			dbInit = false
 		}
 	}
+
+	c.dbInit = dbInit;
 
 	if dbInit {
 		var err error
@@ -843,6 +845,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"div": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
 		},
+		"mult": func(a, b interface{}) float64 {
+			return utils.InterfaceToFloat64(a)*utils.InterfaceToFloat64(b)
+		},
 		"round": func(a  interface{}, num int) float64 {
 			return utils.Round(utils.InterfaceToFloat64(a), num)
 		},
@@ -898,6 +903,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		},
 		"cfCategoryLang": func(lang map[string]string, name string) string {
 			return lang["cf_category_"+name]
+		},
+		"progressBarLang": func(lang map[string]string, name string) string {
+			return lang["progress_bar_pct_"+name]
 		},
 		"checkProjectPs": func(ProjectPs map[string]string, id string) bool {
 			if len(ProjectPs["ps"+id]) > 0 {

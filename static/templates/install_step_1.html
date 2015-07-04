@@ -1,3 +1,5 @@
+{{ define "installStep1" }}
+
 <style>
 	#page-wrapper{
 		margin: 0px 10% 0px 10%;
@@ -57,8 +59,8 @@
 <div style="max-width: 600px; margin: auto; margin-top: 50px">
 
 	<ul class="nav nav-tabs" style="margin-bottom: 20px">
-		<li><a href="#install_step_0">Step 0</a></li>
-		<li class="active"><a href="#install_step_1">Step 1</a></li>
+		<li><a href="#installStep0">Step 0</a></li>
+		<li class="active"><a href="#installStep1">Step 1</a></li>
 	</ul>
 	<h3>Settings</h3>
 	<lebel id="standard"><input type="radio" name="settings" value="standard" checked> Standard</lebel><br>
@@ -84,3 +86,5 @@
 	</div>
 	<button class="btn btn-outline btn-primary" id="next">{{.Lang.next}}</button>
 </div>
+
+{{end}}
