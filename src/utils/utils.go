@@ -41,6 +41,7 @@ import (
 	"crypto/cipher"
 )
 
+
 type BlockData struct {
 	BlockId int64
 	Time int64
@@ -1831,9 +1832,6 @@ func SleepDiff(sleep *int64, diff int64) {
 }
 
 
-func RollbackTransactionsTestBlock(truncate bool){
-
-}
 
 func AllTxParser() {
 
@@ -2039,7 +2037,7 @@ func Sha256(data_ interface{}) []byte {
 }
 
 func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, error) {
-	fmt.Println(variables)
+
 	var mrklSlice [][]byte
 	var txSize int64
 	// [error] парсим после вызова функции
@@ -2505,7 +2503,6 @@ func GetNetworkTime() (*time.Time, error) {
 
 }
 
-
 func MakeUpgradeMenu(cur int) string {
 	result := ""
 	for i:=0; i <=7; i++ {
@@ -2516,6 +2513,34 @@ func MakeUpgradeMenu(cur int) string {
 			active = ``
 		}
 		result += `<li`+active+`><a href="#upgrade`+IntToStr(i)+`">Step `+IntToStr(i)+`</a></li> `;
+	}
+	return result
+}
+
+func SortMap(m map[int64]string) []map[int64]string {
+
+	var keys []int
+	for k := range m {
+		keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+	var result []map[int64]string
+	for _, k := range keys {
+		result = append(result, map[int64]string {int64(k) : m[int64(k)]})
+	}
+	return result
+}
+
+func RSortMap(m map[int64]string) []map[int64]string {
+
+	var keys []int
+	for k := range m {
+		keys = append(keys, int(k))
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(keys)))
+	var result []map[int64]string
+	for _, k := range keys {
+		result = append(result, map[int64]string {int64(k) : m[int64(k)]})
 	}
 	return result
 }

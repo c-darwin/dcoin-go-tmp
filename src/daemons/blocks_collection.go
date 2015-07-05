@@ -1,38 +1,17 @@
 package daemons
 
 import (
-//    "fmt"
     _ "github.com/lib/pq"
-    //"time"
-//    "database/sql"
-	//"strconv"
-   // "crypto/x509"
-    //"encoding/pem"
-    //"crypto"
-    //"crypto/rand"
-   // "crypto/rsa"
-   // math_rand "math/rand"
-    //"crypto/md5"
-	//"bufio"
-	//"os"
-	//"errors"
 	"utils"
 	"log"
 	"consts"
-    //"io/ioutil"
- //   "log"
-  //  "net/http"
- //   "io"
-	////"os"
-   // "github.com/alyu/configparser"
-	//"io/ioutil"
-    //"github.com/astaxie/beego/config"
 	"fmt"
 	"os"
 	"dcparser"
-//	"bufio"
-//    "io/ioutil"
 	"static"
+	"errors"
+	"net/http"
+	"io/ioutil"
 )
 
 
@@ -41,6 +20,7 @@ func BlocksCollection(configIni map[string]string) {
     const GoroutineName = "blocks_collection"
 
     db := utils.DbConnect(configIni)
+    db.GoroutineName = GoroutineName
 
     // Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
     INSTALL:
@@ -246,9 +226,63 @@ func BlocksCollection(configIni map[string]string) {
                 }
                 parser.InsertIntoBlockchain()
 			}
+
+			utils.Sleep(1)
+			db.DbUnlock(GoroutineName);
+            continue BEGIN
+		}
+		db.DbUnlock(GoroutineName);
+
+        myConfig, err := db.OneRow("SELECT local_gate_ip, static_node_user_id FROM config").String()
+        if err != nil {
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+            continue
+        }
+		var hosts []map[string]string
+		var getMaxBlockScriptName, getBlockScriptName, addNodeHost string
+		if len(myConfig["local_gate_ip"]) > 0 {
+            hosts = append(hosts, map[string]string{"host": myConfig["local_gate_ip"], "user_id": myConfig["static_node_user_id"]})
+            nodeHost, err := db.Single("SELECT host FROM miners_data WHERE user_id  =  ?", myConfig["static_node_user_id"]).String()
+            if err != nil {
+                db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+                continue
+			}
+            getMaxBlockScriptName = "ajax?controllerName=protectedGetMaxBlock&nodeHost=".nodeHost;
+			getBlockScriptName = "ajax?controllerName=protectedGetBlock";
+			addNodeHost = "&nodeHost=".nodeHost;
+        } else {
+            // получим список нодов, с кем установлено рукопожатие
+            hosts, err := db.GetAll("SELECT * FROM nodes_connection", -1)
+            if err != nil {
+                db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+                continue
+			}
+            getMaxBlockScriptName = "ajax?controllerName=getMaxBlock";
+            getBlockScriptName = "ajax?controllerName=getBlock";
+            addNodeHost = "";
+        }
+
+		log.Println(hosts)
+
+		if len(hosts) == 0 {
+            db.UnlockPrintSleep(utils.ErrInfo(errors.New("len(hosts) == 0")), 1)
+            continue
 		}
 
-		db.DbUnlock(GoroutineName);
+        maxBlockId := 1
+        // получим максимальный номер блока
+        for _, host := range hosts {
+            url := host["host"]+"/"+getMaxBlockScriptName
+            resp, err := http.Get(url)
+            if err != nil {
+                log.Print(utils.ErrInfo(err))
+                continue
+            }
+            defer resp.Body.Close()
+            html, err := ioutil.ReadAll(resp.Body)
+			id = utils.StrToInt()
+		}
+
 
         // в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
         db.Close()
@@ -256,6 +290,10 @@ func BlocksCollection(configIni map[string]string) {
 
         utils.Sleep(3)
 		//break
+
+		//p := new(dcparser.Parser)
+        //p.GetBlocks()
+
     }
 }
 

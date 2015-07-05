@@ -20,6 +20,7 @@ import (
 type DCDB struct {
 	 *sql.DB
 	ConfigIni map[string]string
+	GoroutineName string
 }
 
 func ReplQ(q string) string {
@@ -1821,9 +1822,7 @@ func (db *DCDB) UpdMainLock() error {
 	return err
 }
 
-func (db *DCDB) GetBlocks (blockId int64, host string, userId, rollbackBlocks int64, getBlockScriptName, addNodeHost string) error {
 
-}
 
 func (db *DCDB) DbLock(name string) error {
 	var mutex = &sync.Mutex{}
@@ -1856,6 +1855,13 @@ func (db *DCDB) DbLock(name string) error {
 	}
 	log.Println("DbLock")
 	return nil
+}
+
+
+func (db *DCDB) UnlockPrintSleep(err error, sleep int) {
+	db.DbUnlock(db.GoroutineName);
+	log.Print(err)
+	utils.Sleep(sleep)
 }
 
 func (db *DCDB) DbUnlock(name string) error {
@@ -1951,6 +1957,25 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 		}
 	}
 	return column, nil
+}
+
+func (db *DCDB) NodesBan(userId int64, info string) error {
+	ban, err := db.Single(`SELECT user_id FROM nodes_ban WHERE user_id = ?`, userId).Int64()
+	if err != nil {
+		return err
+	}
+	if ban == 0 {
+		err = db.ExecSql(`INSERT INTO nodes_ban (user_id, ban_start, info) VALUES (?, ?, ?)`, userId, Time(), info)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.ExecSql(`UPDATE nodes_ban SET ban_start = ?, info = ? WHERE user_id = ?`, userId, Time(), info)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {

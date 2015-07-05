@@ -1,10 +1,8 @@
 package dcparser
 import (
-	//"database/sql"
 	_ "github.com/lib/pq"
 	"fmt"
 	"utils"
-	//"os"
 	"time"
 	"consts"
 	"sync"
@@ -14,6 +12,10 @@ import (
 	"encoding/json"
 	"database/sql"
 	"strings"
+	"errors"
+	"net/http"
+	"io/ioutil"
+	"os"
 )
 
 type vComplex struct {
@@ -68,6 +70,462 @@ type Parser struct {
 	TxTime int64
 	nodePublicKey []byte
 	newPublicKeysHex [3][]byte
+}
+
+func ClearTmp (blocks map[int64]string) {
+	for _, tmpFileName := range blocks {
+		os.Remove(tmpFileName)
+	}
+}
+
+/*
+ * $get_block_script_name, $add_node_host используется только при работе в защищенном режиме и только из blocks_collection.php
+ * */
+func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
+	log.Println("userId", userId, "blockId", blockId)
+	err := p.GetBlocks(blockId, host, hostUserId, "rollback_blocks_2", goroutineName, getBlockScriptName, addNodeHost);
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName, getBlockScriptName, addNodeHost string) error {
+
+	log.Println("blockId", blockId)
+	variables, err :=  p.GetAllVariables()
+	if err != nil {
+		return err
+	}
+	var count int64
+	var blocks map[int64]string
+	for {
+		/*
+		// отметимся в БД, что мы живы.
+		upd_deamon_time($db);
+		// отметимся, чтобы не спровоцировать очистку таблиц
+		upd_main_lock($db);
+		// проверим, не нужно нам выйти, т.к. обновилась версия скрипта
+		if (check_deamon_restart($db)){
+			main_unlock();
+			exit;
+		}*/
+		if blockId < 2 {
+			return utils.ErrInfo(errors.New("block_id < 2"))
+		}
+		// если превысили лимит кол-ва полученных от нода блоков
+		if count > variables.Int64[rollbackBlocks] {
+			ClearTmp(blocks)
+			return utils.ErrInfo(errors.New("count > variables[rollback_blocks]"))
+		}
+		if len(host) == 0 {
+			host, err = p.Single("SELECT host FROM miners_data WHERE user_id = ?", userId).String()
+			if err != nil {
+				ClearTmp(blocks)
+				return utils.ErrInfo(err)
+			}
+		}
+
+		url := ""
+		if len(getBlockScriptName) == 0 {
+			url = host+"/ajax?controllerName=getBlock&id="+utils.Int64ToStr(blockId)
+		} else {
+			url = host+"/"+getBlockScriptName+"id="+utils.Int64ToStr(blockId)
+		}
+		log.Println("url", url)
+		resp, err := http.Get(url)
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		defer resp.Body.Close()
+		htmlData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		binaryBlock := htmlData
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		log.Printf("binaryBlock: %x\n", binaryBlock)
+		binaryBlockFull := binaryBlock
+		if len(binaryBlock) == 0 {
+			log.Println("len(binaryBlock) == 0")
+			ClearTmp(blocks)
+			return utils.ErrInfo(errors.New("len(binaryBlock) == 0"))
+		}
+		utils.BytesShift(&binaryBlock, 1)  // уберем 1-й байт - тип (блок/тр-я)
+		// распарсим заголовок блока
+		blockData := utils.ParseBlockHeader(&binaryBlock)
+		log.Println("blockData", blockData)
+
+		// если существуют глючная цепочка, тот тут мы её проигнорируем
+		badBlocks_, err := p.Single("SELECT bad_blocks FROM config").Bytes()
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		badBlocks := make(map[int64]string)
+		err = json.Unmarshal(badBlocks_, &badBlocks)
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		if badBlocks[blockData.BlockId] == string(utils.BinToHex(blockData.Sign)) {
+			ClearTmp(blocks)
+			return utils.ErrInfo(errors.New("bad block"))
+		}
+		if blockData.BlockId != blockId {
+			ClearTmp(blocks)
+			return utils.ErrInfo(errors.New("bad block_data['block_id']"))
+		}
+
+		// размер блока не может быть более чем max_block_size
+		if int64(len(binaryBlock)) > variables.Int64["max_block_size"] {
+			ClearTmp(blocks)
+			return utils.ErrInfo(errors.New(`len(binaryBlock) > variables.Int64["max_block_size"]`))
+		}
+
+		// нам нужен хэш предыдущего блока, чтобы найти, где началась вилка
+		prevBlockHash, err := p.Single("SELECT hash FROM block_chain WHERE id  =  ?").String()
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+
+		// нам нужен меркель-рут текущего блока
+		mrklRoot, err := utils.GetMrklroot(binaryBlock, variables, false)
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+
+		// публичный ключ того, кто этот блок сгенерил
+		nodePublicKey, err := p.GetNodePublicKey(blockData.UserId)
+
+		// SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+		forSign := fmt.Sprintf("0,%v,%v,%v,%v,%v,%v", blockData.BlockId, prevBlockHash, blockData.Time, blockData.UserId, blockData.Level, mrklRoot)
+		log.Println("forSign", forSign)
+
+		// проверяем подпись
+		_, okSignErr := utils.CheckSign([][]byte{nodePublicKey}, forSign, blockData.Sign, true)
+		log.Println("okSignErr", okSignErr)
+
+		// сам блок сохраняем в файл, чтобы не нагружать память
+		file, err := ioutil.TempFile(os.TempDir(), "DC")
+		defer os.Remove(file.Name())
+		_, err = file.Write(binaryBlockFull)
+		if err != nil {
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)
+		}
+		blocks[blockId] = file.Name()
+		blockId--
+		count++
+
+		// качаем предыдущие блоки до тех пор, пока отличается хэш предудущего.
+		// другими словами, пока подпись с $prev_block_hash будет неверной, т.е. пока что-то есть в $error
+		if okSignErr == nil {
+			log.Printf("plug found blockId=%v\n", blockData.BlockId)
+			break
+		}
+	}
+
+	// чтобы брать блоки по порядку
+	utils.SortMap(blocks)
+	log.Println("blocks", blocks)
+
+	// получим наши транзакции в 1 бинарнике, просто для удобства
+	var transactions []byte
+	all, err := p.GetAll(`SELECT data FROM transactions WHERE verified = 1 AND used = 0`, -1)
+	for _, data := range all {
+		log.Println("data", data)
+		transactions = append(transactions, utils.EncodeLengthPlusData([]byte(data["data"]))...)
+	}
+	if len(transactions) > 0 {
+		// отмечаем, что эти тр-ии теперь нужно проверять по новой
+		err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE verified = 1 AND used = 0")
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		// откатываем по фронту все свежие тр-ии
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.GoroutineName = goroutineName
+		parser.BinaryData = transactions
+		err = parser.ParseDataRollbackFront(false)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+
+	// теперь откатим и transactions_testblock
+	p.RollbackTransactionsTestblock(true)
+
+	err = p.ExecSql("TRUNCATE TABLE testblock")
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+
+	// откатываем наши блоки до начала вилки
+	rows, err := p.Query(p.FormatQuery(`
+			SELECT data
+			FROM block_chain
+			WHERE id > ?
+			ORDER BY id DESC`), blockId)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	for rows.Next() {
+		var data []byte
+		err = rows.Scan(&data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		log.Println("We roll away blocks before plug", blockId)
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.GoroutineName = goroutineName
+		parser.BinaryData = data
+		err = parser.ParseDataRollbackFront(false)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+	log.Println("blocks", blocks)
+
+	var prevBlock map[int64]*utils.BlockData
+	// проходимся по новым блокам
+	for intBlockId, tmpFileName := range blocks {
+		log.Println("Go on new blocks", intBlockId, tmpFileName)
+
+		// проверяем и заносим данные
+		binaryBlock, err := ioutil.ReadFile(tmpFileName)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		log.Printf("binaryBlock: %x\n", binaryBlock)
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.GoroutineName = goroutineName
+		parser.BinaryData = binaryBlock
+		// передаем инфу о предыдущем блоке, т.к. это новые блоки, то инфа о предыдущих блоках в block_chain будет всё еще старая, т.к. обновление block_chain идет ниже
+		if prevBlock[intBlockId-1] != nil {
+			parser.PrevBlock.Hash = prevBlock[intBlockId-1].Hash
+			parser.PrevBlock.HeadHash = prevBlock[intBlockId-1].HeadHash
+			parser.PrevBlock.Time = prevBlock[intBlockId-1].Time
+			parser.PrevBlock.Level = prevBlock[intBlockId-1].Level
+			parser.PrevBlock.BlockId = prevBlock[intBlockId-1].BlockId
+		}
+
+		// если вернулась ошибка, значит переданный блок уже откатился
+		// info_block и config.my_block_id обновляются только если ошибки не было
+		err = parser.ParseDataFull()
+		// для последующей обработки получим хэши и time
+		if err == nil {
+			prevBlock[intBlockId] = parser.GetBlockInfo()
+		}
+		// если есть ошибка, то откатываем все предыдущие блоки из новой цепочки
+		if err != nil {
+			log.Println(err, "there is an error is rolled back all previous blocks of a new chain")
+
+			// баним на 1 час хост, который дал нам ложную цепочку
+			err = p.NodesBan(userId, fmt.Sprintf("%s", err))
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			// обязательно проходимся по блокам в обратном порядке
+			utils.RSortMap(blocks)
+			for int2BlockId, tmpFileName := range blocks {
+				log.Println("int2BlockId", int2BlockId)
+				if int2BlockId >= intBlockId {
+					continue
+				}
+				binaryBlock, err := ioutil.ReadFile(tmpFileName)
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+				parser := new(Parser)
+				parser.DCDB = p.DCDB
+				parser.GoroutineName = goroutineName
+				parser.BinaryData = binaryBlock
+				err = parser.ParseDataRollback()
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+			}
+			// заносим наши данные из block_chain, которые были ранее
+			log.Println("We push data from our block_chain, which were previously")
+			rows, err := p.Query(p.FormatQuery(`
+					SELECT data
+					FROM block_chain
+					WHERE id > ?
+					ORDER BY id ASC`), blockId)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			for rows.Next() {
+				var data []byte
+				err = rows.Scan(&data)
+				if err != nil {
+					return p.ErrInfo(err)
+				}
+				log.Println("blockId", blockId, "intBlockId", intBlockId)
+
+				parser := new(Parser)
+				parser.DCDB = p.DCDB
+				parser.GoroutineName = goroutineName
+				parser.BinaryData = data
+				err = parser.ParseDataFull()
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+			}
+			// т.к. в предыдущем запросе к block_chain могло не быть данных, т.к. $block_id больше чем наш самый большой id в block_chain
+			// то значит info_block мог не обновится и остаться от занесения новых блоков, что приведет к пропуску блока в block_chain
+			lastMyBlock, err := p.OneRow("SELECT * FROM block_chain ORDER BY id DESC").String()
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			binary := []byte(lastMyBlock["data"])
+			utils.BytesShift(&binary, 1)  // уберем 1-й байт - тип (блок/тр-я)
+			lastMyBlockData := utils.ParseBlockHeader(&binary)
+			err = p.ExecSql(`
+					UPDATE info_block
+					SET   hash = [hex],
+							head_hash = [hex],
+							block_id = ?,
+							time = ?,
+							level = ?,
+							sent = 0
+					`, lastMyBlock["hash"], lastMyBlock["head_hash"], lastMyBlockData.BlockId, lastMyBlockData.Time, lastMyBlockData.Level)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			err = p.ExecSql(`
+					UPDATE config
+					SET my_block_id = ?
+					WHERE my_block_id < ?
+					`, lastMyBlockData.BlockId, lastMyBlockData.BlockId)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			ClearTmp(blocks)
+			return utils.ErrInfo(err)  // переходим к следующему блоку в queue_blocks
+		}
+	}
+	log.Println("remove the blocks and enter new block_chain")
+
+	// если всё занеслось без ошибок, то удаляем блоки из block_chain и заносим новые
+	affect, err := p.ExecSqlGetAffect("DELETE FROM block_chain WHERE id > ?", blockId)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	log.Println("affect", affect)
+	log.Println("prevblock", prevBlock)
+	log.Println("blocks", blocks)
+
+	// для поиска бага
+	maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC").Int64()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	log.Println("maxBlockId", maxBlockId)
+
+	// проходимся по новым блокам
+	for blockId, tmpFileName := range blocks {
+
+		block, err := ioutil.ReadFile(tmpFileName)
+		blockHex := utils.BinToHex(block)
+
+		// пишем в цепочку блоков
+		err = p.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id= ?, time= ?, level= ?, sent = 0", prevBlock[blockId].Hash, prevBlock[blockId].HeadHash, prevBlock[blockId].BlockId, prevBlock[blockId].Time, prevBlock[blockId].Level)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+
+		// т.к. эти данные создали мы сами, то пишем их сразу в таблицу проверенных данных, которые будут отправлены другим нодам
+		exists, err := p.Single("SELECT id FROM block_chain WHERE id = ?", blockId).Int64()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		if exists == 0 {
+			affect, err := p.ExecSqlGetAffect("INSERT INTO  block_chain (id, hash, head_hash, data) VALUES (?, [hex], [hex], [hex])", blockId, prevBlock[blockId].Hash, prevBlock[blockId].HeadHash, blockHex)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			log.Println("affect", affect)
+		}
+		os.Remove(tmpFileName)
+		// для поиска бага
+		maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC").Int64()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		log.Println("maxBlockId", maxBlockId)
+	}
+
+	log.Println("HAPPY END")
+
+	return nil
+}
+
+func (p *Parser) GetBlockInfo() *utils.BlockData {
+	return &utils.BlockData{Hash: p.BlockData.Hash, HeadHash: p.BlockData.HeadHash, Time: p.BlockData.Time, Level: p.BlockData.Level, BlockId: p.BlockData.BlockId}
+}
+
+func (p *Parser) RollbackTransactionsTestblock(truncate bool) error {
+	log.Println("RollbackTransactionsTestblock")
+	// прежде чем удалять, нужно откатить
+	// получим наши транзакции в 1 бинарнике, просто для удобства
+	var blockBody []byte
+	rows, err := p.Query("SELECT data, hash FROM transactions_testblock ORDER BY id ASC")
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var data, hash []byte
+		err = rows.Scan(&data, &hash)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		blockBody = append(blockBody, utils.EncodeLengthPlusData(data)...)
+		if truncate {
+			// чтобы тр-ия не потерлась, её нужно заново записать
+			dataHex := utils.BinToHex(data)
+			hashHex := utils.BinToHex(hash)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", hashHex)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+			err = p.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", hashHex, dataHex)
+			if err != nil {
+				return utils.ErrInfo(err)
+			}
+		}
+	}
+
+	// нужно откатить наши транзакции
+	if len(blockBody) > 0 {
+		parser := new(Parser)
+		parser.DCDB = p.DCDB
+		parser.BinaryData = blockBody
+		err = parser.ParseDataRollbackFront(true)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+
+	if truncate {
+		err = p.ExecSql("TRUNCATE TABLE transactions_testblock")
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+	return nil
 }
 
 func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interface{}) error {
@@ -548,7 +1006,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.rollbackTransactionsTestblock(true)
+	err = p.RollbackTransactionsTestblock(true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

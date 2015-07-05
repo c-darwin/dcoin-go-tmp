@@ -22,6 +22,7 @@ import (
    // "github.com/alyu/configparser"
 	//"io/ioutil"
     //"github.com/astaxie/beego/config"
+    "dcparser"
 )
 
 
@@ -225,8 +226,9 @@ func Testblock_generator(configIni map[string]string) {
             time.Sleep(1000 * time.Millisecond)
             continue
         }
-        // отакатим transactions_testblock
-        utils.RollbackTransactionsTestBlock(true)
+        // откатим transactions_testblock
+		p := new(dcparser.Parser)
+        p.RollbackTransactionsTestblock(true)
 
        Time := time.Now().Unix()
 
