@@ -29,7 +29,6 @@ type StatisticVotingPage struct {
 func (c *Controller) StatisticVoting() (string, error) {
 
 	var err error
-	log.Println("StatisticVoting")
 
 	js := ""
 	var divs []string

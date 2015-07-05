@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"fmt"
 )
 
@@ -22,7 +21,6 @@ type DelCfFundingPage struct {
 func (c *Controller) DelCfFunding() (string, error) {
 
 	var err error
-	log.Println("DelCfFunding")
 
 	txType := "DelCfFunding";
 	txTypeId := utils.TypeInt(txType)

@@ -3,7 +3,6 @@ import (
 	"utils"
 	"time"
 	"log"
-	//"strings"
 )
 
 type changeCommissionPage struct {
@@ -25,9 +24,7 @@ type changeCommissionPage struct {
 
 func (c *Controller) ChangeCommission() (string, error) {
 
-	log.Println("changeCommission")
-
-	txType := "change_commission";
+	txType := "ChangeCommission";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

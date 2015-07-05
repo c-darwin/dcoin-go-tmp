@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 )
 
 type newCreditPage struct {
@@ -21,9 +20,7 @@ type newCreditPage struct {
 
 func (c *Controller) NewCredit() (string, error) {
 
-	log.Println("newCredit")
-
-	txType := "new_credit";
+	txType := "NewCredit";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"errors"
 )
 
@@ -18,8 +17,6 @@ type poolAdminPage struct {
 }
 
 func (c *Controller) PoolAdminControl() (string, error) {
-
-	log.Println("PoolAdminControl")
 
 	if !c.PoolAdmin {
 		return "", utils.ErrInfo(errors.New("access denied"))

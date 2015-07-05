@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 	"consts"
 )
@@ -25,9 +24,8 @@ type changeGeolocationPage struct {
 func (c *Controller) ChangeGeolocation() (string, error) {
 
 	var err error
-	log.Println("changeGeolocation")
 
-	txType := "changeGeolocation";
+	txType := "ChangeGeolocation";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

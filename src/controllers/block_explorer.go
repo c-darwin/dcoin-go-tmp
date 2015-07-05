@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"fmt"
 	"dcparser"
 )
@@ -21,7 +20,6 @@ type BlockExplorerPage struct {
 func (c *Controller) BlockExplorer() (string, error) {
 
 	var err error
-	log.Println("BlockExplorer")
 
 	blockId := int64(utils.StrToFloat64(c.Parameters["blockId"]))
 	start := int64(utils.StrToFloat64(c.Parameters["start"]))

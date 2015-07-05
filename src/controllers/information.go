@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type InformationPage struct {
@@ -12,7 +11,6 @@ type InformationPage struct {
 func (c *Controller) Information() (string, error) {
 
 	var err error
-	log.Println("Information")
 
 	alertMessages_, err := c.GetAll(`SELECT * FROM alert_messages ORDER BY id DESC`, -1)
 	var alertMessages []map[string]string

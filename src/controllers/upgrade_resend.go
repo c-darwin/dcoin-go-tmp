@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"fmt"
 )
 
@@ -20,9 +19,7 @@ type UpgradeResendPage struct {
 
 func (c *Controller) UpgradeResend() (string, error) {
 
-	log.Println("UpgradeResend")
-
-	txType := "newMinerUpdate";
+	txType := "NewMinerUpdate";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

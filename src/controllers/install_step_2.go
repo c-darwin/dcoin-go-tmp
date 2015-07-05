@@ -1,17 +1,9 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
-	//"utils"
-	//"runtime"
-	//"consts"
-	//"schema"
 	"consts"
 	"github.com/astaxie/beego/config"
 	"schema"
@@ -24,12 +16,9 @@ type installStep2Struct struct {
 }
 
 // Шаг 1 - выбор либо стандартных настроек (sqlite и блокчейн с сервера) либо расширенных - pg/mysql и загрузка с нодов
-func (c *Controller) Install_step_2() (string, error) {
-
-	fmt.Println("Install_step_2")
+func (c *Controller) InstallStep2() (string, error) {
 
 	c.r.ParseForm()
-	fmt.Println(c.r.Form)
 	installType := c.r.FormValue("type")
 	url := c.r.FormValue("url")
 	setupPassword := c.r.FormValue("setup_password")

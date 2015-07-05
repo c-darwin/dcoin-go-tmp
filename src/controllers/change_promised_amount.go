@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"fmt"
 )
 
@@ -24,15 +23,13 @@ type changePromisedAmountPage struct {
 
 func (c *Controller) ChangePromisedAmount() (string, error) {
 
-	log.Println("ChangePromisedAmount")
-
-	txType := "change_promised_amount";
+	txType := "ChangePromisedAmount";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 	promisedAmountId := c.Parameters["promised_amount_id"]
 	amount := c.Parameters["amount"]
 
-	TemplateStr, err := makeTemplate("change_promised_amount", "changePromisedAmount", &changePromisedAmountPage{
+	TemplateStr, err := makeTemplate("change_promised_amount", "changePromisedAmount", &changePromisedAmountPage {
 		Alert: c.Alert,
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,

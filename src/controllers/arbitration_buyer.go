@@ -1,20 +1,8 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	//"html/template"
-	//"bufio"
-	//"bytes"
-	//"static"
 	"utils"
-	//"strings"
 	"time"
-	//"math"
 	"log"
-	//"consts"
-	//"encoding/json"
-//	"fmt"
 )
 
 type arbitrationBuyerPage struct {

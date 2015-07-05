@@ -1,8 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
-//	"fmt"
 )
 
 type CashRequestInPage struct {
@@ -23,9 +21,7 @@ type CashRequestInPage struct {
 
 func (c *Controller) CashRequestIn() (string, error) {
 
-	log.Println("CashRequestIn")
-
-	txType := "cash_request_in";
+	txType := "CashRequestIn";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

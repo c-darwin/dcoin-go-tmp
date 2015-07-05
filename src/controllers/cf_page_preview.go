@@ -53,7 +53,6 @@ type CfPagePreviewPage struct {
 func (c *Controller) CfPagePreview() (string, error) {
 
 	var err error
-	log.Println("CfPagePreview")
 
 	txType := "CfComment";
 	txTypeId := utils.TypeInt(txType)

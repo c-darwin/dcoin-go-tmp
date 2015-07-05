@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 	"os"
 	"io/ioutil"
@@ -27,9 +26,7 @@ type newUserPage struct {
 
 func (c *Controller) NewUser() (string, error) {
 
-	log.Println("NewUser")
-
-	txType := "new_user";
+	txType := "NewUser";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

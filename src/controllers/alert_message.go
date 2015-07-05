@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-//	"log"
 	"errors"
 	"regexp"
 	"encoding/json"
@@ -12,7 +11,7 @@ import (
 func (c *Controller) AlertMessage() (string, error) {
 
 	if c.SessRestricted!=0 {
-		return "", errors.New("Permission denied")
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

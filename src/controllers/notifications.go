@@ -19,7 +19,6 @@ type notificationsPage struct {
 func (c *Controller) Notifications() (string, error) {
 
 	var err error
-	log.Println("Notifications")
 	data, err := c.OneRow(`
 			SELECT email,
 						 sms_http_get_request,

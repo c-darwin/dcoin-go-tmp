@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type PointsPage struct {
@@ -18,8 +17,6 @@ type PointsPage struct {
 }
 
 func (c *Controller) Points() (string, error) {
-
-	log.Println("Points")
 
 	// список отравленных нами запросов
 	pointsStatus, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"points_status WHERE user_id = ? ORDER BY time_start DESC", -1, c.SessUserId)

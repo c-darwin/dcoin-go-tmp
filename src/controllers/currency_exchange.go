@@ -1,19 +1,12 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
 	"strings"
 	"time"
-	//"math"
 	"log"
-	//"consts"
 	"encoding/json"
 )
 
@@ -43,9 +36,7 @@ type currencyExchangePage struct {
 
 func (c *Controller) CurrencyExchange() (string, error) {
 
-	fmt.Println("CurrencyExchange")
-
-	txType := "new_forex_order";
+	txType := "NewForexOrder";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

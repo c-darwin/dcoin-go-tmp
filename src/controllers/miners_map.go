@@ -1,27 +1,15 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	//"fmt"
-	//"html/template"
-	//"bufio"
-	//"bytes"
-	//"time"
-	//"regexp"
-//    "encoding/json"
 	"utils"
-	//"time"
 	"log"
-//	"math"
 	"fmt"
 	"errors"
 )
 
 func (c *Controller) MinersMap() (string, error) {
 
-	if c.SessRestricted!=0 {
-		return "", errors.New("Permission denied")
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

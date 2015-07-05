@@ -1,20 +1,11 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
-	//"strings"
 	"time"
-	//"math"
 	"log"
-	//"consts"
-	//"encoding/json"
-//	"fmt"
 )
 
 type arbitrationPage struct {
@@ -47,9 +38,7 @@ type arbitrationType struct {
 
 func (c *Controller) Arbitration() (string, error) {
 
-	log.Println("change_arbitrator_list")
-
-	txType := "change_arbitrator_list";
+	txType := "ChangeArbitratorList";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

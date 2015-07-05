@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type InterfacePage struct {
@@ -16,7 +15,6 @@ type InterfacePage struct {
 func (c *Controller) Interface() (string, error) {
 
 	var err error
-	log.Println("Interface")
 
 	name := ""
 	if len(c.Parameters["show_map"]) > 0 {

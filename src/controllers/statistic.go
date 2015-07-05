@@ -1,10 +1,7 @@
 package controllers
 import (
 	"utils"
-	"log"
-//	"fmt"
 	"math"
-//	"html/template"
 	"time"
 )
 
@@ -29,7 +26,6 @@ type StatisticPage struct {
 func (c *Controller) Statistic() (string, error) {
 
 	var err error
-	log.Println("Statistic")
 
 	sumWallets := make(map[int64]float64)
 	// получаем кол-во DC на кошельках

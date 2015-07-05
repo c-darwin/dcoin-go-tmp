@@ -1,17 +1,12 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
-//	"regexp"
 	"errors"
 	"encoding/base64"
 )
 
-
 func (c *Controller) DcoinKey() (string, error) {
-
-	log.Println("DcoinKey")
 
 	c.r.ParseForm()
 

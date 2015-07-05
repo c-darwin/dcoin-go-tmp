@@ -1,28 +1,17 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
-	//"utils"
-	//"runtime"
-	//"consts"
-	//"schema"
 	"utils"
 	"log"
 )
 
-type signLoginStruct struct {
-
-}
 
 /*
  * Генерим код, который юзер должен подписать своим ключем, доказав тем самым, что именно он хочет войти в аккаунт
  * */
 
-func (c *Controller) Sign_login() (string, error) {
+func (c *Controller) SignLogin() (string, error) {
 
-	log.Println("sign_login")
 	var hash []byte
 	loginCode := utils.RandSeq(20)
 	fmt.Println(c.r.RemoteAddr)

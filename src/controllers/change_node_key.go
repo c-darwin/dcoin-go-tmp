@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type changeNodeKeyPage struct {
@@ -19,12 +18,10 @@ type changeNodeKeyPage struct {
 func (c *Controller) ChangeNodeKey() (string, error) {
 
 	var err error
-	log.Println("ChangeNodeKey")
 
 	txType := "ChangeNodeKey";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
-
 
 	TemplateStr, err := makeTemplate("change_node_key", "changeNodeKey", &changeNodeKeyPage{
 		Alert: c.Alert,

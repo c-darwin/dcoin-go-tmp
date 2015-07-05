@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 	"fmt"
 )
@@ -33,9 +32,7 @@ type VotingPage struct {
 
 func (c *Controller) Voting() (string, error) {
 
-	log.Println("Voting")
-
-	txType := "votes_complex";
+	txType := "VotesComplex";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

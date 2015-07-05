@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 	"consts"
 	"encoding/json"
@@ -35,8 +34,6 @@ type AssignmentsPage struct {
 }
 
 func (c *Controller) Assignments() (string, error) {
-
-	log.Println("Assignments")
 
 	var randArr	 []int64
 	// Нельзя завершить голосование юзеров раньше чем через сутки, даже если набрано нужное кол-во голосов.

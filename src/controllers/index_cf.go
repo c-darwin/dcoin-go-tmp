@@ -20,8 +20,6 @@ type indexCf struct {
 
 func IndexCf(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("Index")
-	fmt.Println(r.URL.RawQuery)
 	nav := ""
 	if len(r.URL.RawQuery) > 0 {
 		re, _ := regexp.Compile(`category\-([0-9]+)`)

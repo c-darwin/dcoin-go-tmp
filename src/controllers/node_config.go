@@ -25,10 +25,8 @@ type nodeConfigPage struct {
 
 func (c *Controller) NodeConfigControl() (string, error) {
 
-	log.Println("nodeConfigControl")
-
-	if !c.NodeAdmin {
-		return "", utils.ErrInfo(errors.New("access denied"))
+	if !c.NodeAdmin || c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	log.Println("c.Parameters", c.Parameters)

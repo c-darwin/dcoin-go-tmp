@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 )
 
 type repaymentCreditPage struct {
@@ -21,9 +20,7 @@ type repaymentCreditPage struct {
 
 func (c *Controller) RepaymentCredit() (string, error) {
 
-	log.Println("repaymentCredit")
-
-	txType := "repayment_credit";
+	txType := "RepaymentCredit";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"errors"
 )
 
@@ -21,14 +20,12 @@ type bugReportingPage struct {
 
 func (c *Controller) BugReporting() (string, error) {
 
-	log.Println("bugReporting")
-
-	txType := "message_to_admin";
+	txType := "MessageToAdmin";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
-	if c.SessRestricted!=0 {
-		return "", utils.ErrInfo(errors.New("access denied"))
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	// если юзер тыкнул по какой-то ветке сообщений, то тут будет parent_id, т.е. id этой ветки

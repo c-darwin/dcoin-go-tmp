@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"encoding/json"
 )
 
@@ -25,9 +24,7 @@ type changeArbitratorConditionsPage struct {
 
 func (c *Controller) ChangeArbitratorConditions() (string, error) {
 
-	log.Println("change_arbitrator_conditions")
-
-	txType := "change_arbitrator_conditions";
+	txType := "ChangeArbitratorConditions";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

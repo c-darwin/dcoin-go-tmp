@@ -2,9 +2,14 @@ package controllers
 import (
 	"utils"
 	"encoding/json"
+	"errors"
 )
 
 func (c *Controller) MyNoticeData() (string, error) {
+
+	if !c.dbInit {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
+	}
 
 	c.r.ParseForm()
 

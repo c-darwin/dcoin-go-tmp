@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"fmt"
 )
 
@@ -23,9 +22,7 @@ type delPromisedAmountPage struct {
 
 func (c *Controller) DelPromisedAmount() (string, error) {
 
-	log.Println("delPromisedAmount")
-
-	txType := "del_promised_amount";
+	txType := "DelPromisedAmount";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 	delId := c.Parameters["del_id"]

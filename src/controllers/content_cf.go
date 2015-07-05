@@ -1,13 +1,10 @@
 package controllers
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"log"
 	"utils"
-//	"static"
 	"html/template"
-//	"bytes"
 	"encoding/json"
 )
 
@@ -19,9 +16,6 @@ type contentCf struct {
 }
 
 func ContentCf(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("Index")
-	fmt.Println(r.URL.RawQuery)
 
 	c := new(Controller)
 	c.r = r

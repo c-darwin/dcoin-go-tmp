@@ -1,16 +1,9 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
-	//"net/http"
-	//"strings"
 	"utils"
-	//"text/tabwriter"
 	"static"
 )
 
@@ -23,20 +16,15 @@ type loginStruct struct {
 }
 
 func (c *Controller) Login() (string, error) {
-	var pool_tech_works int
-	fmt.Println("login")
 
+	var pool_tech_works int
 
 	funcMap := template.FuncMap{
 		"noescape": func(s string) template.HTML {
 			return template.HTML(s)
 		},
 	}
-/*
-	t, err := template.New("Dcoin").Funcs(funcMap).ParseFiles("templates/login.html", "templates/modal.html")
-	if err!=nil{
-		fmt.Println(err)
-	}*/
+
 	data, err := static.Asset("static/templates/login.html")
 	if err != nil {
 		return "", err

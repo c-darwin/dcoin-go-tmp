@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type PoolTechWorksPage struct {
@@ -12,8 +11,6 @@ type PoolTechWorksPage struct {
 }
 
 func (c *Controller) PoolTechWorks() (string, error) {
-
-	log.Println("PoolTechWorks")
 
 	info, err := c.GetInfoBlock()
 

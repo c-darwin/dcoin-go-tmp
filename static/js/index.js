@@ -86,7 +86,7 @@ function login_ok (result) {
         if (typeof(get_key_and_sign)==='undefined' || get_key_and_sign=='null') {
 
             var tpl_name = $('#tpl_name').val();
-            if (!tpl_name || tpl_name=='install_step_0' || tpl_name=='install_step_6')
+            if (!tpl_name || tpl_name=='installStep0' || tpl_name=='installStep6')
                 tpl_name = 'home';
 
             $( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
@@ -469,7 +469,7 @@ function doSign_(type, mcrypt_iv) {
     else {
         if (key) {
             // авторизация с ключем и паролем
-            var forsignature = $.getValues("ajax?controllerName=sign_login");
+            var forsignature = $.getValues("ajax?controllerName=signLogin");
             SIGN_LOGIN = true;
         }
         else {

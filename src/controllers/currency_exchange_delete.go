@@ -1,18 +1,11 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
-	//"strings"
 	"time"
-	//"math"
 	"log"
-	//"consts"
 	"encoding/json"
 	"fmt"
 )
@@ -31,8 +24,6 @@ type currencyExchangeDeletePage struct {
 }
 
 func (c *Controller) CurrencyExchangeDelete() (string, error) {
-
-	log.Println("CurrencyExchangeDelete")
 
 	txType := "DelForexOrder";
 	txTypeId := utils.TypeInt(txType)

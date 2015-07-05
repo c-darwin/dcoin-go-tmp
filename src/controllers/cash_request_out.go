@@ -29,9 +29,7 @@ type cashRequestOutPage struct {
 
 func (c *Controller) CashRequestOut() (string, error) {
 
-	log.Println("cashrequestOut")
-
-	txType := "cash_request_out";
+	txType := "CashRequestOut";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

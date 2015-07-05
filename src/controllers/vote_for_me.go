@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type voteForMePage struct {
@@ -15,8 +14,6 @@ type voteForMePage struct {
 }
 
 func (c *Controller) VoteForMe() (string, error) {
-
-	log.Println("VoteForMe")
 
 	// список отравленных нами запросов
 	myComments, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_comments WHERE comment != 'null' AND type NOT IN ('arbitrator','seller')", -1, c.SessUserId)

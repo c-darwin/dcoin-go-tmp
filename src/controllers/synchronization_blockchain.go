@@ -1,24 +1,14 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
-	//"html/template"
-	//"bufio"
-	//"bytes"
 	"time"
 	"utils"
     "encoding/json"
 	"log"
 )
 
-type synchronizationBlockchainStruct struct {
 
-}
-
-func (c *Controller) Synchronization_blockchain() (string, error) {
-	fmt.Println("Synchronization_blockchain")
+func (c *Controller) SynchronizationBlockchain() (string, error) {
 
 	blockData, err:=c.DCDB.GetInfoBlock()
 	if err != nil {

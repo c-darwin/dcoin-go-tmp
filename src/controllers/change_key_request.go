@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type changeKeyRequestPage struct {
@@ -17,8 +16,6 @@ type changeKeyRequestPage struct {
 }
 
 func (c *Controller) ChangeKeyRequest() (string, error) {
-
-	log.Println("changeKeyRequest")
 
 	txType := "ChangeKeyActive";
 	txTypeId := utils.TypeInt(txType)

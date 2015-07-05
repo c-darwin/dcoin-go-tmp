@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"fmt"
 )
 
@@ -20,9 +19,7 @@ type forRepaidFixPage struct {
 
 func (c *Controller) ForRepaidFix() (string, error) {
 
-	log.Println("ForRepaidFix")
-
-	txType := "for_repaid_fix";
+	txType := "ForRepaidFix";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type moneyBackPage struct {
@@ -22,8 +21,6 @@ type moneyBackPage struct {
 }
 
 func (c *Controller) MoneyBack() (string, error) {
-
-	log.Println("moneyBack")
 
 	txType := "MoneyBackTime";
 	txTypeId := utils.TypeInt(txType)

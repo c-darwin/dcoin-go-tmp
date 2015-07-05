@@ -1,8 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
-//	"sort"
 )
 
 type MyCfProjectsPage struct {
@@ -25,7 +23,6 @@ type MyCfProjectsPage struct {
 func (c *Controller) MyCfProjects() (string, error) {
 
 	var err error
-	log.Println("MyCfProjects")
 
 	txType := "NewCfProject";
 	txTypeId := utils.TypeInt(txType)

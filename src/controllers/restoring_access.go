@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"time"
 )
 
@@ -23,7 +22,6 @@ type restoringAccessPage struct {
 func (c *Controller) RestoringAccess() (string, error) {
 
 	var err error
-	log.Println("restoringAccess")
 
 	txType := "ChangeKeyActive";
 	txTypeId := utils.TypeInt(txType)

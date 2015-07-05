@@ -2,16 +2,11 @@ package controllers
 import (
 	"utils"
 	"log"
-	"errors"
 	"encoding/base64"
 	"encoding/json"
 )
 
 func (c *Controller) GenerateNewPrimaryKey() (string, error) {
-
-	if c.SessRestricted!=0 {
-		return "", errors.New("Permission denied")
-	}
 
 	c.r.ParseForm()
 	password := c.r.FormValue("password")

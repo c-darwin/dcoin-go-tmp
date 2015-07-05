@@ -1,20 +1,10 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
-	//"strings"
 	"time"
-	//"math"
-	"log"
-	//"consts"
-	//"encoding/json"
-//	"fmt"
 )
 
 type creditsPage struct {
@@ -45,9 +35,7 @@ type credit struct {
 
 func (c *Controller) Credits() (string, error) {
 
-	log.Println("credits")
-
-	txType := "changeCreditPart";
+	txType := "ChangeCreditPart";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

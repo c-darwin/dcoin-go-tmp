@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"consts"
 )
 
@@ -15,7 +14,6 @@ type ChangeCountryRacePage struct {
 
 func (c *Controller) ChangeCountryRace() (string, error) {
 
-	log.Println("ChangeCountryRace")
 	data, err := c.OneRow("SELECT race, country FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)

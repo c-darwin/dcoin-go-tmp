@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type cfStartPage struct {
@@ -13,7 +12,6 @@ type cfStartPage struct {
 func (c *Controller) CfStart() (string, error) {
 
 	var err error
-	log.Println("cfStart")
 
 	cfUrl, err := c.GetCfUrl()
 

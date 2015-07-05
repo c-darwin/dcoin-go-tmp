@@ -331,7 +331,7 @@
 <script>
 	$(document).ready(function() 	{
 		var refreshId = setInterval( function() {
-			$.post( 'ajax?controllerName=synchronization_blockchain', {}, function (data) {
+			$.post( 'ajax?controllerName=synchronizationBlockchain', {}, function (data) {
 					console.log(data.block_time);
 					console.log(data.block_id);
 					if (data.block_id>1) {

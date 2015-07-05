@@ -8,7 +8,7 @@ import (
 func (c *Controller) SaveNotifications() (string, error) {
 
 	if c.SessRestricted != 0 {
-		return "", errors.New("Permission denied")
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

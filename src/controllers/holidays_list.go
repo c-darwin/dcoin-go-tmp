@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 )
 
@@ -20,7 +19,6 @@ type holidaysListPage struct {
 func (c *Controller) HolidaysList() (string, error) {
 
 	var err error
-	log.Println("HolidaysList")
 
 	var myHolidaysPending []map[string]string
 	if c.SessRestricted == 0 {

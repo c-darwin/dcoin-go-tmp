@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 )
 
 type ChangeAvatarPage struct {
@@ -21,8 +20,6 @@ type ChangeAvatarPage struct {
 }
 
 func (c *Controller) ChangeAvatar() (string, error) {
-
-	log.Println("ChangeAvatar")
 
 	txType := "UserAvatar";
 	txTypeId := utils.TypeInt(txType)

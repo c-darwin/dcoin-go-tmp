@@ -20,13 +20,10 @@ type changeCreditorPage struct {
 
 func (c *Controller) ChangeCreditor() (string, error) {
 
-	log.Println("ChangeCreditor")
-
-	txType := "change_creditor";
+	txType := "ChangeCreditor";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	log.Println("c.Parameters", c.Parameters)
 	creditId := utils.Round(utils.StrToFloat64(c.Parameters["credit_id"]), 0)
 	log.Println("creditId", creditId)
 

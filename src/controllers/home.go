@@ -1,18 +1,12 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
 	"strings"
 	"time"
 	"math"
-//	"log"
 )
 
 type page struct {
@@ -54,8 +48,6 @@ type CurrencyPct struct {
 }
 
 func (c *Controller) Home() (string, error) {
-	fmt.Println("Home1")
-
 
 	var publicKey []byte
 	var poolAdmin bool

@@ -6,21 +6,15 @@ import (
 	 "database/sql"
 	"strings"
 	"regexp"
-	//"errors"
 	"log"
 	"time"
 	"strconv"
 	"encoding/json"
-	//"github.com/astaxie/beego/config"
 	"consts"
 	"sync"
 	"math"
 	"net/smtp"
 	"github.com/jordan-wright/email"
-//	"sync/atomic"
-//	"os"
-	//"dcparser"
-
 )
 
 type DCDB struct {
@@ -1825,6 +1819,10 @@ func (db *DCDB) GetCountCurrencies() (int64, error) {
 func (db *DCDB) UpdMainLock() error {
 	err := db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 	return err
+}
+
+func (db *DCDB) GetBlocks (blockId int64, host string, userId, rollbackBlocks int64, getBlockScriptName, addNodeHost string) error {
+
 }
 
 func (db *DCDB) DbLock(name string) error {

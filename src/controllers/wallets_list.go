@@ -1,19 +1,11 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
-//	"strings"
 	"time"
-	//"math"
 	"log"
-	//"consts"
 	"encoding/json"
 )
 
@@ -46,9 +38,8 @@ type walletsListPage struct {
 }
 
 func (c *Controller) WalletsList() (string, error) {
-	var err error
 
-	fmt.Println("WalletsList")
+	var err error
 
 	// валюты
 	currencyList:=c.CurrencyListCf

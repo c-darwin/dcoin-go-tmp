@@ -1,16 +1,16 @@
 package controllers
 import (
-//	"utils"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"fmt"
 	"encoding/json"
+	"utils"
 )
 func (c *Controller) SendSms() (string, error) {
 
-	if c.SessRestricted != 0 || !c.NodeAdmin {
-		return "", errors.New("Permission denied")
+	if !c.NodeAdmin || c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

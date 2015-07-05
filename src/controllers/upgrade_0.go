@@ -1,8 +1,6 @@
 package controllers
 import (
 	"utils"
-//	"time"
-	"log"
 	"consts"
 	"strings"
 )
@@ -22,8 +20,6 @@ type upgrade0Page struct {
 }
 
 func (c *Controller) Upgrade0() (string, error) {
-
-	log.Println("Upgrade0")
 
 	data, err := c.OneRow("SELECT race, country FROM "+c.MyPrefix+"my_table").Int()
 	if err != nil {

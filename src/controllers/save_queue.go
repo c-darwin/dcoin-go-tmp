@@ -3,7 +3,6 @@ import (
     "encoding/json"
 	"utils"
 	"log"
-//	"math"
 	"fmt"
 	"os"
 	"regexp"
@@ -20,7 +19,6 @@ import (
 func (c *Controller) SaveQueue() (string, error) {
 
 	var err error
-	log.Println("SaveQueue")
 	c.r.ParseForm()
 
 	userId := []byte(c.r.FormValue("user_id"))

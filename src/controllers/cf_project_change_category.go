@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"fmt"
 )
 
@@ -24,7 +23,6 @@ type cfProjectChangeCategoryPage struct {
 func (c *Controller) CfProjectChangeCategory() (string, error) {
 
 	var err error
-	log.Println("cfProjectChangeCategory")
 
 	txType := "CfProjectData";
 	txTypeId := utils.TypeInt(txType)

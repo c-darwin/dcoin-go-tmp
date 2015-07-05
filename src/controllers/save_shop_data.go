@@ -1,9 +1,15 @@
 package controllers
 import (
 	"utils"
+	"errors"
 )
 
 func (c *Controller) SaveShopData() (string, error) {
+
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
+	}
+
 	c.r.ParseForm()
 	shop_secret_key := c.r.FormValue("shop_secret_key")
 	shop_callback_url := c.r.FormValue("shop_callback_url")

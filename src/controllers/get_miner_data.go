@@ -1,21 +1,10 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	//"fmt"
-	//"html/template"
-	//"bufio"
-	//"bytes"
-	//"time"
-	//"regexp"
     "encoding/json"
 	"utils"
-	//"time"
 	"log"
 	"math"
 )
-
 
 
 func (c *Controller) GetMinerData() (string, error) {

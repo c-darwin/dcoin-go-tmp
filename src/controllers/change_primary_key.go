@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"strings"
 )
 
@@ -28,7 +27,6 @@ type changePrimaryKeyPage struct {
 func (c *Controller) ChangePrimaryKey() (string, error) {
 
 	var err error
-	log.Println("ChangePrimaryKey")
 
 	txType := "ChangePrimaryKey";
 	txTypeId := utils.TypeInt(txType)

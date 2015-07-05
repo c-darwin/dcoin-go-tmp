@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"strings"
 )
 
@@ -30,9 +29,7 @@ type newPromisedAmountPage struct {
 
 func (c *Controller) NewPromisedAmount() (string, error) {
 
-	log.Println("NewPromisedAmount")
-
-	txType := "new_promised_amount";
+	txType := "NewPromisedAmount";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -108,4 +105,3 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 	}
 	return TemplateStr, nil
 }
-

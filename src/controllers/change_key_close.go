@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type changeKeyClosePage struct {
@@ -17,8 +16,6 @@ type changeKeyClosePage struct {
 }
 
 func (c *Controller) ChangeKeyClose() (string, error) {
-
-	log.Println("changeKeyClose")
 
 	txType := "ChangeKeyClose";
 	txTypeId := utils.TypeInt(txType)

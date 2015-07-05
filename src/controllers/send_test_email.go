@@ -7,8 +7,8 @@ import (
 )
 func (c *Controller) SendTestEmail() (string, error) {
 
-	if c.SessRestricted!=0 {
-		return "", errors.New("Permission denied")
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

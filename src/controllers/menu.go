@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"strings"
 	"log"
-//	"fmt"
 )
 
 type menuPage struct {
@@ -29,11 +28,7 @@ type menuPage struct {
 
 func (c *Controller) Menu() (string, error) {
 
-	log.Println("Menu")
-
 	if !c.dbInit || c.SessUserId==0 {
-		log.Println("c.dbInit", c.dbInit)
-		log.Println("c.SessUserId", c.SessUserId)
 		return "", nil
 	}
 

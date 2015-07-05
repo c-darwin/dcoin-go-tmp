@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"fmt"
 )
 
@@ -19,8 +18,6 @@ type PromisedAmountActualizationPage struct {
 }
 
 func (c *Controller) PromisedAmountActualization() (string, error) {
-
-	log.Println("ActualizationPromisedAmounts")
 
 	txType := "ActualizationPromisedAmounts";
 	txTypeId := utils.TypeInt(txType)

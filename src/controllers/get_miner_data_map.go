@@ -3,7 +3,6 @@ import (
 	"utils"
 )
 
-
 func (c *Controller) GetMinerDataMap() (string, error) {
 
 	rows, err := c.Query(c.FormatQuery("SELECT user_id, latitude, longitude FROM miners_data WHERE status  =  'miner' AND user_id>7 AND user_id != 106"))

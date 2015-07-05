@@ -2,14 +2,11 @@ package controllers
 import (
 	"utils"
 	"errors"
-	//"net/smtp"
-	"log"
 )
 func (c *Controller) SaveEmailSms() (string, error) {
 
-	log.Println("c.NodeAdmin", c.NodeAdmin)
-	if c.SessRestricted!=0 || !c.NodeAdmin {
-		return "", errors.New("Permission denied")
+	if !c.NodeAdmin || c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	c.r.ParseForm()

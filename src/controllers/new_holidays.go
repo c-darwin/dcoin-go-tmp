@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type newHolidaysPage struct {
@@ -19,9 +18,8 @@ type newHolidaysPage struct {
 func (c *Controller) NewHolidays() (string, error) {
 
 	var err error
-	log.Println("newHolidays")
 
-	txType := "new_holidays";
+	txType := "NewHolidays";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

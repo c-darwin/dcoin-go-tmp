@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 	"strings"
 )
 
@@ -28,9 +27,7 @@ type promisedAmountListPage struct {
 
 func (c *Controller) PromisedAmountList() (string, error) {
 
-	log.Println("promisedAmountList")
-
-	txType := "promised_amount";
+	txType := "PromisedAmount";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

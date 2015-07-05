@@ -26,9 +26,7 @@ type miningPromisedAmountPage struct {
 
 func (c *Controller) MiningPromisedAmount() (string, error) {
 
-	log.Println("miningPromisedAmount")
-
-	txType := "mining";
+	txType := "Mining";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 	amount := utils.StrToMoney(c.Parameters["amount"])

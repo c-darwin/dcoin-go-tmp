@@ -1,12 +1,9 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
 	"reflect"
 	"utils"
 	"net/http"
 	"fmt"
-	//"bufio"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/session"
 	"consts"
@@ -393,12 +390,20 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	controllerName := r.FormValue("controllerName")
 	fmt.Println("controllerName=",controllerName)
-	// вызываем контроллер в зависимости от шаблона
-	html, err :=  CallController(c, controllerName)
-	if err != nil {
-		log.Print(err)
+
+	html := ""
+	nonUserId := []string{"CfCatalog", "CfPagePreview", "CfStart", "Check_sign", "CheckNode", "GetBlock", "GetMinerData", "GetMinerDataMap", "GetSellerData", "Index", "IndexCf", "InstallStep0", "InstallStep1", "InstallStep2", "Login", "SignLogin", "SynchronizationBlockchain", "UpdatingBlockchain"}
+	if !utils.InSliceString(controllerName, nonUserId) && c.SessUserId <= 0 {
+		html = "Access denied"
+	} else {
+		// вызываем контроллер в зависимости от шаблона
+		html, err = CallController(c, controllerName)
+		if err != nil {
+			log.Print(err)
+		}
 	}
 	w.Write([]byte(html))
+
 }
 
 
@@ -442,7 +447,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 func Content(w http.ResponseWriter, r *http.Request) {
 
 	var err error
-	log.Println("content")
+
 	w.Header().Set("Content-type", "text/html")
 
 	sess, _ := globalSessions.SessionStart(w, r)
@@ -461,11 +466,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.sess = sess
 	c.SessRestricted = sessRestricted
 	c.SessUserId = sessUserId
-	if sessAdmin==1 {
+	if sessAdmin == 1 {
 		c.Admin = true
 	}
 	c.ContentInc = true
-
 
 	var installProgress, configExists string
 	var lastBlockTime int64
@@ -588,7 +592,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c.Races = map[int64]string{1: c.Lang["race_1"], 2: c.Lang["race_2"], 3: c.Lang["race_3"]}
 
-	match, _ := regexp.MatchString("^install_step_[0-9_]+$", tplName)
+	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
 		tplName = tplName
@@ -598,7 +602,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if dbInit && installProgress=="complete" {
 		tplName = "login"
 	} else {
-		tplName = "install_step_0" // самый первый запуск
+		tplName = "installStep0" // самый первый запуск
 	}
 	fmt.Println("dbInit", dbInit, "installProgress", installProgress,  "configExists", configExists)
 	fmt.Println("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
@@ -651,7 +655,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		log.Println(wTime)
 		log.Println(lastBlockTime)
 	}
-	if dbInit && tplName!="install_step_0" && (time.Now().Unix()-lastBlockTime > 3600*wTime) && len(configExists)>0 {
+	if dbInit && tplName!="installStep0" && (time.Now().Unix()-lastBlockTime > 3600*wTime) && len(configExists)>0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
 			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config").String()
@@ -659,10 +663,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 				log.Print(err)
 			}
 			if sessUserId != utils.StrToInt64(poolAdminUserId) {
-				tplName = "updating_blockchain"
+				tplName = "updatingBlockchain"
 			}
 		} else {
-			tplName = "updating_blockchain"
+			tplName = "updatingBlockchain"
 		}
 	}
 
@@ -763,7 +767,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if dbInit && tplName !="updating_blockchain" {
+		if dbInit && tplName !="updatingBlockchain" {
 			html, err :=  CallController(c, "AlertMessage")
 			if err != nil {
 				log.Print(err)
@@ -810,10 +814,16 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if len(tplName) > 0 {
 		fmt.Println("tplName",tplName)
-		// вызываем контроллер в зависимости от шаблона
-		html, err :=  CallController(c, tplName)
-		if err != nil {
-			log.Print(err)
+		html := ""
+		nonUserId := []string{"CfCatalog", "CfPagePreview", "CfStart", "Check_sign", "CheckNode", "GetBlock", "GetMinerData", "GetMinerDataMap", "GetSellerData", "Index", "IndexCf", "InstallStep0", "InstallStep1", "InstallStep2", "Login", "SignLogin", "SynchronizationBlockchain", "UpdatingBlockchain"}
+		if !utils.InSliceString(tplName, nonUserId) && c.SessUserId <= 0 {
+			html = "Access denied"
+		} else {
+			// вызываем контроллер в зависимости от шаблона
+			html, err = CallController(c, tplName)
+			if err != nil {
+				log.Print(err)
+			}
 		}
 		w.Write([]byte(html))
 	} else {

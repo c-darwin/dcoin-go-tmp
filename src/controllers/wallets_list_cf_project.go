@@ -1,29 +1,14 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	//"fmt"
-	//"html/template"
-	//"bufio"
-	//"bytes"
-	//"time"
-	//"regexp"
     "encoding/json"
 	"utils"
-	//"time"
-//	"log"
-//	"math"
-	//"time"
 	"errors"
-//	"crypto/rsa"
-//	"crypto/rand"
-//	"errors"
 	"time"
 	"math"
 )
 
 func (c *Controller) WalletsListCfProject() (string, error) {
+
 	var err error
 	c.r.ParseForm()
 

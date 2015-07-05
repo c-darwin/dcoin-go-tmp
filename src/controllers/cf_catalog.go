@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"log"
-//	"sort"
 )
 
 type cfCatalogPage struct {

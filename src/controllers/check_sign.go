@@ -1,29 +1,15 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
-	//"html/template"
-	//"bufio"
-	//"bytes"
-	//"time"
-	//"regexp"
-    //"encoding/json"
 	"utils"
 	"time"
 	"log"
 )
 
-type CheckSignStruct struct {
-
-}
 
 func (c *Controller) Check_sign() (string, error) {
 
 	var checkError bool
-
-	fmt.Println("Check_sign")
 
 	c.r.ParseForm()
 	n := []byte(c.r.FormValue("n"))

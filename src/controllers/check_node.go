@@ -10,11 +10,7 @@ import (
 
 
 func (c *Controller) CheckNode() (string, error) {
-	/*c.w.Header().Set("Access-Control-Allow-Origin", "*")
-	c.w.Header().Set("Access-Control-Allow-Headers", "host_")
-	c.w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")*/
 
-	log.Println("CheckNode")
 	blockData, err := c.GetInfoBlock()
 	if err != nil {
 		return "",  err

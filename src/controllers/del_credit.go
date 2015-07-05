@@ -2,7 +2,6 @@ package controllers
 import (
 	"utils"
 	"time"
-	"log"
 )
 
 type delCreditPage struct {
@@ -20,9 +19,7 @@ type delCreditPage struct {
 
 func (c *Controller) DelCredit() (string, error) {
 
-	log.Println("DelCredit")
-
-	txType := "del_credit";
+	txType := "DelCredit";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 

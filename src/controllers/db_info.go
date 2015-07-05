@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type DbInfoPage struct {
@@ -19,7 +18,6 @@ type DbInfoPage struct {
 func (c *Controller) DbInfo() (string, error) {
 
 	var err error
-	log.Println("DbInfo")
 
 	timeNow := utils.TimeF(c.TimeFormat)
 

@@ -1,11 +1,7 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
 	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"net/http"
 	"strings"
@@ -23,9 +19,6 @@ type index struct {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("Index")
-	fmt.Println(r.URL.RawQuery)
 
 	parameters_ := make(map[string]interface {})
 	err := json.Unmarshal([]byte(r.PostFormValue("parameters")), &parameters_)

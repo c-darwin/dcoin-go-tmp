@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 	"errors"
 )
 
@@ -12,10 +11,8 @@ type rewritePrimaryKeyPage struct {
 
 func (c *Controller) RewritePrimaryKey() (string, error) {
 
-	log.Println("PoolAdminControl")
-
-	if !c.PoolAdmin {
-		return "", utils.ErrInfo(errors.New("access denied"))
+	if !c.NodeAdmin || c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	if len(c.r.FormValue("n")) > 0 {

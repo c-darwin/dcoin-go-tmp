@@ -1,11 +1,6 @@
 package controllers
 import (
-	//"database/sql"
-	//_ "github.com/lib/pq"
-	//"reflect"
-	"fmt"
 	"html/template"
-	//"bufio"
 	"bytes"
 	"static"
 	"utils"
@@ -24,8 +19,7 @@ type updatingBlockchainStruct struct {
 }
 
 
-func (c *Controller) Updating_blockchain() (string, error) {
-	fmt.Println("updating_blockchain")
+func (c *Controller) UpdatingBlockchain() (string, error) {
 
 	funcMap := template.FuncMap{
 		"noescape": func(s string) template.HTML {

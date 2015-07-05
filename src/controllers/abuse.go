@@ -1,7 +1,6 @@
 package controllers
 import (
 	"utils"
-	"log"
 )
 
 type AbusePage struct {
@@ -20,7 +19,6 @@ type AbusePage struct {
 func (c *Controller) Abuse() (string, error) {
 
 	var err error
-	log.Println("Abuse")
 
 	txType := "Abuse";
 	txTypeId := utils.TypeInt(txType)

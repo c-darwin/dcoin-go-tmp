@@ -7,8 +7,8 @@ import (
 
 func (c *Controller) DeleteVideo() (string, error) {
 
-	if c.SessUserId == 0 || c.SessRestricted != 0 {
-		return "", errors.New("Permission denied")
+	if !c.NodeAdmin || c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
 	if c.r.FormValue("type") == "mp4" {
