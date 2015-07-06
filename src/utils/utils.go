@@ -9,7 +9,8 @@ import (
 	"time"
 	"bytes"
 	"net"
-//	"bufio"
+	"net/smtp"
+	"github.com/jordan-wright/email"
 	"os"
 	"encoding/base64"
 	"code.google.com/p/freetype-go/freetype"
@@ -39,6 +40,8 @@ import (
 	crand "crypto/rand"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/json"
+	"io/ioutil"
 )
 
 
@@ -956,10 +959,6 @@ func Round(num float64, precision int) float64 {
 	return float64(round(num * output)) / output
 }
 
-func CheckDaemonRestart(name string) bool {
-	return false
-}
-
 func RandSlice(min, max, count int64) []string {
 	var result []string
 	for i:=0; i<int(count); i++ {
@@ -1245,6 +1244,68 @@ func TimeF(timeFormat string) string {
 func ValidateEmail(email string) bool {
 	Re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return Re.MatchString(email)
+}
+
+func SendSms(sms_http_get_request, text string) (string, error) {
+	resp, err := http.Get(sms_http_get_request+text)
+	if err != nil {
+		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
+		return string(result), nil
+	}
+	defer resp.Body.Close()
+	htmlData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
+		return string(result), nil
+	}
+	result, _ := json.Marshal(map[string]string{"success": string(htmlData)})
+	return string(result), nil
+}
+
+
+
+func sendMail(message, subject string, To string, mailData map[string]string) error {
+
+	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
+		e := email.NewEmail()
+		e.From = "Dcoin <"+mailData["smtp_username"]+">"
+		e.To = []string{To}
+		e.Subject = subject
+		e.HTML = []byte(`<table width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+                 <td style="font-family: 'helvetica neue', 'helvetica', 'arial', 'sans-serif'; font-size: 14px;">
+                          <table width="100%" bgcolor="f0f0f0" color="000000" cellspacing="0" cellpadding="0" border="0">
+                                   <tr>
+                                            <td>
+                                                     <table width="560" align="center" cellspacing="0" cellpadding="8" border="0">
+                                                     <tr>
+														<td><img src="http://dcoin.me/email/logo.png" alt="Dcoin" style="width: 280px; height: 62px; margin: 10px 0 15px;" />
+															<table width="100%" bgcolor="ffffff" style="border: 1px solid #eeeeee; margin-bottom: 10px; padding: 30px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.07); line-height: 1.4;" cellspacing="0" cellpadding="0" border="0">
+															<tr>
+																<td>
+																<table width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td valign="middle" align="center" height="200" style="font-size: 20px; text-decoration: none; color: #111111;">`+message+`</td></tr></table>
+																</td>
+															</tr>
+															</table>
+														</td>
+                                                     </tr>
+                                                     <tr>
+														<td><p style="margin-bottom: 20px; text-align: center; font-size: 11px; color: #555555;">You can cut off the e-mail notifications here: '.$node_url.' -> Settings -> Sms and email notifications</p>
+														</td>
+                                                     </tr>
+													</table>
+                                            </td>
+                                   </tr>
+                          </table>
+                 </td>
+        </tr>
+</table>';`)
+		err := e.Send(mailData["smtp_server"]+":"+mailData["smtp_port"], smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]))
+		if err != nil {
+			return ErrInfo(err)
+		}
+	}
+	return nil
 }
 
 // без проверки на ошибки т.к. тут ошибки не могут навредить

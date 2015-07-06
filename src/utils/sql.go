@@ -13,8 +13,7 @@ import (
 	"consts"
 	"sync"
 	"math"
-	"net/smtp"
-	"github.com/jordan-wright/email"
+	"errors"
 )
 
 type DCDB struct {
@@ -85,7 +84,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 		}
 	}
 
-	return &DCDB{db, ConfigIni}, err
+	return &DCDB{db, ConfigIni, ""}, err
 }
 /*
 func (db *DCDB) DbConnect() {
@@ -108,6 +107,30 @@ func (db *DCDB) GetCfUrl() (string, error) {
 }
 func (db *DCDB) GetMainLockName() (string, error) {
 	return db.Single("SELECT script_name FROM main_lock").String()
+}
+
+func (db *DCDB) SendMail(message, subject, To string, mailData map[string]string, community bool, poolAdminUserId int64) error {
+
+	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
+		err := sendMail(message, subject, To, mailData)
+		if err != nil {
+			return ErrInfo(err)
+		}
+	} else if community {
+		// в пуле пробуем послать с смтп-ешника админа пула
+		prefix := Int64ToStr(poolAdminUserId)+"_"
+		mailData, err := db.OneRow("SELECT * FROM "+prefix+"my_table").String()
+		if err != nil {
+			return ErrInfo(err)
+		}
+		err = sendMail(message, subject,To, mailData)
+		if err != nil {
+			return ErrInfo(err)
+		}
+	} else {
+		return errors.New(`Incorrect mail data`)
+	}
+	return nil
 }
 
 func (db *DCDB) GetAllTables() ([]string, error) {
@@ -523,26 +546,7 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	return result, nil
 }
 
-func (db *DCDB) SendMail(message, subject string, To string, mailData map[string]string) error {
 
-	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
-		e := email.NewEmail()
-		e.From = "Dcoin <"+mailData["smtp_username"]+">"
-		e.To = []string{To}
-		e.Subject = subject
-		//e.Text = []byte(message)
-		e.HTML = []byte(message)
-		log.Println(mailData["smtp_server"]+":"+mailData["smtp_port"])
-		log.Println(mailData["smtp_username"])
-		log.Println(mailData["smtp_password"])
-		log.Println(mailData["smtp_server"])
-		err := e.Send(mailData["smtp_server"]+":"+mailData["smtp_port"], smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
 	if sessRestricted!=0 || sessUserId<=0 {
@@ -1599,12 +1603,13 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 }
 
 func (db *DCDB) GetBlockId() (int64, error) {
-	blockId, err := db.Single("SELECT block_id FROM info_block").Int64()
-	if err != nil {
-		return 0, err
-	}
-	return blockId, nil
+	return db.Single("SELECT block_id FROM info_block").Int64()
 }
+
+func (db *DCDB) GetMyBlockId() (int64, error) {
+	return db.Single("SELECT my_block_id FROM config").Int64()
+}
+
 // наличие cash_requests с pending означает, что у юзера все обещанные суммы в for_repaid. Возможно, временно, если это свежий запрос и юзер еще не успел послать cash_requests_in
 func (db *DCDB) CheckCashRequests(userId int64) (error) {
 	cashRequestStatus, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id  =  ? AND del_block_id  =  0 AND for_repaid_del_block_id  =  0 AND status  =  'pending'", userId).String()
@@ -1818,13 +1823,14 @@ func (db *DCDB) GetCountCurrencies() (int64, error) {
 }
 
 func (db *DCDB) UpdMainLock() error {
-	err := db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
-	return err
+	return db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 }
 
+func (db *DCDB) CheckDaemonRestart() bool {
+	return false
+}
 
-
-func (db *DCDB) DbLock(name string) error {
+func (db *DCDB) DbLock() error {
 	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
@@ -1833,14 +1839,14 @@ func (db *DCDB) DbLock(name string) error {
 		if err != nil {
 			return ErrInfo(err)
 		}
-		if exists["script_name"] == name {
+		if exists["script_name"] == db.GoroutineName {
 			err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 			if err != nil {
 				return ErrInfo(err)
 			}
 			ok = true
 		} else if len(exists["script_name"])==0 {
-			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), name)
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
 			if err != nil {
 				return ErrInfo(err)
 			}
@@ -1858,14 +1864,19 @@ func (db *DCDB) DbLock(name string) error {
 }
 
 
-func (db *DCDB) UnlockPrintSleep(err error, sleep int) {
-	db.DbUnlock(db.GoroutineName);
+func (db *DCDB) UnlockPrintSleep(err error, sleep float64) {
+	db.DbUnlock();
 	log.Print(err)
-	utils.Sleep(sleep)
+	Sleep(sleep)
 }
 
-func (db *DCDB) DbUnlock(name string) error {
-	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
+func (db *DCDB) PrintSleep(err error, sleep float64) {
+	log.Print(err)
+	Sleep(sleep)
+}
+
+func (db *DCDB) DbUnlock() error {
+	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", db.GoroutineName)
 	if err != nil {
 		return err
 	}

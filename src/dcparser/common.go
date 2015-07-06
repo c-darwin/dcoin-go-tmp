@@ -1295,7 +1295,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 	return append(transSlice, returnSlice...), nil
 }
 
-func (p *Parser) InsertIntoBlockchain() {
+func (p *Parser) InsertIntoBlockchain() error {
 	var mutex = &sync.Mutex{}
 	// для локальных тестов
 	if p.BlockData.BlockId == 1 {
@@ -1308,10 +1308,17 @@ func (p *Parser) InsertIntoBlockchain() {
 
 	mutex.Lock()
 	// пишем в цепочку блоков
-	p.DCDB.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
-	p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data, time, tx) VALUES (?, [hex],[hex],[hex], ?, ?)",
+	err := p.DCDB.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
+	if err != nil {
+		return err
+	}
+	err = p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data, time, tx) VALUES (?, [hex],[hex],[hex], ?, ?)",
 		p.BlockData.BlockId, p.BlockData.Hash, p.BlockData.HeadHash, p.blockHex, p.BlockData.Time, TxIdsJson)
+	if err != nil {
+		return err
+	}
 	mutex.Unlock()
+	return nil
 }
 /*public function insert_into_blockchain()
 	{
