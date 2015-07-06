@@ -13,6 +13,9 @@ const DAY2 = 3600*24*2
 const COUNT_CONFIRMED_NODES = 5
 const WAIT_CONFIRMED_NODES = 10
 
+// на сколько % автоматически урезаем денежную массу
+const AUTO_REDUCTION_PCT = 10
+
 // У скольких нодов должен быть такой же блок как и у нас, чтобы считать, что блок у большей части DC-сети. для get_confirmed_block_id()
 const MIN_CONFIRMED_NODES = 1
 

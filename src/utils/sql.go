@@ -1201,9 +1201,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
             level
             FROM info_block
             `)
-
 	defer rows.Close()
-
 	if  ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)
 		if err!= nil {
@@ -1232,15 +1230,10 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 				break;
 			}
 
-			rows, err = db.Query("SELECT LOWER(encode(head_hash, 'hex'))   FROM block_chain  WHERE id = " + strconv.FormatInt(blockId, 10))
-			defer rows.Close()
-			CheckErr(err)
-			var newHeadHash string
-			if  ok := rows.Next(); ok {
-				err = rows.Scan(&newHeadHash)
-				CheckErr(err)
+			newHeadHash, err := db.Single("SELECT LOWER(encode(head_hash, 'hex'))   FROM block_chain  WHERE id = ?", blockId).String()
+			if err != nil {
+				return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 			}
-			//fmt.Println("newHeadHash", newHeadHash)
 			entropy = GetEntropy(newHeadHash);
 		}
 		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy);
@@ -1279,8 +1272,9 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 			minerId = 0;
 		}
 	}
-	err = db.QueryRow("SELECT user_id FROM miners_data WHERE miner_id = $1", 1).Scan(&userId)
-	if err != nil  && err!=sql.ErrNoRows {
+
+	userId, err := db.Single("SELECT user_id FROM miners_data WHERE miner_id = ?", minerId).Int64()
+	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
 	}
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
