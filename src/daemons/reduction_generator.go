@@ -9,6 +9,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"fmt"
+	"dcparser"
 )
 
 /*
@@ -51,8 +52,8 @@ func ReductionGenerator(configIni map[string]string) string {
 		}
 		variables, err := db.GetAllVariables()
 		curTime := utils.Time()
-		var reductionTxData, reductionType string
-		var reductionCurrencyId bool
+		var reductionType string
+		var reductionCurrencyId int
 		var reductionPct float64
 
 		// ===== ручное урезание денежной массы
@@ -109,7 +110,7 @@ func ReductionGenerator(configIni map[string]string) string {
 					continue BEGIN
 				}
 				if curTime - reductionTime > variables.Int64["reduction_period"] {
-					reductionCurrencyId = currency_id
+					reductionCurrencyId = utils.StrToInt(currency_id)
 					reductionPct = pct
 					reductionType = "manual"
 					log.Println("reductionCurrencyId", reductionCurrencyId, "reductionPct", reductionPct, "reductionType", reductionType)
@@ -157,7 +158,7 @@ func ReductionGenerator(configIni map[string]string) string {
 							 del_mining_block_id = 0 AND
 							  (cash_request_out_time = 0 OR cash_request_out_time > ?)
 				GROUP BY currency_id
-				`, "currency_id", "sum_amount", curTime - db.Variables.Int64["cash_request_time"])
+				`, "currency_id", "sum_amount", curTime - variables.Int64["cash_request_time"])
 		if err != nil {
 			db.PrintSleep(err, 60)
 			continue BEGIN
@@ -180,7 +181,7 @@ func ReductionGenerator(configIni map[string]string) string {
 				}
 
 				// если обещанных сумм менее чем 100% от объема DC на кошельках, то запускаем урезание
-				if utils.StrToFloat64(sumPromisedAmount[currencyId]) < sumAmount * consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
+				if utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount * consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
 
 					// проверим, есть ли хотя бы 1000 юзеров, у которых на кошелках есть или была данная валюты
 					countUsers, err := db.Single("SELECT count(user_id) FROM wallets WHERE currency_id  =  ?", currencyId).Int64()
@@ -219,9 +220,9 @@ func ReductionGenerator(configIni map[string]string) string {
 			// создаем тр-ию. пишем $block_id, на момент которого были актуальны голоса и статусы банкнот
 			data := utils.DecToBin(utils.TypeInt("NewReduction"), 1)
 			data = append(data, utils.DecToBin(curTime, 4)...)
-			data = append(data, utils.EncodeLengthPlusData(myUserId)...)
-			data = append(data, utils.EncodeLengthPlusData([]byte(reductionCurrencyId))...)
-			data = append(data, utils.EncodeLengthPlusData([]byte(reductionPct))...)
+			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(myUserId))...)
+			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(int64(reductionCurrencyId)))...)
+			data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(reductionPct))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(reductionType))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
@@ -240,8 +241,8 @@ func ReductionGenerator(configIni map[string]string) string {
 			// таким образом у нас будут в блоке только актуальные голоса.
 			// а если придет другой блок и станет verified=0, то эта тр-ия просто удалится.
 
-			newTxData := map[string]string{"data": data, "hash": utils.HexToBin(utils.Md5(data))}
-			err = db.txParser(newTxData, true)
+			p := new(dcparser.Parser)
+			err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 			if err != nil {
 				db.PrintSleep(err, 60)
 				continue BEGIN

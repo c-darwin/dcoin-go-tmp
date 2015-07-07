@@ -459,7 +459,7 @@ func BlocksCollection(configIni map[string]string) {
                     utils.Sleep(1)
                     continue BEGIN
                 }
-                err = db.ExecSql("TRUNCATE TABLE testblock")
+                err = db.ExecSql("DELETE FROM testblock")
                 if err != nil {
                     db.UnlockPrintSleep(utils.ErrInfo(err), 1)
                     continue BEGIN

@@ -264,7 +264,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 	// теперь откатим и transactions_testblock
 	p.RollbackTransactionsTestblock(true)
 
-	err = p.ExecSql("TRUNCATE TABLE testblock")
+	err = p.ExecSql("DELETE FROM testblock")
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -520,7 +520,7 @@ func (p *Parser) RollbackTransactionsTestblock(truncate bool) error {
 	}
 
 	if truncate {
-		err = p.ExecSql("TRUNCATE TABLE transactions_testblock")
+		err = p.ExecSql("DELETE FROM transactions_testblock")
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -549,14 +549,14 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 	}
 
 	time := utils.BytesToInt(p.TxMap["time"])
-	num, err := p.DCDB.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxUserID, (time-period)).Int()
+	num, err := p.Single("SELECT count(time) FROM log_time_"+txType+" WHERE user_id = ? AND time > ?", p.TxUserID, (time-period)).Int()
 	if err != nil {
 		return err
 	}
 	if num >= limit {
 		return utils.ErrInfo(fmt.Errorf("[limit_requests] log_time_%v %v >= %v", txType, num, limit))
 	} else {
-		err := p.DCDB.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxUserID, time)
+		err := p.ExecSql("INSERT INTO log_time_"+txType+" (user_id, time) VALUES (?, ?)", p.TxUserID, time)
 		if err != nil {
 			return err
 		}
@@ -565,7 +565,7 @@ func (p *Parser) limitRequest(limit_ interface{}, txType string, period_ interfa
 }
 
 func (p *Parser) getAdminUserId() error {
-	AdminUserId, err := p.DCDB.Single("SELECT user_id FROM admin").Int64()
+	AdminUserId, err := p.Single("SELECT user_id FROM admin").Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -579,7 +579,7 @@ func (p *Parser) checkMinerNewbie() error {
 	} else {
 		time = utils.BytesToInt64(p.TxMap["time"])
 	}
-	regTime, err := p.DCDB.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxUserID).Int64()
+	regTime, err := p.Single("SELECT reg_time FROM miners_data WHERE user_id = ?", p.TxUserID).Int64()
 	err = p.getAdminUserId()
 	if err != nil {
 		return utils.ErrInfo(err)
@@ -604,7 +604,7 @@ func (p *Parser) checkMiner(userId int64) error {
 	}
 
 	// когда админ разжаловывает майнера, у него пропадет miner_id
-	minerId, err := p.DCDB.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId).Int64()
+	minerId, err := p.Single("SELECT miner_id FROM miners_data WHERE user_id = ? AND (miner_id>0 "+addSql+")", userId).Int64()
 	if err != nil {
 		return err
 	}
@@ -683,7 +683,7 @@ func (p *Parser) CheckBlockHeader() error {
 	var err error
 	// инфа о предыдущем блоке (т.е. последнем занесенном)
 	if p.PrevBlock == nil {
-		p.PrevBlock, err = p.DCDB.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
+		p.PrevBlock, err = p.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
 		log.Println("PrevBlock 0",p.PrevBlock)
 		if err != nil {
 			return utils.ErrInfo(err)
@@ -726,13 +726,13 @@ func (p *Parser) CheckBlockHeader() error {
 	}
 
 	// получим значения для сна
-	sleepData, err:=p.DCDB.GetSleepData()
+	sleepData, err:=p.GetSleepData()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 
 	// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
-	isReadySleep := p.DCDB.GetIsReadySleep(p.PrevBlock.Level, sleepData["is_ready"])
+	isReadySleep := p.GetIsReadySleep(p.PrevBlock.Level, sleepData["is_ready"])
 	log.Println("isReadySleep", isReadySleep)
 
 	// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
@@ -768,7 +768,7 @@ func (p *Parser) CheckBlockHeader() error {
 	}
 
 	// проверим, есть ли такой майнер и заодно получим public_key
-	nodePublicKey, err := p.DCDB.GetNodePublicKey(p.BlockData.UserId)
+	nodePublicKey, err := p.GetNodePublicKey(p.BlockData.UserId)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -795,7 +795,7 @@ func (p *Parser) CheckBlockHeader() error {
 // Это защита от dos, когда одну транзакцию можно было бы послать миллион раз,
 // и она каждый раз успешно проходила бы фронтальную проверку
 func (p *Parser) CheckLogTx(tx_binary []byte) error {
-	hash, err := p.DCDB.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary)).String()
+	hash, err := p.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary)).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -909,7 +909,7 @@ func (p *Parser) ParseDataRollback() error {
 	}
 	var err error
 
-	p.Variables, err = p.DCDB.GetAllVariables()
+	p.Variables, err = p.GetAllVariables()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -1010,7 +1010,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.ExecSql("TRUNCATE TABLE testblock")
+	err = p.ExecSql("DELETE FROM testblock")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1141,7 +1141,7 @@ func (p *Parser) rollbackTransactionsTestblock(truncate bool) error {
 	}
 
 	if truncate {
-		err = p.ExecSql("TRUNCATE TABLE transactions_testblock")
+		err = p.ExecSql("DELETE FROM transactions_testblock")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1173,7 +1173,7 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 		sizesSlice = utils.SliceReverse(sizesSlice)
 		for i:=0; i<len(sizesSlice); i++ {
 			// обработка тр-ий может занять много времени, нужно отметиться
-			p.DCDB.UpdDaemonTime(p.GoroutineName)
+			p.UpdDaemonTime(p.GoroutineName)
 			// отделим одну транзакцию
 			transactionBinaryData := utils.BytesShiftReverse(&binaryData, sizesSlice[i])
 			transactionBinaryData_ := transactionBinaryData
@@ -1225,16 +1225,16 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 					return utils.ErrInfo(err_.(error))
 				}
 			}
-			p.DCDB.DelLogTx(transactionBinaryData_)
+			p.DelLogTx(transactionBinaryData_)
 
 			// =================== ради эксперимента =========
 			if onlyFront {
-				err = p.DCDB.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
 			} else { // ====================================
-				err = p.DCDB.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -1308,11 +1308,11 @@ func (p *Parser) InsertIntoBlockchain() error {
 
 	mutex.Lock()
 	// пишем в цепочку блоков
-	err := p.DCDB.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
+	err := p.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
 	if err != nil {
 		return err
 	}
-	err = p.DCDB.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data, time, tx) VALUES (?, [hex],[hex],[hex], ?, ?)",
+	err = p.ExecSql("INSERT INTO block_chain (id, hash, head_hash, data, time, tx) VALUES (?, [hex],[hex],[hex], ?, ?)",
 		p.BlockData.BlockId, p.BlockData.Hash, p.BlockData.HeadHash, p.blockHex, p.BlockData.Time, TxIdsJson)
 	if err != nil {
 		return err
@@ -1358,7 +1358,7 @@ func (p *Parser) ParseDataLite() error {
 		return utils.ErrInfo(fmt.Errorf("incorrect dataType"))
 	}
 	var err error
-	p.Variables, err = p.DCDB.GetAllVariables()
+	p.Variables, err = p.GetAllVariables()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -1400,6 +1400,315 @@ func (p *Parser) ParseDataLite() error {
 
 	return nil
 }
+
+
+/**
+ * Занесение данных из блока в БД
+ * используется только в testblock_is_ready
+*/
+func (p *Parser) ParseDataFront() error {
+
+	p.dataPre()
+	if p.dataType == 0 {
+		// инфа о предыдущем блоке (т.е. последнем занесенном)
+		err := p.GetInfoBlock()
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		err = p.ExecSql("DELETE FROM transactions WHERE used=1")
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// разбор блока
+		err = p.ParseBlock()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+
+		p.Variables, err = p.GetAllVariables()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		//меркель рут нужен для updblockinfo()
+		p.MrklRoot, err = utils.GetMrklroot(p.BinaryData, p.Variables, false)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		if len(p.BinaryData) > 0 {
+			for {
+				transactionSize := utils.DecodeLength(&p.BinaryData)
+				if len(p.BinaryData) == 0 {
+					return utils.ErrInfo(fmt.Errorf("empty BinaryData"))
+				}
+				// отчекрыжим одну транзакцию от списка транзакций
+				transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
+				transactionBinaryDataFull := transactionBinaryData
+
+				p.TxHash = utils.Md5(transactionBinaryData)
+				log.Println("p.TxHash", p.TxHash)
+				p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+				log.Println("p.TxSlice", p.TxSlice)
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+
+				// txSlice[3] могут подсунуть пустой
+				if len(p.TxSlice) > 3 {
+					if !utils.CheckInputData(p.TxSlice[3], "int64") {
+						return utils.ErrInfo(fmt.Errorf("empty user_id"))
+					}
+				} else {
+					return utils.ErrInfo(fmt.Errorf("empty user_id"))
+				}
+
+				// проверим, есть ли такой тип тр-ий
+				_, ok := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+				if (!ok) {
+					return utils.ErrInfo(fmt.Errorf("nonexistent type"))
+				}
+
+				p.TxMap = map[string][]byte{}
+
+				// для статы
+				p.TxIds = append(p.TxIds, string(p.TxSlice[1]))
+
+				MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+				log.Println("MethodName", MethodName+"Init")
+				err_ := utils.CallMethod(p,MethodName+"Init")
+				if _, ok := err_.(error); ok {
+					log.Println(err)
+					return utils.ErrInfo(err_.(error))
+				}
+
+				log.Println("MethodName", MethodName)
+				err_ = utils.CallMethod(p,MethodName)
+				if _, ok := err_.(error); ok {
+					log.Println(err)
+					return utils.ErrInfo(err_.(error))
+				}
+
+				err = p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+
+				// даем юзеру понять, что его тр-ия попала в блок
+				err = p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+
+				if len(p.BinaryData) == 0 {
+					break
+				}
+			}
+		}
+
+		p.UpdBlockInfo()
+		p.InsertIntoBlockchain()
+	} else {
+		return utils.ErrInfo(fmt.Errorf("incorrect type"))
+	}
+
+	return nil
+}
+
+/**
+	Обработка данных (блоков или транзакций), пришедших с гейта. Только проверка.
+*/
+func (p *Parser) ParseDataGate(onlyTx bool) error {
+
+	var err error
+	p.dataPre()
+
+	p.Variables, err = p.GetAllVariables()
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+
+	transactionBinaryData :=p.BinaryData
+	var transactionBinaryDataFull [] byte
+
+	// если это транзакции (type>0), а не блок (type==0)
+	if p.dataType > 0 {
+
+		// проверим, есть ли такой тип тр-ий
+		if len(consts.TxTypes[p.dataType]) == 0 {
+			return errors.New("Incorrect tx type")
+		}
+		transactionBinaryData = append(utils.DecToBin(int64(p.dataType), 1), transactionBinaryData...)
+		transactionBinaryDataFull = transactionBinaryData
+
+		// нет ли хэша этой тр-ии у нас в БД?
+		err = p.CheckLogTx(transactionBinaryDataFull)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		p.TxHash = utils.Md5(transactionBinaryData)
+
+		// преобразуем бинарные данные транзакции в массив
+		p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		log.Println("p.TxSlice", p.TxSlice)
+		if len(p.TxSlice) < 3 {
+			return p.ErrInfo(errors.New("len(p.TxSlice) < 3"))
+		}
+
+		// время транзакции может быть немного больше, чем время на ноде.
+		// у нода может быть просто не настроено время.
+		// время транзакции используется только для борьбы с атаками вчерашними транзакциями.
+		// А т.к. мы храним хэши в log_transaction за 36 часов, то боятся нечего.
+		curTime := utils.Time()
+		if utils.BytesToInt64(p.TxSlice[2]) - consts.MAX_TX_FORW > curTime || utils.BytesToInt64(p.TxSlice[2]) < curTime - consts.MAX_TX_BACK {
+			return p.ErrInfo(errors.New("incorrect tx time"))
+		}
+		// $this->transaction_array[3] могут подсунуть пустой
+		if !utils.CheckInputData(p.TxSlice[3], "bigint")  {
+			return p.ErrInfo(errors.New("incorrect user id"))
+		}
+	}
+
+	// если это блок
+	if p.dataType == 0 {
+
+		txCounter := make(map[int64]int64)
+
+		// если есть $only_tx=true, то значит идет восстановление уже проверенного блока и заголовок не требуется
+		if !onlyTx {
+			err = p.ParseBlock()
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+
+			// проверим данные, указанные в заголовке блока
+			err = p.CheckBlockHeader()
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+		log.Println("onlyTx", onlyTx)
+
+		// если в ходе проверки тр-ий возникает ошибка, то вызываем откатчик всех занесенных тр-ий. Эта переменная для него
+		p.fullTxBinaryData = p.BinaryData
+		var txForRollbackTo []byte
+		if len(p.BinaryData) > 0 {
+			for {
+				transactionSize := utils.DecodeLength(&p.BinaryData)
+				if len(p.BinaryData) == 0 {
+					return utils.ErrInfo(fmt.Errorf("empty BinaryData"))
+				}
+
+				// отчекрыжим одну транзакцию от списка транзакций
+				transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
+				transactionBinaryDataFull = transactionBinaryData
+
+				// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
+				txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
+
+				// нет ли хэша этой тр-ии у нас в БД?
+				err = p.CheckLogTx(transactionBinaryDataFull)
+				if err != nil {
+					p.RollbackTo(txForRollbackTo, true, false);
+					return p.ErrInfo(err)
+				}
+
+				p.TxHash = utils.Md5(transactionBinaryData)
+				p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
+				log.Println("p.TxSlice", p.TxSlice)
+				if err !=nil {
+					p.RollbackTo (txForRollbackTo, true, false)
+					return p.ErrInfo(err)
+				}
+
+				var userId int64
+				// txSlice[3] могут подсунуть пустой
+				if len(p.TxSlice) > 3 {
+					if !utils.CheckInputData(p.TxSlice[3], "int64") {
+						return utils.ErrInfo(fmt.Errorf("empty user_id"))
+					} else {
+						userId = utils.BytesToInt64(p.TxSlice[3])
+					}
+				} else {
+					return utils.ErrInfo(fmt.Errorf("empty user_id"))
+				}
+
+				// считаем по каждому юзеру, сколько в блоке от него транзакций
+				txCounter[userId]++
+
+				// чтобы 1 юзер не смог прислать дос-блок размером в 10гб, который заполнит своими же транзакциями
+				if txCounter[userId] > p.Variables.Int64["max_block_user_transactions"]  {
+					p.RollbackTo(txForRollbackTo, true, false)
+					return utils.ErrInfo(fmt.Errorf("max_block_user_transactions"))
+				}
+
+				// проверим, есть ли такой тип тр-ий
+				_, ok := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+				if (!ok) {
+					return utils.ErrInfo(fmt.Errorf("nonexistent type"))
+				}
+
+				p.TxMap = map[string][]byte{}
+
+				// для статы
+				p.TxIds = append(p.TxIds, string(p.TxSlice[1]))
+
+				MethodName := consts.TxTypes[utils.BytesToInt(p.TxSlice[1])]
+				log.Println("MethodName", MethodName+"Init")
+				err_ := utils.CallMethod(p,MethodName+"Init")
+				if _, ok := err_.(error); ok {
+					log.Println(err)
+					p.RollbackTo(txForRollbackTo, true, true);
+					return utils.ErrInfo(err_.(error))
+				}
+
+				log.Println("MethodName", MethodName+"Front")
+				err_ = utils.CallMethod(p,MethodName+"Front")
+				if _, ok := err_.(error); ok {
+					log.Println(err)
+					p.RollbackTo(txForRollbackTo, true, true);
+					return utils.ErrInfo(err_.(error))
+				}
+
+				// пишем хэш тр-ии в лог
+				err = p.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+
+				if len(p.BinaryData) == 0 {
+					break
+				}
+			}
+		}
+	} else {
+
+		// Оперативные транзакции
+		MethodName := consts.TxTypes[p.dataType]
+		log.Println("MethodName", MethodName+"Init")
+		err_ := utils.CallMethod(p,MethodName+"Init")
+		if _, ok := err_.(error); ok {
+			return utils.ErrInfo(err_.(error))
+		}
+
+		log.Println("MethodName", MethodName+"Front")
+		err_ = utils.CallMethod(p,MethodName+"Front")
+		if _, ok := err_.(error); ok {
+			return utils.ErrInfo(err_.(error))
+		}
+
+		// пишем хэш тр-ии в лог
+		err = p.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+
+	return nil
+}
 /**
 	фронт. проверка + занесение данных из блока в таблицы и info_block
 */
@@ -1411,7 +1720,7 @@ func (p *Parser) ParseDataFull() error {
 	}
 	var err error
 
-	p.Variables, err = p.DCDB.GetAllVariables()
+	p.Variables, err = p.GetAllVariables()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -1437,7 +1746,7 @@ func (p *Parser) ParseDataFull() error {
 	if len(p.BinaryData) > 0 {
 		for {
 			// обработка тр-ий может занять много времени, нужно отметиться
-			p.DCDB.UpdDaemonTime(p.GoroutineName)
+			p.UpdDaemonTime(p.GoroutineName)
 			p.halfRollback = false
 			log.Println("&p.BinaryData", p.BinaryData)
 			transactionSize := utils.DecodeLength(&p.BinaryData)
@@ -1465,7 +1774,7 @@ func (p *Parser) ParseDataFull() error {
 				return err
 			}
 
-			p.DCDB.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
 			//log.Println("transactionBinaryData", transactionBinaryData)
 			p.TxHash = utils.Md5(transactionBinaryData)
 			log.Println("p.TxHash", p.TxHash)
@@ -1547,7 +1856,7 @@ func (p *Parser) ParseDataFull() error {
 			p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
 
 			// Тут было time(). А значит если бы в цепочке блоков были блоки в которых были бы одинаковые хэши тр-ий, то ParseDataFull вернул бы error
-			err = p.DCDB.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
+			err = p.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
@@ -1578,12 +1887,12 @@ func (p *Parser) UpdBlockInfo() {
 	p.BlockData.Hash = utils.DSha256(forSha)
 
 	if p.BlockData.BlockId == 1 {
-		p.DCDB.ExecSql("INSERT INTO info_block (hash, head_hash, block_id, time, level, current_version) VALUES ([hex], [hex], ?, ?, ?, ?)",
+		p.ExecSql("INSERT INTO info_block (hash, head_hash, block_id, time, level, current_version) VALUES ([hex], [hex], ?, ?, ?, ?)",
 			p.BlockData.Hash, p.BlockData.HeadHash, blockId, p.BlockData.Time, p.BlockData.Level, p.CurrentVersion)
 	} else {
-		p.DCDB.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id = ?, time = ?, level = ?, sent = 0",
+		p.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id = ?, time = ?, level = ?, sent = 0",
 			p.BlockData.Hash, p.BlockData.HeadHash, blockId, p.BlockData.Time, p.BlockData.Level)
-		p.DCDB.ExecSql("UPDATE config SET my_block_id = ? WHERE my_block_id < ?", blockId, blockId)
+		p.ExecSql("UPDATE config SET my_block_id = ? WHERE my_block_id < ?", blockId, blockId)
 	}
 }
 
@@ -1727,11 +2036,11 @@ func (p *Parser) CheckInputData(data map[string]string) (error) {
 func (p *Parser) limitRequestsRollback(txType string) error {
 	time := p.TxMap["time"]
 	if p.ConfigIni["db_type"] == "mysql" {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ? LIMIT 1", p.TxUserID, time)
+		return p.ExecSql("DELETE FROM log_time_"+txType+" WHERE user_id = ? AND time = ? LIMIT 1", p.TxUserID, time)
 	} else if p.ConfigIni["db_type"] == "postgresql" {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE ctid IN (SELECT ctid FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
+		return p.ExecSql("DELETE FROM log_time_"+txType+" WHERE ctid IN (SELECT ctid FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
 	} else {
-		return p.DCDB.ExecSql("DELETE FROM log_time_"+txType+" WHERE id IN (SELECT id FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
+		return p.ExecSql("DELETE FROM log_time_"+txType+" WHERE id IN (SELECT id FROM log_time_"+txType+" WHERE  user_id = ? AND time = ? LIMIT 1)", p.TxUserID, time)
 	}
 	return nil
 }
@@ -1765,12 +2074,12 @@ func (p *Parser) rollbackAI(table string, num int64) (error) {
 			return utils.ErrInfo(err)
 		}
 	} else if p.ConfigIni["db_type"] == "mysql" {
-		err := p.DCDB.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = "+utils.Int64ToStr(NewAi))
+		err := p.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = "+utils.Int64ToStr(NewAi))
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 	} else if p.ConfigIni["db_type"] == "sqlite" {
-		err := p.DCDB.ExecSql("UPDATE SQLITE_SEQUENCE SET seq = ? WHERE name = ?", NewAi, table)
+		err := p.ExecSql("UPDATE SQLITE_SEQUENCE SET seq = ? WHERE name = ?", NewAi, table)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -1823,7 +2132,7 @@ func (p *Parser) generalCheckAdmin() error {
 		return utils.ErrInfoFmt("user_id (%d!=%d)", p.AdminUserId, p.TxMap["user_id"])
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.DCDB.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
+	data, err := p.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -3407,6 +3716,671 @@ func (p *Parser) checkSpamMoney(currencyId int64, amount float64) (error) {
 					return p.ErrInfo(err)
 				}
 			}
+		}
+	}
+	return nil
+}
+
+
+func (p *Parser) RollbackIncompatibleTx(typesArr []string) error {
+
+	var whereType string
+	for _, txType := range typesArr {
+		whereType += utils.Int64ToStr(utils.TypeInt(txType))+","
+	}
+	whereType = whereType[:len(whereType)-1]
+	transactions, err := p.GetList(`SELECT data FROM transactions WHERE type IN (`+whereType+`) AND verified=1 AND used = 0`).String()
+	for _, txData := range transactions {
+
+		md5 := utils.Md5(txData)
+		// откатим фронтальные записи
+		p.BinaryData = utils.EncodeLengthPlusData([]byte(txData))
+		err = p.ParseDataRollback()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		// Удаляем уже записанные тр-ии.
+		err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", md5)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		/*
+		 * создает проблемы для tesblock_is_ready
+		err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]", md5)
+		if err != nil {
+			p.PrintSleep(err, 60)
+			continue BEGIN
+		}
+		*/
+
+		// создаем тр-ию, которую потом заново проверим
+		err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", md5)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err = p.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", md5, utils.BinToHex([]byte(txData)))
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+
+func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string, int64, int64, int64, string) {
+
+	var fatalError, waitError string
+	var toUserId int64
+
+	// получим тип тр-ии и юзера
+	txType, userId, thirdVar := utils.GetTxTypeAndUserId(binaryTx)
+
+	if !utils.CheckInputData(txType, "int")  {
+		fatalError = "error type"
+	}
+	if !utils.CheckInputData(userId, "int")  {
+		fatalError = "error userId"
+	}
+	if !utils.CheckInputData(thirdVar, "int")  {
+		fatalError = "error thirdVar"
+	}
+
+	if txType == utils.TypeInt("CashRequestOut") {
+		toUserId = utils.StrToInt64(thirdVar)
+	}
+	var forSelfUse int64
+	if utils.InSliceInt64(txType, utils.TypesToIds([]string{"NewPct", "NewReduction", "NewMaxPromisedAmounts", "NewMaxOtherCurrencies"})) {
+		//  чтобы никому не слать эту тр-ю
+		forSelfUse = 1
+		// $my_tx == true - это значит функция вызвана из pct_generator.php/reduction_generator.php
+		// если же false, то она была спаршена query_tx или tesblock_generator и имела verified=0
+		// а т.к. new_pct/NewReduction актуальны только 1 блок, то нужно её удалять
+		if !myTx {
+			fatalError = "old new_pct/NewReduction/NewMaxPromisedAmounts/NewMaxOtherCurrencies"
+			return fatalError, waitError, forSelfUse, txType, userId, utils.Int64ToStr(toUserId)
+		}
+	} else {
+		forSelfUse = 0
+	}
+
+	// две тр-ии одного типа от одного юзера не должны попасть в один блок
+	// исключение - перевод DC между юзерами
+	if len(fatalError) == 0 {
+		p.ClearIncompatibleTxSql(txType, userId, &waitError)
+
+		// если новая тр-ия - это запрос на удаление или изменение обещанной суммы, то нужно проверить
+		// нет ли запросов на получение обещанных сумм к данному юзеру
+		// а также, нужно проверить, нет ли от данного юзера тр-ии cash_request_in
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"DelPromisedAmount", "ChangePromisedAmount"})) {
+			num, err := p.Single(`
+						SELECT count(*)
+			          	FROM (
+				            SELECT user_id
+				            FROM transactions
+				            WHERE (
+				                             third_var = ? AND
+					                         verified=1 AND
+					                         used = 0
+					                      )
+				                          OR (
+					                          type = ? AND
+					                          user_id = ?
+				                         )
+							UNION
+							SELECT user_id
+							FROM transactions_testblock
+							WHERE (
+											 third_var = ?
+										) OR (
+					                         type = ? AND
+					                         user_id = ?
+										)
+						)  AS x
+						`, userId, utils.TypeInt("CashRequestIn"), userId, userId, utils.TypeInt("CashRequestIn"), userId).Int64()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if num > 0 {
+				fatalError = "thirdVar = "+utils.Int64ToStr(userId)
+			}
+		}
+
+		// если новая тр-ия - это запрос на получение наличных, то нужно проверить
+		// нет ли у получающего юзера запросов на удаление или изменение обещанных сумм
+		if txType == utils.TypeInt("CashRequestOut") {
+			txData, err := p.Single(`
+					  SELECT data
+			            FROM (
+				            SELECT data
+				            FROM transactions
+				            WHERE type IN (?, ?) AND
+				                         user_id = ? AND
+				                         verified=1 AND
+				                         used = 0
+							UNION
+							SELECT data
+							FROM transactions_testblock
+							WHERE type IN (?, ?) AND
+										 user_id = ?
+						)  AS x
+					 `, utils.TypeInt("DelPromisedAmount"), utils.TypeInt("ChangePromisedAmount"), toUserId, utils.TypeInt("DelPromisedAmount"), utils.TypeInt("ChangePromisedAmount"), toUserId).String()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if len(txData) > 0 {
+				// откатим фронтальные записи
+				p.BinaryData = utils.EncodeLengthPlusData([]byte(txData))
+				p.ParseDataRollback()
+				// Удаляем именно уже записанную тр-ию. При этом новая (CashRequestOut) тр-ия успешно обработается
+				err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", utils.Md5(txData))
+				if err != nil {
+					fatalError = fmt.Sprintf("%s", err)
+				}
+				/*
+				 * создает проблемы для tesblock_is_ready
+				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]md5(?tx_data)?")
+				if err != nil {
+					p.PrintSleep(err, 60)
+					continue BEGIN
+				}
+				*/
+			}
+		}
+
+		// если новая тр-ия - это запрос на получение банкнот, то нужно проверить
+		// нет ли у отправителя запроса на отправку DC, т.к. после списания может не остаться средств
+		if txType == utils.TypeInt("CashRequestOut") {
+			p.ClearIncompatibleTxSqlSet([]string{"SendDc", "NewForexOrder", "CfSendDc"}, userId, &waitError, "")
+		}
+		// и наоборот
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"SendDc", "NewForexOrder", "CfSendDc"})) {
+			p.ClearIncompatibleTxSqlSet([]string{"CashRequestOut"}, userId, &waitError, "")
+		}
+
+		// на всякий случай не даем попасть в один блок holidays и тр-им, где holidays используются
+		if txType == utils.TypeInt("NewHolidays") {
+			p.ClearIncompatibleTxSql("Mining", userId, &waitError);
+		}
+		if txType == utils.TypeInt("Mining") {
+			p.ClearIncompatibleTxSql("NewHolidays", userId, &waitError);
+		}
+
+
+		if txType == utils.TypeInt("NewHolidays") {
+			p.ClearIncompatibleTxSql("CashRequestIn", userId, &waitError);
+		}
+		if txType == utils.TypeInt("CashRequestIn") {
+			p.ClearIncompatibleTxSql("NewHolidays", userId, &waitError);
+		}
+
+		if txType == utils.TypeInt("CashRequestOut") {
+			p.ClearIncompatibleTxSql("NewHolidays", toUserId, &waitError);
+		}
+
+		// не должно попадать в одни блок NewMinerUpdate и NewMiner
+		if txType == utils.TypeInt("NewMiner") {
+			p.ClearIncompatibleTxSql("NewMinerUpdate", userId, &waitError);
+		}
+		if txType == utils.TypeInt("NewMinerUpdate") {
+			p.ClearIncompatibleTxSql("NewMiner", userId, &waitError);
+		}
+
+		// не должно попадать в один блок смена нодовского ключа и тр-ии которые этим ключем подписываются
+		if txType == utils.TypeInt("ChangeNodeKey") || txType == utils.TypeInt("NewMiner") {
+			p.ClearIncompatibleTxSql("NewMinerUpdate", userId, &waitError);
+		}
+		if txType == utils.TypeInt("ChangeNodeKey") || txType == utils.TypeInt("NewMiner") {
+			p.ClearIncompatibleTxSql("NewPct", userId, &waitError);
+		}
+		if txType == utils.TypeInt("NewMinerUpdate") {
+			p.ClearIncompatibleTxSqlSet([]string{"ChangeNodeKey", "NewMiner"}, userId, &waitError, "");
+		}
+		if txType == utils.TypeInt("NewPct") {
+			p.ClearIncompatibleTxSqlSet([]string{"ChangeNodeKey", "NewMiner"}, userId, &waitError, "");
+		}
+		if txType == utils.TypeInt("ChangeNodeKey") || txType == utils.TypeInt("NewMiner") {
+			p.ClearIncompatibleTxSql("NewReduction", userId, &waitError);
+		}
+
+		// восстановление ключа
+		if txType == utils.TypeInt("ChangeKeyRequest") {
+			p.ClearIncompatibleTxSqlSet([]string{"ChangeKeyActive"}, thirdVar, &waitError, "");
+		}
+		if txType == utils.TypeInt("ChangeKeyActive") {
+			p.ClearIncompatibleTxSqlSet([]string{"ChangeKeyRequest"}, 0, &waitError, userId);
+		}
+
+		// нельзя удалить/изменить обещанную сумму и затем создать запрос на её майнинг
+		if txType == utils.TypeInt("Mining") {
+			p.ClearIncompatibleTxSqlSet([]string{"DelPromisedAmount", "ChangePromisedAmount"}, userId, &waitError, "");
+		}
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"DelPromisedAmount", "ChangePromisedAmount"})) {
+			p.ClearIncompatibleTxSql("Mining", userId, &waitError);
+		}
+		// в 1 блоке только 1 майнинг от юзера
+		if txType == utils.TypeInt("Mining") {
+			p.ClearIncompatibleTxSql("Mining", userId, &waitError);
+		}
+		if txType == utils.TypeInt("Mining") {
+			p.ClearIncompatibleTxSql("AdminBanMiners", 0, &waitError);
+		}
+
+		if txType == utils.TypeInt("CashRequestOut") {
+			p.ClearIncompatibleTxSql("AdminBanMiners", 0, &waitError);
+		}
+		if txType == utils.TypeInt("NewPromisedAmount") {
+			p.ClearIncompatibleTxSql("AdminBanMiners", 0, &waitError);
+		}
+
+		if txType == utils.TypeInt("AdminBanMiners") {
+			p.RollbackIncompatibleTx([]string{"CashRequestOut", "change_host", "NewPromisedAmount", "ChangeNodeKey", "NewPct", "Mining", "VotesMiner", "VotesNodeNewMiner", "VotesPromisedAmount", "Abuses", "NewPromisedAmount", "VotesComplex"})
+		}
+
+		if txType == utils.TypeInt("VotesMiner") {
+			p.ClearIncompatibleTxSqlSet([]string{"AdminBanMiners"}, 0, &waitError, "");
+		}
+		if txType == utils.TypeInt("VotesComplex") {
+			p.ClearIncompatibleTxSqlSet([]string{"AdminBanMiners"}, 0, &waitError, "");
+		}
+		if txType == utils.TypeInt("Abuses") { // AdminBanMiners преоритетнее, abuses надо вытеснять
+			p.ClearIncompatibleTxSqlSet([]string{"AdminBanMiners"}, 0, &waitError, ""); // дополнить
+		}
+		if txType == utils.TypeInt("VotesNodeNewMiner") {
+			p.ClearIncompatibleTxSqlSet([]string{"AdminBanMiners"}, 0, &waitError, "");
+		}
+		if txType == utils.TypeInt("VotesPromisedAmount") {
+			p.ClearIncompatibleTxSqlSet([]string{"AdminBanMiners"}, 0, &waitError, "");
+		}
+
+		// нельзя голосовать за обещанную сумму юзера $promised_amount_user_id, если он меняет свое местоположение, т.к. сменится статус
+		if txType == utils.TypeInt("VotesPromisedAmount") {
+			promisedAmountUserId, err := p.Single("SELECT user_id FROM promised_amount WHERE id  =  ?", thirdVar).Int64()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if promisedAmountUserId > 0 {
+				p.ClearIncompatibleTxSqlSet([]string{"ChangeGeolocation"}, promisedAmountUserId, &waitError, "");
+			}
+		}
+
+		// нельзя менять местоположение, если кто-то отдал голос за мою обещанную сумму
+		if txType == utils.TypeInt("ChangeGeolocation") {
+			promisedAmountIds_, err := p.GetList("SELECT id FROM promised_amount WHERE user_id  = ?", userId).String()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			promisedAmountIds := strings.Join(promisedAmountIds_, ",")
+			if len(promisedAmountIds) > 0 {
+				num, err := p.Single(`
+							SELECT count(*)
+						     FROM (
+						        SELECT user_id
+						        FROM transactions
+						        WHERE  (
+						                        type = ? AND third_var IN (`+promisedAmountIds+`)
+						                      ) AND
+						                     verified=1 AND
+						                     used = 0
+								UNION
+								SELECT user_id
+								FROM transactions_testblock
+								WHERE  (
+						                        type = ? AND third_var IN (`+promisedAmountIds+`)
+						                      )
+							)  AS x
+							`, utils.TypeInt("VotesPromisedAmount"), utils.TypeInt("VotesPromisedAmount")).Int64()
+				if err != nil {
+					fatalError = fmt.Sprintf("%s", err)
+				}
+				if num > 0 {
+					waitError = fmt.Sprintf("%s", err)
+				}
+			}
+		}
+
+		// нельзя удалять CF-проект и в этом же блоке изменить его описание/профинансировать
+		if txType == utils.TypeInt("DelCfProject") {
+			p.ClearIncompatibleTxSqlSet([]string{"CfComment","CfSendDc","CfProjectChangeCategory","CfProjectData"}, 0, &waitError, thirdVar);
+		}
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"CfComment", "CfSendDc", "CfProjectChangeCategory", "CfProjectData"})) {
+			p.ClearIncompatibleTxSqlSet([]string{"DelCfProject"}, 0, &waitError, thirdVar);
+		}
+
+		// потом нужно сделать более тонко. но пока так. Если есть удаление проекта, тогда откатываем все тр-ии del_cf_funding
+		if txType == utils.TypeInt("DelCfProject") {
+			p.RollbackIncompatibleTx([]string{"DelCfFunding"});
+		}
+		// потом нужно сделать более тонко. но пока так. Если есть del_cf_funding, тогда откатываем все тр-ии удаления проектов
+		if txType == utils.TypeInt("DelCfFunding") {
+			p.RollbackIncompatibleTx([]string{"DelCfProject"});
+		}
+		// потом нужно сделать более тонко. но пока так. Если есть смена комиссии, то нельзя отправлять тр-ии, где указана комиссия
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"CfSendDc", "SendDc", "NewForexOrder"})) {
+			p.RollbackIncompatibleTx([]string{"ChangeCommission"});
+		}
+		if txType == utils.TypeInt("ChangeCommission") {
+			p.ClearIncompatibleTxSqlSet([]string{"CfSendDc", "SendDc", "NewForexOrder"}, 0, &waitError, "");
+		}
+
+
+		// Если есть смена коммиссий арбитров, то нельзя делать перевод монет, т.к. там может быть указана комиссия арбитра
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"SendDc"})) {
+			p.RollbackIncompatibleTx( []string{"ChangeArbitratorConditions"} );
+		}
+		if txType == utils.TypeInt("ChangeArbitratorConditions") {
+			p.ClearIncompatibleTxSqlSet( []string{"SendDc"}, 0, &waitError, "");
+		}
+		// если идет смена списка арбитров, то у отправителя и у получателя может получиться нестыковка
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"SendDc"})) {
+			p.RollbackIncompatibleTx( []string{"ChangeArbitratorList"} );
+		}
+		if txType == utils.TypeInt("ChangeArbitratorList") {
+			p.ClearIncompatibleTxSqlSet( []string{"SendDc"}, 0, &waitError, "");
+		}
+		// на всякий случай не даем попасть в один блок тр-ии отправки в CF-проект монет и другим тр-ям связанным с этим CF-проектом. Т.к. проект может завершиться и 2-я тр-я вызовет ошибку
+		if txType == utils.TypeInt("CfSendDc") {
+			p.ClearIncompatibleTxSqlSet( []string{"CfSendDc","CfComment","DelCfProject","CfProjectChangeCategory","CfProjectData"}, 0, &waitError, thirdVar);
+		}
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"CfSendDc", "CfComment", "DelCfProject", "CfProjectChangeCategory", "CfProjectData"})){
+			p.ClearIncompatibleTxSqlSet( []string{"CfSendDc"}, 0, &waitError, thirdVar);
+		}
+
+
+		// нельзя удалять promised_amount и голосовать за него
+		if txType == utils.TypeInt("DelPromisedAmount") {
+			p.ClearIncompatibleTxSqlSet( []string{"VotesPromisedAmount"}, 0, &waitError, thirdVar);
+		}
+		if txType == utils.TypeInt("VotesPromisedAmount") {
+			p.ClearIncompatibleTxSqlSet( []string{"DelPromisedAmount"}, 0, &waitError, thirdVar);
+		}
+		if txType == utils.TypeInt("NewMaxPromisedAmounts") {
+			p.ClearIncompatibleTxSqlSet( []string{"NewMaxPromisedAmounts"}, 0, &waitError, thirdVar);
+		}
+		if txType == utils.TypeInt("NewMaxOtherCurrencies") {
+			p.ClearIncompatibleTxSqlSet( []string{"NewMaxOtherCurrencies"}, 0, &waitError, thirdVar);
+		}
+		if txType == utils.TypeInt("NewPct") {
+			p.ClearIncompatibleTxSqlSet( []string{"NewPct"}, 0, &waitError, thirdVar);
+		}
+		if txType == utils.TypeInt("NewReductions") {
+			p.ClearIncompatibleTxSqlSet( []string{"NewReductions"}, 0, &waitError, thirdVar);
+		}
+
+		// в один блок должен попасть только один голос за один объект голосования. thirdVar - объект голосования
+		if utils.InSliceInt64(txType, utils.TypesToIds([]string{"VotesPromisedAmount", "VotesMiner", "VotesNodeNewMiner", "VotesComplex"})) {
+			num, err := p.Single(`
+			  			  SELECT count(*)
+				            FROM (
+					            SELECT user_id
+					            FROM transactions
+					            WHERE  type IN (?, ?, ?, ?) AND
+					                          third_var = ? AND
+					                          verified=1 AND
+					                          used = 0
+								UNION
+								SELECT user_id
+								FROM transactions_testblock
+								WHERE type IN (?, ?, ?, ?) AND
+					                          third_var = ?
+							)  AS x
+							`, utils.TypeInt("VotesPromisedAmount"), utils.TypeInt("VotesMiner"), utils.TypeInt("VotesNodeNewMiner"), utils.TypeInt("VotesComplex"), thirdVar, utils.TypeInt("VotesPromisedAmount"), utils.TypeInt("VotesMiner"), utils.TypeInt("VotesNodeNewMiner"), utils.TypeInt("VotesComplex"), thirdVar).Int64()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if num > 0 {
+				waitError = "only 1 vote"
+			}
+		}
+
+		// если новая тр-ия - это запрос, в котором юзер отдает наличные (CashRequestIn)
+		// то нужно проверить, не хочет ли юзер удалить или изменить одну из обещанных сумм
+		if txType == utils.TypeInt("CashRequestIn") {
+			txData, err := p.Single(`
+					  SELECT *
+			            FROM (
+				            SELECT data
+				            FROM transactions
+				            WHERE type IN (?, ?) AND
+				                         user_id = ? AND
+				                         verified=1 AND
+				                         used = 0
+							UNION
+							SELECT data
+							FROM transactions_testblock
+							WHERE type IN (?, ?) AND
+										 user_id = ?
+						)  AS x
+						`, utils.TypeInt("DelPromisedAmount"), utils.TypeInt("ChangePromisedAmount"), userId, utils.TypeInt("DelPromisedAmount"), utils.TypeInt("ChangePromisedAmount"), userId).String()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if len(txData) > 0 {
+				// откатим фронтальные записи
+				p.BinaryData = utils.EncodeLengthPlusData([]byte(txData))
+				err = p.ParseDataRollback()
+				if err != nil {
+					fatalError = fmt.Sprintf("%s", err)
+				}
+				// Удаляем именно уже записанную тр-ию. При этом новая (CashRequestIn) тр-ия успешно обработается
+				err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", utils.Md5(txData))
+				if err != nil {
+					fatalError = fmt.Sprintf("%s", err)
+				}
+				/*
+				 * создает проблемы для tesblock_is_ready
+				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]", Md5(txData))
+				if err != nil {
+					p.PrintSleep(err, 60)
+					continue BEGIN
+				}
+				*/
+			}
+		}
+
+		// если новая тр-я - это смена праймари ключа, то не должно быть никаких других тр-ий от этого юзера
+		if txType == utils.TypeInt("ChangePrimaryKey") {
+			num, err := p.Single(`
+						  SELECT count(*)
+				            FROM (
+					            SELECT user_id
+					            FROM transactions
+					            WHERE  user_id = ? AND
+					                         verified=1 AND
+					                         used = 0
+								UNION
+								SELECT user_id
+								FROM transactions_testblock
+								WHERE user_id = ?
+							)  AS x
+							`, userId, userId).Int64()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if num > 0 {
+				waitError = "there are other tr-s";
+			}
+		}
+
+		// если новая тр-я - это смена праймари ключа, то не должно быть никаких других тр-ий от юзера, которому меняем ключ"
+		if txType == utils.TypeInt("AdminChangePrimaryKey") {
+			num, err := p.Single(`
+						  SELECT count(*)
+				            FROM (
+					            SELECT user_id
+					            FROM transactions
+					            WHERE  user_id = ? AND
+					                         verified=1 AND
+					                         used = 0
+								UNION
+								SELECT user_id
+								FROM transactions_testblock
+								WHERE user_id = ?
+							)  AS x
+							`, thirdVar).Int64()
+			if err != nil {
+				fatalError = fmt.Sprintf("%s", err)
+			}
+			if num > 0 {
+				waitError = "there are other tr-s";
+			}
+		}
+		// любая тр-я от юзера не должна проходить, если уже есть тр-я со сменой праймари ключа или new_pct или NewReduction
+		num, err := p.Single(`
+						SELECT count(*)
+				          FROM (
+					            SELECT user_id
+					            FROM transactions
+					            WHERE  (
+						                            (type = ? AND user_id = ?)
+						                            OR
+						                            (type IN (?, ?) )
+					                          ) AND
+					                         verified=1 AND
+					                         used = 0
+								UNION
+								SELECT user_id
+								FROM transactions_testblock
+								WHERE  (
+						                            (type = ? AND user_id = ?)
+						                            OR
+						                            (type IN (?, ?) )
+					                          )
+						)  AS x
+						`, utils.TypeInt("ChangePrimaryKey"), userId, utils.TypeInt("NewPct"), utils.TypeInt("NewReduction"), utils.TypeInt("ChangePrimaryKey"), userId, utils.TypeInt("NewPct"), utils.TypeInt("NewReduction")).Int64()
+		if err != nil {
+			fatalError = fmt.Sprintf("%s", err)
+		}
+		if num > 0 {
+			waitError = "have ChangePrimaryKey tx";
+		}
+
+		// если пришло new_pct, то нужно откатить следующие тр-ии
+		if txType == utils.TypeInt("NewPct") {
+			p.RollbackIncompatibleTx( []string{"NewReduction", "ChangeNodeKey", "NewMiner", "VotesPromisedAmount", "SendDc", "CashRequestIn", "Mining", "CfSendDc", "DelCfProject", "NewForexOrder", "del_forex_order", "for_repaid_fix", "actualization_promised_amounts", "DelCfFunding", "admin_unban_miners", "AdminBanMiners"} );
+		}
+
+		// если пришло NewReduction, то нужно откатить следующие тр-ии
+		if txType == utils.TypeInt("NewReduction") {
+			p.RollbackIncompatibleTx([]string{"NewPct", "ChangeNodeKey", "NewMiner", "VotesPromisedAmount", "SendDc", "CashRequestIn", "Mining", "CfSendDc", "DelCfProject", "NewForexOrder", "del_forex_order", "for_repaid_fix", "actualization_promised_amounts", "DelCfFunding", "admin_unban_miners", "AdminBanMiners"});
+		}
+
+		// временно запрещаем 2 тр-ии любого типа от одного юзера, а то затрахался уже.
+		num, err = p.Single(`
+				    SELECT count(*)
+				    FROM (
+							SELECT user_id
+							FROM transactions
+							WHERE  user_id = ? AND
+				                      verified=1 AND
+				                      used = 0
+							UNION
+							SELECT user_id
+							FROM transactions_testblock
+							WHERE user_id = ?
+					)  AS x
+					`, userId, userId).Int64()
+		if err != nil {
+			fatalError = fmt.Sprintf("%s", err)
+		}
+		if num > 0 {
+			waitError = "only 1 tx";
+		}
+	}
+	log.Println("fatalError", fatalError, "waitError", waitError, "forSelfUse", forSelfUse, "txType", txType, "userId", userId, "thirdVar", thirdVar)
+	return fatalError, waitError, forSelfUse, txType, userId, thirdVar
+
+}
+
+
+
+func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
+
+	// проверим, нет ли несовместимых тр-ий
+	// 	&waitError  - значит просто откладываем обработку тр-ии на после того, как сформируются блок
+	// $fatal_error - удаляем тр-ию, т.к. она некорректная
+
+	var err error
+	fatalError, waitError, forSelfUse, txType, userId, thirdVar := p.ClearIncompatibleTx(binaryTx, myTx)
+	if len(fatalError) == 0 && len(waitError) == 0 {
+		p.BinaryData = binaryTx
+		err = p.ParseDataGate(false)
+	}
+
+	if err != nil || len(fatalError) > 0 {
+		p.DeleteQueueTx(binaryTx) // удалим тр-ию из очереди
+	}
+	if err == nil {
+		err = errors.New(fatalError)
+	}
+	if err == nil {
+		err = errors.New(waitError)
+	}
+	if err != nil {
+		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hash = [hex]", fmt.Sprintf("%s", err))
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	} else {
+		hashHex := utils.BinToHex(hash)
+		counter, err := p.Single("SELECT counter FROM transactions WHERE hash  =  [hex]", hashHex).Int64()
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		counter++
+		err = p.ExecSql(`DELETE FROM transactions WHERE hash = [hex]`, hashHex)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err = p.ExecSql(`INSERT INTO transactions (hash, data, for_self_use, type, user_id, third_var, counter) VALUES ([hex], [hex], ?, ?, ?, ?, ?)`, hashHex, utils.BinToHex(binaryTx), forSelfUse, txType, userId, thirdVar, counter)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		// удалим тр-ию из очереди
+		err = p.DeleteQueueTx(hashHex)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+	}
+
+	return nil
+}
+
+func (p *Parser) DeleteQueueTx(hashHex []byte) error {
+
+	err := p.ExecSql("DELETE FROM queue_tx WHERE hash = [hex]", hashHex)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	// т.к. мы обрабатываем в queue_parser_tx тр-ии с verified=0, то после их обработки их нужно удалять.
+
+	err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex] AND verified=0 AND used = 0", hashHex)
+	if err != nil {
+		return utils.ErrInfo(err)
+	}
+	return nil
+}
+
+func (p *Parser) AllTxParser(hashHex []byte) error {
+
+	// берем тр-ии
+	all, err := p.GetAll(`
+			SELECT *
+			FROM (
+	              SELECT data,
+	                         hash
+	              FROM queue_tx
+				UNION
+				SELECT data,
+							 hash
+				FROM transactions
+				WHERE verified = 0 AND
+							 used = 0
+			)  AS x
+			`, -1)
+	for _, data := range all {
+		err = p.TxParser([]byte(data["hash"]), []byte(data["data"]), false)
+		if err != nil {
+			return utils.ErrInfo(err)
 		}
 	}
 	return nil

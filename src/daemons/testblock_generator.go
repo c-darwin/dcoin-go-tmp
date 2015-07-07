@@ -33,9 +33,10 @@ func Testblock_generator(configIni map[string]string) {
 
     var mutex = &sync.Mutex{}
 
-    const mainName = "blocks_collection"
+    const GoroutineName = "blocks_collection"
 
     db := utils.DbConnect(configIni)
+	db.GoroutineName = GoroutineName
 
     // Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
     INSTALL:
