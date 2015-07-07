@@ -225,6 +225,11 @@ func ReductionGenerator(configIni map[string]string) string {
 			data = append(data, utils.EncodeLengthPlusData([]byte(reductionType))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
+			err = db.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", utils.Md5(data))
+			if err != nil {
+				db.PrintSleep(err, 60)
+				continue BEGIN
+			}
 			err = db.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
 			if err != nil {
 				db.PrintSleep(err, 60)
