@@ -34,10 +34,10 @@ func IsReachable(url string, ch0 chan string) {
 		ch <- check(url)
 	}()
 	select {
-	case reachable := <-ch:
-	ch0 <- reachable
-	case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
-	ch0 <-  "0"
+		case reachable := <-ch:
+		ch0 <- reachable
+		case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
+		ch0 <-  "0"
 	}
 }
 

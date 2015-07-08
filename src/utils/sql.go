@@ -14,6 +14,10 @@ import (
 	"sync"
 	"math"
 	"errors"
+	"crypto/rsa"
+	"crypto/rand"
+	"encoding/pem"
+	"crypto/x509"
 )
 
 type DCDB struct {
@@ -240,6 +244,17 @@ func (r *oneRow) String() (map[string]string, error) {
 		return r.result, r.err
 	}
 	return r.result, nil
+}
+
+func (r *oneRow) Bytes() (map[string][]byte, error) {
+	result := make(map[string][]byte)
+	if r.err != nil {
+		return result, r.err
+	}
+	for k, v := range r.result {
+		result[k] = []byte(v)
+	}
+	return result, nil
 }
 
 func (r *oneRow) Int64() (map[string]int64, error) {
@@ -2113,4 +2128,3 @@ func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, string) {
 	return txType, userId, thirdVar
 
 }
-

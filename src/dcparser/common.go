@@ -1002,7 +1002,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.rollbackTransactions()
+	err = p.RollbackTransactions()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1063,7 +1063,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	return nil
 }
 
-func (p *Parser) rollbackTransactions() error {
+func (p *Parser) RollbackTransactions() error {
 
 	var blockBody []byte
 	rows, err := p.Query("SELECT data, hash FROM transactions WHERE verified = 1 AND used = 0")

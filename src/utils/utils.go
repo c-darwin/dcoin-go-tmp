@@ -1394,7 +1394,14 @@ func ErrInfoFmt(err string, a ...interface{}) error {
 	return fmt.Errorf("%s (%s)", err_, Caller(1))
 }
 
-func ErrInfo(err error, additionally...string) error {
+func ErrInfo(err_ interface {}, additionally...string) error {
+	var err error
+	switch err_.(type) {
+	case error:
+		err = err_.(error)
+	case string:
+		err = errors.New(err_.(string))
+	}
 	if err != nil {
 		if len(additionally) > 0 {
 			return fmt.Errorf("%s # %s (%s)", err, additionally, Caller(1))
@@ -1670,9 +1677,14 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 	return sum;
 }
 
-func EncodeLengthPlusData(data []byte) []byte  {
-	//fmt.Println("len(data)", len(data))
-	//fmt.Printf("EncodeLength(int64(len(data)) %s\n", EncodeLength(int64(len(data))))
+func EncodeLengthPlusData(data_ interface {}) []byte  {
+	var data []byte
+	switch data_.(type) {
+	case string:
+		data = []byte(data_.(string))
+	case []byte:
+		data = data_.([]byte)
+	}
 	return append(EncodeLength(int64(len(data))) , data...)
 }
 
@@ -1734,7 +1746,14 @@ func IntToStr(num int) string {
 	return strconv.Itoa(num)
 }
 
-func DecToBin(dec, sizeBytes int64) []byte {
+func DecToBin(dec_ interface {}, sizeBytes int64) []byte {
+	var dec int64
+	switch dec_.(type) {
+	case int:
+		dec = int64(dec_.(int))
+	case int64:
+		dec = dec_.(int64)
+	}
 	Hex := fmt.Sprintf("%0"+Int64ToStr(sizeBytes*2)+"x", dec)
 	//fmt.Println("Hex", Hex)
 	return HexToBin([]byte(Hex))
@@ -2095,6 +2114,22 @@ func Sha256(data_ interface{}) []byte {
 	sha256_ := sha256.New()
 	sha256_.Write(data)
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
+}
+
+func DeleteHeader(binaryData *[]byte) []byte {
+	/*
+	TYPE (0-блок, 1-тр-я)     1
+	BLOCK_ID   				       4
+	TIME       					       4
+	USER_ID                         5
+	LEVEL                              1
+	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+	Далее - тело блока (Тр-ии)
+	*/
+	BytesShift(&*binaryData, 15)
+	size := DecodeLength(&*binaryData)
+	BytesShift(&*binaryData, size)
+	return *binaryData
 }
 
 func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, error) {
@@ -2465,6 +2500,7 @@ func Encrypt(key, text []byte) ([]byte, error) {
 	plaintext := []byte(strpad(string(text)))
 	ivtext := make([]byte, aes.BlockSize+len(plaintext))
 	iv := ivtext[:aes.BlockSize]
+	iv = []byte("1111111111111111")
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -2476,6 +2512,125 @@ func Encrypt(key, text []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
+
+func EncryptCFB(text, key []byte) []byte {
+	block,err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+	str := text
+	ciphertext := []byte(RandSeq(16))
+	iv := ciphertext[:16]
+
+	encrypter := cipher.NewCFBEncrypter(block, iv)
+	encrypted := make([]byte, len(str))
+	encrypter.XORKeyStream(encrypted, str)
+	return append(iv, encrypted...)
+}
+
+
+func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
+	block,err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+	decrypter := cipher.NewCFBDecrypter(block, iv)
+	var decrypted []byte
+	decrypter.XORKeyStream(decrypted, encrypted)
+
+	return decrypted, nil
+}
+
+func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, error) {
+
+	// генерим ключ
+	key := DSha256([]byte(RandSeq(32)+randTestblockHash))
+
+	// шифруем ключ публичным ключем получателя
+	pub, err := BinToRsaPubKey(publicKey)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+	encKey, err := rsa.EncryptPKCS1v15(rand.Reader, pub, key)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	// шифруем сам блок/тр-ии. Вначале encData добавляется IV
+	encData, err := EncryptCFB(data, key)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	// возвращаем ключ + IV + encData
+	return append(EncodeLengthPlusData(encKey), encData...), nil
+}
+
+func DecryptData(binaryTx *[]byte) ([]byte, []byte, error) {
+
+	if len(*binaryTx) == 0 {
+		return nil, nil, ErrInfo("len(binaryTx) == 0")
+	}
+
+	// вначале пишется user_id, чтобы в режиме пула можно было понять, кому шлется и чей ключ использовать
+	myUserId := BinToDecBytesShift(&*binaryTx, 5)
+
+	// далее идет 16 байт IV
+	IV := BytesShift(&*binaryTx, 16)
+
+	// изымем зашифрванный ключ, а всё, что останется в $binary_tx - сами зашифрованные хэши тр-ий/блоков
+	encryptedKey := BytesShift(&*binaryTx, DecodeLength(&*binaryTx))
+
+	if len(encryptedKey) == 0 {
+		return nil, nil, ErrInfo("len(encryptedKey) == 0")
+	}
+
+	if len(*binaryTx) == 0 {
+		return nil, nil, ErrInfo("len(*binaryTx) == 0")
+	}
+
+	myPrefix := ""
+	collective, err := db.GetCommunityUsers()
+	if err!=nil {
+		return nil, nil, err
+	}
+	if len(collective) > 0 {
+		if !InSliceInt64(myUserId, collective) {
+			return nil, nil, ErrInfo("!InSliceInt64(myUserId, collective)")
+		}
+		myPrefix = Int64ToStr(myUserId)+"_"
+	}
+
+	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
+	if len(nodePrivateKey) == 0 {
+		return nil, nil, ErrInfo("len(nodePrivateKey) == 0")
+	}
+
+	block, _ := pem.Decode([]byte(nodePrivateKey));
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, nil, ErrInfo("No valid PEM data found")
+	}
+
+	private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	decKey, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, encryptedKey)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+	if len(decKey) == 0 {
+		return nil, nil, ErrInfo("len(decKey)")
+	}
+
+	decrypted, err := DecryptCFB(IV, *binaryTx, decKey)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	return decKey, decrypted, nil
+}
 
 func strpad(text string) string {
 	length := aes.BlockSize - (len(text) % aes.BlockSize)
