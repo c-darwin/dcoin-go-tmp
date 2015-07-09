@@ -14,7 +14,7 @@ import (
 Нужно чтобы следить за вилками
 */
 
-func check(host string, blockId int64) string {
+func checkConf(host string, blockId int64) string {
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
@@ -60,7 +60,7 @@ func IsReachable(host string, blockId int64, ch0 chan string) {
 	log.Println("IsReachable", host)
 	ch := make(chan string, 1)
 	go func() {
-		ch <- check(host, blockId)
+		ch <- checkConf(host, blockId)
 	}()
 	select {
 		case reachable := <-ch:

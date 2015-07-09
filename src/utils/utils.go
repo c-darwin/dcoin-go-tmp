@@ -1790,6 +1790,9 @@ func BinToDecBytesShift(bin *[]byte, num int64) int64 {
 }
 
 func BytesShift(str *[]byte, index int64) []byte {
+	if len(*str) < index {
+		return []byte("0")
+	}
 	var substr []byte
 	var str_ []byte
 	substr = *str
@@ -2513,19 +2516,20 @@ func Encrypt(key, text []byte) ([]byte, error) {
 }
 
 
-func EncryptCFB(text, key []byte) ([]byte, error) {
+func EncryptCFB(text, key, iv []byte) ([]byte,[]byte, error) {
 	block,err := aes.NewCipher(key)
 	if err != nil {
-		return nil, ErrInfo(err)
+		return nil, nil, ErrInfo(err)
 	}
 	str := text
-	ciphertext := []byte(RandSeq(16))
-	iv := ciphertext[:16]
-
+	if len(iv) == 0 {
+		ciphertext := []byte(RandSeq(16))
+		iv = ciphertext[:16]
+	}
 	encrypter := cipher.NewCFBEncrypter(block, iv)
 	encrypted := make([]byte, len(str))
 	encrypter.XORKeyStream(encrypted, str)
-	return append(iv, encrypted...), nil
+	return append(iv, encrypted...), iv, nil
 }
 
 
@@ -2541,7 +2545,7 @@ func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
-func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, error) {
+func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, []byte, []byte, error) {
 
 	// генерим ключ
 	key := DSha256([]byte(RandSeq(32)+randTestblockHash))
@@ -2549,21 +2553,21 @@ func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, erro
 	// шифруем ключ публичным ключем получателя
 	pub, err := BinToRsaPubKey(publicKey)
 	if err != nil {
-		return nil,  ErrInfo(err)
+		return nil, nil, nil, ErrInfo(err)
 	}
 	encKey, err := rsa.EncryptPKCS1v15(crand.Reader, pub, key)
 	if err != nil {
-		return nil, ErrInfo(err)
+		return nil, nil, nil, ErrInfo(err)
 	}
 
 	// шифруем сам блок/тр-ии. Вначале encData добавляется IV
-	encData, err := EncryptCFB(data, key)
+	encData, iv, err := EncryptCFB(data, key, []byte(""))
 	if err != nil {
-		return nil, ErrInfo(err)
+		return nil, nil, nil, ErrInfo(err)
 	}
 
 	// возвращаем ключ + IV + encData
-	return append(EncodeLengthPlusData(encKey), encData...), nil
+	return append(EncodeLengthPlusData(encKey), encData...), key, iv, nil
 }
 
 
@@ -2694,4 +2698,434 @@ func RSortMap(m map[int64]string) []map[int64]string {
 		result = append(result, map[int64]string {int64(k) : m[int64(k)]})
 	}
 	return result
+}
+
+
+func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
+
+	defer conn.Close()
+
+	var err error
+	var db *DCDB
+	if len(configIni["db_user"]) > 0 || (configIni["db_type"]=="sqlite") {
+		db, err = NewDbConnect(configIni)
+		if err != nil {
+			log.Println(ErrInfo(err))
+			return
+		} else {
+			defer db.Close()
+		}
+	} else {
+		return
+	}
+
+	// вначале получаем размер данных
+	buf := make([]byte, 4)
+	_, err = conn.Read(buf)
+	if err != nil {
+		log.Println(ErrInfo(err))
+	}
+	size := BinToDec(buf)
+	log.Println("size", size)
+
+	if size < 10485760 {
+
+		buf := make([]byte, size)
+		_, err := conn.Read(buf)
+		if err != nil {
+			log.Println(ErrInfo(err))
+			return
+		}
+
+		variables, err := db.GetAllVariables()
+		if err != nil {
+			log.Println(ErrInfo(err))
+			return
+		}
+
+		// тип данных
+		dataType := BinToDec(buf[0:1])
+		binaryData := buf[1:]
+		if len(binaryData) == 1 {
+			log.Println(ErrInfo("len(binaryData) == 1"))
+			return
+		}
+		switch dataType {
+		case 1:
+
+			/*
+			 * принимаем зашифрованный список тр-ий от демона disseminator, которые есть у отправителя
+			 * Блоки не качаем тут, т.к. может быть цепочка блоков, а их качать долго
+			 * тр-ии качаем тут, т.к. они мелкие и точно скачаются за 60 сек
+			 * */
+			key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			/*
+			 * структура данных:
+			 * user_id - 5 байт
+			 * type - 1 байт. 0 - блок, 1 - список тр-ий
+			 * {если type==1}:
+			 * <любое кол-во следующих наборов>
+			 * high_rate - 1 байт
+			 * tx_hash - 16 байт
+			 * </>
+			 * {если type==0}:
+			 * block_id - 3 байта
+			 * hash - 32 байт
+			 * head_hash - 32 байт
+			 * <любое кол-во следующих наборов>
+			 * high_rate - 1 байт
+			 * tx_hash - 16 байт
+			 * </>
+			 * */
+			blockId, err := db.GetBlockId()
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			// user_id отправителя, чтобы знать у кого брать данные, когда они будут скачиваться другим скриптом
+			newDataUserId := BinToDec(BytesShift(&decryptedBinData, 5))
+
+			// данные могут быть отправлены юзером, который уже не майнер
+			minerId, err := db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ? AND miner_id > 0", newDataUserId).Int64()
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			if minerId == 0 {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// если 0 - значит вначале идет инфа о блоке, если 1 - значит сразу идет набор хэшей тр-ий
+			newDataType := BinToDecBytesShift(&decryptedBinData, 1)
+			if newDataType == 0 {
+
+				// ID блока, чтобы не скачать старый блок
+				newDataBlockId := BinToDecBytesShift(&decryptedBinData, 3)
+
+				// нет смысла принимать старые блоки
+				if newDataBlockId >= blockId {
+
+					// Это хэш для соревнования, у кого меньше хэш
+					newDataHash := BinToHex(BytesShift(&decryptedBinData, 32))
+
+					// Для доп. соревнования, если head_hash равны (шалит кто-то из майнеров и позже будет за такое забанен)
+					newDataHeadHash := BinToHex(BytesShift(&decryptedBinData, 32))
+					err = db.ExecSql(`DELETE FROM queue_blocks WHERE hash = [hex]`, newDataHash)
+					if err != nil {
+						log.Println(ErrInfo(err))
+						return
+					}
+					err = db.ExecSql(`
+							INSERT INTO queue_blocks (
+								hash,
+								head_hash,
+								user_id,
+								block_id
+							) VALUES (
+								[hex],
+								[hex],
+								?,
+								?
+							)`, newDataHash, newDataHeadHash, newDataUserId, newDataBlockId)
+					if err != nil {
+						log.Println(ErrInfo(err))
+						return
+					}
+				}
+			}
+
+			var needTx []byte
+			// Разбираем список транзакций
+			if len(decryptedBinData) == 0 {
+				log.Println(ErrInfo("len(decryptedBinData) == 0"))
+				return
+			}
+			for {
+				// 1 - это админские тр-ии, 0 - обычные
+				newDataHighRate := BinToDecBytesShift(&decryptedBinData, 1)
+				if len(decryptedBinData) < 16 {
+					log.Println(ErrInfo("len(decryptedBinData) < 16"))
+					return
+				}
+				log.Println("newDataHighRate",  newDataHighRate)
+				newDataTxHash := BinToHex(BytesShift(&decryptedBinData, 16))
+				if len(newDataTxHash) == 0 {
+					log.Println(ErrInfo(err))
+					return
+				}
+				// проверим, нет ли у нас такой тр-ии
+				exists, err := db.Single("SELECT count(hash) FROM log_transactions WHERE hash  =  [hex]", newDataTxHash).Int64()
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+				if exists > 0 {
+					continue
+				}
+				needTx = append(needTx, HexToBin(newDataTxHash)...)
+				if len(decryptedBinData) == 0 {
+					break
+				}
+			}
+			if len(needTx) == 0 {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// шифруем данные. ключ $key сеансовый, iv тоже
+			encData, _, err := EncryptCFB(needTx, key, iv)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// в 4-х байтах пишем размер данных, которые пошлем далее
+			size := DecToBin(len(encData), 4)
+			_, err = conn.Write(size)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			// далее шлем сами данные
+			_, err = conn.Write(encData)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// в ответ получаем размер данных, которые нам хочет передать сервер
+			buf := make([]byte, 4)
+			_, err =conn.Read(buf)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			dataSize := BinToDec(buf)
+			// и если данных менее 10мб, то получаем их
+			if dataSize < 10485760 {
+
+				encBinaryTxs := make([]byte, dataSize)
+				_, err := conn.Read(encBinaryTxs)
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+
+				// разбираем полученные данные
+				binaryTxs, err := DecryptCFB(iv, encBinaryTxs, key)
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+
+				for {
+					txSize := DecodeLength(&binaryTxs)
+					if int64(len(binaryTxs)) < txSize {
+						log.Println(ErrInfo(err))
+						return
+					}
+					txBinData := BytesShift(&binaryTxs, txSize)
+					if len(txBinData) == 0 {
+						log.Println(ErrInfo(err))
+						return
+					}
+					txHex := BinToHex(txBinData)
+
+					// проверим размер
+					if int64(len(txBinData)) > variables.Int64["max_tx_size"] {
+						log.Println(ErrInfo("len(txBinData) > max_tx_size"))
+						return
+					}
+
+					// временно для тестов
+					newDataHighRate := 0
+					err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(txBinData), newDataHighRate, txHex)
+					if len(txBinData) == 0 {
+						log.Println(ErrInfo(err))
+						return
+					}
+				}
+
+			}
+
+		case 2:
+
+			/*
+			 * Прием тр-ий от простых юзеров, а не нодов. Вызывается демоном disseminator
+			 * */
+
+			key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// проверим размер
+			if int64(len(binaryData)) > variables.Int64["max_tx_size"] {
+				log.Println(ErrInfo("len(txBinData) > max_tx_size"))
+				return
+			}
+
+			if len(binaryData) < 5 {
+				log.Println(ErrInfo("len(binaryData) < 5"))
+				return
+			}
+			BytesShift(&binaryData, 1) // type
+			BytesShift(&binaryData, 4) // time
+			size := DecodeLength(&binaryData)
+			if len(binaryData) < size {
+				log.Println(ErrInfo("len(binaryData) < size"))
+				return
+			}
+			userId := BytesShift(&binaryData, size)
+			highRate := 0
+			if userId == 1 {
+				highRate = 1
+			}
+			// заливаем тр-ию в БД
+			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
+			if len(txBinData) == 0 {
+				log.Println(ErrInfo("len(txBinData) == 0"))
+				return
+			}
+
+		case 3:
+			/*
+			 * Пересылаем тр-ию, полученную по локальной сети, конечному ноду, указанному в первых 100 байтах тр-ии
+ 			* */
+			if ok, _ := regexp.MatchString(`^192\.168`, conn.RemoteAddr().String()); !ok{
+				log.Println(ErrInfo("not local"))
+				return
+			}
+			size := DecodeLength(&binaryData)
+			if len(binaryData) < size {
+				log.Println(ErrInfo("len(binaryData) < size"))
+				return
+			}
+			host := BytesShift(&binaryData, size)
+			if ok, _ := regexp.MatchString(`^[0-9a-z\_\.\-\/:]{1,50}$`, host); !ok{
+				log.Println(ErrInfo("incorrect host "+host))
+				return
+			}
+
+			// шлем данные указанному хосту
+			tcpAddr, err := net.ResolveTCPAddr("tcp", host)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			conn2, err := net.DialTCP("tcp", nil, tcpAddr)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			defer conn2.Close()
+
+			conn2.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+			conn2.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
+
+			// в 4-х байтах пишем размер данных, которые пошлем далее
+			size := utils.DecToBin(len(binaryData), 4)
+			_, err = conn2.Write(size)
+			if err != nil {
+				log.Println(utils.ErrInfo(err))
+				return
+			}
+			// сами данные
+			_, err = conn2.Write(binaryData)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+		case 4 :
+
+			// данные присылает демон confirmations
+			blockId := BinToDec(binaryData)
+
+			// используется для учета кол-ва подвержденных блоков, т.е. тех, которые есть у большинства нодов
+			hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
+			if err != nil {
+				log.Println(ErrInfo(err))
+				conn.Write(DecToBin(0))
+				return
+			}
+
+			_, err = conn.Write(hash)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+		case 5:
+
+			// данные присылает демон connector
+			userId := BinToDec(binaryData)
+
+			// если работаем в режиме пула, то нужно проверить, верный ли у юзера нодовский ключ
+			community, err := db.GetCommunityUsers()
+			if err != nil {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			allTables, err := db.GetAllTables()
+			if err != nil {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			keyTable := Int64ToStr(userId)+"_my_node_keys"
+			if !InSliceString(keyTable, allTables) {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			myBlockId, err := db.GetMyBlockId()
+			if err != nil {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			myNodeKey, err := db.Single(`
+					SELECT public_key
+					FROM `+keyTable+`
+					WHERE block_id = (SELECT max(block_id) FROM  `+keyTable+`) AND
+								 block_id < ?
+					`, myBlockId).String()
+			if err != nil {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			if len(myNodeKey) == 0 {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			nodePublicKey, err := db.GetNodePublicKey(userId)
+			if err != nil {
+				log.Println(ErrInfo("incorrect user_id"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			if myNodeKey != nodePublicKey {
+				log.Println(ErrInfo("myNodeKey != nodePublicKey"))
+				conn.Write(DecToBin(0))
+				return
+			}
+			// всё норм, шлем 1
+			_, err = conn.Write(DecToBin(1))
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+		}
+	}
+
 }

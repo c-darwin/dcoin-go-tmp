@@ -5,21 +5,22 @@ import (
 	"consts"
 	"time"
 	"log"
-	"strings"
 	"net"
+	"io/ioutil"
+	"strings"
 )
 
-func check(host string, blockId int64) string {
+func check(host string, userId int64) *answerType {
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
 		log.Println(utils.ErrInfo(err))
-		return "0"
+		return &answerType{userId: userId, answer: 0}
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
 		log.Println(utils.ErrInfo(err))
-		return "0"
+		return &answerType{userId: userId, answer: 0}
 	}
 	defer conn.Close()
 
@@ -27,43 +28,29 @@ func check(host string, blockId int64) string {
 	conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
 
 	// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
-	_, err = conn.Write(utils.DecToBin(4, 1))
+	_, err = conn.Write(utils.DecToBin(5, 1))
 	if err != nil {
 		log.Println(utils.ErrInfo(err))
-		return "0"
+		return &answerType{userId: userId, answer: 0}
 	}
 
-	// в 4-х байтах пишем ID блока, хэш которого хотим получить
-	size := utils.DecToBin(blockId, 4)
-	_, err = conn.Write(size)
+	// в 5-и байтах пишем userID, чтобы проверить, верный ли у него нодовский ключ, т.к. иначе ему нельзя слать зашифрованные данные
+	_, err = conn.Write(utils.DecToBin(userId, 5))
 	if err != nil {
 		log.Println(utils.ErrInfo(err))
-		return "0"
+		return &answerType{userId: userId, answer: 0}
 	}
 
-	// ответ всегда 16 байт
-	hash := make([]byte, 16)
-	_, err = conn.Read(hash)
+	// ответ всегда 1 байт. 0 или 1
+	answer := make([]byte, 1)
+	_, err = conn.Read(answer)
 	if err != nil {
 		log.Println(utils.ErrInfo(err))
-		return "0"
+		return &answerType{userId: userId, answer: 0}
 	}
-	return string(utils.BinToHex(hash))
+	return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 }
 
-func isReachable(host string, blockId int64, ch0 chan string) {
-	log.Println("IsReachable", host)
-	ch := make(chan string, 1)
-	go func() {
-		ch <- check(host, blockId)
-	}()
-	select {
-		case reachable := <-ch:
-		ch0 <- reachable
-		case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
-		ch0 <-  "0"
-	}
-}
 
 func Connector(configIni map[string]string) {
 
@@ -79,19 +66,25 @@ func Connector(configIni map[string]string) {
 			break
 		}
 
-		var hosts []map[string]string
 		nodeConfig, err := db.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) > 0 {
 			utils.Sleep(5)
 			continue
 		}
 
+		var delMiners []string
+		var hosts []map[string]string
+		var nodesInc string
+		var nodeCount int64
+		var idArray map[int]int64
+
 		// ровно стольким нодам мы будем слать хэши блоков и тр-ий
 		var maxHosts = consts.OUT_CONNECTIONS
 		if utils.StrToInt64(nodeConfig["out_connections"]) > 0 {
-			maxHosts = utils.StrToInt64(nodeConfig["out_connections"])
+			maxHosts = utils.StrToInt(nodeConfig["out_connections"])
 		}
-		collective, er := db.GetCommunityUsers()
+		log.Println(maxHosts)
+		collective, err := db.GetCommunityUsers()
 		if err != nil {
 			db.PrintSleep(err, 1)
 			continue
@@ -110,12 +103,13 @@ func Connector(configIni map[string]string) {
 			db.PrintSleep(err, 1)
 			continue
 		}
-		nodesBan, err := db.GetList(`
+		log.Println(myMinersIds)
+		nodesBan, err := db.GetMap(`
 				SELECT host, ban_start
 				FROM nodes_ban
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id
-				`, "host", "ban_start").String()
-
+				`, "host", "ban_start")
+		log.Println(nodesBan)
 		nodesConnections, err := db.GetAll(`
 				SELECT nodes_connection.host,
 							 nodes_connection.user_id,
@@ -125,78 +119,199 @@ func Connector(configIni map[string]string) {
 				LEFT JOIN nodes_ban ON nodes_ban.user_id = nodes_connection.user_id
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_connection.user_id
 				`, -1)
-		for _, data := rage nodesConnections {
+		for _, data := range nodesConnections {
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
 			if db.CheckDaemonRestart() {
 				utils.Sleep(1)
-				break
+				break BEGIN
 			}
-		}
-	}
 
-	db := utils.DbConnect(configIni)
-	for {
-		blockId, err := db.GetBlockId()
-		hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println(hash)
-
-		var hosts []map[string]string
-		if db.ConfigIni["test_mode"] == "1" {
-			hosts = []map[string]string {{"host":"http://localhost:8089/", "user_id":"1"}}
-		} else {
-			maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners_data").Int64()
+			// проверим соотвествие хоста и user_id
+			ok, err := db.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND host  =  ?", data["user_id"], data["host"]).Int64()
 			if err != nil {
-				log.Println(err)
+				utils.Sleep(1)
+				continue BEGIN
 			}
-			q := ""
-			if db.ConfigIni["db_type"] == "postgresql" {
-				q = "SELECT DISTINCT ON (host) host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
-			} else {
-				q = "SELECT host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY host"
+			if ok == 0 {
+				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
+				if err != nil {
+					utils.Sleep(1)
+					continue BEGIN
+				}
 			}
-			hosts, err = db.GetAll(q, consts.COUNT_CONFIRMED_NODES)
-			if err != nil {
-				log.Println(err)
+
+			// если нода забанена недавно
+			if utils.StrToInt64(data["ban_start"]) > utils.Time() - consts.NODE_BAN_TIME {
+				delMiners = append(delMiners, data["miner_id"])
+				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
+				if err != nil {
+					utils.Sleep(1)
+					continue BEGIN
+				}
+				continue
 			}
+
+			hosts = append(hosts, map[string]string{"host": data["host"], "user_id": data["user_id"]})
+			nodesInc += data["host"]+";"+data["user_id"]+"\n"
+			nodeCount++
 		}
 
-		ch := make(chan string)
-		for i := 0; i < len(hosts); i++ {
-			log.Println("hosts[i]", hosts[i])
-			host:=hosts[i]["host"];
-			log.Println("host", host)
+		ch := make(chan *answerType)
+		for _, host := range hosts {
+			userId := utils.StrToInt64(host["user_id"])
 			go func() {
-				IsReachable(host, blockId, ch)
+				ch_ := make(chan *answerType, 1)
+				go func() {
+					ch_ <- check(host["host"], userId)
+				}()
+				select {
+					case reachable := <-ch_:
+						ch <- reachable
+					case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
+						ch <-  &answerType{userId: userId, answer: 0}
+				}
 			}()
 		}
-		var answer string
-		var st0, st1 int64
+
+		// если нода не отвечает, то удалем её из таблы nodes_connection
 		for i := 0; i < len(hosts); i++ {
-			answer = <-ch
-			log.Println("answer == hash", answer, hash)
-			if answer == hash {
-				st1 ++
+			result := <-ch
+			if result.answer == 0 {
+				err = db.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
+				if err != nil {
+					db.PrintSleep(err, 1)
+				}
+			}
+			log.Println("answer", result)
+		}
+
+		// добьем недостающие хосты до $max_hosts
+		if len(hosts) < maxHosts {
+			need := maxHosts - len(hosts)
+			max, err := db.Single("SELECT max(miner_id) FROM miners").Int()
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue BEGIN
+			}
+			i0:=0
+			for {
+				rand := 1
+				if max > 1 {
+					rand = utils.RandInt(1, max+1)
+				}
+				idArray[rand] = 1
+				i0++
+				if i0>30 || len(idArray)>=need || len(idArray)>=max {
+					break
+				}
+			}
+			log.Println("idArray", idArray)
+			// удалим себя
+			for _, id := range myMinersIds {
+				delete(idArray, int(id))
+			}
+			// Удалим забаннные хосты
+			for _, id := range delMiners {
+				delete(idArray, utils.StrToInt(id))
+			}
+			log.Println("idArray", idArray)
+
+			ids := ""
+			if len(idArray) > 0 {
+				for id, _ := range idArray {
+					ids+=utils.IntToStr(id)+","
+				}
+				ids = ids[:len(ids)-1]
+				minersHosts, err := db.GetMap(`
+						SELECT host, user_id
+						FROM miners_data
+						WHERE miner_id IN (`+ids+`)`, "host", "user_id")
+				for host, userId := range minersHosts {
+					if len(nodesBan[host]) > 0 {
+						if utils.StrToInt64(nodesBan[host]) > utils.Time() - consts.NODE_BAN_TIME {
+							continue
+						}
+					}
+					hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
+					err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
+					if err != nil {
+						db.PrintSleep(err, 1)
+						continue BEGIN
+					}
+					err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+					if err != nil {
+						db.PrintSleep(err, 1)
+						continue BEGIN
+					}
+				}
+
+			}
+		}
+
+		log.Println("hosts", hosts)
+		// если хосты не набрались из miner_data, то берем из файла
+		if len(hosts) == 0 {
+			hostsData_, err := ioutil.ReadFile("nodes.inc")
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue BEGIN
+			}
+			hostsData := strings.Split(string(hostsData_), "\n")
+			log.Println("hostsData_", hostsData_)
+			log.Println("hostsData", hostsData)
+			max := 0
+			if len(hosts) > maxHosts-1 {
+				max = maxHosts
 			} else {
-				st0 ++
+				max = len(hosts)
 			}
-			log.Println("CHanswer", answer)
+			for i:=0; i < max; i++ {
+				r := utils.RandInt(0, max)
+				hostUserId := strings.Split(hostsData[r], ";")
+				host, userId := hostUserId[0], hostUserId[1]
+				if utils.InSliceInt64(utils.StrToInt64(userId), collective) {
+					continue
+				}
+				if len(nodesBan[host]) > 0 {
+					if utils.StrToInt64(nodesBan[host]) > utils.Time() - consts.NODE_BAN_TIME {
+						continue
+					}
+				}
+
+				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
+				if err != nil {
+					db.PrintSleep(err, 1)
+					continue BEGIN
+				}
+				err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+				if err != nil {
+					db.PrintSleep(err, 1)
+					continue BEGIN
+				}
+			}
 		}
-		exists, err := db.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
-		if exists > 0 {
-			err = db.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
+
+		if nodeCount > 5 {
+			nodesInc = nodesInc[:len(nodesInc)-1]
+			err := ioutil.WriteFile("nodes.inc", []byte(nodesInc), 0644)
 			if err != nil {
-				log.Println(err)
-			}
-		} else {
-			err = db.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
-			if err != nil {
-				log.Println(err)
+				db.PrintSleep(err, 1)
+				continue BEGIN
 			}
 		}
-		utils.Sleep(60)
+
+		for i:=0; i < 60; i++ {
+			if db.CheckDaemonRestart() {
+				utils.Sleep(1)
+				break BEGIN
+			}
+			utils.Sleep(1)
+		}
 	}
+}
+
+type answerType struct {
+	userId int64
+	answer int64
 }
