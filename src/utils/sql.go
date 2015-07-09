@@ -15,7 +15,7 @@ import (
 	"math"
 	"errors"
 	"crypto/rsa"
-	"crypto/rand"
+	crand "crypto/rand"
 	"encoding/pem"
 	"crypto/x509"
 )
@@ -2127,4 +2127,70 @@ func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, string) {
 	}
 	return txType, userId, thirdVar
 
+}
+
+func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, error) {
+
+	if len(*binaryTx) == 0 {
+		return nil, nil, ErrInfo("len(binaryTx) == 0")
+	}
+
+	// вначале пишется user_id, чтобы в режиме пула можно было понять, кому шлется и чей ключ использовать
+	myUserId := BinToDecBytesShift(&*binaryTx, 5)
+
+	// далее идет 16 байт IV
+	IV := BytesShift(&*binaryTx, 16)
+
+	// изымем зашифрванный ключ, а всё, что останется в $binary_tx - сами зашифрованные хэши тр-ий/блоков
+	encryptedKey := BytesShift(&*binaryTx, DecodeLength(&*binaryTx))
+
+	if len(encryptedKey) == 0 {
+		return nil, nil, ErrInfo("len(encryptedKey) == 0")
+	}
+
+	if len(*binaryTx) == 0 {
+		return nil, nil, ErrInfo("len(*binaryTx) == 0")
+	}
+
+	myPrefix := ""
+	collective, err := db.GetCommunityUsers()
+	if err!=nil {
+		return nil, nil, err
+	}
+	if len(collective) > 0 {
+		if !InSliceInt64(myUserId, collective) {
+			return nil, nil, ErrInfo("!InSliceInt64(myUserId, collective)")
+		}
+		myPrefix = Int64ToStr(myUserId)+"_"
+	}
+
+	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
+	if len(nodePrivateKey) == 0 {
+		return nil, nil, ErrInfo("len(nodePrivateKey) == 0")
+	}
+
+	block, _ := pem.Decode([]byte(nodePrivateKey));
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, nil, ErrInfo("No valid PEM data found")
+	}
+
+	private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	decKey, err := rsa.DecryptPKCS1v15(crand.Reader, private_key, encryptedKey)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+	if len(decKey) == 0 {
+		return nil, nil, ErrInfo("len(decKey)")
+	}
+
+	decrypted, err := DecryptCFB(IV, *binaryTx, decKey)
+	if err != nil {
+		return nil, nil, ErrInfo(err)
+	}
+
+	return decKey, decrypted, nil
 }

@@ -9,11 +9,6 @@ import (
 	"net"
 )
 
-/*
-Получаем кол-во нодов, у которых такой же хэш последнего блока как и у нас
-Нужно чтобы следить за вилками
-*/
-
 func check(host string, blockId int64) string {
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
@@ -56,7 +51,7 @@ func check(host string, blockId int64) string {
 	return string(utils.BinToHex(hash))
 }
 
-func IsReachable(host string, blockId int64, ch0 chan string) {
+func isReachable(host string, blockId int64, ch0 chan string) {
 	log.Println("IsReachable", host)
 	ch := make(chan string, 1)
 	go func() {
@@ -70,9 +65,75 @@ func IsReachable(host string, blockId int64, ch0 chan string) {
 	}
 }
 
-func Confirmations(configIni map[string]string) {
+func Connector(configIni map[string]string) {
 
-	const GoroutineName = "confirmations"
+	GoroutineName := "connector"
+	db := utils.DbConnect(configIni)
+	db.GoroutineName = GoroutineName
+	BEGIN:
+	for {
+
+		// проверим, не нужно нам выйти, т.к. обновилась версия софта
+		if db.CheckDaemonRestart() {
+			utils.Sleep(1)
+			break
+		}
+
+		var hosts []map[string]string
+		nodeConfig, err := db.GetNodeConfig()
+		if len(nodeConfig["local_gate_ip"]) > 0 {
+			utils.Sleep(5)
+			continue
+		}
+
+		// ровно стольким нодам мы будем слать хэши блоков и тр-ий
+		var maxHosts = consts.OUT_CONNECTIONS
+		if utils.StrToInt64(nodeConfig["out_connections"]) > 0 {
+			maxHosts = utils.StrToInt64(nodeConfig["out_connections"])
+		}
+		collective, er := db.GetCommunityUsers()
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue
+		}
+		if len(collective) == 0 {
+			myUserId, err := db.GetMyUserId("")
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue
+			}
+			collective = append(collective, myUserId)
+		}
+		// в сингл-моде будет только $my_miners_ids[0]
+		myMinersIds, err := db.GetMyMinersIds(collective);
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue
+		}
+		nodesBan, err := db.GetList(`
+				SELECT host, ban_start
+				FROM nodes_ban
+				LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id
+				`, "host", "ban_start").String()
+
+		nodesConnections, err := db.GetAll(`
+				SELECT nodes_connection.host,
+							 nodes_connection.user_id,
+							 ban_start,
+							 miner_id
+				FROM nodes_connection
+				LEFT JOIN nodes_ban ON nodes_ban.user_id = nodes_connection.user_id
+				LEFT JOIN miners_data ON miners_data.user_id = nodes_connection.user_id
+				`, -1)
+		for _, data := rage nodesConnections {
+
+			// проверим, не нужно нам выйти, т.к. обновилась версия софта
+			if db.CheckDaemonRestart() {
+				utils.Sleep(1)
+				break
+			}
+		}
+	}
 
 	db := utils.DbConnect(configIni)
 	for {

@@ -2513,10 +2513,10 @@ func Encrypt(key, text []byte) ([]byte, error) {
 }
 
 
-func EncryptCFB(text, key []byte) []byte {
+func EncryptCFB(text, key []byte) ([]byte, error) {
 	block,err := aes.NewCipher(key)
 	if err != nil {
-		panic(err)
+		return nil, ErrInfo(err)
 	}
 	str := text
 	ciphertext := []byte(RandSeq(16))
@@ -2525,7 +2525,7 @@ func EncryptCFB(text, key []byte) []byte {
 	encrypter := cipher.NewCFBEncrypter(block, iv)
 	encrypted := make([]byte, len(str))
 	encrypter.XORKeyStream(encrypted, str)
-	return append(iv, encrypted...)
+	return append(iv, encrypted...), nil
 }
 
 
@@ -2549,88 +2549,23 @@ func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, erro
 	// шифруем ключ публичным ключем получателя
 	pub, err := BinToRsaPubKey(publicKey)
 	if err != nil {
-		return nil, nil, ErrInfo(err)
+		return nil,  ErrInfo(err)
 	}
-	encKey, err := rsa.EncryptPKCS1v15(rand.Reader, pub, key)
+	encKey, err := rsa.EncryptPKCS1v15(crand.Reader, pub, key)
 	if err != nil {
-		return nil, nil, ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
 	// шифруем сам блок/тр-ии. Вначале encData добавляется IV
 	encData, err := EncryptCFB(data, key)
 	if err != nil {
-		return nil, nil, ErrInfo(err)
+		return nil, ErrInfo(err)
 	}
 
 	// возвращаем ключ + IV + encData
 	return append(EncodeLengthPlusData(encKey), encData...), nil
 }
 
-func DecryptData(binaryTx *[]byte) ([]byte, []byte, error) {
-
-	if len(*binaryTx) == 0 {
-		return nil, nil, ErrInfo("len(binaryTx) == 0")
-	}
-
-	// вначале пишется user_id, чтобы в режиме пула можно было понять, кому шлется и чей ключ использовать
-	myUserId := BinToDecBytesShift(&*binaryTx, 5)
-
-	// далее идет 16 байт IV
-	IV := BytesShift(&*binaryTx, 16)
-
-	// изымем зашифрванный ключ, а всё, что останется в $binary_tx - сами зашифрованные хэши тр-ий/блоков
-	encryptedKey := BytesShift(&*binaryTx, DecodeLength(&*binaryTx))
-
-	if len(encryptedKey) == 0 {
-		return nil, nil, ErrInfo("len(encryptedKey) == 0")
-	}
-
-	if len(*binaryTx) == 0 {
-		return nil, nil, ErrInfo("len(*binaryTx) == 0")
-	}
-
-	myPrefix := ""
-	collective, err := db.GetCommunityUsers()
-	if err!=nil {
-		return nil, nil, err
-	}
-	if len(collective) > 0 {
-		if !InSliceInt64(myUserId, collective) {
-			return nil, nil, ErrInfo("!InSliceInt64(myUserId, collective)")
-		}
-		myPrefix = Int64ToStr(myUserId)+"_"
-	}
-
-	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
-	if len(nodePrivateKey) == 0 {
-		return nil, nil, ErrInfo("len(nodePrivateKey) == 0")
-	}
-
-	block, _ := pem.Decode([]byte(nodePrivateKey));
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return nil, nil, ErrInfo("No valid PEM data found")
-	}
-
-	private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
-	if err != nil {
-		return nil, nil, ErrInfo(err)
-	}
-
-	decKey, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, encryptedKey)
-	if err != nil {
-		return nil, nil, ErrInfo(err)
-	}
-	if len(decKey) == 0 {
-		return nil, nil, ErrInfo("len(decKey)")
-	}
-
-	decrypted, err := DecryptCFB(IV, *binaryTx, decKey)
-	if err != nil {
-		return nil, nil, ErrInfo(err)
-	}
-
-	return decKey, decrypted, nil
-}
 
 func strpad(text string) string {
 	length := aes.BlockSize - (len(text) % aes.BlockSize)

@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 	"net"
+	"time"
+	"consts"
 )
 
 /*
@@ -27,6 +29,7 @@ func Disseminator(configIni map[string]string) string {
 		}
 
 		var hosts []map[string]string
+		var nodeData map[string]string
 		nodeConfig, err := db.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) == 0 {
 			// обычный режим
@@ -45,7 +48,7 @@ func Disseminator(configIni map[string]string) string {
 			}
 		} else {
 			// защищенный режим
-			nodeData, err := db.OneRow("SELECT node_public_key, host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
+			nodeData, err = db.OneRow("SELECT node_public_key, host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
 			if err != nil {
 				db.PrintSleep(err, 1)
 				continue
@@ -69,8 +72,12 @@ func Disseminator(configIni map[string]string) string {
 			continue BEGIN
 		}
 
+		var dataType int64 // это тип для того, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
+
 		// если я майнер и работаю в обычном режиме, то должен слать хэши
 		if len(myMinersIds) > 0 && len(nodeConfig["local_gate_ip"]) == 0 && changeNodeKey == 0 {
+
+			dataType = 1
 
 			// определим, от кого будем слать
 			r := utils.RandInt(0, len(myMinersIds))
@@ -133,14 +140,225 @@ func Disseminator(configIni map[string]string) string {
 
 			// отправляем блок и хэши тр-ий, если есть что отправлять
 			if len(toBeSent) > 0 {
-				for _, data := range hosts {
+				for _, host := range hosts {
+					userId := utils.StrToInt64(host["user_id"])
 					go func() {
-						SendHashes(toBeSent, data["host"], []byte(data["node_public_key"]), utils.StrToInt64(data["user_id"]))
+						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						conn, err := net.DialTCP("tcp", nil, tcpAddr)
+						if err!=nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						defer conn.Close()
+
+						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT  * time.Second))
+
+						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// получаем IV + ключ + зашифрованный текст
+						encryptedData, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
+						encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
+
+						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
+						_, err = conn.Write(utils.DecToBin(dataType, 1))
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+
+						// в 4-х байтах пишем размер данных, которые пошлем далее
+						size := utils.DecToBin(len(encryptedData), 4)
+						_, err = conn.Write(size)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// далее шлем сами данные
+						_, err = conn.Write(encryptedData)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// в ответ получаем размер данных, которые нам хочет передать сервер
+						buf := make([]byte, 4)
+						_, err =conn.Read(buf)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						dataSize := utils.BinToDec(buf)
+						// и если данных менее 1мб, то получаем их
+						if dataSize < 1048576 {
+							encBinaryTxHashes := make([]byte, dataSize)
+							_, err := conn.Read(encBinaryTxHashes)
+							if err != nil {
+								log.Println(utils.ErrInfo(err))
+								return
+							}
+							// разбираем полученные данные
+							// ключ нужен чтобы зашифровать данные, которые пошлем
+							key, binaryTxHashes, err := db.DecryptData(&encBinaryTxHashes)
+							if err != nil {
+								log.Println(utils.ErrInfo(err))
+								return
+							}
+							var binaryTx []byte
+							for {
+								// Разбираем список транзакций
+								txHash := make([]byte, 16)
+								if len(binaryTxHashes) >= 16 {
+									txHash = utils.BytesShift(&binaryTxHashes, 16)
+								}
+								txHash = utils.BinToHex(txHash)
+								tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
+								if err != nil {
+									log.Println(utils.ErrInfo(err))
+									return
+								}
+								if len(tx) > 0 {
+									binaryTx = append(binaryTx, utils.EncodeLengthPlusData(tx)...)
+								}
+								if len (binaryTxHashes) == 0 {
+									break
+								}
+							}
+
+							// шифруем тр-ии. Вначале encData добавляется IV
+							encData, err := utils.EncryptCFB(binaryTx, key)
+							if err != nil {
+								log.Println(utils.ErrInfo(err))
+								return
+							}
+
+							// шлем серверу
+							// в первых 4-х байтах пишем размер данных, которые пошлем далее
+							size := utils.DecToBin(len(encData), 4)
+							_, err = conn.Write(size)
+							if err != nil {
+								log.Println(utils.ErrInfo(err))
+								return
+							}
+							// далее шлем сами данные
+							_, err = conn.Write(encData)
+							if err != nil {
+								log.Println(utils.ErrInfo(err))
+								return
+							}
+						}
 					}()
 				}
 			}
+		} else {
+			var remoteNodeHost string
+			// если просто юзер или работаю в защищенном режиме, то шлю тр-ии целиком. слать блоки не имею права.
+			if len(nodeConfig["local_gate_ip"]) > 0 {
+				dataType = 2
+				remoteNodeHost = nodeData["host"]
+			} else {
+				dataType = 3
+				remoteNodeHost = ""
+			}
 
+			var toBeSent []byte // сюда пишем все тр-ии, которые будем слать другим нодам
+			// возьмем хэши и сами тр-ии
+			rows, err := db.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue BEGIN
+			}
+			defer rows.Close()
+			if ok := rows.Next(); ok {
+				var hash, data []byte
+				err = rows.Scan(&hash, &data)
+				if err != nil {
+					db.PrintSleep(err, 1)
+					continue BEGIN
+				}
+				hashHex := utils.BinToHex(hash)
+				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
+				if err != nil {
+					db.PrintSleep(err, 1)
+					continue BEGIN
+				}
+				toBeSent = append(toBeSent, data...)
+			}
 
+			// шлем тр-ии
+			if len(toBeSent) > 0 {
+				for _, host := range hosts {
+					userId := utils.StrToInt64(host["user_id"])
+					go func() {
+						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						conn, err := net.DialTCP("tcp", nil, tcpAddr)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						defer conn.Close()
+
+						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
+
+						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// получаем IV + ключ + зашифрованный текст
+						encryptedData, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
+						encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
+
+						// это может быть защищенное локальное соедниение и принмающему ноду нужно знать, куда дальше слать данные и чьим они зашифрованы ключем
+						if len(remoteNodeHost) > 0 {
+							encryptedData = append([]byte(remoteNodeHost), encryptedData...)
+						}
+
+						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
+						_, err = conn.Write(utils.DecToBin(dataType, 1))
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+
+						// в 4-х байтах пишем размер данных, которые пошлем далее
+						size := utils.DecToBin(len(encryptedData), 4)
+						_, err = conn.Write(size)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+						// далее шлем сами данные
+						_, err = conn.Write(encryptedData)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+
+					}()
+				}
+			}
 		}
 
 		db.DbUnlock()
@@ -153,61 +371,4 @@ func Disseminator(configIni map[string]string) string {
 	return ""
 }
 
-/*
- * $remote_node_user_id - это когда идет пересылка уже зашифрованной тр-ии внутри сети. Чтобы принимающая сторона могла понять,
- * какому ноду слать эту тр-ию, пишем в первые 5 байт user_id
- * */
-func SendHashes(data []byte, host string, nodePublicKey []byte, userId int64, remoteNodeHost string) error {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
-	if err != nil {
-		return err
-	}
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err!=nil {
-		return err
-	} else {
 
-		randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock ORDER BY RAND()").String()
-		if err != nil {
-			return err
-		}
-		// получаем IV + ключ + зашифрованный текст
-		encryptedData, err := utils.EncryptData(data, nodePublicKey, randTestblockHash)
-		// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-		encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
-		if len(remoteNodeHost) > 0 {
-			encryptedData = append(utils.EncodeLengthPlusData(remoteNodeHost), encryptedData...)
-		}
-		// в первых 4-х байтах пишем размер данных, которые пошлем далее
-		size := utils.DecToBin(len(encryptedData), 4)
-		conn.Write(size)
-		// далее шлем сами данные
-		conn.Write(encryptedData)
-		// в ответ получаем размер данных, которые нам хочет передать сервер
-		buf := make([]byte, 4)
-		_, err :=conn.Read(buf)
-		if err != nil {
-			return err
-		}
-		dataSize := utils.BinToDec(buf)
-		// и если данных менее 1мб, то получаем их
-		if dataSize < 1048576 {
-			buf := make([]byte, dataSize)
-			_, err := conn.Read(buf)
-			if err != nil {
-				return err
-			}
-			// разбираем полученные данные
-			// ключ нужен чтобы зашифровать данные, которые пошлем
-			key, data, err := utils.DecryptData(&buf)
-			if err != nil {
-				return err
-			}
-			// Разбираем список транзакций
-
-
-
-		}
-		conn.Close()
-	}
-}

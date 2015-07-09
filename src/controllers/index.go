@@ -32,7 +32,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := GetLang(w, r, parameters)
 
-	sess, _ := globalSessions.SessionStart(w, r)
+	sess, err := globalSessions.SessionStart(w, r)
+	if err != nil {
+		log.Print(err)
+	}
 	defer sess.SessionRelease(w)
 
 	r.ParseForm()

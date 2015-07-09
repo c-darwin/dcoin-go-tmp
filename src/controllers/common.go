@@ -392,8 +392,8 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("controllerName=",controllerName)
 
 	html := ""
-	nonUserId := []string{"CfCatalog", "CfPagePreview", "CfStart", "Check_sign", "CheckNode", "GetBlock", "GetMinerData", "GetMinerDataMap", "GetSellerData", "Index", "IndexCf", "InstallStep0", "InstallStep1", "InstallStep2", "Login", "SignLogin", "SynchronizationBlockchain", "UpdatingBlockchain"}
-	if !utils.InSliceString(controllerName, nonUserId) && c.SessUserId <= 0 {
+
+	if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, controllerName); !ok && c.SessUserId <= 0 {
 		html = "Access denied"
 	} else {
 		// вызываем контроллер в зависимости от шаблона
@@ -815,8 +815,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if len(tplName) > 0 {
 		fmt.Println("tplName",tplName)
 		html := ""
-		nonUserId := []string{"CfCatalog", "CfPagePreview", "CfStart", "Check_sign", "CheckNode", "GetBlock", "GetMinerData", "GetMinerDataMap", "GetSellerData", "Index", "IndexCf", "InstallStep0", "InstallStep1", "InstallStep2", "Login", "SignLogin", "SynchronizationBlockchain", "UpdatingBlockchain"}
-		if !utils.InSliceString(tplName, nonUserId) && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
