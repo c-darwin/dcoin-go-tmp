@@ -48,6 +48,7 @@ type Parser struct {
 	TxMapS map[string]string
 	TxIds []string
 	TxMapArr []map[string][]byte
+	TxMapsArr []*txMapsType
 	BlockData *utils.BlockData
 	PrevBlock *utils.BlockData
 	BinaryData []byte
@@ -810,12 +811,10 @@ func (p *Parser) GetInfoBlock() error {
 	// последний успешно записанный блок
 	p.PrevBlock = new(utils.BlockData)
 	var q string
-	if p.ConfigIni["db_type"] == "mysql" {
+	if p.ConfigIni["db_type"] == "mysql" || p.ConfigIni["db_type"] == "sqlite" {
 		q = "SELECT LOWER(HEX(hash)) as hash, LOWER(HEX(head_hash)) as head_hash, block_id, level, time FROM info_block"
 	} else if p.ConfigIni["db_type"] == "postgresql" {
 		q = "SELECT encode(hash, 'HEX')  as hash, encode(head_hash, 'HEX') as head_hash, block_id, level, time FROM info_block"
-	} else {
-		q = "SELECT hash, head_hash, block_id, level, time FROM info_block"
 	}
 	err := p.QueryRow(q).Scan(&p.PrevBlock.Hash, &p.PrevBlock.HeadHash, &p.PrevBlock.BlockId, &p.PrevBlock.Level, &p.PrevBlock.Time)
 
@@ -1391,6 +1390,7 @@ func (p *Parser) ParseDataLite() error {
 			}
 			p.TxMap["md5hash"] = utils.Md5(transactionBinaryDataFull)
 			p.TxMapArr = append(p.TxMapArr, p.TxMap)
+			p.TxMapsArr = append(p.TxMapsArr, p.TxMaps)
 			if len(p.BinaryData) == 0 {
 				break
 			}
@@ -4360,7 +4360,7 @@ func (p *Parser) DeleteQueueTx(hashHex []byte) error {
 	return nil
 }
 
-func (p *Parser) AllTxParser(hashHex []byte) error {
+func (p *Parser) AllTxParser() error {
 
 	// берем тр-ии
 	all, err := p.GetAll(`

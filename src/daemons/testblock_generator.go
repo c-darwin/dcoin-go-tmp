@@ -234,13 +234,17 @@ func Testblock_generator(configIni map[string]string) {
        Time := time.Now().Unix()
 
         // переведем тр-ии в `verified` = 1
-        utils.AllTxParser();
+        err = p.AllTxParser()
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue
+        }
 
         var mrklArray  [][]byte
 		var usedTransactions string
 		var mrklRoot []byte
         // берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
-        rows, err := db.Query("SELECT data, LOWER(encode(hash, 'hex')),type,user_id,third_var FROM transactions WHERE used=0 AND verified = 1")
+        rows, err := db.Query(db.FormatQuery("SELECT data, LOWER(encode(hash, 'hex')),type,user_id,third_var FROM transactions WHERE used=0 AND verified = 1"))
         utils.CheckErr(err)
         for rows.Next() {
             var data []byte

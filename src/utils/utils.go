@@ -1753,12 +1753,23 @@ func DecToBin(dec_ interface {}, sizeBytes int64) []byte {
 		dec = int64(dec_.(int))
 	case int64:
 		dec = dec_.(int64)
+	case string:
+		dec = StrToInt64(dec_.(string))
 	}
 	Hex := fmt.Sprintf("%0"+Int64ToStr(sizeBytes*2)+"x", dec)
 	//fmt.Println("Hex", Hex)
 	return HexToBin([]byte(Hex))
 }
-func BinToHex(bin []byte) []byte {
+func BinToHex(bin_ interface {}) []byte {
+	var bin []byte
+	switch bin_.(type) {
+	case []byte:
+		bin = bin_.([]byte)
+	case int64:
+		bin = Int64ToByte(bin_.(int64))
+	case string:
+		bin = []byte(bin_.(string))
+	}
 	return []byte(fmt.Sprintf("%x", bin))
 }
 
@@ -1790,8 +1801,8 @@ func BinToDecBytesShift(bin *[]byte, num int64) int64 {
 }
 
 func BytesShift(str *[]byte, index int64) []byte {
-	if len(*str) < index {
-		return []byte("0")
+	if int64(len(*str)) < index {
+		return []byte("")
 	}
 	var substr []byte
 	var str_ []byte
@@ -1870,6 +1881,9 @@ func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
 	substr = substr[int64(len(substr))-index:]
 	//fmt.Println(substr)
 	str_ = *str
+	if int64(len(str_)) < int64(len(str_))-index {
+		return []byte("")
+	}
 	str_ = str_[0:int64(len(str_))-index]
 	*str = str_
 	//fmt.Println(utils.BinToHex(str_))
@@ -1916,9 +1930,6 @@ func SleepDiff(sleep *int64, diff int64) {
 
 
 
-func AllTxParser() {
-
-}
 func CopyFileContents(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
@@ -2959,7 +2970,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			 * Прием тр-ий от простых юзеров, а не нодов. Вызывается демоном disseminator
 			 * */
 
-			key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
+			_, _, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
@@ -2978,19 +2989,19 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			BytesShift(&binaryData, 1) // type
 			BytesShift(&binaryData, 4) // time
 			size := DecodeLength(&binaryData)
-			if len(binaryData) < size {
+			if int64(len(binaryData)) < size {
 				log.Println(ErrInfo("len(binaryData) < size"))
 				return
 			}
-			userId := BytesShift(&binaryData, size)
+			userId := BytesToInt64(BytesShift(&binaryData, size))
 			highRate := 0
 			if userId == 1 {
 				highRate = 1
 			}
 			// заливаем тр-ию в БД
 			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
-			if len(txBinData) == 0 {
-				log.Println(ErrInfo("len(txBinData) == 0"))
+			if err!=nil {
+				log.Println(ErrInfo(err))
 				return
 			}
 
@@ -3003,11 +3014,11 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				return
 			}
 			size := DecodeLength(&binaryData)
-			if len(binaryData) < size {
+			if int64(len(binaryData)) < size {
 				log.Println(ErrInfo("len(binaryData) < size"))
 				return
 			}
-			host := BytesShift(&binaryData, size)
+			host := string(BytesShift(&binaryData, size))
 			if ok, _ := regexp.MatchString(`^[0-9a-z\_\.\-\/:]{1,50}$`, host); !ok{
 				log.Println(ErrInfo("incorrect host "+host))
 				return
@@ -3030,10 +3041,9 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			conn2.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
 
 			// в 4-х байтах пишем размер данных, которые пошлем далее
-			size := utils.DecToBin(len(binaryData), 4)
-			_, err = conn2.Write(size)
+			_, err = conn2.Write(DecToBin(len(binaryData), 4))
 			if err != nil {
-				log.Println(utils.ErrInfo(err))
+				log.Println(ErrInfo(err))
 				return
 			}
 			// сами данные
@@ -3052,11 +3062,11 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
 			if err != nil {
 				log.Println(ErrInfo(err))
-				conn.Write(DecToBin(0))
+				conn.Write(DecToBin(0, 1))
 				return
 			}
 
-			_, err = conn.Write(hash)
+			_, err = conn.Write([]byte(hash))
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
@@ -3071,60 +3081,341 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			community, err := db.GetCommunityUsers()
 			if err != nil {
 				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
+				conn.Write(DecToBin(0, 1))
 				return
 			}
-			allTables, err := db.GetAllTables()
-			if err != nil {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			keyTable := Int64ToStr(userId)+"_my_node_keys"
-			if !InSliceString(keyTable, allTables) {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			myBlockId, err := db.GetMyBlockId()
-			if err != nil {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			myNodeKey, err := db.Single(`
+			if len(community) > 0 {
+				allTables, err := db.GetAllTables()
+				if err != nil {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				keyTable := Int64ToStr(userId) + "_my_node_keys"
+				if !InSliceString(keyTable, allTables) {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				myBlockId, err := db.GetMyBlockId()
+				if err != nil {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				myNodeKey, err := db.Single(`
 					SELECT public_key
 					FROM `+keyTable+`
 					WHERE block_id = (SELECT max(block_id) FROM  `+keyTable+`) AND
 								 block_id < ?
 					`, myBlockId).String()
-			if err != nil {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
+				if err != nil {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				if len(myNodeKey) == 0 {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				nodePublicKey, err := db.GetNodePublicKey(userId)
+				if err != nil {
+					log.Println(ErrInfo("incorrect user_id"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				if myNodeKey != string(nodePublicKey) {
+					log.Println(ErrInfo("myNodeKey != nodePublicKey"))
+					conn.Write(DecToBin(0, 1))
+					return
+				}
+				// всё норм, шлем 1
+				_, err = conn.Write(DecToBin(1, 1))
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+			} else {
+				// всё норм, шлем 1
+				_, err = conn.Write(DecToBin(1, 1))
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
 			}
-			if len(myNodeKey) == 0 {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			nodePublicKey, err := db.GetNodePublicKey(userId)
-			if err != nil {
-				log.Println(ErrInfo("incorrect user_id"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			if myNodeKey != nodePublicKey {
-				log.Println(ErrInfo("myNodeKey != nodePublicKey"))
-				conn.Write(DecToBin(0))
-				return
-			}
-			// всё норм, шлем 1
-			_, err = conn.Write(DecToBin(1))
+		case 6:
+			/**
+			- проверяем, находится ли отправитель на одном с нами уровне
+			- получаем  block_id, user_id, mrkl_root, signature
+			- если хэш блока меньше того, что есть у нас в табле testblock, то смотртим, есть ли такой же хэш тр-ий,
+			- если отличается, то загружаем блок от отправителя по адресу http://host/get_testblock.php.
+			- если не отличается, то просто обновляет хэш блока у себя
+			 */
+			currentBlockId, err := db.GetBlockId()
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
 			}
+			if currentBlockId == 0 {
+				log.Println(ErrInfo("currentBlockId == 0"))
+				return
+			}
+			newTestblockBlockId := BinToDecBytesShift(&binaryData, 4)
+			newTestblockTime := BinToDecBytesShift(&binaryData, 4)
+			newTestblockUserId := BinToDecBytesShift(&binaryData, 4)
+			newTestblockMrklRoot := BinToHex(BytesShift(&binaryData, 32))
+			newTestblockSignatureHex := BinToHex(BytesShift(&binaryData, DecodeLength(&binaryData)))
+
+			if !CheckInputData(newTestblockBlockId, "int")  {
+				log.Println(ErrInfo("incorrect newTestblockBlockId"))
+				return
+			}
+			if !CheckInputData(newTestblockTime, "int")  {
+				log.Println(ErrInfo("incorrect newTestblockTime"))
+				return
+			}
+			if !CheckInputData(newTestblockUserId, "int")  {
+				log.Println(ErrInfo("incorrect newTestblockUserId"))
+				return
+			}
+			if !CheckInputData(newTestblockMrklRoot, "sha256")  {
+				log.Println(ErrInfo("incorrect newTestblockMrklRoot"))
+				return
+			}
+
+			/*
+			 * Проблема одновременных попыток локнуть. Надо попробовать без локов
+			 * */
+			db.DbLock()
+
+			//prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
+			prevBlock, _, _, _, level, levelsRange, err := db.TestBlock()
+			if err != nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			nodesIds := GetOurLevelNodes(level, levelsRange)
+
+			// проверим, верный ли ID блока
+			if newTestblockBlockId != prevBlock.BlockId+1 {
+				db.UnlockPrintSleep(ErrInfo(fmt.Sprintf("newTestblockBlockId != prevBlock.BlockId+1 %d!=%d+1", newTestblockBlockId, prevBlock.BlockId)), 1)
+				return
+			}
+
+			// проверим, есть ли такой майнер
+			minerId, err := db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", newTestblockUserId).Int64()
+			if err != nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			if minerId == 0 {
+				db.UnlockPrintSleep(ErrInfo("minerId == 0"), 0)
+				return
+			}
+			// проверим, точно ли отправитель с нашего уровня
+			if !InSliceInt64(minerId, nodesIds) {
+				db.UnlockPrintSleep(ErrInfo("!InSliceInt64(minerId, nodesIds)"), 0)
+				return
+			}
+
+			// допустимая погрешность во времени генерации блока
+			maxErrorTime := variables.Int64["error_time"]
+
+
+			// получим значения для сна
+			sleep, err := db.GetGenSleep(prevBlock, level)
+			if err!=nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			// исключим тех, кто сгенерил блок слишком рано
+			if prevBlock.Time + sleep - newTestblockTime > maxErrorTime {
+				db.UnlockPrintSleep(ErrInfo("prevBlock.Time + sleep - newTestblockTime > maxErrorTime"), 0)
+				return
+			}
+			// исключим тех, кто сгенерил блок с бегущими часами
+			if newTestblockTime > Time() {
+				db.UnlockPrintSleep(ErrInfo("newTestblockTime > Time()"), 0)
+				return
+			}
+			// получим хэш заголовка
+			newHeaderHash := DSha256(fmt.Sprintf("%v,%v,%v", newTestblockUserId, newTestblockBlockId, prevBlock.HeadHash))
+			myTestblock, err := db.OneRow(`
+					SELECT block_id,
+								user_id,
+								LOWER(HEX(mrkl_root)) as mrkl_root,
+								LOWER(HEX(signature)) as signature
+					FROM testblock
+					WHERE status = "active"
+					`).String()
+			if err!=nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			// получим хэш заголовка
+			myHeaderHash := DSha256(fmt.Sprintf("%v,%v,%v", myTestblock["user_id"], myTestblock["block_id"], prevBlock.HeadHash))
+			// у кого меньше хэш, тот и круче
+			hash1 := big.NewInt(0)
+			hash1.SetString(string(newHeaderHash), 16)
+			hash2 := big.NewInt(0)
+			hash2.SetString(string(myHeaderHash), 16)
+			fmt.Println(hash1.Cmp(hash2))
+			//if HexToDecBig(newHeaderHash) > string(myHeaderHash) {
+			if hash1.Cmp(hash2) == 1 {
+				db.UnlockPrintSleep(ErrInfo("newHeaderHash > myHeaderHash"), 0)
+				return
+			}
+			/* т.к. на данном этапе в большинстве случаев наш текущий блок будет заменен,
+			 * то нужно парсить его, рассылать другим нодам и дождаться окончания проверки
+			 */
+			err = db.ExecSql("UPDATE testblock SET status = 'pending'")
+			if err != nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			// если отличается, то загружаем недостающии тр-ии от отправителя
+			if string(newTestblockMrklRoot) != myTestblock["mrkl_root"] {
+				sendData := ""
+				// получим все имеющиеся у нас тр-ии, которые еще не попали в блоки
+				txArray, err := db.GetMap(`SELECT LOWER(HEX(hash)) as hash, data FROM transactions`, "hash", "data")
+				if err != nil {
+					db.UnlockPrintSleep(ErrInfo(err), 0)
+					return
+				}
+				for hash, _ := range txArray {
+					sendData+=hash
+				}
+
+				// в 4-х байтах пишем размер данных, которые пошлем далее
+				_, err = conn.Write(DecToBin(len(sendData), 4))
+				if err != nil {
+					db.UnlockPrintSleep(ErrInfo(err), 0)
+					return
+				}
+				// шлем набор хэшей тр-ий, которые есть у нас
+				if len(sendData) > 0 {
+					_, err = conn.Write([]byte(sendData))
+					if err != nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
+				}
+				/*
+				в ответ получаем:
+				BLOCK_ID   				       4
+				TIME       					       4
+				USER_ID                         5
+				SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+				Размер всех тр-ий, размер 1 тр-ии, тело тр-ии.
+				Хэши три-ий (порядок тр-ий)
+				*/
+				buf := make([]byte, 4)
+				_, err =conn.Read(buf)
+				if err != nil {
+					db.UnlockPrintSleep(ErrInfo(err), 0)
+					return
+				}
+				dataSize := BinToDec(buf)
+				// и если данных менее 10мб, то получаем их
+				if dataSize < 10485760 {
+
+					binaryData := make([]byte, dataSize)
+					_, err := conn.Read(binaryData)
+					if err != nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
+					// Разбираем полученные бинарные данные
+					newTestblockBlockId := BinToDecBytesShift(&binaryData, 4)
+					newTestblockTime := BinToDecBytesShift(&binaryData, 4)
+					newTestblockUserId := BinToDecBytesShift(&binaryData, 5)
+					newTestblockSignature := BytesShift(&binaryData, DecodeLength(&binaryData))
+
+					// недостающие тр-ии
+					length := DecodeLength(&binaryData) // размер всех тр-ий
+					txBinary := BytesShift(&binaryData, length)
+					for {
+						// берем по одной тр-ии
+						length := DecodeLength(&txBinary) // размер всех тр-ий
+						if length == 0 {
+							break
+						}
+						tx := BytesShift(&txBinary, length)
+						txArray[string(Md5(tx))] = string(tx)
+					}
+					// порядок тр-ий
+					var orderHashArray []string
+					for {
+						orderHashArray = append(orderHashArray, string(BinToHex(BytesShift(&binaryData, 16))))
+						if len(binaryData) == 0{
+							break
+						}
+					}
+					// сортируем и наши и полученные транзакции
+					var transactions []byte
+					for _, txMd5 := range orderHashArray {
+						transactions = append(transactions, []byte(txArray[txMd5])...)
+					}
+
+					// формируем блок, который далее будем тщательно проверять
+					/*
+					Заголовок (от 143 до 527 байт )
+					TYPE (0-блок, 1-тр-я)     1
+					BLOCK_ID   				       4
+					TIME       					       4
+					USER_ID                         5
+					LEVEL                              1
+					SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+					Далее - тело блока (Тр-ии)
+					*/
+					newBlockIdBinary := DecToBin(newTestblockBlockId, 4)
+					timeBinary := DecToBin(newTestblockTime, 4)
+					userIdBinary := DecToBin(newTestblockUserId, 5)
+					levelBinary := DecToBin(level, 1)
+
+					newBlockHeader := DecToBin(0, 1) // 0 - это блок
+					newBlockHeader = append(newBlockHeader, newBlockIdBinary...)
+					newBlockHeader = append(newBlockHeader, timeBinary...)
+					newBlockHeader = append(newBlockHeader, userIdBinary...)
+					newBlockHeader = append(newBlockHeader, levelBinary...) // $level пишем, чтобы при расчете времени ожидания в следующем блоке не пришлось узнавать, какой был max_miner_id
+					newBlockHeader = append(newBlockHeader, newTestblockSignature...)
+
+					newBlockHex := BinToHex(append(newBlockHeader, transactions...))
+
+					// и передаем блок для обратотки через демон queue_parser_testblock
+					// т.к. есть запросы к log_time_, а их можно выполнять только по очереди
+					err = db.ExecSql(`DELETE FROM queue_testblock WHERE head_hash = [hex]`, newHeaderHash)
+					if err != nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
+					err = db.ExecSql(`INSERT INTO queue_testblock (head_hash, data) VALUES ([hex], [hex])`, newHeaderHash, newBlockHex)
+					if err != nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
+				}
+			} else {
+				// если всё нормально, то пишем в таблу testblock новые данные
+				err = db.ExecSql(`
+						UPDATE testblock
+						SET   time = ?,
+								user_id = ?,
+								header_hash = [hex],
+								signature = [hex]
+						`, newTestblockTime, newTestblockUserId, newHeaderHash, newTestblockSignatureHex)
+				if err != nil {
+					db.UnlockPrintSleep(ErrInfo(err), 0)
+					return
+				}
+			}
+			err = db.ExecSql("UPDATE testblock SET status = 'active'")
+			if err != nil {
+				db.UnlockPrintSleep(ErrInfo(err), 0)
+				return
+			}
+			db.DbUnlock()
 		}
 	}
 

@@ -9,17 +9,17 @@ import (
 	"consts"
 )
 
-/*
- * просто шлем всем, кто есть в nodes_connection хэши блока и тр-ий
- * если мы не майнер, то шлем всю тр-ию целиком, блоки слать не можем
- * если майнер - то шлем только хэши, т.к. у нас есть хост, откуда всё можно скачать
- * */
-func Disseminator(configIni map[string]string) string {
+/**
+ * Демон, который мониторит таблу testblock и если видит status=active,
+ * то шлет блок строго тем, кто находятся на одном с нами уровне. Если пошлет
+ * тем, кто не на одном уровне, то блок просто проигнорируется
+ *
+ */
+func Testblock_disseminator(configIni map[string]string) string {
 
-	GoroutineName := "disseminator"
+	GoroutineName := "testblock_disseminator"
 	db := utils.DbConnect(configIni)
 	db.GoroutineName = GoroutineName
-	BEGIN:
 	for {
 
 		// проверим, не нужно нам выйти, т.к. обновилась версия софта
@@ -28,335 +28,175 @@ func Disseminator(configIni map[string]string) string {
 			break
 		}
 
-		var hosts []map[string]string
-		var nodeData map[string]string
 		nodeConfig, err := db.GetNodeConfig()
-		if len(nodeConfig["local_gate_ip"]) == 0 {
-			// обычный режим
-			hosts, err = db.GetAll(`
-					SELECT miners_data.user_id, miners_data.host, node_public_key
-					FROM nodes_connection
-					LEFT JOIN miners_data ON nodes_connection.user_id = miners_data.user_id
-					`, -1)
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue
-			}
-			if len(hosts) == 0 {
-				utils.Sleep(1)
-				continue
-			}
-		} else {
-			// защищенный режим
-			nodeData, err = db.OneRow("SELECT node_public_key, host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue
-			}
-			hosts = append(hosts, map[string]string{"host":nodeConfig["local_gate_ip"], "node_public_key":nodeData["node_public_key"], "user_id":nodeConfig["static_node_user_id"]})
+		if len(nodeConfig["local_gate_ip"]) != 0 {
+			db.PrintSleep("local_gate_ip", 60)
+			continue
 		}
 
-		myUsersIds, err := db.GetMyUsersIds(false)
-		myMinersIds, err := db.GetMyMinersIds(myUsersIds)
-
-		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться
-		// т.к. при некорректном нодовском ключе придет зашифрованый запрос на отдачу данных, а мы его не сможем расшифровать т.к. ключ у нас неверный
-		changeNodeKey, err := db.Single(`
-				SELECT count(*)
-				FROM transactions
-				WHERE type = ? AND
-							 user_id IN (`+strings.Join(utils.SliceInt64ToString(myUsersIds), ",")+`)
-				`, utils.TypeInt("ChangeNodeKey")).Int64()
+		_, _, _, _, level, levelsRange, err := db.TestBlock()
 		if err != nil {
 			db.PrintSleep(err, 1)
-			continue BEGIN
+			continue
 		}
 
-		var dataType int64 // это тип для того, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
+		// получим id майнеров, которые на нашем уровне
+		nodesIds := utils.GetOurLevelNodes(level, levelsRange)
+		if len(nodesIds) == 0 {
+			db.PrintSleep("len(nodesIds) == 0", 1)
+			continue
+		}
 
-		// если я майнер и работаю в обычном режиме, то должен слать хэши
-		if len(myMinersIds) > 0 && len(nodeConfig["local_gate_ip"]) == 0 && changeNodeKey == 0 {
+		// получим хосты майнеров, которые на нашем уровне
+		hosts, err := db.GetList("SELECT host FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue
+		}
 
-			dataType = 1
+		// шлем block_id, user_id, mrkl_root, signature
+		data, err := db.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active'").String()
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue
+		}
+		if len(data) > 0 {
 
-			// определим, от кого будем слать
-			r := utils.RandInt(0, len(myMinersIds))
-			myMinerId := myMinersIds[r]
-			myUserId, err := db.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue BEGIN
-			}
+			dataToBeSent := utils.DecToBin(utils.StrToInt64(data["block_id"]), 4)
+			dataToBeSent = append(dataToBeSent, utils.DecToBin(data["time"], 4)...)
+			dataToBeSent = append(dataToBeSent, utils.DecToBin(data["user_id"], 4)...)
+			dataToBeSent = append(dataToBeSent, []byte(data["mrkl_root"])...)
+			dataToBeSent = append(dataToBeSent, utils.EncodeLengthPlusData(data["signature"])...)
 
-			// возьмем хэш текущего блока и номер блока
-			// для теста ролбеков отключим на время
-			data, err := db.OneRow("SELECT block_id, hash, head_hash FROM info_block WHERE sent  =  0").Bytes()
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue BEGIN
-			}
-			err = db.ExecSql("UPDATE info_block SET sent = 1")
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue BEGIN
-			}
+			for _, host := range hosts {
+				go func() {
 
-			/*
-			 * Составляем данные на отправку
-			 * */
-			// 5 байт = наш user_id. Но они будут не первые, т.к. m_curl допишет вперед user_id получателя (нужно для пулов)
-			toBeSent := utils.DecToBin(myUserId, 5);
-			if len(data) > 0 {  // блок
-				// если 5-й байт = 0, то на приемнике будем читать блок, если = 1 , то сразу хэши тр-ий
-				toBeSent = append(toBeSent, utils.DecToBin(0, 1)...)
-				toBeSent = append(toBeSent, utils.DecToBin(utils.BytesToInt64(data["block_id"]), 3)...)
-				toBeSent = append(toBeSent, data["hash"]...)
-				toBeSent = append(toBeSent, data["head_hash"]...)
-				err = db.ExecSql("UPDATE info_block SET sent = 1")
-				if err != nil {
-					db.PrintSleep(err, 1)
-					continue BEGIN
-				}
-			} else { // тр-ии без блока
-				toBeSent = append(toBeSent, utils.DecToBin(1, 1)...)
-			}
+					tcpAddr, err := net.ResolveTCPAddr("tcp", host)
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+					conn, err := net.DialTCP("tcp", nil, tcpAddr)
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+					defer conn.Close()
 
-			// возьмем хэши тр-ий
-			transactions, err := db.GetAll("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0", -1)
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue BEGIN
-			}
-			for _, data := range transactions {
-				hexHash := utils.BinToHex([]byte(data["hash"]))
-				toBeSent = append(toBeSent, utils.DecToBin(utils.StrToInt64(data["high_rate"]), 1)...)
-				toBeSent = append(toBeSent, []byte(data["hash"])...)
-				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hexHash)
-				if err != nil {
-					db.PrintSleep(err, 1)
-					continue BEGIN
-				}
-			}
+					conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+					conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
 
-			// отправляем блок и хэши тр-ий, если есть что отправлять
-			if len(toBeSent) > 0 {
-				for _, host := range hosts {
-					userId := utils.StrToInt64(host["user_id"])
-					go func() {
-						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
+					// вначале шлем тип данных
+					_, err = conn.Write(utils.DecToBin(6, 1))
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+
+					// в 4-х байтах пишем размер данных, которые пошлем далее
+					_, err = conn.Write(utils.DecToBin(len(dataToBeSent), 4))
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+					// далее шлем сами данные
+					_, err = conn.Write(dataToBeSent)
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+
+					/*
+					 * Получаем тр-ии, которые есть у юзера, в ответ выдаем те, что недостают и
+					 * их порядок следования, чтобы получить валидный блок
+					 */
+					buf := make([]byte, 4)
+					_, err =conn.Read(buf)
+					if err != nil {
+						log.Println(utils.ErrInfo(err))
+						return
+					}
+					dataSize := utils.BinToDec(buf)
+					// и если данных менее 10мб, то получаем их
+					if dataSize < 10485760 {
+
+						data, err := db.OneRow("SELECT * FROM testblock").String()
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
-						conn, err := net.DialTCP("tcp", nil, tcpAddr)
-						if err!=nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						defer conn.Close()
 
-						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT  * time.Second))
+						responseBinaryData := utils.DecToBin(utils.StrToInt64(data["block_id"]), 4)
+						responseBinaryData = append(responseBinaryData, utils.DecToBin(utils.StrToInt64(data["time"]), 4)...)
+						responseBinaryData = append(responseBinaryData, utils.DecToBin(utils.StrToInt64(data["user_id"]), 5)...)
+						responseBinaryData = append(responseBinaryData, utils.EncodeLengthPlusData(data["signature"])...)
 
-						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// получаем IV + ключ + зашифрованный текст
-						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
-
-						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
-						dataToBeSent = append(utils.DecToBin(dataType, 1), dataToBeSent...)
-
-						// в 4-х байтах пишем размер данных, которые пошлем далее
-						size := utils.DecToBin(len(dataToBeSent), 4)
-						_, err = conn.Write(size)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// далее шлем сами данные
-						_, err = conn.Write(dataToBeSent)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// в ответ получаем размер данных, которые нам хочет передать сервер
-						buf := make([]byte, 4)
-						_, err =conn.Read(buf)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						dataSize := utils.BinToDec(buf)
-						// и если данных менее 1мб, то получаем их
-						if dataSize < 1048576 {
-							encBinaryTxHashes := make([]byte, dataSize)
-							_, err := conn.Read(encBinaryTxHashes)
+						addSql := ""
+						if dataSize > 0 {
+							binaryData := make([]byte, dataSize)
+							_, err := conn.Read(binaryData)
 							if err != nil {
 								log.Println(utils.ErrInfo(err))
 								return
 							}
-							// разбираем полученные данные
-							binaryTxHashes, err := utils.DecryptCFB(iv, encBinaryTxHashes, key)
-							if err != nil {
-								log.Println(utils.ErrInfo(err))
-								return
-							}
-							var binaryTx []byte
+
+							// разбираем присланные данные
+							// получим хэши тр-ий, которые надо исключить
 							for {
-								// Разбираем список транзакций
-								txHash := make([]byte, 16)
-								if len(binaryTxHashes) >= 16 {
-									txHash = utils.BytesShift(&binaryTxHashes, 16)
+								if len(binaryData) < 16 {
+									break
 								}
-								txHash = utils.BinToHex(txHash)
-								tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
-								if err != nil {
-									log.Println(utils.ErrInfo(err))
-									return
-								}
-								if len(tx) > 0 {
-									binaryTx = append(binaryTx, utils.EncodeLengthPlusData(tx)...)
-								}
-								if len (binaryTxHashes) == 0 {
+								txHex := utils.BinToHex(utils.BytesShift(&binaryData, 16))
+								// проверим
+								addSql+=string(txHex)+","
+								if len(binaryData) == 0 {
 									break
 								}
 							}
-
-							// шифруем тр-ии. Вначале encData добавляется IV
-							encData, _, err := utils.EncryptCFB(binaryTx, key, iv)
-							if err != nil {
-								log.Println(utils.ErrInfo(err))
-								return
-							}
-
-							// шлем серверу
-							// в первых 4-х байтах пишем размер данных, которые пошлем далее
-							size := utils.DecToBin(len(encData), 4)
-							_, err = conn.Write(size)
-							if err != nil {
-								log.Println(utils.ErrInfo(err))
-								return
-							}
-							// далее шлем сами данные
-							_, err = conn.Write(encData)
-							if err != nil {
-								log.Println(utils.ErrInfo(err))
-								return
-							}
+							addSql = addSql[:len(addSql)-1]
+							addSql = "WHERE id NOT IN ("+addSql+")"
 						}
-					}()
-				}
-			}
-		} else {
-			var remoteNodeHost string
-			// если просто юзер или работаю в защищенном режиме, то шлю тр-ии целиком. слать блоки не имею права.
-			if len(nodeConfig["local_gate_ip"]) > 0 {
-				dataType = 3
-				remoteNodeHost = nodeData["host"]
-			} else {
-				dataType = 2
-				remoteNodeHost = ""
-			}
-
-			var toBeSent []byte // сюда пишем все тр-ии, которые будем слать другим нодам
-			// возьмем хэши и сами тр-ии
-			rows, err := db.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
-			if err != nil {
-				db.PrintSleep(err, 1)
-				continue BEGIN
-			}
-			defer rows.Close()
-			if ok := rows.Next(); ok {
-				var hash, data []byte
-				err = rows.Scan(&hash, &data)
-				if err != nil {
-					db.PrintSleep(err, 1)
-					continue BEGIN
-				}
-				hashHex := utils.BinToHex(hash)
-				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
-				if err != nil {
-					db.PrintSleep(err, 1)
-					continue BEGIN
-				}
-				toBeSent = append(toBeSent, data...)
-			}
-
-			// шлем тр-ии
-			if len(toBeSent) > 0 {
-				for _, host := range hosts {
-					userId := utils.StrToInt64(host["user_id"])
-					go func() {
-						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
+						// сами тр-ии
+						var transactions []byte
+						transactions_testblock, err := db.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
-						conn, err := net.DialTCP("tcp", nil, tcpAddr)
+						for _, txData := range transactions_testblock {
+							transactions = append(transactions, utils.EncodeLengthPlusData(txData)...)
+						}
+
+						responseBinaryData = append(responseBinaryData, utils.EncodeLengthPlusData(transactions)...)
+
+						// порядок тр-ий
+						transactions_testblock, err = db.GetList(`SELECT hash FROM transactions_testblock ORDER BY id ASC`).String()
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
-						defer conn.Close()
-
-						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
-
-						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// получаем IV + ключ + зашифрованный текст
-						encryptedData, _, _, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
-
-						// это может быть защищенное локальное соедниение и принмающему ноду нужно знать, куда дальше слать данные и чьим они зашифрованы ключем
-						if len(remoteNodeHost) > 0 {
-							encryptedData = append([]byte(remoteNodeHost), encryptedData...)
-						}
-
-						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
-						_, err = conn.Write(utils.DecToBin(dataType, 1))
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
+						for _, txHash := range transactions_testblock {
+							responseBinaryData = append(responseBinaryData, []byte(txHash)...)
 						}
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее
-						size := utils.DecToBin(len(encryptedData), 4)
-						_, err = conn.Write(size)
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						// далее шлем сами данные
-						_, err = conn.Write(encryptedData)
+						_, err = conn.Write(utils.DecToBin(len(responseBinaryData), 4))
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
 
-					}()
-				}
+						// далее шлем сами данные
+						_, err = conn.Write(responseBinaryData)
+						if err != nil {
+							log.Println(utils.ErrInfo(err))
+							return
+						}
+					}
+
+				}()
 			}
 		}
-
-		db.DbUnlock()
 
 		utils.Sleep(1)
 

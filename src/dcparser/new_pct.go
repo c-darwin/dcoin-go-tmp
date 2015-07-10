@@ -4,18 +4,8 @@ import (
 	"fmt"
 	"utils"
 	"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
-	//"time"
-	//"strings"
-	//"sort"
-//	"time"
-	//"consts"
 	"log"
 )
-
 
 // Эту транзакцию имеет право генерить только нод, который генерит данный блок
 // подписана нодовским ключом

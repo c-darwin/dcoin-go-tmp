@@ -381,7 +381,6 @@ func (db *DCDB) GetAllCfLng() (map[string]string, error) {
 func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (map[string]string, error) {
 	result := make(map[string]string)
 	all, err := db.GetAll(query, -1, args ...)
-	fmt.Println(all)
 	if err != nil {
 		return result, err
 	}
@@ -714,6 +713,16 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
 		for i := len(indexArr)-1; i >= 0; i-- {
 			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
+		}
+	}
+
+	r, _ := regexp.Compile(`hex\(([\w]+)\)`)
+	indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
+	for i := len(indexArr)-1; i >= 0; i-- {
+		if dbType == "mysql" || dbType == "sqlite" {
+			newQ = newQ[:indexArr[i][0]]+`LOWER(HEX(`+newQ[indexArr[i][2]:indexArr[i][3]]+`))`+newQ[indexArr[i][1]:]
+		} else {
+			newQ = newQ[:indexArr[i][0]]+`LOWER(encode(`+newQ[indexArr[i][2]:indexArr[i][3]]+`, 'hex'))`+newQ[indexArr[i][1]:]
 		}
 	}
 
@@ -1144,6 +1153,11 @@ func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
 	return result, nil
 }
 
+
+func (db *DCDB) GetMyPrivateKey(myPrefix string) (string, error) {
+	return db.Single("SELECT private_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").String()
+}
+
 func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
 	var key string
 	key, err := db.Single("SELECT private_key FROM "+myPrefix+"my_node_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_node_keys)").String()
@@ -1208,14 +1222,14 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	prevBlock := new(prevBlockType)
 	var levelsRange [][][]int64
 	// последний успешно записанный блок
-	rows, err := db.Query(`
+	rows, err := db.Query(db.FormatQuery(`
             SELECT LOWER(encode(hash, 'hex')),
             LOWER(encode(head_hash, 'hex')),
             block_id,
             time,
             level
             FROM info_block
-            `)
+            `))
 	defer rows.Close()
 	if  ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)
@@ -1337,6 +1351,17 @@ func (db *DCDB) FormatQuery(q string) string {
 			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
 		}
 	}
+
+	r, _ := regexp.Compile(`hex\(([\w]+)\)`)
+	indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
+	for i := len(indexArr)-1; i >= 0; i-- {
+		if db.ConfigIni["db_type"] == "mysql" || db.ConfigIni["db_type"] == "sqlite" {
+			newQ = newQ[:indexArr[i][0]]+`LOWER(HEX(`+newQ[indexArr[i][2]:indexArr[i][3]]+`))`+newQ[indexArr[i][1]:]
+		} else {
+			newQ = newQ[:indexArr[i][0]]+`LOWER(encode(`+newQ[indexArr[i][2]:indexArr[i][3]]+`, 'hex'))`+newQ[indexArr[i][1]:]
+		}
+	}
+
 	log.Println(newQ)
 	return newQ
 }
@@ -1873,13 +1898,24 @@ func (db *DCDB) DbLock() error {
 }
 
 
+func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
+	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)
+}
+
 func (db *DCDB) UnlockPrintSleep(err error, sleep float64) {
 	db.DbUnlock();
 	log.Print(err)
 	Sleep(sleep)
 }
 
-func (db *DCDB) PrintSleep(err error, sleep float64) {
+func (db *DCDB) PrintSleep(err_ interface {}, sleep float64) {
+	var err error
+	switch err_.(type) {
+	case string:
+		err = errors.New(err_.(string))
+	case error:
+		err = err_.(error)
+	}
 	log.Print(err)
 	Sleep(sleep)
 }
