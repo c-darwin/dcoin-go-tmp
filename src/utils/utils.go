@@ -1246,19 +1246,26 @@ func ValidateEmail(email string) bool {
 	return Re.MatchString(email)
 }
 
-func SendSms(sms_http_get_request, text string) (string, error) {
-	resp, err := http.Get(sms_http_get_request+text)
+func GetHttpTextAnswer(url string) (string, error) {
+	resp, err := http.Get(url)
 	if err != nil {
-		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
-		return string(result), nil
+		return "", err
 	}
 	defer resp.Body.Close()
 	htmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		return "", err
+	}
+	return string(htmlData), nil
+}
+
+func SendSms(sms_http_get_request, text string) (string, error) {
+	html, err :=GetHttpTextAnswer(sms_http_get_request+text)
+	if err != nil {
 		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
 		return string(result), nil
 	}
-	result, _ := json.Marshal(map[string]string{"success": string(htmlData)})
+	result, _ := json.Marshal(map[string]string{"success": html})
 	return string(result), nil
 }
 
@@ -1364,18 +1371,46 @@ func StrToMoney(str string) float64 {
 	return StrToFloat64(new)
 }
 
-func GetEndBlockId() int64 {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return 0
+func GetEndBlockId() (int64, error) {
+	if _, err := os.Stat("public/blockchain"); os.IsNotExist(err) {
+		return 0, ErrInfo(err)
 	} else {
-		file, err := ioutil.ReadFile("public/blockchain")
-		if err != nil {
-			return 0
-		}
 		// размер блока, записанный в 5-и последних байтах файла blockchain
+		fname := "public/blockchain"
+		file, err := os.Open(fname)
+		if err != nil {
+			return 0, ErrInfo(err)
+		}
+		defer file.Close()
 
+		// размер блока, записанный в 5-и последних байтах файла blockchain
+		_, err = file.Seek(-5, 2)
+		if err != nil {
+			return 0, ErrInfo(err)
+		}
+		buf := make([]byte, 5)
+		_, err = file.Read(buf)
+		if err != nil {
+			return 0, ErrInfo(err)
+		}
+		size:=BinToDec(buf)
+		// сам блок
+		_, err = file.Seek(-(size+5), 2)
+		if err != nil {
+			return 0, ErrInfo(err)
+		}
+		dataBinary := make([]byte, size+5)
+		_, err = file.Read(dataBinary)
+		if err != nil {
+			return 0, ErrInfo(err)
+		}
+		// размер (id блока + тело блока)
+		BinToDecBytesShift(&dataBinary, 5)
+		blockId := BinToDecBytesShift(&dataBinary, 5)
+		return blockId, nil
 
 	}
+	return 0, nil
 }
 
 func DownloadToFile(url, file string, timeoutSec int64) (int64, error) {

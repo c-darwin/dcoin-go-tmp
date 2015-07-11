@@ -2,7 +2,6 @@ package daemons
 
 import (
 	"utils"
-	"encoding/json"
 	"fmt"
 	"dcparser"
 )
@@ -68,18 +67,18 @@ func elections_admin(configIni map[string]string) string {
 
 		// берем все голоса
 		var newAdmin int64
-		data, err := db.GetMap(`
+		votes_admin, err := db.GetMap(`
 				SELECT	 admin_user_id,
 							  count(user_id) as votes
 				FROM votes_admin
 				WHERE time > ?
 				GROUP BY  admin_user_id
-				`, curTime - variables.Int64["new_pct_period"], "admin_user_id", "votes")
+				`, "admin_user_id", "votes", curTime - variables.Int64["new_pct_period"])
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
 			continue BEGIN
 		}
-		for admin_user_id, votes := range data {
+		for admin_user_id, votes := range votes_admin {
 			// если более 50% майнеров проголосовали
 			if utils.StrToInt64(votes) > countMiners/2 {
 				newAdmin = utils.StrToInt64(admin_user_id)
@@ -110,7 +109,7 @@ func elections_admin(configIni map[string]string) string {
 		}
 
 		p := new(dcparser.Parser)
-		err = db.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
+		err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 		if err != nil {
 			db.PrintSleep(err, 60)
 			continue BEGIN
