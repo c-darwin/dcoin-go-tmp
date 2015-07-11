@@ -4,9 +4,6 @@ import (
 	"utils"
 	"log"
 	"encoding/json"
-	"crypto/rsa"
-	"crypto"
-	"crypto/rand"
 	"fmt"
 	"dcparser"
 )
@@ -188,42 +185,20 @@ func pct_generator(configIni map[string]string) string {
 			}
 
 			_, myUserId, _, _, _, _, err := db.TestBlock();
-			community, err := db.GetCommunityUsers()
-			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
-				continue BEGIN
-			}
-			myPrefix := ""
-			if len(community) > 0 {
-				myPrefix = utils.Int64ToStr(myUserId)+"_"
-			}
-			nodePrivateKey, err := db.GetNodePrivateKey(myPrefix);
-			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
-				continue BEGIN
-			}
-			// подписываем нашим нод-ключем данные транзакции
-			privateKey, err := utils.MakePrivateKey(nodePrivateKey)
-			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
-				continue BEGIN
-			}
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewPct"), curTime, myUserId, jsonData)
-			binSign, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
-
+			binSign, err := db.GetBinSign(forSign, myUserId)
+			if err!= nil {
+				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				continue BEGIN
+			}
 			data := utils.DecToBin(utils.TypeInt("NewPct"), 1)
 			data = append(data, utils.DecToBin(curTime, 4)...)
 			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(myUserId))...)
 			data = append(data, utils.EncodeLengthPlusData(jsonData)...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
-			err = db.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", utils.Md5(data))
-			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
-				continue BEGIN
-			}
-			err = db.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
-			if err != nil {
+			err = db.InsertReplaceTxInQueue(data)
+			if err!= nil {
 				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
 				continue BEGIN
 			}

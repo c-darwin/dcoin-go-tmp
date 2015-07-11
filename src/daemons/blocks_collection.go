@@ -85,7 +85,7 @@ func BlocksCollection(configIni map[string]string) {
 
                 log.Println("first_load_blockchain=file")
 
-                blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain")
+                blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain", 3600)
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
                         log.Print(utils.ErrInfo(err))

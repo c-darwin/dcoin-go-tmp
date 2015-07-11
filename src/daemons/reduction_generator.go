@@ -5,9 +5,6 @@ import (
 	"errors"
 	"log"
 	"consts"
-	"crypto/rsa"
-	"crypto"
-	"crypto/rand"
 	"fmt"
 	"dcparser"
 )
@@ -40,7 +37,7 @@ func ReductionGenerator(configIni map[string]string) string {
 			continue BEGIN
 		}
 
-		_, myUserId, myMinerId, _, _, _, err := db.TestBlock();
+		_, _, myMinerId, _, _, _, err := db.TestBlock();
 		if err != nil {
 			db.UnlockPrintSleep(err, 60)
 			continue BEGIN
@@ -200,24 +197,14 @@ func ReductionGenerator(configIni map[string]string) string {
 			}
 		}
 		if reductionCurrencyId > 0 && reductionPct > 0 {
-			myPrefix := ""
-			community, err := db.GetCommunityUsers()
-			if len(community) > 0 {
-				myPrefix = utils.Int64ToStr(myUserId)+"_"
-			}
-			log.Println("myPrefix", myPrefix)
 
-			nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
-			// подписываем нашим нод-ключем данные транзакции
-			privateKey, err := utils.MakePrivateKey(nodePrivateKey)
-			if err != nil {
-				db.PrintSleep(err, 60)
+			_, myUserId, _, _, _, _, err := db.TestBlock();
+			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
+			binSign, err := db.GetBinSign(forSign, myUserId)
+			if err!= nil {
+				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
 				continue BEGIN
 			}
-			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
-			binSign, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
-
-			// создаем тр-ию. пишем $block_id, на момент которого были актуальны голоса и статусы банкнот
 			data := utils.DecToBin(utils.TypeInt("NewReduction"), 1)
 			data = append(data, utils.DecToBin(curTime, 4)...)
 			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(myUserId))...)
@@ -226,14 +213,9 @@ func ReductionGenerator(configIni map[string]string) string {
 			data = append(data, utils.EncodeLengthPlusData([]byte(reductionType))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
-			err = db.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", utils.Md5(data))
-			if err != nil {
-				db.PrintSleep(err, 60)
-				continue BEGIN
-			}
-			err = db.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
-			if err != nil {
-				db.PrintSleep(err, 60)
+			err = db.InsertReplaceTxInQueue(data)
+			if err!= nil {
+				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
 				continue BEGIN
 			}
 

@@ -1363,14 +1363,20 @@ func StrToMoney(str string) float64 {
 	}
 	return StrToFloat64(new)
 }
-func DownloadToFile(url, file string) (int64, error) {
+
+func DownloadToFile(url, file string, timeoutSec int64) (int64, error) {
+
 	out, err := os.Create(file)
 	if err != nil {
 		return 0, err
 	}
 	defer out.Close()
 
-	resp, err := http.Get(url)
+	timeout := time.Duration(time.Duration(timeoutSec) * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return 0, err
 	}

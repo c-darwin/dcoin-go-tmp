@@ -18,6 +18,7 @@ import (
 	crand "crypto/rand"
 	"encoding/pem"
 	"crypto/x509"
+	"crypto"
 )
 
 type DCDB struct {
@@ -2231,4 +2232,37 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 	return decKey, iv, decrypted, nil
 }
 
+func (db *DCDB) GetBinSign(forSign string, myUserId int64) ([]byte, error) {
 
+	community, err := db.GetCommunityUsers()
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	myPrefix := ""
+	if len(community) > 0 {
+		myPrefix = Int64ToStr(myUserId)+"_"
+	}
+	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix);
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	// подписываем нашим нод-ключем данные транзакции
+	privateKey, err := MakePrivateKey(nodePrivateKey)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	return rsa.SignPKCS1v15(crand.Reader, privateKey, crypto.SHA1, HashSha1(forSign))
+}
+
+func (db *DCDB) InsertReplaceTxInQueue(data []byte) error {
+
+	err := db.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", Md5(data))
+	if err != nil {
+		return ErrInfo(err)
+	}
+	err = db.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", Md5(data), BinToHex(data))
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
+}
