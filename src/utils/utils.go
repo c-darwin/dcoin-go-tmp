@@ -1364,6 +1364,20 @@ func StrToMoney(str string) float64 {
 	return StrToFloat64(new)
 }
 
+func GetEndBlockId() int64 {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return 0
+	} else {
+		file, err := ioutil.ReadFile("public/blockchain")
+		if err != nil {
+			return 0
+		}
+		// размер блока, записанный в 5-и последних байтах файла blockchain
+
+
+	}
+}
+
 func DownloadToFile(url, file string, timeoutSec int64) (int64, error) {
 
 	out, err := os.Create(file)
