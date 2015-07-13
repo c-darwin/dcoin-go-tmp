@@ -16,13 +16,13 @@ import (
 	"bufio"
 	"os"
 	"errors"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"log"
 	"sync"
    // "github.com/alyu/configparser"
 	//"io/ioutil"
     //"github.com/astaxie/beego/config"
-    "github.com/c-darwin/dcoin-tmp/packages/dcparser"
+    "github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
 

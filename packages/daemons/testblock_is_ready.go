@@ -2,10 +2,10 @@ package daemons
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"log"
 	"errors"
-	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
 /**

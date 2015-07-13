@@ -1,9 +1,9 @@
 package controllers
 import (
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
 	"encoding/json"
-	"github.com/c-darwin/dcoin-tmp/packages/schema"
+	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 )
 
 func (c *Controller) SignUpInPool() (string, error) {

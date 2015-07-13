@@ -2,9 +2,9 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"github.com/c-darwin/dcoin-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 func (p *Parser) NewCfProjectInit() (error) {

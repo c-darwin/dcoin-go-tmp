@@ -3,8 +3,8 @@ import (
 	"fmt"
 	"html/template"
 	"bytes"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
-	"github.com/c-darwin/dcoin-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 )
 
 type loginStruct struct {

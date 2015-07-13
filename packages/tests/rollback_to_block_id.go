@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-//	"github.com/c-darwin/dcoin-tmp/packages/utils"
+//	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"tests_utils"
-	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
 func main() {

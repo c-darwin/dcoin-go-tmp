@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"tests_utils"
 )
 

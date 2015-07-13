@@ -1,15 +1,15 @@
 package main
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-tmp/packages/daemons"
+	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"log"
 	"os"
 	"net/http"
 	_ "image/png"
-	"github.com/c-darwin/dcoin-tmp/packages/controllers"
+	"github.com/c-darwin/dcoin-go-tmp/packages/controllers"
 	"github.com/astaxie/beego/config"
     "github.com/elazarl/go-bindata-assetfs"
-	"github.com/c-darwin/dcoin-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
 	"io/ioutil"
@@ -17,7 +17,7 @@ import (
 	"time"
 	"strings"
 	"net"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 var configIni map[string]string

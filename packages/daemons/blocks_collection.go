@@ -2,13 +2,13 @@ package daemons
 
 import (
     _ "github.com/lib/pq"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"log"
-	"github.com/c-darwin/dcoin-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"fmt"
 	"os"
-	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
-	"github.com/c-darwin/dcoin-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"errors"
 	"net/http"
 	"io/ioutil"

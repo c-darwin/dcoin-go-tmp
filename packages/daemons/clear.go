@@ -1,7 +1,7 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func Clear(configIni map[string]string) {

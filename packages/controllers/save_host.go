@@ -1,7 +1,7 @@
 package controllers
 import (
 	"errors"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) SaveHost() (string, error) {

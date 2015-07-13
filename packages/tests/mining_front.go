@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 //	"database/sql"
-	//"github.com/c-darwin/dcoin-tmp/packages/dcparser"
-	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	//"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"tests_utils"
 	//_ "github.com/lib/pq"
 	//"encoding/binary"
@@ -13,7 +13,7 @@ import (
 	//"crypto/rand"
 	//"crypto/rsa"
 	//"crypto/sha1"
-	//"github.com/c-darwin/dcoin-tmp/packages/daemons"
+	//"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 //	"strconv"
 	//"errors"
 	"log"
@@ -23,7 +23,7 @@ import (
 	//"strings"
 	//"regexp"
 	//"reflect"
-//	"github.com/c-darwin/dcoin-tmp/packages/consts"
+//	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"io"
 )
 
