@@ -116,7 +116,7 @@ err = fmt.Errorf("unsupported platform")
 
 
 	// включаем листинг TCP-сервером и обработку входящих запросов
-	l, err := net.Listen("tcp", "localhost:8088")
+	l, err := net.Listen("tcp", ":8088")
 	if err != nil {
 		log.Println("Error listening:", err.Error())
 		os.Exit(1)
