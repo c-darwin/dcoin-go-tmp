@@ -1,50 +1,23 @@
 package main
 import (
 	"fmt"
-	//"schema"
-	//"encoding/binary"
-	//"bytes"
-	//"encoding/hex"
-	//"crypto/rand"
-	//"crypto/rsa"
-	//"crypto/sha1"
-	"daemons"
-	//"dcparser"
+	"dcoin/packages/daemons"
 	"log"
 	"os"
-	//"github.com/alyu/configparser"
 	"net/http"
-	//"html/template"
-	//"image/jpeg"
 	_ "image/png"
-	//"image"
-	"controllers"
-	//"bufio"
-	//"utils"
-	//"strconv"
-	//"bytes"
-	//"encoding/binary"
-	//"regexp"
-	//"time"
-	//"github.com/beego/i18n"
-	//"github.com/nicksnyder/go-i18n/i18n"
-	//"consts"
-	//"strconv"
-	//"reflect"
+	"dcoin/packages/controllers"
 	"github.com/astaxie/beego/config"
     "github.com/elazarl/go-bindata-assetfs"
-	"static"
+	"dcoin/packages/static"
 	_ "github.com/mattn/go-sqlite3"
-	//"runtime"
-//	"database/sql"
-	//"os/exec"
+	"io"
 	"io/ioutil"
-//	"schema"
-	//"utils"
-	//"time"
 	"math/rand"
 	"time"
-
+	"strings"
+	"net"
+	"dcoin/packages/utils"
 )
 
 var configIni map[string]string
@@ -55,38 +28,6 @@ func main() {
 	if _, err := os.Stat("public"); os.IsNotExist(err) {
 		os.Mkdir("public", 0755)
 	}
-
-/*
-	t := time.Unix(time.Now().Unix(), 0)
-	fmt.Println(t.Format("2006-01-02 15:04:05"))
-*/
-
-	/*enc := utils.Encode_length(443343);
-	fmt.Println(enc);
-	bin_enc := utils.HexToBin(enc)+utils.HexToBin("FFFFFF")
-	fmt.Println("bin_enc", utils.BinToHex(bin_enc));
-	DecodeLength(&bin_enc)
-	fmt.Println("bin_enc", utils.BinToHex(bin_enc));
-	/*
-	xxx:="9876"
-	Shift := StringShift(&xxx, 1);
-	fmt.Println("Shift", Shift);
-	fmt.Println("xxx", xxx);*/
-
-/*
-	langIni_, err := configparser.Read("lang/1.ini")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(langIni_.AllSections())
-	//_, err := langIni_.Section("")
-	//fmt.Println(langIni)
-	//v:= langIni.ValueOf("picture_description")
-	//fmt.Println(langIni.String())
-*/
-	//fmt.Println(xx)
-	//schema := schema.GetSchema("sqlite", 555555)
-	//fmt.Println("schema", schema)
 
 	// читаем config.ini
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -120,25 +61,45 @@ db_name=`)
 
 	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	defer f.Close()
-	log.SetOutput(f)
+	//log.SetOutput(f)
+	log.SetOutput(io.MultiWriter(f, os.Stdout))
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-
+	// запускаем всех демонов
+	go daemons.TestblockIsReady(configIni)
+	go daemons.TestblockGenerator(configIni)
+	go daemons.TestblockDisseminator(configIni)
+	go daemons.Shop(configIni)
+	go daemons.ReductionGenerator(configIni)
+	go daemons.QueueParserTx(configIni)
+	go daemons.QueueParserTestblock(configIni)
+	go daemons.QueueParserBlocks(configIni)
+	go daemons.PctGenerator(configIni)
+	go daemons.Notifications(configIni)
+	go daemons.NodeVoting(configIni)
+	go daemons.MaxPromisedAmountGenerator(configIni)
+	go daemons.MaxOtherCurrenciesGenerator(configIni)
+	go daemons.ElectionsAdmin(configIni)
+	go daemons.Disseminator(configIni)
+	go daemons.Confirmations(configIni)
+	go daemons.Connector(configIni)
+	go daemons.Clear(configIni)
+	go daemons.CleaningDb(configIni)
+	go daemons.CfProjects(configIni)
 	go daemons.BlocksCollection(configIni)
-	if len(os.Args)>1 {
-		// запускаем всех демонов
-		go daemons.Testblock_generator(configIni)
-		go daemons.BlocksCollection(configIni)
-		go daemons.Testblock_is_ready()
-	}
-	// включаем листинг TCP-сервером и обработку входящих запросов
+
 
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
 	http.HandleFunc("/content", controllers.Content)
 	http.HandleFunc("/ajax", controllers.Ajax)
-
+	http.HandleFunc("/tools", controllers.Tools)
+	http.HandleFunc("/cf/", controllers.IndexCf)
+	http.HandleFunc("/cf/content", controllers.ContentCf)
+	http.Handle("/public/", noDirListing(http.FileServer(http.Dir("./"))))
 	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
+
+
 /*
 fmt.Println(runtime.GOOS)
 switch runtime.GOOS {
@@ -154,6 +115,34 @@ err = fmt.Errorf("unsupported platform")
 	http.ListenAndServe(":8089", nil)
 
 
+	// включаем листинг TCP-сервером и обработку входящих запросов
+	l, err := net.Listen("tcp", "localhost:8088")
+	if err != nil {
+		log.Println("Error listening:", err.Error())
+		os.Exit(1)
+	}
+	defer l.Close()
+	go func() {
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				log.Println("Error accepting: ", err.Error())
+				os.Exit(1)
+			}
+			go utils.HandleTcpRequest(conn, configIni)
+		}
+	}()
 	fmt.Scanln()
 
+}
+
+// http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
+func noDirListing(h http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
