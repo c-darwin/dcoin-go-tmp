@@ -1,11 +1,11 @@
 package daemons
 
 import (
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"log"
 	"encoding/json"
 	"fmt"
-	"dcoin/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
 )
 
 /*

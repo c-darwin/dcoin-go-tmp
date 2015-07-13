@@ -2,8 +2,8 @@ package dcparser
 
 import (
 	"fmt"
-	"dcoin/packages/utils"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 )
 
 // арбитр увеличивает время манибэка, чтобы успеть разобраться в ситуации

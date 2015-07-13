@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"fmt"
-	"dcoin/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
 )
 
 func ElectionsAdmin(configIni map[string]string) string {

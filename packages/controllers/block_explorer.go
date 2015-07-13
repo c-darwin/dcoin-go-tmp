@@ -1,8 +1,8 @@
 package controllers
 import (
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"fmt"
-	"dcoin/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
 )
 
 type BlockExplorerPage struct {

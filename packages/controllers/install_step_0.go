@@ -3,7 +3,7 @@ import (
 	"fmt"
 	"html/template"
 	"bytes"
-	"dcoin/packages/static"
+	"github.com/c-darwin/dcoin-tmp/packages/static"
 )
 
 type installStep0Struct struct {

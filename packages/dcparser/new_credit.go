@@ -2,8 +2,8 @@ package dcparser
 
 import (
 	"fmt"
-	"dcoin/packages/utils"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 )
 
 func (p *Parser) NewCreditInit() (error) {

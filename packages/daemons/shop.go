@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"fmt"
-	"dcoin/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"

@@ -2,10 +2,10 @@ package controllers
 import (
 	"html/template"
 	"bytes"
-	"dcoin/packages/static"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/static"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"runtime"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 )
 
 type updatingBlockchainStruct struct {

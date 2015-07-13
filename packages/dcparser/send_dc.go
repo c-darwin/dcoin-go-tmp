@@ -2,9 +2,9 @@ package dcparser
 
 import (
 	"fmt"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"encoding/json"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 	"math"
 	"database/sql"
 	"log"

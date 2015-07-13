@@ -1,12 +1,12 @@
 package controllers
 import (
 	"reflect"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"net/http"
 	"fmt"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/session"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 	"strconv"
 	"time"
 	"log"
@@ -14,7 +14,7 @@ import (
 	"unicode"
 	"os"
 	"io/ioutil"
-	"dcoin/packages/static"
+	"github.com/c-darwin/dcoin-tmp/packages/static"
 	"bytes"
 	"encoding/json"
 	"html/template"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"regexp"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"log"
 )
 
@@ -1143,7 +1143,7 @@ s2[7] = map[string]string{"name":"restart", "mysql":"tinyint(1) NOT NULL DEFAULT
 s1["fields"] = s2
 s1["PRIMARY"] = []string{"script"}
 s1["comment"] = "Демоны"
-s["dcoin/packages/daemons"] = s1
+s["github.com/c-darwin/dcoin-tmp/packages/daemons"] = s1
 schema.s = s
 schema.printSchema()
 

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"dcoin/packages/dcparser"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"os"
 	"log"
 	//"io"

@@ -2,8 +2,8 @@ package dcparser
 
 import (
 	"fmt"
-	"dcoin/packages/utils"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 )
 
 //  продавец меняет % и кол-во дней для новых сделок

@@ -2,8 +2,8 @@ package tests_utils
 
 import (
 	"regexp"
-	"dcoin/packages/dcparser"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"fmt"
 	"crypto/rsa"
 	"crypto/rand"

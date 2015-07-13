@@ -1,7 +1,7 @@
 package controllers
 import (
-	"dcoin/packages/utils"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 )
 
 type ChangeCountryRacePage struct {

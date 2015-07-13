@@ -3,11 +3,11 @@ import (
 	"fmt"
 	"html/template"
 	"bytes"
-	"dcoin/packages/static"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/static"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 	"github.com/astaxie/beego/config"
-	"dcoin/packages/schema"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/schema"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 )
 
 type installStep2Struct struct {

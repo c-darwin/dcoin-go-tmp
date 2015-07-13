@@ -2,9 +2,9 @@ package dcparser
 import (
 	_ "github.com/lib/pq"
 	"fmt"
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"time"
-	"dcoin/packages/consts"
+	"github.com/c-darwin/dcoin-tmp/packages/consts"
 	"sync"
 	"reflect"
 	"math"

@@ -1,8 +1,8 @@
 package controllers
 import (
-	"dcoin/packages/utils"
+	"github.com/c-darwin/dcoin-tmp/packages/utils"
 	"os"
-	"dcoin/packages/static"
+	"github.com/c-darwin/dcoin-tmp/packages/static"
 	"html/template"
 	"bytes"
 	"log"
