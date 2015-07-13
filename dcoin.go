@@ -112,7 +112,6 @@ err = fmt.Errorf("unsupported platform")
 }*/
 
 
-	http.ListenAndServe(":8089", nil)
 
 
 	// включаем листинг TCP-сервером и обработку входящих запросов
@@ -132,7 +131,8 @@ err = fmt.Errorf("unsupported platform")
 			go utils.HandleTcpRequest(conn, configIni)
 		}
 	}()
-	fmt.Scanln()
+
+	http.ListenAndServe(":8089", nil)
 
 }
 
