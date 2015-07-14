@@ -83,7 +83,7 @@ func (p *Parser) ChangeHostFront() (error) {
 func (p *Parser) ChangeHost() (error) {
 	tcpHost := ""
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
-		re := regexp.MustCompile(`^https?:\/\/[0-9a-z\_\.\-:]+)\/`)
+		re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
 		match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
 		if len(match) != 0 {
 			tcpHost = match[1]+":8088"
