@@ -1366,7 +1366,7 @@ func (db *DCDB) FormatQuery(q string) string {
 		}
 	}
 
-	log.Println(newQ)
+//	log.Println(newQ)
 	return newQ
 }
 
@@ -1924,7 +1924,7 @@ func (db *DCDB) DbUnlock() error {
 	if err != nil {
 		return err
 	}
-	log.Println("DbUnlock")
+	//log.Println("DbUnlock")
 	return nil
 }
 
