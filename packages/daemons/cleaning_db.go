@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-func CleaningDb(configIni map[string]string) {
+func CleaningDb() {
 
 	const GoroutineName = "CleaningDb"
 

@@ -79,7 +79,7 @@ func (c *Controller) ProgressBar() (string, error) {
 		progressBar["upgrade_host"] = 1;
 		progressBar["upgrade_geolocation"] = 1;
 	} else if c.SessRestricted==0 {
-		upgradeData, err := c.OneRow("SELECT user_id, race, country, geolocation, host, face_coords, profile_coords, video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
+		upgradeData, err := c.OneRow("SELECT user_id, race, country, geolocation, http_host as host, face_coords, profile_coords, video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

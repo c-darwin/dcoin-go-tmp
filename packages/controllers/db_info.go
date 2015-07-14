@@ -24,7 +24,7 @@ func (c *Controller) DbInfo() (string, error) {
 	nodesBan, err := c.GetAll(`
 			SELECT nodes_ban.ban_start,
 						  nodes_ban.user_id,
-						  miners_data.host,
+						  miners_data.tcp_host,
 						  nodes_ban.info
 			FROM nodes_ban
 			LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id

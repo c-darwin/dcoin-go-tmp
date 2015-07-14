@@ -139,9 +139,9 @@ func (p *Parser) VotesMiner() (error) {
 				}
 				// обновим статус в нашей локальной табле.
 				err = p.ExecSql(`UPDATE `+myPrefix+`my_table
-					SET status = 'miner', host_status = 'approved', host = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, miner_id = ?, notification_status = 0
+					SET status = 'miner', host_status = 'approved', http_host = ?, tcp_host = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, miner_id = ?, notification_status = 0
 					WHERE status != 'bad_key'`,
-					minerData["host"], minerData["face_coords"], minerData["profile_coords"], minerData["video_type"], minerData["video_url_id"], minerId)
+					minerData["http_host"], minerData["tcp_host"], minerData["face_coords"], minerData["profile_coords"], minerData["video_type"], minerData["video_url_id"], minerId)
 				if err != nil {
 					return p.ErrInfo(err)
 				}

@@ -12,7 +12,7 @@ import (
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
 
-func MaxPromisedAmountGenerator(configIni map[string]string) string {
+func MaxPromisedAmountGenerator() string {
 
 	const GoroutineName = "MaxPromisedAmountGenerator"
 	db := utils.DbConnect(configIni)

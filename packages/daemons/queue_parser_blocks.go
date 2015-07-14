@@ -20,7 +20,7 @@ import (
  *
  * */
 
-func QueueParserBlocks(configIni map[string]string) string {
+func QueueParserBlocks() string {
 
 	const GoroutineName = "QueueParserBlocks"
 	db := utils.DbConnect(configIni)
@@ -40,12 +40,12 @@ BEGIN:
 			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		prevBlockData, err := db.OneRow("SELECT * FROM info_block ?, ?fetch_array?").String()
+		prevBlockData, err := db.OneRow("SELECT * FROM info_block").String()
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		newBlockData, err := db.OneRow("SELECT * FROM queue_blocks  ?, ?fetch_array?").String()
+		newBlockData, err := db.OneRow("SELECT * FROM queue_blocks").String()
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -117,7 +117,7 @@ BEGIN:
 		/*
 		 * Загрузка блоков для детальной проверки
 		 */
-		host, err := db.Single("SELECT host FROM miners_data WHERE user_id  =  ?", newBlockData["user_id"]).String()
+		host, err := db.Single("SELECT tcp_host FROM miners_data WHERE user_id  =  ?", newBlockData["user_id"]).String()
 		if err != nil {
 			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
@@ -127,7 +127,7 @@ BEGIN:
 
 		p := new(dcparser.Parser)
 		//func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName, getBlockScriptName, addNodeHost string) error {
-		err = p.GetBlocks(blockId, host, utils.StrToInt64(newBlockData["user_id"]), "rollback_blocks_1", GoroutineName, "", "")
+		err = p.GetBlocks(blockId, host, utils.StrToInt64(newBlockData["user_id"]), "rollback_blocks_1", GoroutineName, 7, "")
 		if err != nil {
 			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
 			db.NodesBan(utils.StrToInt64(newBlockData["user_id"]), fmt.Sprintf("%v", err))

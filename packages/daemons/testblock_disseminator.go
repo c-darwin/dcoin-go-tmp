@@ -4,9 +4,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"log"
 	"strings"
-	"net"
-	"time"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 /**
@@ -15,7 +12,7 @@ import (
  * тем, кто не на одном уровне, то блок просто проигнорируется
  *
  */
-func TestblockDisseminator(configIni map[string]string) string {
+func TestblockDisseminator() string {
 
 	GoroutineName := "TestblockDisseminator"
 	db := utils.DbConnect(configIni)
@@ -49,7 +46,7 @@ func TestblockDisseminator(configIni map[string]string) string {
 		}
 
 		// получим хосты майнеров, которые на нашем уровне
-		hosts, err := db.GetList("SELECT host FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
+		hosts, err := db.GetList("SELECT tcp_host FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
 		if err != nil {
 			db.PrintSleep(err, 1)
 			continue
@@ -72,20 +69,12 @@ func TestblockDisseminator(configIni map[string]string) string {
 			for _, host := range hosts {
 				go func() {
 
-					tcpAddr, err := net.ResolveTCPAddr("tcp", host)
-					if err != nil {
-						log.Println(utils.ErrInfo(err))
-						return
-					}
-					conn, err := net.DialTCP("tcp", nil, tcpAddr)
+					conn, err := utils.TcpConn(host)
 					if err != nil {
 						log.Println(utils.ErrInfo(err))
 						return
 					}
 					defer conn.Close()
-
-					conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-					conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
 
 					// вначале шлем тип данных
 					_, err = conn.Write(utils.DecToBin(6, 1))

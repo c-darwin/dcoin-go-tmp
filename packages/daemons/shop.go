@@ -19,7 +19,7 @@ import (
  * Важно! отключать демона при обнулении данных в БД
 */
 
-func Shop(configIni map[string]string) {
+func Shop() {
 
 	const GoroutineName = "Shop"
 	db := utils.DbConnect(configIni)

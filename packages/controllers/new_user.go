@@ -115,7 +115,7 @@ func (c *Controller) NewUser() (string, error) {
 		}
 		minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
 		if len(minersIds) > 0 {
-			hosts, err := c.GetList("SELECT host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+			hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -172,7 +172,7 @@ func (c *Controller) NewUser() (string, error) {
 		}
 		// получим ID майнеров, у которых лежат фото нужного нам юзера
 		minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
-		hosts, err := c.GetList("SELECT host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+		hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

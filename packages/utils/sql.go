@@ -340,7 +340,7 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	case err != nil:
 		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
 	}
-	if db.ConfigIni["log"]=="1" {
+	if db.ConfigIni["sql_log"]=="1" {
 		log.Printf("SQL: %s / %v", newQuery, newArgs)
 	}
 	return &singleResult{result, nil}
@@ -422,7 +422,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	}
 	defer rows.Close()
 
-	if db.ConfigIni["log"]=="1" {
+	if db.ConfigIni["sql_log"]=="1" {
 		log.Printf("SQL: %s / %v", newQuery, newArgs)
 	}
 	// Get column names
@@ -483,9 +483,9 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 
 func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	result := make(map[string]string)
-	log.Println(query, args)
+	//log.Println(query, args)
 	all, err := db.GetAll(query, 1, args ...)
-	log.Println(all)
+	//log.Println(all)
 	if err != nil {
 		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
 	}
@@ -600,7 +600,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 		if err != nil {
 			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 		}
-		if db.ConfigIni["log"] == "1" {
+		if db.ConfigIni["sql_log"] == "1" {
 			log.Printf("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
 		}
 		/*r, _ := regexp.Compile(`(?i)insert into (\w+)`)
@@ -617,7 +617,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 		}
 		affect, err := res.RowsAffected()
 		lastId, err = res.LastInsertId()
-		if db.ConfigIni["log"] == "1" {
+		if db.ConfigIni["sql_log"] == "1" {
 			log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 		}
 	}
@@ -672,43 +672,41 @@ func (db *DCDB) GetPoints(lng map[string]string) (map[string]string, error) {
 func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface {}) {
 	var newArgs []interface {}
 	newQ := q
-	switch dbType {
-	case "sqlite":
-		r, _ := regexp.Compile(`(\[hex\]|\?)`)
-		indexArr := r.FindAllStringSubmatchIndex(q, -1)
-		for i:=0; i < len(indexArr); i++ {
-			str:=q[indexArr[i][0]:indexArr[i][1]]
-			if str!="[hex]" {
-				switch args[i].(type) {
-				case []byte:
-					newArgs = append(newArgs, string(args[i].([]byte)))
-				default:
-					newArgs = append(newArgs, args[i])
-				}
-			} else {
-				switch args[i].(type) {
-				case string:
-					newQ =strings.Replace(newQ, "[hex]", "x'"+args[i].(string)+"'", 1)
-				case []byte:
-					newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
+	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok {
+		switch dbType {
+		case "sqlite":
+			r, _ := regexp.Compile(`(\[hex\]|\?)`)
+			indexArr := r.FindAllStringSubmatchIndex(q, -1)
+			for i := 0; i < len(indexArr); i++ {
+				str := q[indexArr[i][0]:indexArr[i][1]]
+				if str!="[hex]" {
+					switch args[i].(type) {
+						case []byte:
+						newArgs = append(newArgs, string(args[i].([]byte)))
+						default:
+						newArgs = append(newArgs, args[i])
+					}
+				} else {
+					switch args[i].(type) {
+						case string:
+						newQ =strings.Replace(newQ, "[hex]", "x'"+args[i].(string)+"'", 1)
+						case []byte:
+						newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
+					}
 				}
 			}
+			newQ = strings.Replace(newQ, "[hex]", "?", -1)
+		//log.Println("newQ", newQ)
+		case "postgresql":
+			newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+			newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+			newQ = ReplQ(newQ)
+			newArgs = args
+		case "mysql":
+			newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+			newArgs = args
 		}
-		newQ = strings.Replace(newQ, "[hex]", "?", -1)
-		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
-		log.Println("newQ", newQ)
-	case "postgresql":
-		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
-		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
-		newQ = strings.Replace(newQ, "delete,", `"delete",`, -1)
-		newQ = ReplQ(newQ)
-		newArgs = args
-	case "mysql":
-		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
-		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
-		newArgs = args
 	}
-
 	if dbType == "postgresql" || dbType == "sqlite" {
 		r, _ := regexp.Compile(`\s*([0-9]+_[\w]+)(?:\.|\s|\)|$)`)
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
@@ -736,7 +734,7 @@ func (db *DCDB) CheckInstall() {
 	INSTALL:
 	progress, err := db.Single("SELECT progress FROM install").String()
 	if err != nil || progress != "complete" {
-		log.Println(`progress != "complete"`)
+		log.Println(`progress != "complete"`, db.GoroutineName)
 		if err!=nil {
 			log.Print(ErrInfo(err))
 		}
@@ -753,7 +751,7 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
-	if db.ConfigIni["log"]=="1" {
+	if db.ConfigIni["sql_log"]=="1" {
 		log.Printf("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return nil
@@ -769,7 +767,7 @@ func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, erro
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
-	if db.ConfigIni["log"]=="1" {
+	if db.ConfigIni["sql_log"]=="1" {
 		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return affect, nil
@@ -805,8 +803,8 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 
 	// это у всех разное, а значит и хэши будут разные, а это будет вызывать путаницу
 	var logOff bool
-	if db.ConfigIni["log"] == "1" {
-		db.ConfigIni["log"] = "0"
+	if db.ConfigIni["sql_log"] == "1" {
+		db.ConfigIni["sql_log"] = "0"
 		logOff = true
 	}
 	q:=""
@@ -848,7 +846,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		return "", ErrInfo(err, q)
 	}
 	if logOff {
-		db.ConfigIni["log"] = "1"
+		db.ConfigIni["sql_log"] = "1"
 	}
 	return hash, nil
 }
@@ -1335,20 +1333,19 @@ func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 func (db *DCDB) FormatQuery(q string) string {
 
 	newQ := q
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		newQ = strings.Replace(newQ, "[hex]", "?", -1)
-		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
-		newQ = strings.Replace(newQ, "user,", "`user`,", -1)
-	case "postgresql":
-		newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
-		newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
-		newQ = strings.Replace(newQ, "user,", `"user",`, -1)
-		newQ = ReplQ(newQ)
-		newQ = strings.Replace(newQ, "delete", `"delete"`, -1)
-	case "mysql":
-		newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
-		newQ = strings.Replace(newQ, "delete", "`delete`", -1)
+	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok{
+		switch db.ConfigIni["db_type"] {
+		case "sqlite":
+			newQ = strings.Replace(newQ, "[hex]", "?", -1)
+			newQ = strings.Replace(newQ, "user,", "`user`,", -1)
+		case "postgresql":
+			newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+			newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
+			newQ = strings.Replace(newQ, "user,", `"user",`, -1)
+			newQ = ReplQ(newQ)
+		case "mysql":
+			newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
+		}
 	}
 
 	if db.ConfigIni["db_type"] == "postgresql" || db.ConfigIni["db_type"] == "sqlite" {
@@ -1716,12 +1713,7 @@ func(db *DCDB) GetRepaidAmount(userId, currencyId int64) (float64, error) {
 */
 func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
-	sql:=""
-	if db.ConfigIni["db_type"]=="mysql" || db.ConfigIni["db_type"]=="sqlite"  {
-		sql ="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND `delete` = 0";
-	} else {
-		sql =`SELECT start_time, end_time FROM holidays WHERE user_id = $1 AND "delete" = 0`;
-	}
+	sql :="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND del = 0";
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		return result, err

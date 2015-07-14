@@ -968,6 +968,9 @@ func RandSlice(min, max, count int64) []string {
 }
 
 func RandInt(min int, max int) int {
+	if max-min <= 0 {
+		return 1
+	}
 	return min + rand.Intn(max-min)
 }
 
@@ -1161,8 +1164,12 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
-	case "host":
+	case "http_host":
 		if ok, _ := regexp.MatchString(`^https?:\/\/[0-9a-z\_\.\-\/:]{1,100}[\/]$`, data); ok{
+			return true
+		}
+	case "tcp_host":
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, data); ok{
 			return true
 		}
 	case "coords":
@@ -3063,46 +3070,29 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 		case 3:
 			/*
 			 * Пересылаем тр-ию, полученную по локальной сети, конечному ноду, указанному в первых 100 байтах тр-ии
+			 * от демона disseminator
  			* */
-			if ok, _ := regexp.MatchString(`^192\.168`, conn.RemoteAddr().String()); !ok{
-				log.Println(ErrInfo("not local"))
-				return
-			}
-			size := DecodeLength(&binaryData)
-			if int64(len(binaryData)) < size {
-				log.Println(ErrInfo("len(binaryData) < size"))
-				return
-			}
-			host := string(BytesShift(&binaryData, size))
-			if ok, _ := regexp.MatchString(`^[0-9a-z\_\.\-\/:]{1,50}$`, host); !ok{
-				log.Println(ErrInfo("incorrect host "+host))
-				return
-			}
-
-			// шлем данные указанному хосту
-			tcpAddr, err := net.ResolveTCPAddr("tcp", host)
+			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
 			}
-			conn2, err := net.DialTCP("tcp", nil, tcpAddr)
+
+			// шлем данные указанному хосту
+			conn2, err := TcpConn(host)
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
 
-			conn2.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-			conn2.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
-
-			// в 4-х байтах пишем размер данных, которые пошлем далее
-			_, err = conn2.Write(DecToBin(len(binaryData), 4))
+			// шлем тип данных
+			_, err = conn2.Write(DecToBin(2, 1))
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
 			}
-			// сами данные
-			_, err = conn2.Write(binaryData)
+			err = WriteSizeAndDataTCPConn(binaryData, conn2)
 			if err != nil {
 				log.Println(ErrInfo(err))
 				return
@@ -3206,6 +3196,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			- если хэш блока меньше того, что есть у нас в табле testblock, то смотртим, есть ли такой же хэш тр-ий,
 			- если отличается, то загружаем блок от отправителя по адресу http://host/get_testblock.php.
 			- если не отличается, то просто обновляет хэш блока у себя
+			данные присылает демон testblockDisseminator
 			 */
 			currentBlockId, err := db.GetBlockId()
 			if err != nil {
@@ -3342,19 +3333,10 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					sendData+=hash
 				}
 
-				// в 4-х байтах пишем размер данных, которые пошлем далее
-				_, err = conn.Write(DecToBin(len(sendData), 4))
+				err = WriteSizeAndData([]byte(sendData), conn)
 				if err != nil {
 					db.UnlockPrintSleep(ErrInfo(err), 0)
 					return
-				}
-				// шлем набор хэшей тр-ий, которые есть у нас
-				if len(sendData) > 0 {
-					_, err = conn.Write([]byte(sendData))
-					if err != nil {
-						db.UnlockPrintSleep(ErrInfo(err), 0)
-						return
-					}
 				}
 				/*
 				в ответ получаем:
@@ -3403,7 +3385,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					var orderHashArray []string
 					for {
 						orderHashArray = append(orderHashArray, string(BinToHex(BytesShift(&binaryData, 16))))
-						if len(binaryData) == 0{
+						if len(binaryData) == 0 {
 							break
 						}
 					}
@@ -3471,7 +3453,249 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				return
 			}
 			db.DbUnlock()
+
+		case 7:
+			/* Выдаем тело указанного блока
+			 * запрос шлет демон blocksCollection и queue_parser_blocks через p.GetBlocks()
+			 */
+			blockId := BinToDec(binaryData)
+			block, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).String()
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			err = WriteSizeAndData([]byte(block), conn)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+		case 8:
+			/* делаем запрос на указанную ноду, чтобы получить оттуда тело блока
+			 * запрос шлет демон blocksCollection и queueParserBlocks через p.GetBlocks()
+			 */
+			blockId := BinToDec(binaryData)
+
+			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// шлем данные указанному хосту
+			conn2, err := TcpConn(host)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			defer conn2.Close()
+
+			// шлем тип данных
+			_, err = conn2.Write(DecToBin(7, 1))
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			// шлем ID блока
+			_, err = conn2.Write(DecToBin(blockId, 4))
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// в ответ получаем размер данных, которые нам хочет передать сервер
+			buf := make([]byte, 4)
+			_, err =conn2.Read(buf)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			dataSize := BinToDec(buf)
+			// и если данных менее 10мб, то получаем их
+			if dataSize < 10485760 {
+				blockBinary := make([]byte, dataSize)
+				_, err := conn2.Read(blockBinary)
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+				// шлем тому, кто запросил блок из демона
+				_, err = conn.Write(blockBinary)
+				if err != nil {
+					log.Println(ErrInfo(err))
+					return
+				}
+			}
+			return
+
+		case 9:
+			/* Делаем запрос на указанную ноду, чтобы получить оттуда номер макс. блока
+			 * запрос шлет демон blocksCollection
+			 */
+			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			// шлем данные указанному хосту
+			conn2, err := TcpConn(host)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			defer conn2.Close()
+			// шлем тип данных
+			_, err = conn2.Write(DecToBin(10, 1))
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			// в ответ получаем номер блока
+			blockIdBin := make([]byte, 4)
+			_, err = conn2.Read(blockIdBin)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+			// и возвращаем номер блока демону, который этот запрос прислал
+			_, err = conn.Write(blockIdBin)
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+
+		case 10:
+			/* Выдаем номер макс. блока
+			 * запрос шлет демон blocksCollection
+			*/
+			blockId, err := db.Single("SELECT block_id FROM info_block").Int64()
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
+			_, err = conn.Write(DecToBin(blockId, 4))
+			if err != nil {
+				log.Println(ErrInfo(err))
+				return
+			}
 		}
 	}
+
+}
+
+
+func TcpConn(Addr string) (*net.TCPConn, error) {
+	// шлем данные указанному хосту
+	tcpAddr, err := net.ResolveTCPAddr("tcp", Addr)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+	conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
+	return conn, nil
+}
+
+func ProtectedCheckRemoteAddrAndGetHost(binaryData *[]byte, conn net.Conn) (string, error) {
+	if ok, _ := regexp.MatchString(`^192\.168`, conn.RemoteAddr().String()); !ok{
+		return "", ErrInfo("not local")
+	}
+	size := DecodeLength(&*binaryData)
+	if int64(len(*binaryData)) < size {
+		return "", ErrInfo("int64(len(binaryData)) < size")
+	}
+	host := string(BytesShift(&*binaryData, size))
+	if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, host); !ok{
+		return "", ErrInfo("incorrect host "+host)
+	}
+	return host, nil
+
+}
+
+func WriteSizeAndData(binaryData []byte, conn net.Conn) error {
+	// в 4-х байтах пишем размер данных, которые пошлем далее
+	size := DecToBin(len(binaryData), 4)
+	_, err := conn.Write(size)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	// далее шлем сами данные
+	if len(binaryData) > 0 {
+		_, err = conn.Write(binaryData)
+		if err != nil {
+			return ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+func WriteSizeAndDataTCPConn(binaryData []byte, conn *net.TCPConn) error {
+	// в 4-х байтах пишем размер данных, которые пошлем далее
+	size := DecToBin(len(binaryData), 4)
+	_, err := conn.Write(size)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	// далее шлем сами данные
+	if len(binaryData) > 0 {
+		_, err = conn.Write(binaryData)
+		if err != nil {
+			return ErrInfo(err)
+		}
+	}
+	return nil
+}
+
+
+
+func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost string) ([]byte, error) {
+
+	conn, err := TcpConn(host)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	defer conn.Close()
+
+	// шлем тип данных
+	_, err = conn.Write(DecToBin(dataTypeBlockBody, 1))
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	if len(nodeHost) > 0 { // защищенный режим
+		err = WriteSizeAndDataTCPConn([]byte(nodeHost), conn)
+		if err != nil {
+			return nil, ErrInfo(err)
+		}
+	}
+
+	// шлем номер блока
+	_, err = conn.Write(DecToBin(blockId, 4))
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+
+	// в ответ получаем размер данных, которые нам хочет передать сервер
+	buf := make([]byte, 4)
+	_, err =conn.Read(buf)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	var binaryBlock []byte
+
+	// и если данных менее 10мб, то получаем их
+	dataSize := BinToDec(buf)
+	if dataSize < 10485760 {
+		binaryBlock = make([]byte, dataSize)
+		_, err := conn.Read(binaryBlock)
+		if err != nil {
+			return nil, ErrInfo(err)
+		}
+	}
+	return binaryBlock, nil
 
 }

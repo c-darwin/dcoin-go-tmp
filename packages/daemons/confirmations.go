@@ -14,7 +14,7 @@ import (
 Нужно чтобы следить за вилками
 */
 
-func Confirmations(configIni map[string]string) {
+func Confirmations() {
 
 	const GoroutineName = "Confirmations"
 	db := utils.DbConnect(configIni)
@@ -37,11 +37,14 @@ func Confirmations(configIni map[string]string) {
 			if err != nil {
 				log.Println(err)
 			}
+			if maxMinerId == 0 {
+				maxMinerId = 1
+			}
 			q := ""
 			if db.ConfigIni["db_type"] == "postgresql" {
-				q = "SELECT DISTINCT ON (host) host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
+				q = "SELECT DISTINCT ON (tcp_host) tcp_host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
 			} else {
-				q = "SELECT host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY host"
+				q = "SELECT tcp_host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY tcp_host"
 			}
 			hosts, err = db.GetAll(q, consts.COUNT_CONFIRMED_NODES)
 			if err != nil {

@@ -12,7 +12,7 @@ import (
  * Каждые 2 недели собираем инфу о голосах за % и создаем тр-ию, которая
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
-func PctGenerator(configIni map[string]string) string {
+func PctGenerator() string {
 
 	const GoroutineName = "PctGenerator"
 	db := utils.DbConnect(configIni)

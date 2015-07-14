@@ -29,7 +29,7 @@ import (
 
 var err error
 
-func TestblockGenerator(configIni map[string]string) {
+func TestblockGenerator() {
 
     var mutex = &sync.Mutex{}
 

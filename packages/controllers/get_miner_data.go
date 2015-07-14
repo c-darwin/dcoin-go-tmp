@@ -25,7 +25,7 @@ func (c *Controller) GetMinerData() (string, error) {
 
 	// получим ID майнеров, у которых лежат фото нужного нам юзера
 	minersIds := utils.GetMinersKeepers(minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], false)
-	hosts, err := c.GetList("SELECT host FROM miners_data WHERE miner_id IN ("+utils.JoinInts(minersIds, ",")+")").String()
+	hosts, err := c.GetList("SELECT http_host as host FROM miners_data WHERE miner_id IN ("+utils.JoinInts(minersIds, ",")+")").String()
 	if err != nil {
 		return "", err
 	}

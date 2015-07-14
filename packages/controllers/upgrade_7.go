@@ -39,7 +39,7 @@ func (c *Controller) Upgrade7() (string, error) {
 	timeNow := utils.Time()
 
 	// Формируем контент для подписи
-	myTable, err := c.OneRow("SELECT user_id, race, country, geolocation, host, face_coords, profile_coords, video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
+	myTable, err := c.OneRow("SELECT user_id, race, country, geolocation, http_host, tcp_host, face_coords, profile_coords, video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -104,7 +104,7 @@ func (c *Controller) Upgrade7() (string, error) {
 		TxType: txType,
 		TxTypeId: txTypeId,
 		NoExistsMp4: noExistsMp4,
-		SignData: fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],latitude,longitude,myTable["host"],faceHash,profileHash,myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],nodePublicKey),
+		SignData: fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],latitude,longitude,myTable["http_host"],myTable["tcp_host"],faceHash,profileHash,myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],nodePublicKey),
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		Latitude: latitude,

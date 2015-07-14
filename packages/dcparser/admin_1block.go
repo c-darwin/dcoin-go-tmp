@@ -67,7 +67,7 @@ func (p *Parser) Admin1Block() (error) {
 		}
 	}
 
-	err = p.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, host, photo_block_id, photo_max_miner_id, miners_keepers)
+	err = p.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, http_host, photo_block_id, photo_max_miner_id, miners_keepers)
 		VALUES (1,1,'miner',[hex],?,1,1,1)`,
 		firstBlock.NodePublicKey, firstBlock.Host)
 	if err != nil {

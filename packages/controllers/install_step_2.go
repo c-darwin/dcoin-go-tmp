@@ -1,9 +1,6 @@
 package controllers
 import (
 	"fmt"
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
@@ -179,23 +176,11 @@ func (c *Controller) InstallStep2() (string, error) {
 		return "", err
 	}
 
-	data, err := static.Asset("static/templates/install_step_2.html")
-	if err != nil {
-		return "", err
-	}
-	modal, err := static.Asset("static/templates/modal.html")
-	if err != nil {
-		return "", err
-	}
 
-	t := template.Must(template.New("template").Parse(string(data)))
-	t = template.Must(t.Parse(string(modal)))
-
-	b := new(bytes.Buffer)
-	err = t.Execute(b, &installStep2Struct{Lang: c.Lang, MyModalIdName: "myModalLogin"})
+	TemplateStr, err := makeTemplate("install_step_2", "installStep2", &installStep0Struct{
+		Lang: c.Lang})
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
-
-	return b.String(), nil
+	return TemplateStr, nil
 }

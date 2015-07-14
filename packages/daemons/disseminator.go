@@ -4,9 +4,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"log"
 	"strings"
-	"net"
-	"time"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 /*
@@ -14,7 +11,7 @@ import (
  * если мы не майнер, то шлем всю тр-ию целиком, блоки слать не можем
  * если майнер - то шлем только хэши, т.к. у нас есть хост, откуда всё можно скачать
  * */
-func Disseminator(configIni map[string]string) string {
+func Disseminator() string {
 
 	GoroutineName := "Disseminator"
 	db := utils.DbConnect(configIni)
@@ -35,7 +32,7 @@ BEGIN:
 		if len(nodeConfig["local_gate_ip"]) == 0 {
 			// обычный режим
 			hosts, err = db.GetAll(`
-					SELECT miners_data.user_id, miners_data.host, node_public_key
+					SELECT miners_data.user_id, miners_data.tcp_host as host, node_public_key
 					FROM nodes_connection
 					LEFT JOIN miners_data ON nodes_connection.user_id = miners_data.user_id
 					`, -1)
@@ -49,7 +46,7 @@ BEGIN:
 			}
 		} else {
 			// защищенный режим
-			nodeData, err = db.OneRow("SELECT node_public_key, host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
+			nodeData, err = db.OneRow("SELECT node_public_key, tcp_host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
 			if err != nil {
 				db.PrintSleep(err, 1)
 				continue
@@ -144,20 +141,14 @@ BEGIN:
 				for _, host := range hosts {
 					userId := utils.StrToInt64(host["user_id"])
 					go func() {
-						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
+
+						// шлем данные указанному хосту
+						conn, err := utils.TcpConn(host["host"])
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
-						conn, err := net.DialTCP("tcp", nil, tcpAddr)
-						if err!=nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
 						defer conn.Close()
-
-						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT  * time.Second))
 
 						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
 						if err != nil {
@@ -297,20 +288,13 @@ BEGIN:
 				for _, host := range hosts {
 					userId := utils.StrToInt64(host["user_id"])
 					go func() {
-						tcpAddr, err := net.ResolveTCPAddr("tcp", host["host"])
-						if err != nil {
-							log.Println(utils.ErrInfo(err))
-							return
-						}
-						conn, err := net.DialTCP("tcp", nil, tcpAddr)
+
+						conn, err := utils.TcpConn(host["host"])
 						if err != nil {
 							log.Println(utils.ErrInfo(err))
 							return
 						}
 						defer conn.Close()
-
-						conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-						conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
 
 						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
 						if err != nil {

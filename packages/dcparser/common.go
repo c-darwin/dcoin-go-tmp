@@ -13,7 +13,6 @@ import (
 	"database/sql"
 	"strings"
 	"errors"
-	"net/http"
 	"io/ioutil"
 	"os"
 )
@@ -82,16 +81,16 @@ func ClearTmp (blocks map[int64]string) {
 /*
  * $get_block_script_name, $add_node_host используется только при работе в защищенном режиме и только из blocks_collection.php
  * */
-func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
+func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName string, dataTypeBlockBody int64, nodeHost string) error {
 	log.Println("userId", userId, "blockId", blockId)
-	err := p.GetBlocks(blockId, host, hostUserId, "rollback_blocks_2", goroutineName, getBlockScriptName, addNodeHost);
+	err := p.GetBlocks(blockId, host, hostUserId, "rollback_blocks_2", goroutineName, dataTypeBlockBody, nodeHost);
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName, getBlockScriptName, addNodeHost string) error {
+func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName string, dataTypeBlockBody int64, nodeHost string) error {
 
 	log.Println("blockId", blockId)
 	variables, err :=  p.GetAllVariables()
@@ -120,32 +119,16 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return utils.ErrInfo(errors.New("count > variables[rollback_blocks]"))
 		}
 		if len(host) == 0 {
-			host, err = p.Single("SELECT host FROM miners_data WHERE user_id = ?", userId).String()
+			host, err = p.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", userId).String()
 			if err != nil {
 				ClearTmp(blocks)
 				return utils.ErrInfo(err)
 			}
 		}
 
-		url := ""
-		if len(getBlockScriptName) == 0 {
-			url = host+"/ajax?controllerName=getBlock&id="+utils.Int64ToStr(blockId)
-		} else {
-			url = host+"/"+getBlockScriptName+"id="+utils.Int64ToStr(blockId)
-		}
-		log.Println("url", url)
-		resp, err := http.Get(url)
-		if err != nil {
-			ClearTmp(blocks)
-			return utils.ErrInfo(err)
-		}
-		defer resp.Body.Close()
-		htmlData, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			ClearTmp(blocks)
-			return utils.ErrInfo(err)
-		}
-		binaryBlock := htmlData
+		// качаем тело блока с хоста host
+		binaryBlock, err := utils.GetBlockBody(host, blockId, dataTypeBlockBody, nodeHost)
+
 		if err != nil {
 			ClearTmp(blocks)
 			return utils.ErrInfo(err)

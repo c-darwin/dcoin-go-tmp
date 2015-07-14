@@ -144,8 +144,8 @@ func (p *Parser) ChangePrimaryKey() (error) {
 				return p.ErrInfo(err)
 			}
 			if len(minersData) > 0 {
-				err = p.ExecSql("UPDATE "+myPrefix+"my_table SET user_id = ?, miner_id = ?, status = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, host = ?, geolocation = ?, geolocation_status = 'approved' WHERE status != 'bad_key'",
-					minersData["user_id"], minersData["miner_id"], minersData["status"], minersData["face_coords"], minersData["profile_coords"], minersData["video_type"], minersData["video_url_id"], minersData["host"], minersData["latitude"]+", "+minersData["longitude"])
+				err = p.ExecSql("UPDATE "+myPrefix+"my_table SET user_id = ?, miner_id = ?, status = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, http_host = ?, tcp_host = ?, geolocation = ?, geolocation_status = 'approved' WHERE status != 'bad_key'",
+					minersData["user_id"], minersData["miner_id"], minersData["status"], minersData["face_coords"], minersData["profile_coords"], minersData["video_type"], minersData["video_url_id"], minersData["http_host"], minersData["tcp_host"], minersData["latitude"]+", "+minersData["longitude"])
 				if err != nil {
 					return p.ErrInfo(err)
 				}

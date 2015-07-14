@@ -6,7 +6,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
-func ElectionsAdmin(configIni map[string]string) string {
+func ElectionsAdmin() string {
 
 	const GoroutineName = "ElectionsAdmin"
 	db := utils.DbConnect(configIni)

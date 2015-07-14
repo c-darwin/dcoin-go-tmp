@@ -267,7 +267,8 @@ func (c *Controller) SaveQueue() (string, error) {
 		country := []byte(c.r.FormValue("country"));
 		latitude := []byte(c.r.FormValue("latitude"));
 		longitude := []byte(c.r.FormValue("longitude"));
-		host := []byte(c.r.FormValue("host"));
+		http_host := []byte(c.r.FormValue("http_host"));
+		tcp_host := []byte(c.r.FormValue("tcp_host"));
 		faceHash := []byte(c.r.FormValue("face_hash"));
 		profileHash := []byte(c.r.FormValue("profile_hash"));
 		faceCoords := []byte(c.r.FormValue("face_coords"));
@@ -276,7 +277,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		videoUrlId := []byte(c.r.FormValue("video_url_id"));
 		nodePublicKey := []byte(c.r.FormValue("node_public_key"));
 
-		if len(race) == 0 || len(country) == 0 || len(latitude) == 0 || len(longitude) == 0 || len(host) == 0 || len(faceHash) == 0 || len(profileHash) == 0 || len(faceCoords) == 0 || len(profileCoords) == 0 || len(videoType) == 0 || len(videoUrlId) == 0 || len(nodePublicKey) == 0 {
+		if len(race) == 0 || len(country) == 0 || len(latitude) == 0 || len(longitude) == 0 || len(http_host) == 0 || len(tcp_host) == 0 || len(faceHash) == 0 || len(profileHash) == 0 || len(faceCoords) == 0 || len(profileCoords) == 0 || len(videoType) == 0 || len(videoUrlId) == 0 || len(nodePublicKey) == 0 {
 			return "empty", nil
 		}
 		if string(videoType) == "null" || string(videoUrlId) == "null" {
@@ -292,7 +293,8 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(country)...)
 		data = append(data, utils.EncodeLengthPlusData(latitude)...)
 		data = append(data, utils.EncodeLengthPlusData(longitude)...)
-		data = append(data, utils.EncodeLengthPlusData(host)...)
+		data = append(data, utils.EncodeLengthPlusData(http_host)...)
+		data = append(data, utils.EncodeLengthPlusData(tcp_host)...)
 		data = append(data, utils.EncodeLengthPlusData(faceCoords)...)
 		data = append(data, utils.EncodeLengthPlusData(profileCoords)...)
 		data = append(data, utils.EncodeLengthPlusData(faceHash)...)
@@ -309,7 +311,6 @@ func (c *Controller) SaveQueue() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 		}
-
 
 	case "votes_miner" : // голос за юзера, который хочет стать майнером
 
@@ -1134,10 +1135,14 @@ func (c *Controller) SaveQueue() (string, error) {
 
 	case "change_host" :
 
-		host := []byte(c.r.FormValue("host"));
+		http_host := []byte(c.r.FormValue("http_host"));
+		tcp_host := []byte(c.r.FormValue("tcp_host"));
 
-		if !utils.CheckInputData(c.r.FormValue("host"), "host") {
-			return `incorrect host`, nil
+		if !utils.CheckInputData(c.r.FormValue("http_host"), "http_host") {
+			return `incorrect http_host`, nil
+		}
+		if !utils.CheckInputData(c.r.FormValue("tcp_host"), "tcp_host") {
+			return `incorrect tcp_host`, nil
 		}
 
 		var community []int64
@@ -1168,8 +1173,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				uId := community[i]
 				err = c.ExecSql(`
 							UPDATE `+myPrefix+`my_table
-							SET  host = ?,
-									host_status = 'my_pending'`, host)
+							SET  http_host = ?, tcp_host = ?, host_status = 'my_pending'`, http_host, tcp_host)
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -1195,7 +1199,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
-				forSign := fmt.Sprintf("%d,%d,%d,%s", utils.TypeInt(txType_), timeNow, uId, host)
+				forSign := fmt.Sprintf("%d,%d,%d,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
 				if err != nil {
 					return "", utils.ErrInfo(err)
@@ -1205,7 +1209,8 @@ func (c *Controller) SaveQueue() (string, error) {
 				data = utils.DecToBin(txType, 1)
 				data = append(data, utils.DecToBin(timeNow, 4)...)
 				data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(uId))...)
-				data = append(data, utils.EncodeLengthPlusData(host)...)
+				data = append(data, utils.EncodeLengthPlusData(http_host)...)
+				data = append(data, utils.EncodeLengthPlusData(tcp_host)...)
 				data = append(data, binSignature...)
 
 				err = c.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))

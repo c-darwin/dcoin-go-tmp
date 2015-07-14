@@ -10,12 +10,10 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"errors"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
 )
 
-func BlocksCollection(configIni map[string]string) {
+func BlocksCollection() {
 
     const GoroutineName = "BlocksCollection"
 
@@ -117,9 +115,9 @@ func BlocksCollection(configIni map[string]string) {
                         file.Read(data)
                         fmt.Printf("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-                        if blockId == 244790 {
-                            break BEGIN
-                        }
+                        //if blockId == 244790 {
+                        //    break BEGIN
+                        //}
                         log.Println("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
@@ -128,7 +126,7 @@ func BlocksCollection(configIni map[string]string) {
                         blockBin := utils.BytesShift(&data2, length)
                         fmt.Printf("blockBin %x\n", blockBin)
 
-                        if blockId > 244790 {
+                        //if blockId > 244790 {
 
                             // парсинг блока
                             parser := new(dcparser.Parser)
@@ -160,7 +158,7 @@ func BlocksCollection(configIni map[string]string) {
                                 file.Close()
                                 break BEGIN
                             }
-                        }
+                        //}
                         // ненужный тут размер в конце блока данных
                         data = make([]byte, 5)
                         file.Read(data)
@@ -203,37 +201,40 @@ func BlocksCollection(configIni map[string]string) {
 
         myConfig, err := db.OneRow("SELECT local_gate_ip, static_node_user_id FROM config").String()
         if err != nil {
-            utils.Sleep(1)
+            db.PrintSleep(err, 1)
             continue
         }
 		var hosts []map[string]string
-		var getMaxBlockScriptName, getBlockScriptName, addNodeHost string
+		var nodeHost string
+        var dataTypeMaxBlockId, dataTypeBlockBody int64
 		if len(myConfig["local_gate_ip"]) > 0 {
             hosts = append(hosts, map[string]string{"host": myConfig["local_gate_ip"], "user_id": myConfig["static_node_user_id"]})
-            nodeHost, err := db.Single("SELECT host FROM miners_data WHERE user_id  =  ?", myConfig["static_node_user_id"]).String()
+            nodeHost, err = db.Single("SELECT tcp_host FROM miners_data WHERE user_id  =  ?", myConfig["static_node_user_id"]).String()
             if err != nil {
-                utils.Sleep(1)
+                db.PrintSleep(err, 1)
                 continue
-			}
-            getMaxBlockScriptName = "ajax?controllerName=protectedGetMaxBlock&nodeHost="+nodeHost;
-			getBlockScriptName = "ajax?controllerName=protectedGetBlock";
-			addNodeHost = "&nodeHost="+nodeHost;
+            }
+            dataTypeMaxBlockId = 9
+            dataTypeBlockBody = 8
+			//getBlockScriptName = "ajax?controllerName=protectedGetBlock";
+			//addNodeHost = "&nodeHost="+nodeHost;
         } else {
             // получим список нодов, с кем установлено рукопожатие
             hosts, err = db.GetAll("SELECT * FROM nodes_connection", -1)
             if err != nil {
-                utils.Sleep(1)
+                db.PrintSleep(err, 1)
                 continue
-			}
-            getMaxBlockScriptName = "ajax?controllerName=getMaxBlock";
-            getBlockScriptName = "ajax?controllerName=getBlock";
-            addNodeHost = "";
+            }
+            dataTypeMaxBlockId = 10
+            dataTypeBlockBody = 7
+            //getBlockScriptName = "ajax?controllerName=getBlock";
+            //addNodeHost = "";
         }
 
 		log.Println(hosts)
 
 		if len(hosts) == 0 {
-            utils.Sleep(1)
+            db.PrintSleep("len hosts = 0", 1)
             continue
 		}
 
@@ -242,15 +243,34 @@ func BlocksCollection(configIni map[string]string) {
         var maxBlockIdUserId int64
         // получим максимальный номер блока
         for i:=0; i < len(hosts); i++ {
-            url := hosts[i]["host"]+"/"+getMaxBlockScriptName
-            resp, err := http.Get(url)
+
+            conn, err := utils.TcpConn(hosts[i]["host"])
             if err != nil {
-                utils.Sleep(1)
+                db.PrintSleep(err, 1)
                 continue
             }
-            defer resp.Body.Close()
-            html, err := ioutil.ReadAll(resp.Body)
-			id := utils.BytesToInt64(html)
+            defer conn.Close()
+            // шлем тип данных
+            _, err = conn.Write(utils.DecToBin(dataTypeMaxBlockId, 1))
+            if err != nil {
+                db.PrintSleep(err, 1)
+                continue
+            }
+            if len(nodeHost) > 0 { // защищенный режим
+                err = utils.WriteSizeAndData([]byte(nodeHost), conn)
+                if err != nil {
+                    db.PrintSleep(err, 1)
+                    continue
+                }
+            }
+            // в ответ получаем номер блока
+            blockIdBin := make([]byte, 4)
+            _, err = conn.Read(blockIdBin)
+            if err != nil {
+                db.PrintSleep(err, 1)
+                continue
+            }
+			id := utils.BinToDec(blockIdBin)
             if id > maxBlockId || i == 0 {
                 maxBlockId = id
                 maxBlockIdHost = hosts[i]["host"]
@@ -288,15 +308,10 @@ func BlocksCollection(configIni map[string]string) {
                 db.UnlockPrintSleep(utils.ErrInfo(err), 1)
                 continue BEGIN
             }
-            url := maxBlockIdHost+"/"+getBlockScriptName+"?id="+utils.Int64ToStr(blockId)+addNodeHost
-            resp, err := http.Get(url)
-            if err != nil {
-                db.UnlockPrintSleep(utils.ErrInfo(err), 1)
-                continue BEGIN
-            }
-            defer resp.Body.Close()
-            binaryBlock, err := ioutil.ReadAll(resp.Body)
-			if len(binaryBlock) == 0 {
+            // качаем тело блока с хоста maxBlockIdHost
+            binaryBlock, err := utils.GetBlockBody(maxBlockIdHost, blockId, dataTypeBlockBody, nodeHost)
+
+            if len(binaryBlock) == 0 {
                 // баним на 1 час хост, который дал нам пустой блок, хотя должен был дать все до максимального
                 // для тестов убрал, потом вставить.
                 //nodes_ban ($db, $max_block_id_user_id, substr($binary_block, 0, 512)."\n".__FILE__.', '.__LINE__.', '. __FUNCTION__.', '.__CLASS__.', '. __METHOD__);
@@ -394,7 +409,7 @@ func BlocksCollection(configIni map[string]string) {
                 p := new(dcparser.Parser)
 				p.DCDB = db
 				//func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
-                err := p.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, getBlockScriptName, addNodeHost)
+                err := p.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
 				log.Println(err)
 				if err != nil {
                     db.NodesBan(maxBlockIdUserId, fmt.Sprintf(`blockId: %v / %v`, blockId, err))

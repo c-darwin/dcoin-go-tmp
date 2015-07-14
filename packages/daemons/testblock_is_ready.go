@@ -16,7 +16,7 @@ import (
  *
  */
 
-func TestblockIsReady(configIni map[string]string) string {
+func TestblockIsReady() string {
 
 	GoroutineName := "TestblockIsReady"
 	db := utils.DbConnect(configIni)

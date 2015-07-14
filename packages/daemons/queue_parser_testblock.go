@@ -11,7 +11,7 @@ import (
  * Парсим и разносим данные из queue_testblock
  * */
 
-func QueueParserTestblock(configIni map[string]string) string {
+func QueueParserTestblock() string {
 
 	GoroutineName := "QueueParserTestblock"
 	db := utils.DbConnect(configIni)

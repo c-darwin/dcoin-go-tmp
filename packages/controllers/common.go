@@ -12,13 +12,12 @@ import (
 	"log"
 	"regexp"
 	"unicode"
-	"os"
-	"io/ioutil"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"bytes"
 	"encoding/json"
 	"html/template"
 	"strings"
+	"os"
 )
 
 type Controller struct {
@@ -70,34 +69,25 @@ var globalLangReadOnly map[int]map[string]string
 func init() {
 	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"./tmp"}`)
 	go globalSessions.GC()
+	// мониторим config.ini на наличие изменений
+	go func() {
+		for {
 
-	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
-		fmt.Println("NO")
-		d1 := []byte(`
-error_log=1
-log=1
-log_block_id_begin=0
-log_block_id_end=0
-bad_tx_log=1
-nodes_ban_exit=0
-log_tables=
-log_fns=
-sign_hash=ip
-db_type=sqlite
-DB_USER=
-DB_PASSWORD=
-DB_NAME=`)
-		ioutil.WriteFile("config.ini", d1, 0644)
-	} else {
-		fmt.Println("YES")
-	}
-
-	configIni_, err := config.NewConfig("ini", "config.ini")
-	if err != nil {
-		log.Fatal(err)
-	}
-	configIni, err = configIni_.GetSection("default")
-
+			if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
+				utils.Sleep(1)
+				continue
+			}
+			configIni_, err := config.NewConfig("ini", "config.ini")
+			if err != nil {
+				log.Println(utils.ErrInfo(err))
+			}
+			configIni, err = configIni_.GetSection("default")
+			if err != nil {
+				log.Println(utils.ErrInfo(err))
+			}
+			utils.Sleep(1)
+		}
+	}()
 	globalLangReadOnly = make(map[int]map[string]string)
 	for _, v := range consts.LangMap{
 		data, err := static.Asset(fmt.Sprintf("static/lang/%d.ini", v))

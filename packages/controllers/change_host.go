@@ -29,7 +29,7 @@ func (c *Controller) ChangeHost() (string, error) {
 		return "", utils.ErrInfo(errors.New("access denied"))
 	}
 
-	data, err := c.OneRow("SELECT host, host_status FROM " + c.MyPrefix + "my_table").String()
+	data, err := c.OneRow("SELECT http_host, tcp_host, host_status FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -13,7 +13,7 @@ import (
  * Каждые 2 недели собираем инфу о голосах за % и создаем тр-ию, которая
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
-func ReductionGenerator(configIni map[string]string) string {
+func ReductionGenerator() string {
 
 	const GoroutineName = "ReductionGenerator"
 	db := utils.DbConnect(configIni)

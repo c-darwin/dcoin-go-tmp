@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-func CfProjects(configIni map[string]string) {
+func CfProjects() {
 
 	const GoroutineName = "CfProjects"
 

@@ -35,6 +35,7 @@ func main() {
 		d1 := []byte(`
 error_log=1
 log=1
+sql_log=0
 log_block_id_begin=0
 log_block_id_end=0
 bad_tx_log=1
@@ -66,28 +67,27 @@ db_name=`)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// запускаем всех демонов
-	go daemons.TestblockIsReady(configIni)
-	go daemons.TestblockGenerator(configIni)
-	go daemons.TestblockDisseminator(configIni)
-	go daemons.Shop(configIni)
-	go daemons.ReductionGenerator(configIni)
-	go daemons.QueueParserTx(configIni)
-	go daemons.QueueParserTestblock(configIni)
-	go daemons.QueueParserBlocks(configIni)
-	go daemons.PctGenerator(configIni)
-	go daemons.Notifications(configIni)
-	go daemons.NodeVoting(configIni)
-	go daemons.MaxPromisedAmountGenerator(configIni)
-	go daemons.MaxOtherCurrenciesGenerator(configIni)
-	go daemons.ElectionsAdmin(configIni)
-	go daemons.Disseminator(configIni)
-	go daemons.Confirmations(configIni)
-	go daemons.Connector(configIni)
-	go daemons.Clear(configIni)
-	go daemons.CleaningDb(configIni)
-	go daemons.CfProjects(configIni)
-	go daemons.BlocksCollection(configIni)
-
+	go daemons.TestblockIsReady()
+	go daemons.TestblockGenerator()
+	go daemons.TestblockDisseminator()
+	go daemons.Shop()
+	go daemons.ReductionGenerator()
+	go daemons.QueueParserTx()
+	go daemons.QueueParserTestblock()
+	go daemons.QueueParserBlocks()
+	go daemons.PctGenerator()
+	go daemons.Notifications()
+	go daemons.NodeVoting()
+	go daemons.MaxPromisedAmountGenerator()
+	go daemons.MaxOtherCurrenciesGenerator()
+	go daemons.ElectionsAdmin()
+	go daemons.Disseminator()
+	go daemons.Confirmations()
+	go daemons.Connector()
+	go daemons.Clear()
+	go daemons.CleaningDb()
+	go daemons.CfProjects()
+	go daemons.BlocksCollection()
 
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
@@ -128,6 +128,7 @@ err = fmt.Errorf("unsupported platform")
 				log.Println("Error accepting: ", err.Error())
 				os.Exit(1)
 			}
+
 			go utils.HandleTcpRequest(conn, configIni)
 		}
 	}()

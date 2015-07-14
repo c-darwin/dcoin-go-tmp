@@ -1,9 +1,6 @@
 package controllers
 import (
-	"fmt"
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type installStep1Struct struct {
@@ -13,15 +10,10 @@ type installStep1Struct struct {
 // Шаг 1 - выбор либо стандартных настроек (sqlite и блокчейн с сервера) либо расширенных - pg/mysql и загрузка с нодов
 func (c *Controller) InstallStep1() (string, error) {
 
-	data, err := static.Asset("static/templates/install_step_1.html")
+	TemplateStr, err := makeTemplate("install_step_1", "installStep1", &installStep0Struct{
+		Lang: c.Lang})
 	if err != nil {
-		fmt.Println("err", err)
+		return "", utils.ErrInfo(err)
 	}
-	fmt.Println(data)
-	t := template.New("template")
-	t, _ = t.Parse(string(data))
-
-	b := new(bytes.Buffer)
-	t.Execute(b, &installStep0Struct{Lang: c.Lang})
-	return b.String(), nil
+	return TemplateStr, nil
 }

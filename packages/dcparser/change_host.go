@@ -3,24 +3,17 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
-	//"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
-//	"time"
-	//"strings"
-	//"bytes"
-	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-//	"math"
-//	"database/sql"
-//	"bytes"
+	"regexp"
 )
 
 func (p *Parser) ChangeHostInit() (error) {
+	var fields []map[string]string
 
-	fields := []map[string]string {{"host":"string"}, {"sign":"bytes"}}
+	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
+		fields = []map[string]string{{"http_host":"string"}, {"sign":"bytes"}}
+	} else {
+		fields = []map[string]string{{"http_host":"string"}, {"tcp_host":"string"}, {"sign":"bytes"}}
+	}
 	err := p.GetTxMaps(fields);
 	if err != nil {
 		return p.ErrInfo(err)
@@ -35,8 +28,12 @@ func (p *Parser) ChangeHostFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-
-	verifyData := map[string]string {"host":"host"}
+	var verifyData map[string]string
+	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
+		verifyData = map[string]string {"http_host":"http_host"}
+	} else {
+		verifyData = map[string]string {"http_host":"http_host", "tcp_host":"tcp_host"}
+	}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -58,8 +55,13 @@ func (p *Parser) ChangeHostFront() (error) {
 	}
 
 	var CheckSignResult bool
-	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["host"])
-	if p.BlockData!=nil && p.BlockData.BlockId <= 240240 {
+	var forSign string
+	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
+		forSign = fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"])
+	} else {
+		forSign = fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"], p.TxMap["tcp_host"])
+	}
+	if p.BlockData != nil && p.BlockData.BlockId <= 240240 {
 		CheckSignResult, err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	} else {
 		CheckSignResult, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
@@ -79,7 +81,17 @@ func (p *Parser) ChangeHostFront() (error) {
 }
 
 func (p *Parser) ChangeHost() (error) {
-	err := p.selectiveLoggingAndUpd([]string{"host"}, []interface {}{p.TxMaps.String["host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	tcpHost := ""
+	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
+		re := regexp.MustCompile(`^https?:\/\/[0-9a-z\_\.\-:]+)\/`)
+		match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
+		if len(match) != 0 {
+			tcpHost = match[1]+":8088"
+		}
+	} else {
+		tcpHost = p.TxMaps.String["tcp_host"]
+	}
+	err := p.selectiveLoggingAndUpd([]string{"http_host", "tcp_host"}, []interface{}{p.TxMaps.String["http_host"], tcpHost}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -99,7 +111,7 @@ func (p *Parser) ChangeHost() (error) {
 }
 
 func (p *Parser) ChangeHostRollback() (error) {
-	err := p.selectiveRollback([]string{"host"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+	err := p.selectiveRollback([]string{"http_host", "tcp_host"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

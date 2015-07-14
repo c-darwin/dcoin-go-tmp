@@ -11,7 +11,7 @@ import (
 )
 
 
-func Connector(configIni map[string]string) {
+func Connector() {
 
 	GoroutineName := "Connector"
 	db := utils.DbConnect(configIni)
@@ -65,10 +65,10 @@ func Connector(configIni map[string]string) {
 		}
 		log.Println(myMinersIds)
 		nodesBan, err := db.GetMap(`
-				SELECT host, ban_start
+				SELECT tcp_host, ban_start
 				FROM nodes_ban
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id
-				`, "host", "ban_start")
+				`, "tcp_host", "ban_start")
 		log.Println(nodesBan)
 		nodesConnections, err := db.GetAll(`
 				SELECT nodes_connection.host,
@@ -88,7 +88,7 @@ func Connector(configIni map[string]string) {
 			}
 
 			// проверим соотвествие хоста и user_id
-			ok, err := db.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND host  =  ?", data["user_id"], data["host"]).Int64()
+			ok, err := db.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND tcp_host  =  ?", data["user_id"], data["host"]).Int64()
 			if err != nil {
 				utils.Sleep(1)
 				continue BEGIN
@@ -184,9 +184,9 @@ func Connector(configIni map[string]string) {
 				}
 				ids = ids[:len(ids)-1]
 				minersHosts, err := db.GetMap(`
-						SELECT host, user_id
+						SELECT tcp_host, user_id
 						FROM miners_data
-						WHERE miner_id IN (`+ids+`)`, "host", "user_id")
+						WHERE miner_id IN (`+ids+`)`, "tcp_host", "user_id")
 				for host, userId := range minersHosts {
 					if len(nodesBan[host]) > 0 {
 						if utils.StrToInt64(nodesBan[host]) > utils.Time() - consts.NODE_BAN_TIME {

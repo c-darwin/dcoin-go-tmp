@@ -21,7 +21,7 @@ func (c *Controller) NewPhoto() (string, error) {
 	// берем 1 случайный из 10-и ID майнеров
 	k := utils.RandInt(0, len(minersIds))
 	minerId := minersIds[k]
-	host, err := c.Single("SELECT host FROM miners_data WHERE miner_id  =  ?", minerId).String()
+	host, err := c.Single("SELECT http_host FROM miners_data WHERE miner_id  =  ?", minerId).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

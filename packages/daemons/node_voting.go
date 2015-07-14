@@ -14,7 +14,7 @@ import (
  */
 
 
-func NodeVoting(configIni map[string]string) string {
+func NodeVoting() string {
 
 	const GoroutineName = "NodeVoting"
 	db := utils.DbConnect(configIni)
@@ -38,7 +38,7 @@ BEGIN:
 		// берем данные, которые находятся на голосовании нодов
 		rows, err := db.Query(`
 				SELECT miners_data.user_id,
-							 host,
+							 http_host as host,
 							 face_hash,
 							 profile_hash,
 							 photo_block_id,

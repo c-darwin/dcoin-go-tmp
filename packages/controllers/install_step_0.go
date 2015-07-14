@@ -1,9 +1,6 @@
 package controllers
 import (
-	"fmt"
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type installStep0Struct struct {
@@ -13,15 +10,10 @@ type installStep0Struct struct {
 // Шаг 0 - выбор языка
 func (c *Controller) InstallStep0() (string, error) {
 
-	data, err := static.Asset("static/templates/install_step_0.html")
+	TemplateStr, err := makeTemplate("install_step_0", "installStep0", &installStep0Struct{
+		Lang: c.Lang})
 	if err != nil {
-		fmt.Println("err", err)
+		return "", utils.ErrInfo(err)
 	}
-	fmt.Println(data)
-	t := template.New("template")
-	t, _ = t.Parse(string(data))
-
-	b := new(bytes.Buffer)
-	t.Execute(b, &installStep0Struct{Lang: c.Lang})
-	return b.String(), nil
+	return TemplateStr, nil
 }

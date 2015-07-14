@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-func Notifications(configIni map[string]string) {
+func Notifications() {
 
 	const GoroutineName = "Notifications"
 	db := utils.DbConnect(configIni)

@@ -4,7 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func Clear(configIni map[string]string) {
+func Clear() {
 
 	const GoroutineName = "Clear"
 

@@ -12,7 +12,7 @@ import (
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
 
-func MaxOtherCurrenciesGenerator(configIni map[string]string) string {
+func MaxOtherCurrenciesGenerator() string {
 
 	const GoroutineName = "MaxOtherCurrenciesGenerator"
 	db := utils.DbConnect(configIni)

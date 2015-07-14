@@ -10,7 +10,7 @@ import (
  * Берем тр-ии из очереди и обрабатываем
  * */
 
-func QueueParserTx(configIni map[string]string) string {
+func QueueParserTx() string {
 
 	GoroutineName := "QueueParserTx"
 	db := utils.DbConnect(configIni)
@@ -49,6 +49,7 @@ BEGIN:
 		}
 
 		p := new(dcparser.Parser)
+		p.DCDB = db
 		err = p.AllTxParser()
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)

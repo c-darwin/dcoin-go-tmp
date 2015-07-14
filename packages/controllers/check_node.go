@@ -25,14 +25,14 @@ func (c *Controller) CheckNode() (string, error) {
 	//table := c.r.FormValue("table")
 
 	if block_id > 0 {
-		// используется для учета кол-ва подвержденных блоков, т.е. тех, которые есть у большинства нодов
+		// используется для учета кол-ва подтвержденных блоков, т.е. тех, которые есть у большинства нодов
 		hash, err := c.Single(c.FormatQuery("SELECT hash FROM block_chain WHERE id =  ?"), block_id).String()
 		if err != nil {
 			return "", err
 		}
 		return hash, nil
 	} else if len(nodes) > 0 {
-		nodes, err := c.GetAll("SELECT host, count(user_id) as count FROM miners_data WHERE status =  'miner' GROUP BY host", 100)
+		nodes, err := c.GetAll("SELECT tcp_host, count(user_id) as count FROM miners_data WHERE status =  'miner' GROUP BY tcp_host", 100)
 		if err != nil {
 			return "", err
 		}

@@ -86,7 +86,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		}
 		if myMinerId == 0 {
 			// проверим, послали ли мы запрос в DC-сеть
-			data, err := c.OneRow("SELECT node_voting_send_request, host FROM "+c.MyPrefix+"my_table").String()
+			data, err := c.OneRow("SELECT node_voting_send_request, http_host as host FROM "+c.MyPrefix+"my_table").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
