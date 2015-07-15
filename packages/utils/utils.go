@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
 	"time"
 	"bytes"
 	"net"
@@ -348,15 +347,15 @@ type pctAmount struct {
 
 func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 
-	log.Println("amount", amount)
-	log.Println("timeStart", timeStart)
-	log.Println("timeFinish", timeFinish)
-	log.Println(pctArray)
-	log.Println(pointsStatusArray)
-	log.Println(holidaysArray)
-	log.Println(maxPromisedAmountArray)
-	log.Println("currencyId", currencyId)
-	log.Println("repaidAmount", repaidAmount)
+	log.Debug("amount", amount)
+	log.Debug("timeStart", timeStart)
+	log.Debug("timeFinish", timeFinish)
+	log.Debug("%v", pctArray)
+	log.Debug("%v", pointsStatusArray)
+	log.Debug("%v", holidaysArray)
+	log.Debug("%v", maxPromisedAmountArray)
+	log.Debug("currencyId", currencyId)
+	log.Debug("repaidAmount", repaidAmount)
 
 
 	var lastStatus string = ""
@@ -374,21 +373,21 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 		return false
 	}
 
-	log.Println("pctArray", pctArray)
+	log.Debug("pctArray", pctArray)
 	for i:=0; i < len(pctArray); i++ {
 		for time, statusPctArray := range pctArray[i] {
-			log.Println("i=", i, "pctArray[i]=", pctArray[i])
+			log.Debug("i=", i, "pctArray[i]=", pctArray[i])
 			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
-			//log.Println("i", i)
-			log.Println("time", time)
-			log.Println("findMinArray", findMinArray)
-			log.Println("pointsStatusArray", pointsStatusArray)
+			//log.Debug("i", i)
+			log.Debug("time", time)
+			log.Debug("findMinArray", findMinArray)
+			log.Debug("pointsStatusArray", pointsStatusArray)
 			for j := 0; j < len(findMinArray); j++ {
 				if StrToInt64(findMinArray[j]["time"]) < time {
 					findMinPct := findMinPct_24946(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
 					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
 						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
-						log.Println("findMinPct", findMinPct)
+						log.Debug("findMinPct", findMinPct)
 					}
 					lastStatus = findMinArray[j]["status"];
 				}
@@ -416,7 +415,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 		}
 	}
 
-	log.Println("newArr", newArr)
+	log.Debug("newArr", newArr)
 
 
 	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
@@ -466,7 +465,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 
 	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
 	for i:=0; i < len(newArr); i++ {
-		log.Println("i ", i)
+		log.Debug("i ", i)
 		for time, pct := range newArr[i] {
 			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
 			for j:=0; j < len(findMinArray); j++ {
@@ -494,7 +493,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	}
 
 
-	log.Println("newArr2", newArr2)
+	log.Debug("newArr2", newArr2)
 
 	if !findTime2(timeFinish, newArr2) {
 		newArr2 = append(newArr2, map[int64]pctAmount{timeFinish:{pct:pct_, amount:0}})
@@ -510,7 +509,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 
 		for time, pctAndAmount := range newArr2[i] {
 
-			log.Println("pctAndAmount", pctAndAmount)
+			log.Debug("pctAndAmount", pctAndAmount)
 
 			if (time > timeStart) {
 				workTime = time
@@ -520,14 +519,14 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 						continue
 					}
 
-					log.Println("holidaysArray[j]", holidaysArray[j])
+					log.Debug("holidaysArray[j]", holidaysArray[j])
 
 					// полные каникулы в промежутке между time и old_time
 					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
 						time = holidaysArray[j][0];
 						holidaysArray[j][0] = -1
 						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-						log.Println("resultArr append")
+						log.Debug("resultArr append")
 						oldTime = holidaysArray[j][1];
 						holidaysArray[j][1] = -1
 					}
@@ -556,7 +555,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 					time = timeFinish
 				}
 				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-				log.Println("new", (time-oldTime))
+				log.Debug("new", (time-oldTime))
 				oldTime = time
 			} else {
 				oldTime = timeStart
@@ -565,10 +564,10 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 		}
 	}
 
-	log.Println("resultArr", resultArr)
+	log.Debug("resultArr", resultArr)
 
 	if (startHolidays && finishHolidaysElement>0) {
-		log.Println("finishHolidaysElement:", finishHolidaysElement)
+		log.Debug("finishHolidaysElement:", finishHolidaysElement)
 	}
 
 	// время в процентах меньше, чем нужное нам конечное время
@@ -588,7 +587,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
 	}
-	log.Println("profit", profit)
+	log.Debug("profit", profit)
 
 	return profit, nil
 }
@@ -620,19 +619,19 @@ BR:
 func findMinPct_24946 (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
 	var findTime int64 = 0
 	var pct float64 = 0
-	log.Println("pctArray findMinPct_24946", pctArray)
+	log.Debug("pctArray findMinPct_24946", pctArray)
 BR:
 	for i:=0; i<len(pctArray); i++ {
 		for time, _ := range pctArray[i] {
-			log.Println(time, ">", needTime, "?")
+			log.Debug("%v", time, ">", needTime, "?")
 			if time > needTime {
-				log.Println("break")
+				log.Debug("break")
 				break BR
 			}
 			findTime = int64(i)
 		}
 	}
-	log.Println("findTime", findTime)
+	log.Debug("findTime", findTime)
 	if findTime >0 {
 		for _, arr := range pctArray[findTime] {
 			pct = arr[status]
@@ -642,16 +641,16 @@ BR:
 }
 func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 
-	log.Println("CalcProfit")
-	log.Println("amount", amount)
-	log.Println("timeStart", timeStart)
-	log.Println("timeFinish", timeFinish)
-	log.Println(pctArray)
-	log.Println(pointsStatusArray)
-	log.Println(holidaysArray)
-	log.Println(maxPromisedAmountArray)
-	log.Println("currencyId", currencyId)
-	log.Println("repaidAmount", repaidAmount)
+	log.Debug("CalcProfit")
+	log.Debug("amount", amount)
+	log.Debug("timeStart", timeStart)
+	log.Debug("timeFinish", timeFinish)
+	log.Debug("%v", pctArray)
+	log.Debug("%v", pointsStatusArray)
+	log.Debug("%v", holidaysArray)
+	log.Debug("%v", maxPromisedAmountArray)
+	log.Debug("currencyId", currencyId)
+	log.Debug("repaidAmount", repaidAmount)
 
 	if timeStart >= timeFinish {
 		return 0, nil
@@ -682,21 +681,21 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 		return false
 	}
 
-	log.Println("pctArray", pctArray)
+	log.Debug("pctArray", pctArray)
 	for i:=0; i < len(pctArray); i++ {
 		for time, statusPctArray := range pctArray[i] {
-			log.Println("i=", i, "pctArray[i]=", pctArray[i])
+			log.Debug("i=", i, "pctArray[i]=", pctArray[i])
 			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
-			//log.Println("i", i)
-			log.Println("time", time)
-			log.Println("findMinArray", findMinArray)
-			log.Println("pointsStatusArray", pointsStatusArray)
+			//log.Debug("i", i)
+			log.Debug("time", time)
+			log.Debug("findMinArray", findMinArray)
+			log.Debug("pointsStatusArray", pointsStatusArray)
 			for j := 0; j < len(findMinArray); j++ {
 				if StrToInt64(findMinArray[j]["time"]) <= time {
 					findMinPct := findMinPct(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
 					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
 						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
-						log.Println("findMinPct", findMinPct)
+						log.Debug("findMinPct", findMinPct)
 					}
 					lastStatus = findMinArray[j]["status"];
 				}
@@ -724,7 +723,7 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 		}
 	}
 
-	log.Println("newArr", newArr)
+	log.Debug("newArr", newArr)
 
 
 	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
@@ -772,11 +771,11 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 		lastAmount = amount
 	}
 
-	log.Println("newArr201", newArr)
+	log.Debug("newArr201", newArr)
 
 	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
 	for i:=0; i < len(newArr); i++ {
-		log.Println("i ", i)
+		log.Debug("i ", i)
 		for time, pct := range newArr[i] {
 			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
 			for j:=0; j < len(findMinArray); j++ {
@@ -792,17 +791,17 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 			}
 			if !findTime2(time, newArr2) {
 				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
-				log.Println("findTime2", time, pct)
+				log.Debug("findTime2", time, pct)
 			}
 			pct_ = pct;
 		}
 	}
 
-	log.Println("newArr21", newArr2)
+	log.Debug("newArr21", newArr2)
 
 	// если в max_promised_amount больше чем в pct
 	if len(maxPromisedAmountArray) > 0 {
-		log.Println("maxPromisedAmountArray", maxPromisedAmountArray)
+		log.Debug("maxPromisedAmountArray", maxPromisedAmountArray)
 
 		for i:=0; i<len(maxPromisedAmountArray); i++ {
 			for time, maxPromisedAmount := range maxPromisedAmountArray[i] {
@@ -841,16 +840,16 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	var oldPctAndAmount pctAmount
 	var startHolidays bool
 	var finishHolidaysElement int64
-	log.Println("newArr2", newArr2)
+	log.Debug("newArr2", newArr2)
 START:
 	for i:=0; i < len(newArr2); i++ {
 
 		for time, pctAndAmount := range newArr2[i] {
 
-			log.Println(time, timeFinish)
-			log.Println("pctAndAmount", pctAndAmount)
+			log.Debug("%v", time, timeFinish)
+			log.Debug("pctAndAmount", pctAndAmount)
 			if (time > timeFinish) {
-				log.Println("continue START", time, timeFinish)
+				log.Debug("continue START", time, timeFinish)
 				continue START
 			}
 			if (time > timeStart) {
@@ -861,14 +860,14 @@ START:
 						continue
 					}
 
-					log.Println("holidaysArray[j]", holidaysArray[j])
+					log.Debug("holidaysArray[j]", holidaysArray[j])
 
 					// полные каникулы в промежутке между time и old_time
 					if holidaysArray[j][0]!=-1 && oldTime <= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
 						time = holidaysArray[j][0];
 						holidaysArray[j][0] = -1
 						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-						log.Println("resultArr append")
+						log.Debug("resultArr append")
 						oldTime = holidaysArray[j][1];
 						holidaysArray[j][1] = -1
 					}
@@ -897,33 +896,33 @@ START:
 					time = timeFinish
 				}
 				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-				log.Println("new", (time-oldTime))
+				log.Debug("new", (time-oldTime))
 				oldTime = time
 			} else {
 				oldTime = timeStart
 			}
 			oldPctAndAmount = pctAndAmount
-			log.Println("oldPctAndAmount", oldPctAndAmount)
+			log.Debug("oldPctAndAmount", oldPctAndAmount)
 		}
 	}
-	log.Println("oldTime", oldTime)
-	log.Println("timeFinish", timeFinish)
+	log.Debug("oldTime", oldTime)
+	log.Debug("timeFinish", timeFinish)
 
-	log.Println("resultArr", resultArr)
+	log.Debug("resultArr", resultArr)
 
 	if (startHolidays && finishHolidaysElement>0) {
-		log.Println("finishHolidaysElement:", finishHolidaysElement)
+		log.Debug("finishHolidaysElement:", finishHolidaysElement)
 	}
 
 	// время в процентах меньше, чем нужное нам конечное время
 	if (oldTime < timeFinish && !startHolidays) {
-		log.Println("oldTime < timeFinish")
+		log.Debug("oldTime < timeFinish")
 		// просто берем последний процент и добиваем его до нужного $time_finish
 		sec := timeFinish - oldTime;
 		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
 	}
 
-	log.Println("resultArr", resultArr)
+	log.Debug("resultArr", resultArr)
 
 	var profit, amountAndProfit float64
 	for i:=0; i < len(resultArr); i++ {
@@ -935,27 +934,27 @@ START:
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
 	}
 
-	log.Println("total profit w/o amount:", profit)
+	log.Debug("total profit w/o amount:", profit)
 
 	return profit, nil
 }
 
 func round(num float64) int64 {
-	log.Println("num", num)
+	log.Debug("num", num)
 	//num += ROUND_FIX
 	//	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
-	log.Println("num", num)
+	log.Debug("num", num)
 	return int64(num + math.Copysign(0.5, num))
 }
 
 func Round(num float64, precision int) float64 {
 	num += consts.ROUND_FIX
-	log.Println("num", num)
+	log.Debug("num", num)
 	//num = StrToFloat64(Float64ToStr(num))
-	log.Println("precision", precision)
-	log.Println("float64(precision)", float64(precision))
+	log.Debug("precision", precision)
+	log.Debug("float64(precision)", float64(precision))
 	output := math.Pow(10, float64(precision))
-	log.Println("output", output)
+	log.Debug("output", output)
 	return float64(round(num * output)) / output
 }
 
@@ -996,7 +995,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case []byte:
 		data = string(data_.([]byte))
 	}
-	log.Println("CheckInputData_:"+data)
+	log.Debug("CheckInputData_:"+data)
 	switch dataType {
 	case "arbitration_trust_list":
 		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok{
@@ -2029,30 +2028,30 @@ func MakeAsn1(hex_n, hex_e []byte) []byte {
 	//hex_n = append([]byte("00"), hex_n...)
 	n_ := []byte(HexToBin(hex_n))
 	n_ = append([]byte("02"), BinToHex(EncodeLength(int64(len(HexToBin(hex_n)))))...)
-	//log.Println("n_length", string(n_))
+	//log.Debug("n_length", string(n_))
 	n_ = append(n_, hex_n...)
-	//log.Println("n_", string(n_))
+	//log.Debug("n_", string(n_))
 	e_ := append([]byte("02"), BinToHex(EncodeLength(int64(len(HexToBin(hex_e)))))...)
 	e_ = append(e_, hex_e...)
-	//log.Println("e_", string(e_))
+	//log.Debug("e_", string(e_))
 	length := BinToHex(EncodeLength(int64(len(HexToBin(append(n_,e_...))))))
-	//log.Println("length", string(length))
+	//log.Debug("length", string(length))
 	rez := append([]byte("30"), length...)
 	rez = append(rez, n_...)
 	rez = append(rez, e_...)
 	rez = append([]byte("00"), rez...)
-	//log.Println(string(rez))
-	//log.Println(len(string(rez)))
-	//log.Println(len(HexToBin(rez)))
+	//log.Debug("%v", string(rez))
+	//log.Debug("%v", len(string(rez)))
+	//log.Debug("%v", len(HexToBin(rez)))
 	rez = append(BinToHex(EncodeLength(int64(len(HexToBin(rez))))), rez...)
 	rez = append([]byte("03"), rez...)
-	//log.Println(string(rez))
+	//log.Debug("%v", string(rez))
 	rez = append([]byte("300d06092a864886f70d0101010500"), rez...)
-	//log.Println(string(rez))
+	//log.Debug("%v", string(rez))
 	rez = append(BinToHex(EncodeLength(int64(len(HexToBin(rez))))), rez...)
-	//log.Println(string(rez))
+	//log.Debug("%v", string(rez))
 	rez = append([]byte("30"), rez...)
-	//log.Println(string(rez))
+	//log.Debug("%v", string(rez))
 
 	return rez
 	//b64:=base64.StdEncoding.EncodeToString([]byte(utils.HexToBin("30"+length+bin_enc)))
@@ -2065,7 +2064,7 @@ func BinToRsaPubKey(publicKey []byte) (*rsa.PublicKey, error) {
 	key := base64.StdEncoding.EncodeToString(publicKey)
 	key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
 	//fmt.Printf("%x\n", publicKeys[i])
-	log.Println("key", key)
+	log.Debug("key", key)
 	block, _ := pem.Decode([]byte(key))
 	if block == nil {
 		return nil, ErrInfo(fmt.Errorf("incorrect key"))
@@ -2083,7 +2082,7 @@ func BinToRsaPubKey(publicKey []byte) (*rsa.PublicKey, error) {
 
 func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
 
-	log.Println("forSign", forSign)
+	log.Debug("forSign", forSign)
 	//fmt.Println("publicKeys", publicKeys)
 	var signsSlice [][]byte
 	// у нода всегда 1 подпись
@@ -2101,18 +2100,18 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			signsSlice = append(signsSlice, BytesShift(&signs, length))
 		}
 		if len(publicKeys) != len(signsSlice) {
-			log.Println("signsSlice", signsSlice)
-			log.Println("publicKeys", publicKeys)
+			log.Debug("signsSlice", signsSlice)
+			log.Debug("publicKeys", publicKeys)
 			return false, fmt.Errorf("sign error %d!=%d", len(publicKeys), len(signsSlice) )
 		}
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		/*log.Println("publicKeys[i]", string(publicKeys[i]))
+		/*log.Debug("publicKeys[i]", string(publicKeys[i]))
 		key := base64.StdEncoding.EncodeToString(publicKeys[i])
 		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
 		//fmt.Printf("%x\n", publicKeys[i])
-		log.Println("key", key)
+		log.Debug("key", key)
 		block, _ := pem.Decode([]byte(key))
 		if block == nil {
 			return false, ErrInfo(fmt.Errorf("incorrect key"))
@@ -2131,12 +2130,12 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
-			log.Println("pub", pub)
-			log.Println("crypto.SHA1", crypto.SHA1)
-			log.Println("HashSha1(forSign)", HashSha1(forSign))
-			log.Println("HashSha1(forSign)", string(HashSha1(forSign)))
-			log.Println("forSign", forSign)
-			log.Printf("sign: %x\n", signsSlice[i])
+			log.Debug("pub", pub)
+			log.Debug("crypto.SHA1", crypto.SHA1)
+			log.Debug("HashSha1(forSign)", HashSha1(forSign))
+			log.Debug("HashSha1(forSign)", string(HashSha1(forSign)))
+			log.Debug("forSign", forSign)
+			log.Debug("sign: %x\n", signsSlice[i])
 			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v",  HashSha1(forSign), forSign)
 		}
 	}
@@ -2293,7 +2292,7 @@ func DbConnect(configIni map[string]string) *DCDB {
 func DbClose(c *DCDB) {
 	err := c.Close()
 	if err != nil {
-		log.Print(err)
+		log.Debug("%v", err)
 	}
 }
 
@@ -2487,20 +2486,20 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 	var ctx_ float64
 	ctx_ = float64(ctx)
 	for i:=0; i<minersKeepers; i++ {
-		//log.Println("ctx", ctx)
+		//log.Debug("ctx", ctx)
 		//var hi float34
 		hi := ctx_ / float64(127773)
-		//log.Println("hi", hi)
+		//log.Debug("hi", hi)
 		lo := int(ctx_) % 127773
-		//log.Println("lo", lo)
+		//log.Debug("lo", lo)
 		x := (float64(16807) * float64(lo)) - (float64(2836) * hi)
-		//log.Println("x", x, float64(16807), float64(lo), float64(2836), hi)
+		//log.Debug("x", x, float64(16807), float64(lo), float64(2836), hi)
 		if x <= 0 {
 			x += 0x7fffffff
 		}
 		ctx_ = x
 		rez := int(ctx_) % (maxMinerId+1)
-		//log.Println("rez", rez)
+		//log.Debug("rez", rez)
 		if rez == 0 {
 			rez = 1
 		}
@@ -2783,7 +2782,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 	if len(configIni["db_user"]) > 0 || (configIni["db_type"]=="sqlite") {
 		db, err = NewDbConnect(configIni)
 		if err != nil {
-			log.Println(ErrInfo(err))
+			log.Debug("%v", ErrInfo(err))
 			return
 		} else {
 			defer db.Close()
@@ -2796,23 +2795,23 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 	buf := make([]byte, 4)
 	_, err = conn.Read(buf)
 	if err != nil {
-		log.Println(ErrInfo(err))
+		log.Debug("%v", ErrInfo(err))
 	}
 	size := BinToDec(buf)
-	log.Println("size", size)
+	log.Debug("size", size)
 
 	if size < 10485760 {
 
 		buf := make([]byte, size)
 		_, err := conn.Read(buf)
 		if err != nil {
-			log.Println(ErrInfo(err))
+			log.Debug("%v", ErrInfo(err))
 			return
 		}
 
 		variables, err := db.GetAllVariables()
 		if err != nil {
-			log.Println(ErrInfo(err))
+			log.Debug("%v", ErrInfo(err))
 			return
 		}
 
@@ -2820,7 +2819,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 		dataType := BinToDec(buf[0:1])
 		binaryData := buf[1:]
 		if len(binaryData) == 1 {
-			log.Println(ErrInfo("len(binaryData) == 1"))
+			log.Debug("%v", ErrInfo("len(binaryData) == 1"))
 			return
 		}
 		switch dataType {
@@ -2833,7 +2832,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			 * */
 			key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			/*
@@ -2856,7 +2855,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			 * */
 			blockId, err := db.GetBlockId()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			// user_id отправителя, чтобы знать у кого брать данные, когда они будут скачиваться другим скриптом
@@ -2865,11 +2864,11 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// данные могут быть отправлены юзером, который уже не майнер
 			minerId, err := db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ? AND miner_id > 0", newDataUserId).Int64()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			if minerId == 0 {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -2890,7 +2889,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					newDataHeadHash := BinToHex(BytesShift(&decryptedBinData, 32))
 					err = db.ExecSql(`DELETE FROM queue_blocks WHERE hash = [hex]`, newDataHash)
 					if err != nil {
-						log.Println(ErrInfo(err))
+						log.Debug("%v", ErrInfo(err))
 						return
 					}
 					err = db.ExecSql(`
@@ -2906,7 +2905,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 								?
 							)`, newDataHash, newDataHeadHash, newDataUserId, newDataBlockId)
 					if err != nil {
-						log.Println(ErrInfo(err))
+						log.Debug("%v", ErrInfo(err))
 						return
 					}
 				}
@@ -2915,26 +2914,26 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			var needTx []byte
 			// Разбираем список транзакций
 			if len(decryptedBinData) == 0 {
-				log.Println(ErrInfo("len(decryptedBinData) == 0"))
+				log.Debug("%v", ErrInfo("len(decryptedBinData) == 0"))
 				return
 			}
 			for {
 				// 1 - это админские тр-ии, 0 - обычные
 				newDataHighRate := BinToDecBytesShift(&decryptedBinData, 1)
 				if len(decryptedBinData) < 16 {
-					log.Println(ErrInfo("len(decryptedBinData) < 16"))
+					log.Debug("%v", ErrInfo("len(decryptedBinData) < 16"))
 					return
 				}
-				log.Println("newDataHighRate",  newDataHighRate)
+				log.Debug("newDataHighRate",  newDataHighRate)
 				newDataTxHash := BinToHex(BytesShift(&decryptedBinData, 16))
 				if len(newDataTxHash) == 0 {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 				// проверим, нет ли у нас такой тр-ии
 				exists, err := db.Single("SELECT count(hash) FROM log_transactions WHERE hash  =  [hex]", newDataTxHash).Int64()
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 				if exists > 0 {
@@ -2946,14 +2945,14 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				}
 			}
 			if len(needTx) == 0 {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			// шифруем данные. ключ $key сеансовый, iv тоже
 			encData, _, err := EncryptCFB(needTx, key, iv)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -2961,13 +2960,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			size := DecToBin(len(encData), 4)
 			_, err = conn.Write(size)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			// далее шлем сами данные
 			_, err = conn.Write(encData)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -2975,7 +2974,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			buf := make([]byte, 4)
 			_, err =conn.Read(buf)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			dataSize := BinToDec(buf)
@@ -2985,33 +2984,33 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				encBinaryTxs := make([]byte, dataSize)
 				_, err := conn.Read(encBinaryTxs)
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 
 				// разбираем полученные данные
 				binaryTxs, err := DecryptCFB(iv, encBinaryTxs, key)
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 
 				for {
 					txSize := DecodeLength(&binaryTxs)
 					if int64(len(binaryTxs)) < txSize {
-						log.Println(ErrInfo(err))
+						log.Debug("%v", ErrInfo(err))
 						return
 					}
 					txBinData := BytesShift(&binaryTxs, txSize)
 					if len(txBinData) == 0 {
-						log.Println(ErrInfo(err))
+						log.Debug("%v", ErrInfo(err))
 						return
 					}
 					txHex := BinToHex(txBinData)
 
 					// проверим размер
 					if int64(len(txBinData)) > variables.Int64["max_tx_size"] {
-						log.Println(ErrInfo("len(txBinData) > max_tx_size"))
+						log.Debug("%v", ErrInfo("len(txBinData) > max_tx_size"))
 						return
 					}
 
@@ -3019,7 +3018,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					newDataHighRate := 0
 					err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(txBinData), newDataHighRate, txHex)
 					if len(txBinData) == 0 {
-						log.Println(ErrInfo(err))
+						log.Debug("%v", ErrInfo(err))
 						return
 					}
 				}
@@ -3034,25 +3033,25 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 
 			_, _, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			// проверим размер
 			if int64(len(binaryData)) > variables.Int64["max_tx_size"] {
-				log.Println(ErrInfo("len(txBinData) > max_tx_size"))
+				log.Debug("%v", ErrInfo("len(txBinData) > max_tx_size"))
 				return
 			}
 
 			if len(binaryData) < 5 {
-				log.Println(ErrInfo("len(binaryData) < 5"))
+				log.Debug("%v", ErrInfo("len(binaryData) < 5"))
 				return
 			}
 			BytesShift(&binaryData, 1) // type
 			BytesShift(&binaryData, 4) // time
 			size := DecodeLength(&binaryData)
 			if int64(len(binaryData)) < size {
-				log.Println(ErrInfo("len(binaryData) < size"))
+				log.Debug("%v", ErrInfo("len(binaryData) < size"))
 				return
 			}
 			userId := BytesToInt64(BytesShift(&binaryData, size))
@@ -3063,7 +3062,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// заливаем тр-ию в БД
 			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
 			if err!=nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3074,14 +3073,14 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
  			* */
 			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
@@ -3089,12 +3088,12 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// шлем тип данных
 			_, err = conn2.Write(DecToBin(2, 1))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			err = WriteSizeAndDataTCPConn(binaryData, conn2)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3106,14 +3105,14 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// используется для учета кол-ва подвержденных блоков, т.е. тех, которые есть у большинства нодов
 			hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				conn.Write(DecToBin(0, 1))
 				return
 			}
 
 			_, err = conn.Write([]byte(hash))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3125,26 +3124,26 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// если работаем в режиме пула, то нужно проверить, верный ли у юзера нодовский ключ
 			community, err := db.GetCommunityUsers()
 			if err != nil {
-				log.Println(ErrInfo("incorrect user_id"))
+				log.Debug("%v", ErrInfo("incorrect user_id"))
 				conn.Write(DecToBin(0, 1))
 				return
 			}
 			if len(community) > 0 {
 				allTables, err := db.GetAllTables()
 				if err != nil {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				keyTable := Int64ToStr(userId) + "_my_node_keys"
 				if !InSliceString(keyTable, allTables) {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				myBlockId, err := db.GetMyBlockId()
 				if err != nil {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
@@ -3155,37 +3154,37 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 								 block_id < ?
 					`, myBlockId).String()
 				if err != nil {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				if len(myNodeKey) == 0 {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				nodePublicKey, err := db.GetNodePublicKey(userId)
 				if err != nil {
-					log.Println(ErrInfo("incorrect user_id"))
+					log.Debug("%v", ErrInfo("incorrect user_id"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				if myNodeKey != string(nodePublicKey) {
-					log.Println(ErrInfo("myNodeKey != nodePublicKey"))
+					log.Debug("%v", ErrInfo("myNodeKey != nodePublicKey"))
 					conn.Write(DecToBin(0, 1))
 					return
 				}
 				// всё норм, шлем 1
 				_, err = conn.Write(DecToBin(1, 1))
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 			} else {
 				// всё норм, шлем 1
 				_, err = conn.Write(DecToBin(1, 1))
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 			}
@@ -3200,11 +3199,11 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			 */
 			currentBlockId, err := db.GetBlockId()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			if currentBlockId == 0 {
-				log.Println(ErrInfo("currentBlockId == 0"))
+				log.Debug("%v", ErrInfo("currentBlockId == 0"))
 				return
 			}
 			newTestblockBlockId := BinToDecBytesShift(&binaryData, 4)
@@ -3214,19 +3213,19 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			newTestblockSignatureHex := BinToHex(BytesShift(&binaryData, DecodeLength(&binaryData)))
 
 			if !CheckInputData(newTestblockBlockId, "int")  {
-				log.Println(ErrInfo("incorrect newTestblockBlockId"))
+				log.Debug("%v", ErrInfo("incorrect newTestblockBlockId"))
 				return
 			}
 			if !CheckInputData(newTestblockTime, "int")  {
-				log.Println(ErrInfo("incorrect newTestblockTime"))
+				log.Debug("%v", ErrInfo("incorrect newTestblockTime"))
 				return
 			}
 			if !CheckInputData(newTestblockUserId, "int")  {
-				log.Println(ErrInfo("incorrect newTestblockUserId"))
+				log.Debug("%v", ErrInfo("incorrect newTestblockUserId"))
 				return
 			}
 			if !CheckInputData(newTestblockMrklRoot, "sha256")  {
-				log.Println(ErrInfo("incorrect newTestblockMrklRoot"))
+				log.Debug("%v", ErrInfo("incorrect newTestblockMrklRoot"))
 				return
 			}
 
@@ -3461,13 +3460,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			blockId := BinToDec(binaryData)
 			block, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).String()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			err = WriteSizeAndData([]byte(block), conn)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3479,14 +3478,14 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 
 			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
@@ -3494,13 +3493,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			// шлем тип данных
 			_, err = conn2.Write(DecToBin(7, 1))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			// шлем ID блока
 			_, err = conn2.Write(DecToBin(blockId, 4))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3508,7 +3507,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			buf := make([]byte, 4)
 			_, err =conn2.Read(buf)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			dataSize := BinToDec(buf)
@@ -3517,13 +3516,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				blockBinary := make([]byte, dataSize)
 				_, err := conn2.Read(blockBinary)
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 				// шлем тому, кто запросил блок из демона
 				_, err = conn.Write(blockBinary)
 				if err != nil {
-					log.Println(ErrInfo(err))
+					log.Debug("%v", ErrInfo(err))
 					return
 				}
 			}
@@ -3535,34 +3534,34 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			 */
 			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
 			// шлем тип данных
 			_, err = conn2.Write(DecToBin(10, 1))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			// в ответ получаем номер блока
 			blockIdBin := make([]byte, 4)
 			_, err = conn2.Read(blockIdBin)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
 			// и возвращаем номер блока демону, который этот запрос прислал
 			_, err = conn.Write(blockIdBin)
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 
@@ -3572,12 +3571,12 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			*/
 			blockId, err := db.Single("SELECT block_id FROM info_block").Int64()
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 			_, err = conn.Write(DecToBin(blockId, 4))
 			if err != nil {
-				log.Println(ErrInfo(err))
+				log.Debug("%v", ErrInfo(err))
 				return
 			}
 		}

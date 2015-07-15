@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"encoding/base64"
-	"log"
 )
 
 
@@ -91,7 +90,7 @@ func MakePctArray(pctArray map[string]int64) []map[int64]int64 {
 
 func GetPctValue(key int64) string {
 	arr := fillPct()
-	log.Println("fillPct", arr)
+	log.Debug("fillPct", arr)
 	var i int64
 	for _, pct := range arr {
 		if i == key {

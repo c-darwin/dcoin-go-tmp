@@ -2,7 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
@@ -84,7 +84,7 @@ BEGIN:
 		err = p.ParseDataGate(false)
 		if err != nil {
 
-			log.Println(err)
+			log.Info("%v", err)
 
 			// т.к. мы откатили наши тр-ии из transactions_testblock, то теперь нужно обработать их по новой
 			// получим наши транзакции в 1 бинарнике, просто для удобства
@@ -181,7 +181,7 @@ BEGIN:
 
 		utils.Sleep(1)
 
-		log.Println("Happy end")
+		log.Info("%v", "Happy end")
 	}
 
 	return ""

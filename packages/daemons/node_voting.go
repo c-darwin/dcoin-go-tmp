@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"io/ioutil"
-	"log"
+	//"log"
 	"os"
 )
 
@@ -105,14 +105,14 @@ BEGIN:
 					continue BEGIN
 				}
 				profileHash := string(utils.DSha256(profileFile))
-				log.Println("profileHash", profileHash)
+				log.Info("%v", "profileHash", profileHash)
 				faceFile, err := ioutil.ReadFile(facePath)
 				if err != nil {
 					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				faceHash := string(utils.DSha256(faceFile))
-				log.Println("faceHash", faceHash)
+				log.Info("%v", "faceHash", faceHash)
 
 				// проверяем хэш. Если сходится, то голосуем за, если нет - против и размер не должен быть более 200 Kb.
 				if profileHash == row_face_hash && faceHash == row_profile_hash && len(profileFile) < 204800 && len(faceFile) < 204800 {

@@ -3,7 +3,7 @@ package daemons
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
-	"log"
+	//"log"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
@@ -71,7 +71,7 @@ BEGIN:
 			db.UnlockPrintSleep(err, 60)
 			continue BEGIN
 		}
-		log.Println("promisedAmount", promisedAmount)
+		log.Info("%v", "promisedAmount", promisedAmount)
 
 		// берем все голоса юзеров
 		rows, err := db.Query(`
@@ -110,7 +110,7 @@ BEGIN:
 					reductionCurrencyId = utils.StrToInt(currency_id)
 					reductionPct = pct
 					reductionType = "manual"
-					log.Println("reductionCurrencyId", reductionCurrencyId, "reductionPct", reductionPct, "reductionType", reductionType)
+					log.Info("%v", "reductionCurrencyId", reductionCurrencyId, "reductionPct", reductionPct, "reductionType", reductionType)
 					break
 				}
 			}

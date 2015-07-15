@@ -2,7 +2,7 @@ package main
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
-	"log"
+//	"log"
 	"os"
 	"net/http"
 	_ "image/png"
@@ -18,10 +18,31 @@ import (
 	"strings"
 	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/op/go-logging"
+)
+
+var log = logging.MustGetLogger("example")
+var format = logging.MustStringFormatter(
+	"%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}",
 )
 
 var configIni map[string]string
 func main() {
+	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	defer f.Close()
+	backend := logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	backendLeveled := logging.AddModuleLevel(backendFormatter)
+	backendLeveled.SetLevel(logging.DEBUG, "")
+	logging.SetBackend(backendLeveled)
+/*
+	log.Debug("debug")
+	log.Info("info")
+	log.Notice("notice")
+	log.Warning("warning")
+	log.Error("err")
+	log.Critical("crit")
+*/
 
 	rand.Seed( time.Now().UTC().UnixNano())
 
@@ -60,11 +81,7 @@ db_name=`)
 	configIni, err = configIni_.GetSection("default")
 	fmt.Println("configIni[log]", configIni["log"])
 
-	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
-	defer f.Close()
-	//log.SetOutput(f)
-	log.SetOutput(io.MultiWriter(f, os.Stdout))
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 
 	// запускаем всех демонов
 	go daemons.TestblockIsReady()
@@ -117,7 +134,7 @@ err = fmt.Errorf("unsupported platform")
 	// включаем листинг TCP-сервером и обработку входящих запросов
 	l, err := net.Listen("tcp", ":8088")
 	if err != nil {
-		log.Println("Error listening:", err.Error())
+		log.Info("Error listening:", err.Error())
 		os.Exit(1)
 	}
 	defer l.Close()
@@ -125,7 +142,7 @@ err = fmt.Errorf("unsupported platform")
 		for {
 			conn, err := l.Accept()
 			if err != nil {
-				log.Println("Error accepting: ", err.Error())
+				log.Info("Error accepting: ", err.Error())
 				os.Exit(1)
 			}
 

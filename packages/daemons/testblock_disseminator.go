@@ -2,7 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"strings"
 )
 
@@ -71,7 +71,7 @@ func TestblockDisseminator() string {
 
 					conn, err := utils.TcpConn(host)
 					if err != nil {
-						log.Println(utils.ErrInfo(err))
+						log.Info("%v", utils.ErrInfo(err))
 						return
 					}
 					defer conn.Close()
@@ -79,20 +79,20 @@ func TestblockDisseminator() string {
 					// вначале шлем тип данных
 					_, err = conn.Write(utils.DecToBin(6, 1))
 					if err != nil {
-						log.Println(utils.ErrInfo(err))
+						log.Info("%v", utils.ErrInfo(err))
 						return
 					}
 
 					// в 4-х байтах пишем размер данных, которые пошлем далее
 					_, err = conn.Write(utils.DecToBin(len(dataToBeSent), 4))
 					if err != nil {
-						log.Println(utils.ErrInfo(err))
+						log.Info("%v", utils.ErrInfo(err))
 						return
 					}
 					// далее шлем сами данные
 					_, err = conn.Write(dataToBeSent)
 					if err != nil {
-						log.Println(utils.ErrInfo(err))
+						log.Info("%v", utils.ErrInfo(err))
 						return
 					}
 
@@ -103,7 +103,7 @@ func TestblockDisseminator() string {
 					buf := make([]byte, 4)
 					_, err =conn.Read(buf)
 					if err != nil {
-						log.Println(utils.ErrInfo(err))
+						log.Info("%v", utils.ErrInfo(err))
 						return
 					}
 					dataSize := utils.BinToDec(buf)
@@ -112,7 +112,7 @@ func TestblockDisseminator() string {
 
 						data, err := db.OneRow("SELECT * FROM testblock").String()
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 
@@ -126,7 +126,7 @@ func TestblockDisseminator() string {
 							binaryData := make([]byte, dataSize)
 							_, err := conn.Read(binaryData)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 
@@ -150,7 +150,7 @@ func TestblockDisseminator() string {
 						var transactions []byte
 						transactions_testblock, err := db.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						for _, txData := range transactions_testblock {
@@ -162,7 +162,7 @@ func TestblockDisseminator() string {
 						// порядок тр-ий
 						transactions_testblock, err = db.GetList(`SELECT hash FROM transactions_testblock ORDER BY id ASC`).String()
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						for _, txHash := range transactions_testblock {
@@ -172,14 +172,14 @@ func TestblockDisseminator() string {
 						// в 4-х байтах пишем размер данных, которые пошлем далее
 						_, err = conn.Write(utils.DecToBin(len(responseBinaryData), 4))
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 
 						// далее шлем сами данные
 						_, err = conn.Write(responseBinaryData)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 					}
@@ -190,7 +190,7 @@ func TestblockDisseminator() string {
 
 		utils.Sleep(1)
 
-		log.Println("Happy end")
+		log.Info("%v", "Happy end")
 	}
 
 	return ""

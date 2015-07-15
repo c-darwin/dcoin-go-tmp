@@ -3,7 +3,7 @@ package daemons
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
@@ -47,7 +47,7 @@ BEGIN:
 			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
-		log.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
+		log.Info("%v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId == 0 {
 			db.PrintSleep(utils.ErrInfo(errors.New("myMinerId == 0 ")), 1)
@@ -77,7 +77,7 @@ BEGIN:
 				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			log.Println("i", i, "time", utils.Time())
+			log.Info("%v", "i", i, "time", utils.Time())
 			if utils.Time() - startSleep > sleep {
 				break
 			}
@@ -106,7 +106,7 @@ BEGIN:
 			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
-		log.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
+		log.Info("%v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		// на всякий случай убедимся, что блок не изменился
 		if prevBlock.HeadHash != prevHeadHash {
@@ -227,7 +227,7 @@ BEGIN:
 
 		db.DbUnlock()
 
-		log.Println("Happy end")
+		log.Info("%v", "Happy end")
 
 		utils.Sleep(1)
 	}

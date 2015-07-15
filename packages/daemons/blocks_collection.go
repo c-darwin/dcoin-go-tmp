@@ -3,7 +3,6 @@ package daemons
 import (
     _ "github.com/lib/pq"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"fmt"
 	"os"
@@ -25,7 +24,7 @@ func BlocksCollection() {
     BEGIN:
 	for {
 
-		log.Println("BlocksCollection")
+		log.Info("BlocksCollection")
         // проверим, не нужно нам выйти из цикла
         if db.CheckDaemonRestart() {
 			break
@@ -39,11 +38,11 @@ func BlocksCollection() {
 
         /*myPrefix, err:= db.GetMyPrefix()
         if err != nil {
-            log.Print(utils.ErrInfo(err))
+            log.Info(utils.ErrInfo(err))
             utils.Sleep(1)
             continue BEGIN
         }
-		log.Println("myPrefix",myPrefix)*/
+		log.Info("myPrefix",myPrefix)*/
 
        err = db.DbLock();
         if err != nil {
@@ -58,8 +57,8 @@ func BlocksCollection() {
             continue BEGIN
         }
 
-        log.Println("config", config)
-        log.Println("currentBlockId", currentBlockId)
+        log.Info("config", config)
+        log.Info("currentBlockId", currentBlockId)
 
 		// на время тесто
 		if !cur {
@@ -70,14 +69,19 @@ func BlocksCollection() {
 
 			if config["first_load_blockchain"]=="file" {
 
-                log.Println("first_load_blockchain=file")
-
-                blockchainSize, err := utils.DownloadToFile(consts.BLOCKCHAIN_URL, "public/blockchain", 3600)
+                log.Info("first_load_blockchain=file")
+                blockchain_url:=""
+                if len(configIni["blockchain_url"]) > 0 {
+                    blockchain_url = configIni["blockchain_url"]
+                } else {
+                    blockchain_url = consts.BLOCKCHAIN_URL
+                }
+                blockchainSize, err := utils.DownloadToFile(blockchain_url, "public/blockchain", 3600)
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
-                        log.Print(utils.ErrInfo(err))
+                        log.Info("%v", utils.ErrInfo(err))
                     } else {
-                        log.Print(fmt.Sprintf("%v < %v", blockchainSize, consts.BLOCKCHAIN_SIZE))
+                        log.Info(fmt.Sprintf("%v < %v", blockchainSize, consts.BLOCKCHAIN_SIZE))
 					}
                     db.UnlockPrintSleep(err, 1)
                     continue BEGIN
@@ -103,28 +107,28 @@ func BlocksCollection() {
                     continue BEGIN
                 }
 
-                log.Println("GO!")
+                log.Info("GO!")
                 for {
                     b1 := make([]byte, 5)
                     file.Read(b1)
                     dataSize := utils.BinToDec(b1)
-                    log.Println("dataSize", dataSize)
+                    log.Info("dataSize", dataSize)
                     if dataSize > 0 {
 
                         data := make([]byte, dataSize)
                         file.Read(data)
-                        fmt.Printf("data %x\n", data)
+                        log.Info("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
                         //if blockId == 244790 {
                         //    break BEGIN
                         //}
-                        log.Println("blockId", blockId)
+                        log.Info("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
-                        log.Println("length", length)
-                        fmt.Printf("data2 %x\n", data2)
+                        log.Info("length", length)
+                        log.Info("data2 %x\n", data2)
                         blockBin := utils.BytesShift(&data2, length)
-                        fmt.Printf("blockBin %x\n", blockBin)
+                        log.Info("blockBin %x\n", blockBin)
 
                         //if blockId > 244790 {
 
@@ -231,7 +235,7 @@ func BlocksCollection() {
             //addNodeHost = "";
         }
 
-		log.Println(hosts)
+		log.Info("%v", hosts)
 
 		if len(hosts) == 0 {
             db.PrintSleep("len hosts = 0", 1)
@@ -290,7 +294,7 @@ func BlocksCollection() {
             db.UnlockPrintSleep(utils.ErrInfo(err), 1)
             continue
         }
-		log.Println("currentBlockId", currentBlockId, "maxBlockId", maxBlockId)
+		log.Info("currentBlockId", currentBlockId, "maxBlockId", maxBlockId)
         if maxBlockId <= currentBlockId {
             db.UnlockPrintSleep(utils.ErrInfo(errors.New("maxBlockId <= currentBlockId")), 1)
             continue
@@ -323,7 +327,7 @@ func BlocksCollection() {
 			utils.BytesShift(&binaryBlock, 1) // уберем 1-й байт - тип (блок/тр-я)
             // распарсим заголовок блока
             blockData := utils.ParseBlockHeader(&binaryBlock)
-			log.Println("blockData", blockData, "blockId", blockId)
+			log.Info("blockData", blockData, "blockId", blockId)
 
             // если существуют глючная цепочка, тот тут мы её проигнорируем
             badBlocks_, err := db.Single("SELECT bad_blocks FROM config").Bytes()
@@ -400,7 +404,7 @@ func BlocksCollection() {
             // качаем предыдущие блоки до тех пор, пока отличается хэш предыдущего.
             // другими словами, пока подпись с $prev_block_hash будет неверной, т.е. пока что-то есть в $error
 			if err != nil {
-                log.Println(utils.ErrInfo(err))
+                log.Info("%v", utils.ErrInfo(err))
 				if blockId < 1 {
                     db.UnlockPrintSleep(utils.ErrInfo(err), 1)
                     continue BEGIN
@@ -410,7 +414,7 @@ func BlocksCollection() {
 				p.DCDB = db
 				//func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
                 err := p.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
-				log.Println(err)
+				log.Info("%v", err)
 				if err != nil {
                     db.NodesBan(maxBlockIdUserId, fmt.Sprintf(`blockId: %v / %v`, blockId, err))
                     db.UnlockPrintSleep(utils.ErrInfo(err), 1)
@@ -419,7 +423,7 @@ func BlocksCollection() {
 
             } else {
 
-                log.Printf("plug found blockId=%v\n", blockId)
+                log.Info("plug found blockId=%v\n", blockId)
 
                 // получим наши транзакции в 1 бинарнике, просто для удобства
                 var transactions []byte

@@ -17,7 +17,7 @@ import (
 	"os"
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"sync"
    // "github.com/alyu/configparser"
 	//"io/ioutil"
@@ -46,7 +46,7 @@ BEGIN:
         blockId, err := db.GetBlockId()
 		if err != nil {
             db.DbUnlock()
-			log.Print(err)
+			log.Error("%v", err)
             utils.Sleep(1)
             continue BEGIN
         }
@@ -55,7 +55,7 @@ BEGIN:
         testBlockId, err := db.GetTestBlockId()
         if err != nil {
             db.DbUnlock()
-            log.Print(err)
+            log.Error("%v", err)
             utils.Sleep(1)
             continue BEGIN
         }
@@ -63,9 +63,9 @@ BEGIN:
 
         if x, err := db.GetMyLocalGateIp(); x!="" {
             if err != nil {
-                log.Print(err)
+                log.Error("%v", err)
 			}
-            log.Print("continue")
+            log.Info("%v", "continue")
             db.DbUnlock()
             utils.Sleep(1)
             continue BEGIN
@@ -73,7 +73,7 @@ BEGIN:
 
         if testBlockId==newBlockId {
             db.DbUnlock()
-            log.Print(err)
+            log.Error("%v", err)
             utils.Sleep(1)
             continue
         }
@@ -81,7 +81,7 @@ BEGIN:
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
         if err != nil {
             db.DbUnlock()
-            log.Print(err)
+            log.Error("%v", err)
             utils.Sleep(1)
             continue BEGIN
         }
@@ -95,7 +95,7 @@ BEGIN:
 
 		sleep, err := db.GetGenSleep(prevBlock, level)
         if err!=nil {
-            log.Print(err)
+            log.Error("%v", err)
             db.DbUnlock()
             utils.Sleep(1)
             continue
@@ -150,7 +150,7 @@ BEGIN:
 
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
             db.DbUnlock()
             utils.Sleep(1)
             continue
@@ -182,7 +182,7 @@ BEGIN:
 		var myPrefix string
         CommunityUser, err := db.GetCommunityUsers()
         if err != nil {
-            log.Print(err)
+            log.Error("%v", err)
             db.DbUnlock()
             utils.Sleep(1)
             continue

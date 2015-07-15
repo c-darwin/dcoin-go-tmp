@@ -16,7 +16,7 @@ func CleaningDb() {
 
 	BEGIN:
 	for {
-
+		log.Debug(GoroutineName)
 		err := db.DbLock()
 		if err != nil {
 			db.PrintSleep(utils.ErrInfo(err), 60)

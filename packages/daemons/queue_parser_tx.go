@@ -2,7 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
@@ -60,7 +60,7 @@ BEGIN:
 
 		utils.Sleep(1)
 
-		log.Println("Happy end")
+		log.Info("%v", "Happy end")
 	}
 
 	return ""

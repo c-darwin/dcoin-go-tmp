@@ -6,7 +6,6 @@ import (
 	 "database/sql"
 	"strings"
 	"regexp"
-	"log"
 	"time"
 	"strconv"
 	"encoding/json"
@@ -19,7 +18,12 @@ import (
 	"encoding/pem"
 	"crypto/x509"
 	"crypto"
+	"github.com/op/go-logging"
+	"runtime"
+	"path/filepath"
 )
+
+var log = logging.MustGetLogger("daemons")
 
 type DCDB struct {
 	 *sql.DB
@@ -37,7 +41,7 @@ func ReplQ(q string) string {
 			result+=q1[i]
 		}
 	}
-	log.Println(result)
+	log.Debug("%v", result)
 	return result
 }
 
@@ -341,7 +345,20 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
 	}
 	if db.ConfigIni["sql_log"]=="1" {
-		log.Printf("SQL: %s / %v", newQuery, newArgs)
+		parent := ""
+		for i:=2;;i++{
+			name := ""
+			if pc, _, _, ok := runtime.Caller(i); ok {
+				name = filepath.Base(runtime.FuncForPC(pc).Name())
+				file, line := runtime.FuncForPC(pc).FileLine(pc)
+				if i > 5 || name == "runtime.goexit" {
+					break
+				} else {
+					parent += fmt.Sprintf("%s:%d -> %s / ", filepath.Base(file), line, name, parent)
+				}
+			}
+		}
+		log.Debug("SQL: %s / %v / %v", newQuery, newArgs, parent)
 	}
 	return &singleResult{result, nil}
 }
@@ -423,7 +440,20 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	defer rows.Close()
 
 	if db.ConfigIni["sql_log"]=="1" {
-		log.Printf("SQL: %s / %v", newQuery, newArgs)
+		parent := ""
+		for i:=2;;i++{
+			name := ""
+			if pc, _, _, ok := runtime.Caller(i); ok {
+				name = filepath.Base(runtime.FuncForPC(pc).Name())
+				file, line := runtime.FuncForPC(pc).FileLine(pc)
+				if i > 5 || name == "runtime.goexit" {
+					break
+				} else {
+					parent += fmt.Sprintf("%s:%d -> %s / ", filepath.Base(file), line, name)
+				}
+			}
+		}
+		log.Debug("SQL: %s / %v / %v", newQuery, newArgs, parent)
 	}
 	// Get column names
 	columns, err := rows.Columns()
@@ -483,9 +513,9 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 
 func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	result := make(map[string]string)
-	//log.Println(query, args)
+	//log.Debug("%v", query, args)
 	all, err := db.GetAll(query, 1, args ...)
-	//log.Println(all)
+	//log.Debug("%v", all)
 	if err != nil {
 		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
 	}
@@ -542,8 +572,8 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	}
 	result["funding_amount"] = Float64ToStrPct(funding_amount)
 	// % собрано
-	log.Println("funding_amount", funding_amount)
-	log.Println("amount", amount)
+	log.Debug("%v", "funding_amount", funding_amount)
+	log.Debug("%v", "amount", amount)
 	if amount > 0 {
 		result["pct"] = Float64ToStrPct(Round((funding_amount/amount*100), 0))
 	} else {
@@ -565,28 +595,28 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 
 func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
 	if sessRestricted!=0 || sessUserId<=0 {
-		log.Println("NodeAdminAccess1")
+		log.Debug("%v", "NodeAdminAccess1")
 		return false, nil
 	}
 	community, err := db.GetCommunityUsers()
 	if err != nil {
-		log.Println("NodeAdminAccess2")
+		log.Debug("%v", "NodeAdminAccess2")
 		return false, ErrInfo(err)
 	}
 	if len(community) > 0 {
 		pool_admin_user_id, err := db.GetPoolAdminUserId()
 		if err != nil {
-			log.Println("NodeAdminAccess3")
+			log.Debug("%v", "NodeAdminAccess3")
 			return false, ErrInfo(err)
 		}
 		if sessUserId == pool_admin_user_id {
 			return true, nil
 		} else {
-			log.Println("NodeAdminAccess4")
+			log.Debug("%v", "NodeAdminAccess4")
 			return false, nil
 		}
 	} else {
-		log.Println("NodeAdminAccess0")
+		log.Debug("%v", "NodeAdminAccess0")
 		return true, nil
 	}
 }
@@ -601,7 +631,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 		}
 		if db.ConfigIni["sql_log"] == "1" {
-			log.Printf("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
+			log.Debug("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
 		}
 		/*r, _ := regexp.Compile(`(?i)insert into (\w+)`)
 		find := r.FindStringSubmatch(newQuery)
@@ -618,7 +648,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 		affect, err := res.RowsAffected()
 		lastId, err = res.LastInsertId()
 		if db.ConfigIni["sql_log"] == "1" {
-			log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+			log.Debug("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 		}
 	}
 	return lastId, nil
@@ -696,7 +726,7 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 				}
 			}
 			newQ = strings.Replace(newQ, "[hex]", "?", -1)
-		//log.Println("newQ", newQ)
+		//log.Debug("%v", "newQ", newQ)
 		case "postgresql":
 			newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
 			newQ = strings.Replace(newQ, "user,", `"user",`, -1)
@@ -734,9 +764,9 @@ func (db *DCDB) CheckInstall() {
 	INSTALL:
 	progress, err := db.Single("SELECT progress FROM install").String()
 	if err != nil || progress != "complete" {
-		log.Println(`progress != "complete"`, db.GoroutineName)
+		log.Debug("%v", `progress != "complete"`, db.GoroutineName)
 		if err!=nil {
-			log.Print(ErrInfo(err))
+			log.Debug("%v", ErrInfo(err))
 		}
 		Sleep(1)
 		goto INSTALL
@@ -752,7 +782,7 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["sql_log"]=="1" {
-		log.Printf("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+		log.Debug("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return nil
 }
@@ -768,7 +798,7 @@ func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, erro
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["sql_log"]=="1" {
-		log.Printf("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+		log.Debug("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return affect, nil
 }
@@ -827,7 +857,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		columns = strings.Replace(columns,",`cash_request_in_block_id`","",-1)
 		columns = strings.Replace(columns,"`cash_request_in_block_id`,","",-1)
 		q="SELECT MD5(GROUP_CONCAT( CONCAT_WS( '#', `"+columns+"`)  "+orderBy+" )) FROM `"+table+"` "+where
-		log.Println(q)
+		log.Debug("%v", q)
 	}
 	//fmt.Println(q)
 
@@ -862,7 +892,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	if confirmedBlockId == 0 {
 		confirmedBlockId = 1
 	}
-	log.Print("confirmedBlockId", confirmedBlockId)
+	log.Debug("%v", "confirmedBlockId", confirmedBlockId)
 	// получим время из последнего подвержденного блока
 	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId).Bytes()
 	if err != nil || len(lastBlockBin)==0 {
@@ -1141,7 +1171,7 @@ func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 
 func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	// получим данные для подписи
-	log.Println("hash", hash)
+	log.Debug("%v", "hash", hash)
 	data, err := db.Single(`SELECT data FROM authorization WHERE hash = [hex]`, hash).String()
 	if err != nil {
 		return "", ErrInfo(err)
@@ -1366,7 +1396,7 @@ func (db *DCDB) FormatQuery(q string) string {
 		}
 	}
 
-//	log.Println(newQ)
+//	log.Debug("%v", newQ)
 	return newQ
 }
 
@@ -1393,7 +1423,7 @@ type PromisedAmounts struct {
 }
 
 func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []PromisedAmounts, map[int]DCAmounts, error) {
-	log.Println("cash_request_time", cash_request_time)
+	log.Debug("%v", "cash_request_time", cash_request_time)
 	var actualizationPromisedAmounts int64
 	var promisedAmountListAccepted []PromisedAmounts
 	promisedAmountListGen := make(map[int]DCAmounts)
@@ -1410,7 +1440,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		if err != nil {
 			return 0, nil, nil, err
 		}
-		log.Println("GetPromisedAmounts: ", currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
+		log.Debug("%v", "GetPromisedAmounts: ", currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
 		// есть ли просроченные запросы
 		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
 		if err != nil {
@@ -1428,17 +1458,17 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		if del_block_id > 0 {
 			continue
 		}
-		log.Println("tdc", tdc)
+		log.Debug("%v", "tdc", tdc)
 		if status == "mining" {
 			profit, err := db.CalcProfitGen(currency_id, amount+tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "mining")
-			log.Println("profit", profit)
+			log.Debug("%v", "profit", profit)
 			if err != nil {
 				return 0, nil, nil, err
 			}
 			tdc+=profit
-			log.Println("tdc", tdc)
+			log.Debug("%v", "tdc", tdc)
 			tdc = Round(tdc, 9)
-			log.Println("tdc", tdc)
+			log.Debug("%v", "tdc", tdc)
 		} else if status == "repaid" {
 			profit, err := db.CalcProfitGen(currency_id, tdc_amount, userId, tdc_amount_update, time.Now().Unix(), "repaid")
 			if err != nil {
@@ -1482,7 +1512,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		if err != nil {
 			return 0, nil, nil, err
 		}
-		log.Println("pct", pct, "currency_id", currency_id, "pctStatus", pctStatus)
+		log.Debug("%v", "pct", pct, "currency_id", currency_id, "pctStatus", pctStatus)
 		pct_sec := pct
 		pct = Round((math.Pow(1+pct, 3600*24*365)-1)*100, 2)
 		// тут accepted значит просто попало в блок
@@ -1531,7 +1561,7 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		//log.Print("result int64",StrToInt64(result))
+		//log.Debug("%v", "result int64",StrToInt64(result))
 		return result, nil
 	}
 }
@@ -1655,7 +1685,7 @@ func (db *DCDB) CheckCashRequests(userId int64) (error) {
 		return err
 	}
 	if len(cashRequestStatus) > 0 {
-		log.Println("cashRequestStatus")
+		log.Debug("%v", "cashRequestStatus")
 		return fmt.Errorf("cashRequestStatus")
 	}
 	return nil
@@ -1872,6 +1902,7 @@ func (db *DCDB) DbLock() error {
 		if err != nil {
 			return ErrInfo(err)
 		}
+		log.Debug("%s, %s", exists["lock_time"], exists["script_name"])
 		if exists["script_name"] == db.GoroutineName {
 			err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 			if err != nil {
@@ -1887,12 +1918,12 @@ func (db *DCDB) DbLock() error {
 		}
 		mutex.Unlock()
 		if !ok {
-			time.Sleep(time.Duration(RandInt(100, 200)) * time.Millisecond)
+			time.Sleep(time.Duration(RandInt(300, 400)) * time.Millisecond)
 		} else {
 			break
 		}
 	}
-	log.Println("DbLock")
+	log.Debug("%v", "DbLock")
 	return nil
 }
 
@@ -1903,7 +1934,7 @@ func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 
 func (db *DCDB) UnlockPrintSleep(err error, sleep float64) {
 	db.DbUnlock();
-	log.Print(err)
+	log.Error("%v", err)
 	Sleep(sleep)
 }
 
@@ -1915,7 +1946,7 @@ func (db *DCDB) PrintSleep(err_ interface {}, sleep float64) {
 	case error:
 		err = err_.(error)
 	}
-	log.Print(err)
+	log.Error("%v", err)
 	Sleep(sleep)
 }
 
@@ -1924,7 +1955,7 @@ func (db *DCDB) DbUnlock() error {
 	if err != nil {
 		return err
 	}
-	//log.Println("DbUnlock")
+	//log.Debug("%v", "DbUnlock")
 	return nil
 }
 
@@ -2039,7 +2070,7 @@ func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	if err!=nil {
 		return BlockData, err
 	}
-	log.Printf("data: %x\n", data["data"])
+	log.Debug("data: %x\n", data["data"])
 	if len(data["data"]) > 0 {
 		binaryData := []byte(data["data"])
 		BytesShift(&binaryData, 1)  // не нужно. 0 - блок, >0 - тр-ии

@@ -543,5 +543,6 @@ BEGIN:
 				}
 			}
 		}
+		utils.Sleep(30)
 	}
 }

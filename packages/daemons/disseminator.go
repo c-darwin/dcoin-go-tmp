@@ -2,7 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	//"log"
 	"strings"
 )
 
@@ -145,20 +145,20 @@ BEGIN:
 						// шлем данные указанному хосту
 						conn, err := utils.TcpConn(host["host"])
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						defer conn.Close()
 
 						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// получаем IV + ключ + зашифрованный текст
 						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
@@ -171,20 +171,20 @@ BEGIN:
 						size := utils.DecToBin(len(dataToBeSent), 4)
 						_, err = conn.Write(size)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// далее шлем сами данные
 						_, err = conn.Write(dataToBeSent)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// в ответ получаем размер данных, которые нам хочет передать сервер
 						buf := make([]byte, 4)
 						_, err =conn.Read(buf)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						dataSize := utils.BinToDec(buf)
@@ -193,13 +193,13 @@ BEGIN:
 							encBinaryTxHashes := make([]byte, dataSize)
 							_, err := conn.Read(encBinaryTxHashes)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 							// разбираем полученные данные
 							binaryTxHashes, err := utils.DecryptCFB(iv, encBinaryTxHashes, key)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 							var binaryTx []byte
@@ -212,7 +212,7 @@ BEGIN:
 								txHash = utils.BinToHex(txHash)
 								tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
 								if err != nil {
-									log.Println(utils.ErrInfo(err))
+									log.Info("%v", utils.ErrInfo(err))
 									return
 								}
 								if len(tx) > 0 {
@@ -226,7 +226,7 @@ BEGIN:
 							// шифруем тр-ии. Вначале encData добавляется IV
 							encData, _, err := utils.EncryptCFB(binaryTx, key, iv)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 
@@ -235,13 +235,13 @@ BEGIN:
 							size := utils.DecToBin(len(encData), 4)
 							_, err = conn.Write(size)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 							// далее шлем сами данные
 							_, err = conn.Write(encData)
 							if err != nil {
-								log.Println(utils.ErrInfo(err))
+								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
 						}
@@ -291,20 +291,20 @@ BEGIN:
 
 						conn, err := utils.TcpConn(host["host"])
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						defer conn.Close()
 
 						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// получаем IV + ключ + зашифрованный текст
 						encryptedData, _, _, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
@@ -318,7 +318,7 @@ BEGIN:
 						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
 						_, err = conn.Write(utils.DecToBin(dataType, 1))
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 
@@ -326,13 +326,13 @@ BEGIN:
 						size := utils.DecToBin(len(encryptedData), 4)
 						_, err = conn.Write(size)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 						// далее шлем сами данные
 						_, err = conn.Write(encryptedData)
 						if err != nil {
-							log.Println(utils.ErrInfo(err))
+							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
 
@@ -345,7 +345,7 @@ BEGIN:
 
 		utils.Sleep(1)
 
-		log.Println("Happy end")
+		log.Info("%v", "Happy end")
 	}
 
 	return ""

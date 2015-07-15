@@ -30,7 +30,11 @@ func (c *Controller) InstallStep2() (string, error) {
 
 	if installType=="standard" {
 		dbType = "sqlite"
-		url = consts.BLOCKCHAIN_URL
+		if len(configIni["blockchain_url"]) > 0 {
+			url = configIni["blockchain_url"]
+		} else {
+			url = consts.BLOCKCHAIN_URL
+		}
 	}
 
 	confIni, err := config.NewConfig("ini", "config.ini")

@@ -4,7 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"time"
-	"log"
+//	//"log"
 	"net"
 	"io/ioutil"
 	"strings"
@@ -43,7 +43,7 @@ func Connector() {
 		if utils.StrToInt64(nodeConfig["out_connections"]) > 0 {
 			maxHosts = utils.StrToInt(nodeConfig["out_connections"])
 		}
-		log.Println(maxHosts)
+		log.Info("%v", maxHosts)
 		collective, err := db.GetCommunityUsers()
 		if err != nil {
 			db.PrintSleep(err, 1)
@@ -63,13 +63,13 @@ func Connector() {
 			db.PrintSleep(err, 1)
 			continue
 		}
-		log.Println(myMinersIds)
+		log.Info("%v", myMinersIds)
 		nodesBan, err := db.GetMap(`
 				SELECT tcp_host, ban_start
 				FROM nodes_ban
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id
 				`, "tcp_host", "ban_start")
-		log.Println(nodesBan)
+		log.Info("%v", nodesBan)
 		nodesConnections, err := db.GetAll(`
 				SELECT nodes_connection.host,
 							 nodes_connection.user_id,
@@ -143,7 +143,7 @@ func Connector() {
 					db.PrintSleep(err, 1)
 				}
 			}
-			log.Println("answer", result)
+			log.Info("%v", "answer", result)
 		}
 
 		// добьем недостающие хосты до $max_hosts
@@ -166,7 +166,7 @@ func Connector() {
 					break
 				}
 			}
-			log.Println("idArray", idArray)
+			log.Info("%v", "idArray", idArray)
 			// удалим себя
 			for _, id := range myMinersIds {
 				delete(idArray, int(id))
@@ -175,7 +175,7 @@ func Connector() {
 			for _, id := range delMiners {
 				delete(idArray, utils.StrToInt(id))
 			}
-			log.Println("idArray", idArray)
+			log.Info("%v", "idArray", idArray)
 
 			ids := ""
 			if len(idArray) > 0 {
@@ -209,7 +209,7 @@ func Connector() {
 			}
 		}
 
-		log.Println("hosts", hosts)
+		log.Info("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
 		if len(hosts) == 0 {
 			hostsData_, err := ioutil.ReadFile("nodes.inc")
@@ -218,8 +218,8 @@ func Connector() {
 				continue BEGIN
 			}
 			hostsData := strings.Split(string(hostsData_), "\n")
-			log.Println("hostsData_", hostsData_)
-			log.Println("hostsData", hostsData)
+			log.Info("%v", "hostsData_", hostsData_)
+			log.Info("%v", "hostsData", hostsData)
 			max := 0
 			if len(hosts) > maxHosts-1 {
 				max = maxHosts
@@ -280,12 +280,12 @@ func check(host string, userId int64) *answerType {
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
-		log.Println(utils.ErrInfo(err))
+		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
-		log.Println(utils.ErrInfo(err))
+		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	defer conn.Close()
@@ -296,14 +296,14 @@ func check(host string, userId int64) *answerType {
 	// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
 	_, err = conn.Write(utils.DecToBin(5, 1))
 	if err != nil {
-		log.Println(utils.ErrInfo(err))
+		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 
 	// в 5-и байтах пишем userID, чтобы проверить, верный ли у него нодовский ключ, т.к. иначе ему нельзя слать зашифрованные данные
 	_, err = conn.Write(utils.DecToBin(userId, 5))
 	if err != nil {
-		log.Println(utils.ErrInfo(err))
+		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 
@@ -311,7 +311,7 @@ func check(host string, userId int64) *answerType {
 	answer := make([]byte, 1)
 	_, err = conn.Read(answer)
 	if err != nil {
-		log.Println(utils.ErrInfo(err))
+		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	return &answerType{userId: userId, answer: utils.BinToDec(answer)}
