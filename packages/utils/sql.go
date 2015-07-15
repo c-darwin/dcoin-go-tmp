@@ -345,7 +345,7 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
 	}
 	if db.ConfigIni["sql_log"]=="1" {
-		parent := ""
+		/*parent := ""
 		for i:=2;;i++{
 			name := ""
 			if pc, _, _, ok := runtime.Caller(i); ok {
@@ -358,6 +358,8 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 				}
 			}
 		}
+		*/
+		parent := GetParent()
 		log.Debug("SQL: %s / %v / %v", newQuery, newArgs, parent)
 	}
 	return &singleResult{result, nil}
@@ -422,6 +424,22 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 	return &listResult{result, nil}
 }
 
+func GetParent() string {
+	parent := ""
+	for i:=2;;i++{
+		name := ""
+		if pc, _, num, ok := runtime.Caller(i); ok {
+			name = filepath.Base(runtime.FuncForPC(pc).Name())
+			file, line := runtime.FuncForPC(pc).FileLine(pc)
+			if i > 5 || name == "runtime.goexit" {
+				break
+			} else {
+				parent += fmt.Sprintf("%s:%d -> %s:%d / ", filepath.Base(file), line, name, num)
+			}
+		}
+	}
+	return parent
+}
 
 func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[string]string, error) {
 
@@ -440,7 +458,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	defer rows.Close()
 
 	if db.ConfigIni["sql_log"]=="1" {
-		parent := ""
+		/*parent := ""
 		for i:=2;;i++{
 			name := ""
 			if pc, _, _, ok := runtime.Caller(i); ok {
@@ -452,7 +470,8 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 					parent += fmt.Sprintf("%s:%d -> %s / ", filepath.Base(file), line, name)
 				}
 			}
-		}
+		}*/
+		parent := GetParent()
 		log.Debug("SQL: %s / %v / %v", newQuery, newArgs, parent)
 	}
 	// Get column names
@@ -778,12 +797,14 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	res, err := db.Exec(newQuery, newArgs...)
 	if err != nil {
-		return fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		parent := GetParent()
+		return fmt.Errorf("%s in query %s %s / %s", err, newQuery, newArgs, parent)
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
 	if db.ConfigIni["sql_log"]=="1" {
-		log.Debug("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
+		parent := GetParent()
+		log.Debug("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s / %s", newQuery, affect, lastId, newArgs, parent)
 	}
 	return nil
 }
@@ -1273,13 +1294,15 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
 	}
-	//fmt.Println("prevBlock", prevBlock)
+
+	log.Debug("prevBlock: %v (%v)", prevBlock, GetParent())
 
 	// общее кол-во майнеров
 	maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners").Int64()
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
+	log.Debug("maxMinerId: %v (%v)", maxMinerId, GetParent())
 
 	for currentUserId == 0 {
 		// если майнера заморозили то у него исчезает miner_id, чтобы не попасть на такой пустой miner_id
@@ -1287,6 +1310,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		var entropy int64
 		if (i == 0) {
 			entropy = GetEntropy(prevBlock.HeadHash);
+			log.Debug("entropy: %v (%v)", entropy, GetParent())
 		} else {
 			time.Sleep(1000 * time.Millisecond)
 
@@ -1296,12 +1320,14 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 			}
 
 			newHeadHash, err := db.Single("SELECT hex(head_hash) FROM block_chain  WHERE id = ?", blockId).String()
+			log.Debug("newHeadHash: %v (%v)", newHeadHash, GetParent())
 			if err != nil {
 				return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 			}
 			entropy = GetEntropy(newHeadHash);
 		}
 		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy);
+		log.Debug("currentMinerId: %v (%v)", currentMinerId, GetParent())
 
 		// получим ID юзера по его miner_id
 		currentUserId, err = db.Single("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10)).Int64()
@@ -1315,12 +1341,14 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
+	log.Debug("collective: %v (%v)", collective, GetParent())
 
 	// в сингл-моде будет только $my_miners_ids[0]
 	myMinersIds, err := db.GetMyMinersIds(collective);
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
+	log.Debug("myMinersIds: %v (%v)", myMinersIds, GetParent())
 
 	// есть ли кто-то из нашего пула (или сингл-мода), кто находится на 0-м уровне
 	if InSliceInt64(currentMinerId, myMinersIds) {
@@ -1951,7 +1979,7 @@ func (db *DCDB) PrintSleep(err_ interface {}, sleep float64) {
 	case error:
 		err = err_.(error)
 	}
-	log.Error("%v", err)
+	log.Error("%v (%v)", err, GetParent())
 	Sleep(sleep)
 }
 

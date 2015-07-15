@@ -4,34 +4,22 @@ import (
     "fmt"
     _ "github.com/lib/pq"
     "time"
-//    "database/sql"
 	"strconv"
     "crypto/x509"
     "encoding/pem"
     "crypto"
     "crypto/rand"
     "crypto/rsa"
-//    math_rand "math/rand"
     "crypto/md5"
 	"bufio"
 	"os"
-	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
-	"sync"
-   // "github.com/alyu/configparser"
-	//"io/ioutil"
-    //"github.com/astaxie/beego/config"
     "github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
-
-
 
 var err error
 
 func TestblockGenerator() {
-
-    var mutex = &sync.Mutex{}
 
     const GoroutineName = "TestblockGenerator"
     db := utils.DbConnect(configIni)
@@ -40,6 +28,7 @@ func TestblockGenerator() {
 
 BEGIN:
 	for {
+        log.Debug("START")
 
         db.DbLock()
 
@@ -51,7 +40,7 @@ BEGIN:
             continue BEGIN
         }
         newBlockId := blockId + 1;
-        fmt.Println(newBlockId, "newBlockId")
+        log.Debug("newBlockId: %v", newBlockId)
         testBlockId, err := db.GetTestBlockId()
         if err != nil {
             db.DbUnlock()
@@ -59,7 +48,8 @@ BEGIN:
             utils.Sleep(1)
             continue BEGIN
         }
-        fmt.Println(testBlockId, "testBlockId")
+
+        log.Debug("testBlockId %v", testBlockId)
 
         if x, err := db.GetMyLocalGateIp(); x!="" {
             if err != nil {
@@ -85,7 +75,7 @@ BEGIN:
             utils.Sleep(1)
             continue BEGIN
         }
-        fmt.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
+        log.Debug("%v %v %v %v %v %v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId==0 {
             db.DbUnlock()
@@ -100,43 +90,43 @@ BEGIN:
             utils.Sleep(1)
             continue
         }
-        fmt.Println("sleep", sleep)
+        log.Debug("sleep %v", sleep)
 
         blockId = prevBlock.BlockId;
-        fmt.Println("blockId", blockId)
+        log.Debug("blockId %v", blockId)
         prevHeadHash := prevBlock.HeadHash;
-        fmt.Println("prevHeadHash", prevHeadHash)
+        log.Debug("prevHeadHash %v", prevHeadHash)
 
         // сколько прошло сек с момента генерации прошлого блока
         diff := time.Now().Unix() - prevBlock.Time;
-        fmt.Println("diff", diff)
+        log.Debug("diff %v", diff)
 
         // вычитаем уже прошедшее время
         utils.SleepDiff(&sleep, diff)
 
         // Если случится откат или придет новый блок, то генератор блоков нужно запускать с начала, т.к. изменится max_miner_id.
-        fmt.Println("sleep", sleep)
+        log.Debug("sleep %v", sleep)
         startSleep := time.Now().Unix();
-        fmt.Println("startSleep", startSleep)
+        log.Debug("startSleep %v", startSleep)
 
         db.DbUnlock()
 
         for i := 0; i < int(sleep); i++ {
             db.DbLock();
-            fmt.Println("i", i)
-            fmt.Println("sleep", sleep)
+            log.Debug("i %v", i)
+            log.Debug("sleep %v", sleep)
 			var newHeadHash string
             err := db.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
             utils.CheckErr(err)
-            fmt.Println("newHeadHash", newHeadHash)
+            log.Debug("newHeadHash %v", newHeadHash)
             db.DbUnlock();
             if (newHeadHash != prevHeadHash) {
-                fmt.Println("newHeadHash!=prevHeadHash", newHeadHash, prevHeadHash)
+                log.Debug("newHeadHash!=prevHeadHash  %v  %v", newHeadHash, prevHeadHash)
                 continue BEGIN
             }
             // из-за задержек с main_lock время уже прошло и выходим раньше, чем закончится цикл
             if time.Now().Unix() - startSleep > sleep {
-                fmt.Println("break")
+                log.Debug("break")
                 break
             }
             time.Sleep(1000 * time.Millisecond) // спим 1 сек. общее время = $sleep
@@ -155,24 +145,24 @@ BEGIN:
             utils.Sleep(1)
             continue
 		}
-        fmt.Println(prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
+        log.Debug("%v %v %v %v %v %v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
         // сколько прошло сек с момента генерации прошлого блока
         diff = time.Now().Unix() - prevBlock.Time;
-        fmt.Println("diff", diff)
+        log.Debug("diff %v", diff)
         // вычитаем уже прошедшее время
         utils.SleepDiff(&sleep, diff)
-        fmt.Println("sleep", sleep)
+        log.Debug("sleep %v", sleep)
         // если нужно доспать, то просто вернемся в начало и доспим нужное время. И на всякий случай убедимся, что блок не изменился
         if sleep > 0 || prevBlock.HeadHash != prevHeadHash {
-            fmt.Println("continue")
+            log.Debug("continue")
             db.DbUnlock()
             time.Sleep(1000 * time.Millisecond)
             continue
         }
-        fmt.Println("Закончили спать, теперь генерим блок")
+        log.Debug("blockgeneration begin")
         blockId = prevBlock.BlockId;
         if blockId < 1 {
-            fmt.Println("continue")
+            log.Debug("continue")
             db.DbUnlock()
             time.Sleep(1000 * time.Millisecond)
             continue
@@ -194,33 +184,34 @@ BEGIN:
 	    }
         nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
 		if len(nodePrivateKey) < 1 {
-            fmt.Println("continue")
+            log.Debug("continue")
             db.DbUnlock()
             time.Sleep(1000 * time.Millisecond)
             continue
         }
         prevHeadHash = prevBlock.HeadHash
 
-        fmt.Println(nodePrivateKey, prevHeadHash)
+        log.Debug("%v %v", nodePrivateKey, prevHeadHash)
 
         //#####################################
         //##		 Формируем блок
         //#####################################
-        fmt.Println(newBlockId, currentUserId)
+        log.Debug("%v %v", newBlockId, currentUserId)
         if currentUserId < 1 {
-            fmt.Println("continue")
+            log.Debug("continue")
             db.DbUnlock()
             time.Sleep(1000 * time.Millisecond)
             continue
         }
         if prevBlock.BlockId >= newBlockId {
-            fmt.Println("continue")
+            log.Debug("continue")
             db.DbUnlock()
             time.Sleep(1000 * time.Millisecond)
             continue
         }
         // откатим transactions_testblock
 		p := new(dcparser.Parser)
+        p.DCDB = db
         p.RollbackTransactionsTestblock(true)
 
        Time := time.Now().Unix()
@@ -246,21 +237,21 @@ BEGIN:
             var thirdVar string
             err = rows.Scan(&data, &hash, &txType, &txUserId, &thirdVar)
             utils.CheckErr(err)
-            fmt.Println("data", data)
-            fmt.Println("hash", hash)
+            log.Debug("data %v", data)
+            log.Debug("hash %v", hash)
             transactionType := data[1:2];
-            fmt.Println(transactionType)
+            log.Debug("%v", transactionType)
             fmt.Printf("%x", transactionType)
             mrklArray = append(mrklArray, utils.DSha256(data));
-            fmt.Println("mrklArray", mrklArray)
+            log.Debug("mrklArray %v", mrklArray)
 
             hash2_ := md5.New()
             hash2_.Write(data)
             hashMd5:=fmt.Sprintf("%x", hash2_.Sum(nil))
-            fmt.Println(hashMd5)
+            log.Debug(hashMd5)
 
             dataHex := fmt.Sprintf("%x", data)
-            fmt.Println("dataHex", dataHex)
+            log.Debug("dataHex %v", dataHex)
 
             file, _ := os.Create("/home/z/psql.sql")
             writer := bufio.NewWriter(file)
@@ -278,17 +269,23 @@ BEGIN:
             utils.CheckErr(err)
             affect, err := res.RowsAffected()
             utils.CheckErr(err)
-            fmt.Println(affect, "rows changed")
+            log.Debug("rows changed %v", affect)
             _, err = db.Exec(`COPY transactions (hash, data, type, user_id, third_var)
 			                  FROM '/home/z/psql.sql' with (FORMAT csv, DELIMITER '|')`)
             utils.CheckErr(err)
             affect, err = res.RowsAffected()
             utils.CheckErr(err)
-            fmt.Println(affect, "rows changed")
+            log.Debug("rows changed %v", affect)
 
             usedTransactions+="\\x"+hash+",";
-            mrklRoot = utils.MerkleTreeRoot(mrklArray);
         }
+
+        if len(mrklArray) == 0 {
+            mrklArray = append(mrklArray,  []byte("0"))
+        }
+        mrklRoot = utils.MerkleTreeRoot(mrklArray);
+        log.Debug("mrklRoot: %s", mrklRoot)
+        log.Debug("mrklRoot: %x", mrklRoot)
 
         /*
 		Заголовок
@@ -306,25 +303,38 @@ BEGIN:
         // Extract the PEM-encoded data block
         block, _ := pem.Decode([]byte(nodePrivateKey))
         if block == nil {
-            utils.CheckErr(errors.New("bad key data"))
+            log.Error("bad key data %v ", utils.GetParent())
+            utils.Sleep(1)
+            continue BEGIN
         }
         if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-            utils.CheckErr(errors.New("unknown key type "+got+", want "+want));
+            log.Error("unknown key type %v, want %v / %v ", got, want, utils.GetParent())
+            utils.Sleep(1)
+            continue BEGIN
         }
         privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-        utils.CheckErr(err);
-		var forSign string
-        forSign = fmt.Sprintf("0,%s,%s,%s,%s,%s,%s", newBlockId, prevBlock.Hash, Time, myUserId, level, mrklRoot)
+        if err != nil {
+            log.Error("err %v %v", err, utils.GetParent())
+            utils.Sleep(1)
+            continue BEGIN
+        }
+        var forSign string
+        forSign = fmt.Sprintf("0,%v,%v,%v,%v,%v,%v", newBlockId, prevBlock.Hash, Time, myUserId, level, string(mrklRoot))
+        log.Debug("forSign: %v", forSign)
         bytes, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
-        utils.CheckErr(err)
+        if err != nil {
+            log.Error("err %v %v", err, utils.GetParent())
+            utils.Sleep(1)
+            continue BEGIN
+        }
         signatureHex := fmt.Sprintf("%x", bytes)
 
         // хэш шапки блока. нужен для сравнивания с другими и у кого будет меньше - у того блок круче
         headerHash := utils.DSha256([]byte(fmt.Sprintf("%s,%s,%s", myUserId, newBlockId, prevHeadHash)));
 
-        /*data := fmt.Sprintf("%d|%d|%d|%d|\\x%s|\\x%s|\\x%s", newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
+        /*data := fmt.Sprintf("%d|%d|%d|%d|\\x%s|\\x%s|\\x%s", newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRootHex)
 		name := os.TempDir()+"/Dcoin."+strconv.Itoa(math_rand.Intn(999999999))
-        fmt.Println(name)
+        log.Debug(name)
         file, _ := os.Create(name)
         defer file.Close()
         writer := bufio.NewWriter(file)
@@ -332,18 +342,17 @@ BEGIN:
         writer.Flush()
         defer os.Remove(name)*/
 
-        mutex.Lock()
         err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
-        utils.CheckErr(err)
-//        affect, err := res.RowsAffected()
-//        utils.CheckErr(err)
-        err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex]`,
-            newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRoot)
-        utils.CheckErr(err)
-  //      affect, err = res.RowsAffected()
-//        utils.CheckErr(err)
-//        fmt.Println(affect, "rows changed")
-        mutex.Unlock()
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
+        }
+        err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
+            newBlockId, Time, level, myUserId, headerHash, signatureHex, string(mrklRoot))
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
+        }
 
         /// #######################################
         // Отмечаем транзакции, которые попали в transactions_testblock
@@ -351,8 +360,12 @@ BEGIN:
         // если не отмечать, то получается, что и в transactions_testblock и в transactions будут провернные тр-ии, которые откатятся дважды
         if len(usedTransactions)>0 {
             usedTransactions := usedTransactions[:len(usedTransactions)-1]
-            fmt.Println("usedTransactions", usedTransactions)
+            log.Debug("usedTransactions %v", usedTransactions)
             _, err = db.Exec("UPDATE transactions SET used=1 WHERE hash IN ($1)", usedTransactions)
+            if err != nil {
+                db.PrintSleep(err, 1)
+                continue BEGIN
+            }
             // для теста удаляем, т.к. она уже есть в transactions_testblock
             /*  $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
 				  DELETE FROM `".DB_PREFIX."transactions`
@@ -366,6 +379,8 @@ BEGIN:
 		// в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
         db.Close()
         db = utils.DbConnect(configIni)
+
+        log.Debug("END")
 
         time.Sleep(3000 * time.Millisecond)
 		break

@@ -4298,13 +4298,13 @@ func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
 	if err == nil {
 		err = errors.New(waitError)
 	}
+	hashHex := utils.BinToHex(hash)
 	if err != nil {
-		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hash = [hex]", fmt.Sprintf("%s", err))
+		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hash = [hex]", fmt.Sprintf("%s", err), hashHex)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 	} else {
-		hashHex := utils.BinToHex(hash)
 		counter, err := p.Single("SELECT counter FROM transactions WHERE hash  =  [hex]", hashHex).Int64()
 		if err != nil {
 			return utils.ErrInfo(err)

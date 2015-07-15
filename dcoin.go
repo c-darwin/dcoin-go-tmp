@@ -2,7 +2,6 @@ package main
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
-//	"log"
 	"os"
 	"net/http"
 	_ "image/png"
@@ -22,12 +21,13 @@ import (
 )
 
 var log = logging.MustGetLogger("example")
-var format = logging.MustStringFormatter(
-	"%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}",
-)
+//var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}")
+var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
 
 var configIni map[string]string
+
 func main() {
+
 	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	defer f.Close()
 	backend := logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)

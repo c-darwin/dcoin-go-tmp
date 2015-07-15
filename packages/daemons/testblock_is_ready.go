@@ -155,6 +155,7 @@ BEGIN:
 		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true);
 		if err != nil {
 			p := new(dcparser.Parser)
+			p.DCDB = db
 			p.RollbackTransactionsTestblock(true)
 			err = db.ExecSql("DELETE FROM testblock")
 			if err != nil {

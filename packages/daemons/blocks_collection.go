@@ -15,7 +15,6 @@ import (
 func BlocksCollection() {
 
     const GoroutineName = "BlocksCollection"
-
     db := utils.DbConnect(configIni)
     db.GoroutineName = GoroutineName
     db.CheckInstall()

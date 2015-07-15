@@ -68,7 +68,7 @@ func (p *Parser) Admin1Block() (error) {
 	}
 	tcpHost := ""
 	re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
-	match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
+	match := re.FindStringSubmatch(firstBlock.Host)
 	if len(match) != 0 {
 		tcpHost = match[1]+":8088"
 	}

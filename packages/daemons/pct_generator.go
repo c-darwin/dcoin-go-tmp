@@ -208,6 +208,7 @@ BEGIN:
 			// а если придет другой блок и станет verified=0, то эта тр-ия просто удалится.
 
 			p := new(dcparser.Parser)
+			p.DCDB = db
 			err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 			if err != nil {
 				db.PrintSleep(err, 60)

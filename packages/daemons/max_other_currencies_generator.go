@@ -110,6 +110,7 @@ BEGIN:
 		}
 
 		p := new(dcparser.Parser)
+		p.DCDB = db
 		err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 		if err != nil {
 			db.PrintSleep(err, 60)

@@ -4,7 +4,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"time"
-//	//"log"
 	"net"
 	"io/ioutil"
 	"strings"
@@ -138,12 +137,13 @@ func Connector() {
 		for i := 0; i < len(hosts); i++ {
 			result := <-ch
 			if result.answer == 0 {
+				log.Info("delete %v", result.userId)
 				err = db.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
 				if err != nil {
 					db.PrintSleep(err, 1)
 				}
 			}
-			log.Info("%v", "answer", result)
+			log.Info("answer: %v", result)
 		}
 
 		// добьем недостающие хосты до $max_hosts
@@ -176,7 +176,6 @@ func Connector() {
 				delete(idArray, utils.StrToInt(id))
 			}
 			log.Info("%v", "idArray", idArray)
-
 			ids := ""
 			if len(idArray) > 0 {
 				for id, _ := range idArray {
