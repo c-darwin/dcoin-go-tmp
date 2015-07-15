@@ -1273,7 +1273,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	if  ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)
 		if err!= nil {
-			return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
 	}
 	//fmt.Println("prevBlock", prevBlock)
@@ -1281,7 +1281,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	// общее кол-во майнеров
 	maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners").Int64()
 	if err != nil {
-		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
 
 	for currentUserId == 0 {
@@ -1300,7 +1300,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 
 			newHeadHash, err := db.Single("SELECT hex(head_hash) FROM block_chain  WHERE id = ?", blockId).String()
 			if err != nil {
-				return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+				return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 			}
 			entropy = GetEntropy(newHeadHash);
 		}
@@ -1309,20 +1309,20 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		// получим ID юзера по его miner_id
 		currentUserId, err = db.Single("SELECT user_id  FROM miners_data  WHERE miner_id = " + strconv.FormatInt(currentMinerId, 10)).Int64()
 		if err != nil {
-			return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
 		i++;
 	}
 
 	collective, err := db.GetMyUsersIds(true)
 	if err != nil {
-		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
 
 	// в сингл-моде будет только $my_miners_ids[0]
 	myMinersIds, err := db.GetMyMinersIds(collective);
 	if err != nil {
-		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
 
 	// есть ли кто-то из нашего пула (или сингл-мода), кто находится на 0-м уровне
@@ -1343,7 +1343,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 
 	userId, err = db.Single("SELECT user_id FROM miners_data WHERE miner_id = ?", minerId).Int64()
 	if err != nil {
-		return prevBlock, userId, minerId, currentUserId, level, levelsRange, err
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
 }
@@ -1906,7 +1906,7 @@ func (db *DCDB) DbLock() error {
 		if err != nil {
 			return ErrInfo(err)
 		}
-		log.Debug("%s, %s", exists["lock_time"], exists["script_name"])
+		//log.Debug("%s, %s", exists["lock_time"], exists["script_name"])
 		if exists["script_name"] == db.GoroutineName {
 			err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 			if err != nil {
@@ -1927,7 +1927,7 @@ func (db *DCDB) DbLock() error {
 			break
 		}
 	}
-	log.Debug("%v", "DbLock")
+	//log.Debug("%v", "DbLock")
 	return nil
 }
 
@@ -2072,7 +2072,7 @@ func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	BlockData := new(BlockData)
 	data, err := db.OneRow("SELECT * FROM block_chain WHERE id = ?", blockId).String()
 	if err!=nil {
-		return BlockData, err
+		return BlockData, ErrInfo(err)
 	}
 	log.Debug("data: %x\n", data["data"])
 	if len(data["data"]) > 0 {
