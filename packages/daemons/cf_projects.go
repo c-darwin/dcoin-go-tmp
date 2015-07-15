@@ -65,7 +65,7 @@ func CfProjects() {
 				continue BEGIN
 			}
 			// сколько собрано средств
-			funding, err := db.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0").Float64()
+			funding, err := db.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", data["project_id"]).Float64()
 			if err != nil {
 				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
 				continue BEGIN
