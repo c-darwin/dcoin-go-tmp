@@ -2,8 +2,8 @@ package dcparser
 
 import (
 	"fmt"
-	//"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
+	"regexp"
 )
 
 
@@ -66,10 +66,15 @@ func (p *Parser) Admin1Block() (error) {
 			return p.ErrInfo(err)
 		}
 	}
-
-	err = p.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, http_host, photo_block_id, photo_max_miner_id, miners_keepers)
-		VALUES (1,1,'miner',[hex],?,1,1,1)`,
-		firstBlock.NodePublicKey, firstBlock.Host)
+	tcpHost := ""
+	re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
+	match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
+	if len(match) != 0 {
+		tcpHost = match[1]+":8088"
+	}
+	err = p.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, http_host, tcp_host, photo_block_id, photo_max_miner_id, miners_keepers)
+		VALUES (1,1,'miner',[hex],?,?,1,1,1)`,
+		firstBlock.NodePublicKey, firstBlock.Host, tcpHost)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

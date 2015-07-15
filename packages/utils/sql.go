@@ -708,6 +708,10 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 			r, _ := regexp.Compile(`(\[hex\]|\?)`)
 			indexArr := r.FindAllStringSubmatchIndex(q, -1)
 			for i := 0; i < len(indexArr); i++ {
+				if len(indexArr) < 2 {
+					log.Debug(q, indexArr)
+					continue
+				}
 				str := q[indexArr[i][0]:indexArr[i][1]]
 				if str!="[hex]" {
 					switch args[i].(type) {
