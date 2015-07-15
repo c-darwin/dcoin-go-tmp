@@ -713,6 +713,7 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 					continue
 				}
 				str := q[indexArr[i][0]:indexArr[i][1]]
+				log.Debug("i", i, len(args), str, q)
 				if str!="[hex]" {
 					switch args[i].(type) {
 						case []byte:
