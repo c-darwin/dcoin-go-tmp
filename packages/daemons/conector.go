@@ -199,13 +199,13 @@ func Connector() {
 						db.PrintSleep(err, 1)
 						continue BEGIN
 					}
+					log.Debug(host)
 					err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 					if err != nil {
 						db.PrintSleep(err, 1)
 						continue BEGIN
 					}
 				}
-
 			}
 		}
 
@@ -244,6 +244,7 @@ func Connector() {
 					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
+				log.Debug(host)
 				err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 				if err != nil {
 					db.PrintSleep(err, 1)

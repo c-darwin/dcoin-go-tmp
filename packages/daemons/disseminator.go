@@ -59,15 +59,18 @@ BEGIN:
 
 		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться
 		// т.к. при некорректном нодовском ключе придет зашифрованый запрос на отдачу данных, а мы его не сможем расшифровать т.к. ключ у нас неверный
-		changeNodeKey, err := db.Single(`
+		var changeNodeKey int64
+		if len(myUsersIds) > 0 {
+			changeNodeKey, err = db.Single(`
 				SELECT count(*)
 				FROM transactions
 				WHERE type = ? AND
 							 user_id IN (`+strings.Join(utils.SliceInt64ToString(myUsersIds), ",")+`)
 				`, utils.TypeInt("ChangeNodeKey")).Int64()
-		if err != nil {
-			db.PrintSleep(err, 1)
-			continue BEGIN
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue BEGIN
+			}
 		}
 
 		var dataType int64 // это тип для того, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
