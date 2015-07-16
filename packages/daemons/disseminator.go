@@ -11,10 +11,10 @@ import (
  * если мы не майнер, то шлем всю тр-ию целиком, блоки слать не можем
  * если майнер - то шлем только хэши, т.к. у нас есть хост, откуда всё можно скачать
  * */
-func Disseminator() string {
+func Disseminator() {
 
 	GoroutineName := "Disseminator"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -164,11 +164,16 @@ BEGIN:
 							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
-						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
 
 						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
-						dataToBeSent = append(utils.DecToBin(dataType, 1), dataToBeSent...)
+						_, err = conn.Write(utils.DecToBin(dataType, 1))
+						if err != nil {
+							log.Info("%v", utils.ErrInfo(err))
+							return
+						}
+
+						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
+						dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее
 						size := utils.DecToBin(len(dataToBeSent), 4)
@@ -310,19 +315,28 @@ BEGIN:
 							log.Info("%v", utils.ErrInfo(err))
 							return
 						}
-						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
-
-						// это может быть защищенное локальное соедниение и принмающему ноду нужно знать, куда дальше слать данные и чьим они зашифрованы ключем
-						if len(remoteNodeHost) > 0 {
-							encryptedData = append([]byte(remoteNodeHost), encryptedData...)
-						}
 
 						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
 						_, err = conn.Write(utils.DecToBin(dataType, 1))
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
+						}
+
+						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
+						_, err = conn.Write(utils.DecToBin(userId, 5))
+						if err != nil {
+							log.Info("%v", utils.ErrInfo(err))
+							return
+						}
+
+						// это может быть защищенное локальное соедниение (dataType = 3) и принимающему ноду нужно знать, куда дальше слать данные и чьим они зашифрованы ключем
+						if len(remoteNodeHost) > 0 {
+							_, err = conn.Write([]byte(remoteNodeHost))
+							if err != nil {
+								log.Info("%v", utils.ErrInfo(err))
+								return
+							}
 						}
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее
@@ -351,7 +365,7 @@ BEGIN:
 		log.Info("%v", "Happy end")
 	}
 
-	return ""
+
 }
 
 

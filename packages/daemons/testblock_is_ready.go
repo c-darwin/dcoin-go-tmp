@@ -16,10 +16,10 @@ import (
  *
  */
 
-func TestblockIsReady() string {
+func TestblockIsReady() {
 
 	GoroutineName := "TestblockIsReady"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -120,7 +120,7 @@ BEGIN:
 			db.UnlockPrintSleep(utils.ErrInfo(errors.New("prevBlock.HeadHash != prevHeadHash")), 1)
 			continue
 		}
-
+		log.Debug("testBlockData: %v", testBlockData)
 		if len(testBlockData) == 0 {
 			db.UnlockPrintSleep(utils.ErrInfo(errors.New("null $testblock_data")), 1)
 			continue
@@ -149,11 +149,15 @@ BEGIN:
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		forSign := fmt.Sprintf("0,%v,%v,%v,%v,%v,%v", testBlockData["blockId"], prevBlockHash, testBlockData["time"], testBlockData["userId"], testBlockData["level"],utils.BinToHex([]byte(testBlockData["mrklRoot"])))
+		//0,,[102 48 55 97 48 98 99 98 57 99 97 101 102 56 53 55 49 54 54 56 101 102 51 53 99 57 55 97 52 52 102 52 52 57 102 100 102 102 56 53 55 52 99 49 53 56 53 98 53 49 57 49 53 50 98 100 101 51 56 54 57 56 102 50],1437029217,,2,[]
+		forSign := fmt.Sprintf("0,%v,%s,%v,%v,%v,%s", testBlockData["block_id"], prevBlockHash, testBlockData["time"], testBlockData["user_id"], testBlockData["level"],utils.BinToHex([]byte(testBlockData["mrkl_root"])))
+		log.Debug("forSign %v", forSign)
+		log.Debug("signature %x", testBlockData["signature"])
 
 		// проверяем подпись
 		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true);
 		if err != nil {
+			log.Error("incorrect signature %v")
 			p := new(dcparser.Parser)
 			p.DCDB = db
 			p.RollbackTransactionsTestblock(true)
@@ -167,7 +171,10 @@ BEGIN:
 		}
 		// БАГ
 		if utils.StrToInt64(testBlockData["block_id"]) == prevBlock.BlockId {
+			log.Error("testBlockData block_id =  prevBlock.BlockId (%v=%v)", testBlockData["block_id"], prevBlock.BlockId)
+
 			p := new(dcparser.Parser)
+			p.DCDB=db
 			err = p.RollbackTransactionsTestblock(true)
 			if err != nil {
 				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
@@ -183,9 +190,9 @@ BEGIN:
 		}
 
 		// готовим заголовок
-		newBlockIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["blockId"]), 4 );
+		newBlockIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["block_id"]), 4 );
 		timeBinary := utils.DecToBin(utils.StrToInt64(testBlockData["time"]), 4 );
-		userIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["userId"]), 5 );
+		userIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["user_id"]), 5 );
 		levelBinary := utils.DecToBin(utils.StrToInt64(testBlockData["level"]), 1 );
 		//prevBlockHashBinary := prevBlock.Hash
 		//merkleRootBinary := testBlockData["mrklRoot"];
@@ -200,12 +207,13 @@ BEGIN:
 
 		// сам блок
 		block := append(blockHeader, testBlockDataTx...)
+		log.Debug("block %x", block)
 
 		// теперь нужно разнести блок по таблицам и после этого мы будем его слать всем нодам скриптом disseminator.php
 		p := new(dcparser.Parser)
 		p.BinaryData = block
 		p.DCDB = db
-		err = p.ParseDataRollbackFront(false)
+		err = p.ParseDataFront()
 		if err != nil {
 			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -233,5 +241,5 @@ BEGIN:
 		utils.Sleep(1)
 	}
 
-	return ""
+
 }

@@ -9,7 +9,7 @@ func CfProjects() {
 
 	const GoroutineName = "CfProjects"
 
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 

@@ -10,9 +10,6 @@ import (
     "crypto"
     "crypto/rand"
     "crypto/rsa"
-    "crypto/md5"
-	"bufio"
-	"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
     "github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
@@ -22,7 +19,7 @@ var err error
 func TestblockGenerator() {
 
     const GoroutineName = "TestblockGenerator"
-    db := utils.DbConnect(configIni)
+    db := DbConnect()
     db.GoroutineName = GoroutineName
     db.CheckInstall()
 
@@ -191,7 +188,7 @@ BEGIN:
         }
         prevHeadHash = prevBlock.HeadHash
 
-        log.Debug("%v %v", nodePrivateKey, prevHeadHash)
+        log.Debug("prevHeadHash: %v", prevHeadHash)
 
         //#####################################
         //##		 Формируем блок
@@ -219,7 +216,7 @@ BEGIN:
         // переведем тр-ии в `verified` = 1
         err = p.AllTxParser()
         if err != nil {
-            db.PrintSleep(err, 1)
+            db.PrintSleep(utils.ErrInfo(err), 1)
             continue
         }
 
@@ -227,8 +224,11 @@ BEGIN:
 		var usedTransactions string
 		var mrklRoot []byte
         // берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
-        rows, err := db.Query(db.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used=0 AND verified = 1"))
-        utils.CheckErr(err)
+        rows, err := db.Query(db.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1"))
+        if err != nil {
+            db.PrintSleep(utils.ErrInfo(err), 1)
+            continue
+        }
         for rows.Next() {
             var data []byte
             var hash string
@@ -236,7 +236,10 @@ BEGIN:
             var txUserId string
             var thirdVar string
             err = rows.Scan(&data, &hash, &txType, &txUserId, &thirdVar)
-            utils.CheckErr(err)
+            if err != nil {
+                db.PrintSleep(utils.ErrInfo(err), 1)
+                continue
+            }
             log.Debug("data %v", data)
             log.Debug("hash %v", hash)
             transactionType := data[1:2];
@@ -245,39 +248,30 @@ BEGIN:
             mrklArray = append(mrklArray, utils.DSha256(data));
             log.Debug("mrklArray %v", mrklArray)
 
-            hash2_ := md5.New()
-            hash2_.Write(data)
-            hashMd5:=fmt.Sprintf("%x", hash2_.Sum(nil))
-            log.Debug(hashMd5)
+            hashMd5 := utils.Md5(data)
+            log.Debug("hashMd5: %s", hashMd5)
 
             dataHex := fmt.Sprintf("%x", data)
             log.Debug("dataHex %v", dataHex)
 
-            file, _ := os.Create("/home/z/psql.sql")
-            writer := bufio.NewWriter(file)
-            writer.Write([]byte("\\x"+hashMd5))
-            writer.Write([]byte("|"))
-            writer.Write([]byte("\\x"+dataHex))
-            writer.Write([]byte("|"))
-            writer.Write([]byte(txType))
-            writer.Write([]byte("|"))
-            writer.Write([]byte(txUserId))
-            writer.Write([]byte("|"))
-            writer.Write([]byte(thirdVar))
-            writer.Flush()
-            res, err := db.Exec("DELETE FROM transactions WHERE hash = decode($1, 'hex')", hashMd5)
-            utils.CheckErr(err)
-            affect, err := res.RowsAffected()
-            utils.CheckErr(err)
-            log.Debug("rows changed %v", affect)
-            _, err = db.Exec(`COPY transactions (hash, data, type, user_id, third_var)
-			                  FROM '/home/z/psql.sql' with (FORMAT csv, DELIMITER '|')`)
-            utils.CheckErr(err)
-            affect, err = res.RowsAffected()
-            utils.CheckErr(err)
-            log.Debug("rows changed %v", affect)
-
-            usedTransactions+="\\x"+hash+",";
+            exists, err := db.Single("SELECT hash FROM transactions_testblock WHERE hash = [hex]", hashMd5).String()
+            if err != nil {
+                db.PrintSleep(utils.ErrInfo(err), 1)
+                continue
+            }
+            if len(exists) == 0 {
+                err = db.ExecSql(`INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)`,
+                    hashMd5, dataHex, txType, txUserId, thirdVar)
+                if err != nil {
+                    db.PrintSleep(utils.ErrInfo(err), 1)
+                    continue
+                }
+            }
+            if configIni["db_type"] == "postgresql" {
+                usedTransactions+="decode('"+hash+"', 'hex'),";
+            } else {
+                usedTransactions+="x'"+hash+"',";
+            }
         }
 
         if len(mrklArray) == 0 {
@@ -285,7 +279,6 @@ BEGIN:
         }
         mrklRoot = utils.MerkleTreeRoot(mrklArray);
         log.Debug("mrklRoot: %s", mrklRoot)
-        log.Debug("mrklRoot: %x", mrklRoot)
 
         /*
 		Заголовок
@@ -300,7 +293,6 @@ BEGIN:
 
         // подписываем нашим нод-ключем заголовок блока
 
-        // Extract the PEM-encoded data block
         block, _ := pem.Decode([]byte(nodePrivateKey))
         if block == nil {
             log.Error("bad key data %v ", utils.GetParent())
@@ -331,24 +323,14 @@ BEGIN:
 
         // хэш шапки блока. нужен для сравнивания с другими и у кого будет меньше - у того блок круче
         headerHash := utils.DSha256([]byte(fmt.Sprintf("%s,%s,%s", myUserId, newBlockId, prevHeadHash)));
-
-        /*data := fmt.Sprintf("%d|%d|%d|%d|\\x%s|\\x%s|\\x%s", newBlockId, Time, level, myUserId, headerHash, signatureHex, mrklRootHex)
-		name := os.TempDir()+"/Dcoin."+strconv.Itoa(math_rand.Intn(999999999))
-        log.Debug(name)
-        file, _ := os.Create(name)
-        defer file.Close()
-        writer := bufio.NewWriter(file)
-        writer.WriteString(data)
-        writer.Flush()
-        defer os.Remove(name)*/
-
         err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
         if err != nil {
             db.PrintSleep(err, 1)
             continue BEGIN
         }
         err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
-            newBlockId, Time, level, myUserId, headerHash, signatureHex, string(mrklRoot))
+            newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
+        log.Debug("newBlockId: %v / Time: %v / level: %v / myUserId: %v / headerHash: %v / signatureHex: %v / mrklRoot: %v / ", newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
         if err != nil {
             db.PrintSleep(err, 1)
             continue BEGIN
@@ -361,7 +343,7 @@ BEGIN:
         if len(usedTransactions)>0 {
             usedTransactions := usedTransactions[:len(usedTransactions)-1]
             log.Debug("usedTransactions %v", usedTransactions)
-            _, err = db.Exec("UPDATE transactions SET used=1 WHERE hash IN ($1)", usedTransactions)
+            err = db.ExecSql("UPDATE transactions SET used=1 WHERE hash IN ("+usedTransactions+")")
             if err != nil {
                 db.PrintSleep(err, 1)
                 continue BEGIN
@@ -381,9 +363,8 @@ BEGIN:
         db = utils.DbConnect(configIni)
 
         log.Debug("END")
-
-        time.Sleep(3000 * time.Millisecond)
-		break
+        //break
+        utils.Sleep(10)
     }
 }
 

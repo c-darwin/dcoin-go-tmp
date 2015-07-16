@@ -12,10 +12,10 @@ import (
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
 
-func MaxPromisedAmountGenerator() string {
+func MaxPromisedAmountGenerator() {
 
 	const GoroutineName = "MaxPromisedAmountGenerator"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -125,7 +125,7 @@ BEGIN:
 		db.DbUnlock()
 		utils.Sleep(60)
 	}
-	return ""
+
 }
 
 

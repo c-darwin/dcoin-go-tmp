@@ -20,10 +20,10 @@ import (
  *
  * */
 
-func QueueParserBlocks() string {
+func QueueParserBlocks() {
 
 	const GoroutineName = "QueueParserBlocks"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -138,5 +138,5 @@ BEGIN:
 		db.DbUnlock()
 		utils.Sleep(10)
 	}
-	return ""
+
 }

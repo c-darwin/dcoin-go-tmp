@@ -25,3 +25,23 @@ func init() {
 		}
 	}()
 }
+
+func CallDeamons(name string) {
+	//utils.CallMethod(p, name)
+}
+
+func DbConnect() *utils.DCDB {
+	for {
+		if len(configIni) == 0 {
+			utils.Sleep(1)
+			continue
+		}
+		db, err := utils.NewDbConnect(configIni)
+		if err == nil {
+			return db
+		} else {
+			utils.Sleep(1)
+		}
+	}
+	return nil
+}

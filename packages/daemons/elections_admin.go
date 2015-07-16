@@ -6,10 +6,10 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
-func ElectionsAdmin() string {
+func ElectionsAdmin() {
 
 	const GoroutineName = "ElectionsAdmin"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -118,7 +118,7 @@ BEGIN:
 		db.DbUnlock()
 		utils.Sleep(60)
 	}
-	return ""
+
 }
 
 

@@ -8,7 +8,7 @@ func Clear() {
 
 	const GoroutineName = "Clear"
 
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 

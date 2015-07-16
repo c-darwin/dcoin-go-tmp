@@ -13,7 +13,7 @@ import (
 func Connector() {
 
 	GoroutineName := "Connector"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 	BEGIN:
@@ -116,13 +116,15 @@ func Connector() {
 			nodeCount++
 		}
 
+		log.Debug("hosts: %v", hosts)
 		ch := make(chan *answerType)
 		for _, host := range hosts {
 			userId := utils.StrToInt64(host["user_id"])
-			go func() {
+			go func(userId int64, host string) {
 				ch_ := make(chan *answerType, 1)
 				go func() {
-					ch_ <- check(host["host"], userId)
+					log.Debug("host: %v / userId: %v", host, userId)
+					ch_ <- check(host, userId)
 				}()
 				select {
 					case reachable := <-ch_:
@@ -130,7 +132,7 @@ func Connector() {
 					case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
 						ch <-  &answerType{userId: userId, answer: 0}
 				}
-			}()
+			}(userId, host["host"])
 		}
 
 		// если нода не отвечает, то удалем её из таблы nodes_connection
@@ -261,7 +263,7 @@ func Connector() {
 			}
 		}
 
-		for i:=0; i < 60; i++ {
+		for i:=0; i < 10; i++ {
 			if db.CheckDaemonRestart() {
 				utils.Sleep(1)
 				break BEGIN
@@ -309,10 +311,12 @@ func check(host string, userId int64) *answerType {
 
 	// ответ всегда 1 байт. 0 или 1
 	answer := make([]byte, 1)
+
 	_, err = conn.Read(answer)
 	if err != nil {
 		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
+	log.Debug("host: %v / answer: %v", host, answer)
 	return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 }

@@ -17,7 +17,7 @@ import (
 func Confirmations() {
 
 	const GoroutineName = "Confirmations"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 

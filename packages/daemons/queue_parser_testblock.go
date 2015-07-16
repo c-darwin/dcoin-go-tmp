@@ -11,10 +11,10 @@ import (
  * Парсим и разносим данные из queue_testblock
  * */
 
-func QueueParserTestblock() string {
+func QueueParserTestblock() {
 
 	GoroutineName := "QueueParserTestblock"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -184,5 +184,5 @@ BEGIN:
 		log.Info("%v", "Happy end")
 	}
 
-	return ""
+
 }

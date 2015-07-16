@@ -14,10 +14,10 @@ import (
  */
 
 
-func NodeVoting() string {
+func NodeVoting() {
 
 	const GoroutineName = "NodeVoting"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -167,5 +167,5 @@ BEGIN:
 		db.DbUnlock()
 		utils.Sleep(1)
 	}
-	return ""
+
 }

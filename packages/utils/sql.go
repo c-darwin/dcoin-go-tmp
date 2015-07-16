@@ -793,6 +793,72 @@ func (db *DCDB) CheckInstall() {
 	}
 }
 
+func (db *DCDB) GetTcpPort() string {
+	// Слушать TCP нужно только майнерам
+ 	for {
+		community, err := db.GetCommunityUsers()
+		if err!=nil {
+			log.Error("%v", ErrInfo(err))
+		}
+		myPrefix := ""
+		if len(community) > 0 {
+			myUserId, err := db.GetPoolAdminUserId()
+			if err!=nil {
+				log.Error("%v", ErrInfo(err))
+			}
+			myPrefix = Int64ToStr(myUserId)+"_"
+		}
+		tcpHost, err := db.Single("SELECT tcp_host FROM "+myPrefix+"my_table").String()
+		if err!=nil {
+			log.Error("%v", ErrInfo(err))
+		}
+		re := regexp.MustCompile(`([0-9]+)$`)
+		match := re.FindStringSubmatch(tcpHost)
+		tcpPort := ""
+		if len(match) != 0 {
+			tcpPort = match[1]
+		}
+		if len(tcpPort) > 0 {
+			return tcpPort
+		} else {
+			Sleep(5)
+		}
+	}
+	return ""
+}
+
+
+func (db *DCDB) GetHttpPort() string {
+	httpPort := "8089"
+	// Если первый запуск, то будет висеть на 8089
+	community, err := db.GetCommunityUsers()
+	if err!=nil {
+		log.Error("%v", ErrInfo(err))
+		return httpPort
+	}
+	myPrefix := ""
+	if len(community) > 0 {
+		myUserId, err := db.GetPoolAdminUserId()
+		if err!=nil {
+			log.Error("%v", ErrInfo(err))
+			return httpPort
+		}
+		myPrefix = Int64ToStr(myUserId)+"_"
+	}
+	httpHost, err := db.Single("SELECT http_host FROM "+myPrefix+"my_table").String()
+	if err!=nil {
+		log.Error("%v", ErrInfo(err))
+		return httpPort
+	}
+	re := regexp.MustCompile(`([0-9]+)$`)
+	match := re.FindStringSubmatch(httpHost)
+	if len(match) != 0 {
+		httpPort = match[1]
+	}
+	return httpPort
+}
+
+
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	res, err := db.Exec(newQuery, newArgs...)
@@ -1294,7 +1360,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
 	}
-
+	log.Debug(db.FormatQuery(`SELECT hex(hash), hex(head_hash), block_id, time, level FROM info_block`))
 	log.Debug("prevBlock: %v (%v)", prevBlock, GetParent())
 
 	// общее кол-во майнеров

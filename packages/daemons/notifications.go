@@ -9,7 +9,7 @@ import (
 func Notifications() {
 
 	const GoroutineName = "Notifications"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:

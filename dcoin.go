@@ -18,6 +18,7 @@ import (
 	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
+//	"reflect"
 )
 
 var log = logging.MustGetLogger("example")
@@ -81,10 +82,21 @@ db_name=`)
 	configIni, err = configIni_.GetSection("default")
 	fmt.Println("configIni[log]", configIni["log"])
 
+	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 
+	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {
+		daemonsConf := strings.Split(configIni["daemons"], ",")
+		for _, fns := range daemonsConf {
+			go daemonsStart[fns]()
+		}
+	} else if configIni["daemons"] != "null" {
+		for _, fns := range daemonsStart {
+			go fns()
+		}
+	}
 
 	// запускаем всех демонов
-	go daemons.TestblockIsReady()
+	/*go daemons.TestblockIsReady()
 	go daemons.TestblockGenerator()
 	go daemons.TestblockDisseminator()
 	go daemons.Shop()
@@ -104,7 +116,7 @@ db_name=`)
 	go daemons.Clear()
 	go daemons.CleaningDb()
 	go daemons.CfProjects()
-	go daemons.BlocksCollection()
+	go daemons.BlocksCollection()*/
 
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
@@ -128,29 +140,32 @@ default:
 err = fmt.Errorf("unsupported platform")
 }*/
 
-
-
-
-	// включаем листинг TCP-сервером и обработку входящих запросов
-	l, err := net.Listen("tcp", ":8088")
-	if err != nil {
-		log.Info("Error listening:", err.Error())
-		os.Exit(1)
-	}
-	defer l.Close()
+	db := utils.DbConnect(configIni)
 	go func() {
-		for {
-			conn, err := l.Accept()
-			if err != nil {
-				log.Info("Error accepting: ", err.Error())
-				os.Exit(1)
-			}
-
-			go utils.HandleTcpRequest(conn, configIni)
+		tcpPort := db.GetTcpPort()
+		// включаем листинг TCP-сервером и обработку входящих запросов
+		l, err := net.Listen("tcp", ":"+tcpPort)
+		log.Debug("tcpPort: %v", tcpPort)
+		if err != nil {
+			log.Info("Error listening:", err.Error())
+			os.Exit(1)
 		}
+		//defer l.Close()
+		go func() {
+			for {
+				conn, err := l.Accept()
+				if err != nil {
+					log.Info("Error accepting: ", err.Error())
+					os.Exit(1)
+				}
+
+				go utils.HandleTcpRequest(conn, configIni)
+			}
+		}()
 	}()
 
-	http.ListenAndServe(":8089", nil)
+	HttpPort := db.GetHttpPort()
+	http.ListenAndServe(":"+HttpPort, nil)
 
 }
 
@@ -164,3 +179,4 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 		h.ServeHTTP(w, r)
 	})
 }
+

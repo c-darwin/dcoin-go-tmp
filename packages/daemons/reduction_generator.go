@@ -13,10 +13,10 @@ import (
  * Каждые 2 недели собираем инфу о голосах за % и создаем тр-ию, которая
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
-func ReductionGenerator() string {
+func ReductionGenerator() {
 
 	const GoroutineName = "ReductionGenerator"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -233,5 +233,5 @@ BEGIN:
 		db.DbUnlock()
 		utils.Sleep(60)
 	}
-	return ""
+
 }

@@ -10,10 +10,10 @@ import (
  * Берем тр-ии из очереди и обрабатываем
  * */
 
-func QueueParserTx() string {
+func QueueParserTx() {
 
 	GoroutineName := "QueueParserTx"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 BEGIN:
@@ -63,5 +63,5 @@ BEGIN:
 		log.Info("%v", "Happy end")
 	}
 
-	return ""
+
 }

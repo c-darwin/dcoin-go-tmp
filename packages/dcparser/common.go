@@ -98,7 +98,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		return err
 	}
 	var count int64
-	var blocks map[int64]string
+	blocks := make(map[int64]string)
 	for {
 		/*
 		// отметимся в БД, что мы живы.
@@ -152,10 +152,12 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return utils.ErrInfo(err)
 		}
 		badBlocks := make(map[int64]string)
-		err = json.Unmarshal(badBlocks_, &badBlocks)
-		if err != nil {
-			ClearTmp(blocks)
-			return utils.ErrInfo(err)
+		if len(badBlocks_) > 0 {
+			err = json.Unmarshal(badBlocks_, &badBlocks)
+			if err != nil {
+				ClearTmp(blocks)
+				return utils.ErrInfo(err)
+			}
 		}
 		if badBlocks[blockData.BlockId] == string(utils.BinToHex(blockData.Sign)) {
 			ClearTmp(blocks)
@@ -173,7 +175,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		}
 
 		// нам нужен хэш предыдущего блока, чтобы найти, где началась вилка
-		prevBlockHash, err := p.Single("SELECT hash FROM block_chain WHERE id  =  ?").String()
+		prevBlockHash, err := p.Single("SELECT hash FROM block_chain WHERE id  =  ?", blockId-1).String()
 		if err != nil {
 			ClearTmp(blocks)
 			return utils.ErrInfo(err)
@@ -1743,7 +1745,8 @@ func (p *Parser) ParseDataFull() error {
 			//log.Println("transactionSize", transactionSize)
 			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
 			transactionBinaryDataFull := transactionBinaryData
-
+			ioutil.WriteFile("/tmp/dctx", transactionBinaryDataFull, 0644)
+			ioutil.WriteFile("/tmp/dctxhash", utils.Md5(transactionBinaryDataFull), 0644)
 			// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
 			txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
 			//log.Printf("transactionBinaryData: %x\n", transactionBinaryData)

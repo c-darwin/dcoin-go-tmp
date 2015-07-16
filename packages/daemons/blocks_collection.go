@@ -15,7 +15,7 @@ import (
 func BlocksCollection() {
 
     const GoroutineName = "BlocksCollection"
-    db := utils.DbConnect(configIni)
+    db := DbConnect()
     db.GoroutineName = GoroutineName
     db.CheckInstall()
 
@@ -24,7 +24,7 @@ func BlocksCollection() {
 	for {
 
 		log.Info("BlocksCollection")
-        // проверим, не нужно нам выйти из цикла
+        // проверим, не нужно ли нам выйти из цикла
         if db.CheckDaemonRestart() {
 			break
 		}
@@ -326,7 +326,7 @@ func BlocksCollection() {
 			utils.BytesShift(&binaryBlock, 1) // уберем 1-й байт - тип (блок/тр-я)
             // распарсим заголовок блока
             blockData := utils.ParseBlockHeader(&binaryBlock)
-			log.Info("blockData", blockData, "blockId", blockId)
+			log.Info("blockData: %v, blockId: %v", blockData, blockId)
 
             // если существуют глючная цепочка, тот тут мы её проигнорируем
             badBlocks_, err := db.Single("SELECT bad_blocks FROM config").Bytes()
@@ -335,10 +335,12 @@ func BlocksCollection() {
                 continue BEGIN
             }
             badBlocks := make(map[int64]string)
-            err = json.Unmarshal(badBlocks_, &badBlocks)
-            if err != nil {
-                db.UnlockPrintSleep(utils.ErrInfo(err), 1)
-                continue BEGIN
+            if len(badBlocks_) > 0 {
+                err = json.Unmarshal(badBlocks_, &badBlocks)
+                if err != nil {
+                    db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+                    continue BEGIN
+                }
             }
             if badBlocks[blockData.BlockId] == string(utils.BinToHex(blockData.Sign)) {
                 db.NodesBan(maxBlockIdUserId, fmt.Sprintf("bad_block = %v => %v", blockData.BlockId, badBlocks[blockData.BlockId]))
@@ -364,7 +366,7 @@ func BlocksCollection() {
             // нам нужен хэш предыдущего блока, чтобы проверить подпись
             prevBlockHash := ""
             if blockId > 1 {
-                prevBlockHash, err := db.Single("SELECT hash FROM block_chain WHERE id = ?", blockId-1).String()
+                prevBlockHash, err = db.Single("SELECT hash FROM block_chain WHERE id = ?", blockId-1).String()
                 if err != nil {
                     db.UnlockPrintSleep(utils.ErrInfo(err), 1)
                     continue BEGIN
@@ -393,7 +395,7 @@ func BlocksCollection() {
             }
 
             // SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-            forSign := fmt.Sprintf("0,%v,%v,%v,%v,%v,%v", blockData.BlockId, prevBlockHash, blockData.Time, blockData.UserId, blockData.Level, mrklRoot)
+            forSign := fmt.Sprintf("0,%v,%v,%v,%v,%v,%s", blockData.BlockId, prevBlockHash, blockData.Time, blockData.UserId, blockData.Level, mrklRoot)
 
             // проверяем подпись
 			if !first {
@@ -496,7 +498,7 @@ func BlocksCollection() {
         db.Close()
         db = utils.DbConnect(configIni)
 
-        utils.Sleep(60)
+        utils.Sleep(10)
     }
 }
 

@@ -12,10 +12,10 @@ import (
  * тем, кто не на одном уровне, то блок просто проигнорируется
  *
  */
-func TestblockDisseminator() string {
+func TestblockDisseminator() {
 
 	GoroutineName := "TestblockDisseminator"
-	db := utils.DbConnect(configIni)
+	db := DbConnect()
 	db.GoroutineName = GoroutineName
 	db.CheckInstall()
 	for {
@@ -37,13 +37,15 @@ func TestblockDisseminator() string {
 			db.PrintSleep(err, 1)
 			continue
 		}
-
+		log.Debug("level: %v", level)
+		log.Debug("levelsRange: %v", levelsRange)
 		// получим id майнеров, которые на нашем уровне
 		nodesIds := utils.GetOurLevelNodes(level, levelsRange)
 		if len(nodesIds) == 0 {
 			db.PrintSleep("len(nodesIds) == 0", 1)
 			continue
 		}
+		log.Debug("nodesIds: %v", nodesIds)
 
 		// получим хосты майнеров, которые на нашем уровне
 		hosts, err := db.GetList("SELECT tcp_host FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
@@ -51,6 +53,7 @@ func TestblockDisseminator() string {
 			db.PrintSleep(err, 1)
 			continue
 		}
+		log.Debug("hosts: %v", hosts)
 
 		// шлем block_id, user_id, mrkl_root, signature
 		data, err := db.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active'").String()
@@ -67,7 +70,7 @@ func TestblockDisseminator() string {
 			dataToBeSent = append(dataToBeSent, utils.EncodeLengthPlusData(data["signature"])...)
 
 			for _, host := range hosts {
-				go func() {
+				go func(host string) {
 
 					conn, err := utils.TcpConn(host)
 					if err != nil {
@@ -90,6 +93,7 @@ func TestblockDisseminator() string {
 						return
 					}
 					// далее шлем сами данные
+					log.Debug("dataToBeSent: %x", dataToBeSent)
 					_, err = conn.Write(dataToBeSent)
 					if err != nil {
 						log.Info("%v", utils.ErrInfo(err))
@@ -184,7 +188,7 @@ func TestblockDisseminator() string {
 						}
 					}
 
-				}()
+				}(host)
 			}
 		}
 
@@ -193,7 +197,7 @@ func TestblockDisseminator() string {
 		log.Info("%v", "Happy end")
 	}
 
-	return ""
+
 }
 
 
