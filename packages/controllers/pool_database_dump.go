@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (c *Controller) PoolMysqlDump() (string, error) {
+func (c *Controller) poolDataBaseDump() (string, error) {
 
 	if !c.NodeAdmin || c.SessRestricted != 0 {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
