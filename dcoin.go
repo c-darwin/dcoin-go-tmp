@@ -31,7 +31,8 @@ func main() {
 
 	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	defer f.Close()
-	backend := logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
+	//backend := logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
+	backend := logging.NewLogBackend(f, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
 	backendLeveled.SetLevel(logging.DEBUG, "")
