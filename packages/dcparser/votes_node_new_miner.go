@@ -8,7 +8,7 @@ import (
 	//"math"
 //	"strings"
 	"os"
-	"log"
+
 )
 
 // голосования нодов, которые должны сохранить фото у себя.
@@ -92,10 +92,10 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	log.Println("votesData", votesData)
-	log.Println("votesData[user_id]", votesData["user_id"])
+	log.Debug("votesData", votesData)
+	log.Debug("votesData[user_id]", votesData["user_id"])
 	minersData, err := p.OneRow("SELECT photo_block_id, photo_max_miner_id, miners_keepers, log_id FROM miners_data WHERE user_id = ?", votesData["user_id"]).String()
-	log.Println("minersData", minersData)
+	log.Debug("minersData", minersData)
 	// $votes_data['user_id'] - это юзер, за которого голосуют
 	if err != nil {
 		return p.ErrInfo(err)
@@ -121,7 +121,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	// ID майнеров, у которых сохраняются фотки
 	minersIds := utils.GetMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 
-	log.Println("minersIds", minersIds, len(minersIds))
+	log.Debug("minersIds", minersIds, len(minersIds))
 	// данные для проверки окончания голосования
 
 	minerData := new(MinerData)
@@ -137,7 +137,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	minerData.votes0 = votes[0]
 	minerData.votes1 = votes[1]
 	minerData.minMinersKeepers = p.Variables.Int64["min_miners_keepers"]
-	log.Println("minerData", minerData)
+	log.Debug("minerData", minerData)
 	if p.minersCheckVotes1(minerData) || (minerData.votes0 > minerData.minMinersKeepers || int(minerData.votes0) == len(minerData.minersIds)) {
 		// отмечаем, что голосование нодов закончено
 		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])

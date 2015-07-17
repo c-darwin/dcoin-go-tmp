@@ -3,7 +3,7 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	//"encoding/json"
 	//"regexp"
 	//"math"
@@ -159,7 +159,7 @@ func (p *Parser) NewForexOrder() (error) {
 		if err!= nil {
 			return p.ErrInfo(err)
 		}
-		log.Println("rowId", rowId, "rowUserId", rowUserId, "rowSellCurrencyId", rowSellCurrencyId, "rowBuyCurrencyId", rowBuyCurrencyId, "rowSellRate", rowSellRate, "rowAmount", rowAmount)
+		log.Debug("rowId", rowId, "rowUserId", rowUserId, "rowSellCurrencyId", rowSellCurrencyId, "rowBuyCurrencyId", rowBuyCurrencyId, "rowSellRate", rowSellRate, "rowAmount", rowAmount)
 		// сколько мы готовы купить по курсу владельца данного ордера
 		readyToBuy := totalSellAmount * rowSellRate
 

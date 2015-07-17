@@ -44,7 +44,7 @@ BEGIN:
 
 		newBlock := []byte(data["data"])
 		newHeaderHash := utils.BinToHex([]byte(data["head_hash"]))
-		tx := utils.DeleteHeader(&newBlock)
+		tx := utils.DeleteHeader(newBlock)
 
 		// сразу можно удалять данные из таблы-очереди
 		err = db.ExecSql("DELETE FROM queue_testblock WHERE head_hash = [hex]", newHeaderHash)
@@ -60,10 +60,14 @@ BEGIN:
 		p := new(dcparser.Parser)
 		p.DCDB = db;
 		if len(tx) > 0 {
+			log.Debug("len(tx): %d", len(tx))
 			for {
+				log.Debug("tx: %x", tx)
 				txSize := utils.DecodeLength(&tx)
+				log.Debug("txSize: %d", txSize)
 				// отделим одну транзакцию от списка транзакций
 				txBinaryData := utils.BytesShift(&tx, txSize)
+				log.Debug("txBinaryData: %x", txBinaryData)
 				// проверим, нет ли несовместимых тр-ий
 				fatalError, waitError, _, _, _, _ := p.ClearIncompatibleTx(txBinaryData, false)
 				if len(fatalError) > 0 || len(waitError) > 0 {
@@ -114,18 +118,25 @@ BEGIN:
 				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			// если всё нормально, то пишем в таблу testblock новые тр-ии и новые данные по юзеру их сгенерившему
-			err = db.ExecSql(`
+			exists, err := db.Single(`SELECT block_id FROM testblock`).Int64()
+			if err != nil {
+				db.PrintSleep(utils.ErrInfo(err), 1)
+				return
+			}
+			if exists > 0 {
+				// если всё нормально, то пишем в таблу testblock новые тр-ии и новые данные по юзеру их сгенерившему
+				err = db.ExecSql(`
 				UPDATE testblock
 				SET  time = ?,
 						user_id = ?,
 						header_hash = [hex],
 						signature = [hex],
 						mrkl_root = [hex]
-				`, p.BlockData.Time, p.BlockData.UserId, newHeaderHash, p.MrklRoot)
-			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 1)
-				continue BEGIN
+				`, p.BlockData.Time, p.BlockData.UserId, newHeaderHash, utils.BinToHex(p.BlockData.Sign), p.MrklRoot)
+				if err != nil {
+					db.PrintSleep(utils.ErrInfo(err), 1)
+					continue BEGIN
+				}
 			}
 
 			// и сами тр-ии пишем в отдельную таблу

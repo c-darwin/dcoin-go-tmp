@@ -1423,7 +1423,8 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		minerId = currentMinerId;
 	} else {
 		levelsRange = GetBlockGeneratorMinerIdRange (currentMinerId, maxMinerId);
-		//fmt.Println("levelsRange", levelsRange)
+		log.Debug("levelsRange %v", levelsRange)
+		log.Debug("myMinersIds %v", myMinersIds)
 		if len(myMinersIds)>0 {
 			minerId, level = FindMinerIdLevel(myMinersIds,levelsRange);
 		} else {
@@ -2281,7 +2282,6 @@ func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface {
 }
 
 func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, string) {
-
 	var userId int64
 	var thirdVar string
 	txType := BinToDecBytesShift(&binaryBlock, 1)
@@ -2290,8 +2290,8 @@ func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, string) {
 	if InSliceInt64(txType, TypesToIds([]string{"AdminChangePrimaryKey", "ChangeKeyRequest", "CfProjectData", "CfComment", "CfProjectChangeCategory", "CfSendDc", "DelCfProject", "CashRequestOut", "VotesGeolocation", "VotesMiner", "VotesNodeNewMiner", "VotesPct", "VotesPromisedAmount", "DelPromisedAmount"})) {
 		thirdVar = string(BytesShift(&binaryBlock, DecodeLength(&binaryBlock)))
 	}
+	log.Debug("txType, userId, thirdVar %v, %v, %v", txType, userId, thirdVar)
 	return txType, userId, thirdVar
-
 }
 
 func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
@@ -2302,12 +2302,18 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 
 	// вначале пишется user_id, чтобы в режиме пула можно было понять, кому шлется и чей ключ использовать
 	myUserId := BinToDecBytesShift(&*binaryTx, 5)
-
-	// далее идет 16 байт IV
-	iv := BytesShift(&*binaryTx, 16)
+	log.Debug("myUserId: %d", myUserId)
 
 	// изымем зашифрванный ключ, а всё, что останется в $binary_tx - сами зашифрованные хэши тр-ий/блоков
 	encryptedKey := BytesShift(&*binaryTx, DecodeLength(&*binaryTx))
+	log.Debug("encryptedKey: %x", encryptedKey)
+	log.Debug("encryptedKey: %s", encryptedKey)
+
+	// далее идет 16 байт IV
+	iv := BytesShift(&*binaryTx, 16)
+	log.Debug("iv: %s", iv)
+	log.Debug("iv: %x", iv)
+
 
 	if len(encryptedKey) == 0 {
 		return nil, nil, nil, ErrInfo("len(encryptedKey) == 0")
@@ -2348,10 +2354,13 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 	if err != nil {
 		return nil, nil, nil, ErrInfo(err)
 	}
+	log.Debug("decrypted Key: %s", decKey)
 	if len(decKey) == 0 {
 		return nil, nil, nil, ErrInfo("len(decKey)")
 	}
 
+	log.Debug("binaryTx %x", *binaryTx)
+	log.Debug("iv %s", iv)
 	decrypted, err := DecryptCFB(iv, *binaryTx, decKey)
 	if err != nil {
 		return nil, nil, nil, ErrInfo(err)

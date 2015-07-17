@@ -6,7 +6,7 @@ import (
 	"time"
 	"database/sql"
 	"math"
-//	"log"
+//
 )
 
 func (p *Parser) MoneyBackInit() (error) {

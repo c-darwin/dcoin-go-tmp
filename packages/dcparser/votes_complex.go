@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"log"
+
 )
 
 
@@ -176,8 +176,8 @@ func (p *Parser) VotesComplexFront() (error) {
 
 		// max promise amount
 		if (!utils.InSliceInt64(int64(data[2]), utils.GetAllMaxPromisedAmount())) {
-			log.Println(int64(data[2]))
-			log.Println(utils.GetAllMaxPromisedAmount())
+			log.Debug("%v", int64(data[2]))
+			log.Debug("%v", utils.GetAllMaxPromisedAmount())
 			return p.ErrInfo("incorrect max promised amount")
 		}
 

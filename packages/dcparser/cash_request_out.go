@@ -3,19 +3,8 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
-	//"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
 	"time"
-	//"strings"
-	//"bytes"
-	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-//	"math"
-//	"database/sql"
-	"log"
+
 )
 
 func (p *Parser) CashRequestOutInit() (error) {
@@ -214,14 +203,14 @@ func (p *Parser) CashRequestOut() (error) {
 	// обновление нужно, только если данный cash_request единственный с pending, иначе делать пересчет tdc_amount нельзя, т.к. уже были ранее пересчитаны
 	existsRequests := p.CheckCashRequests(p.TxMaps.Int64["to_user_id"])
 	if existsRequests==nil {
-		log.Println("updPromisedAmounts=", existsRequests)
+		log.Debug("updPromisedAmounts=", existsRequests)
 		err = p.updPromisedAmounts(p.TxMaps.Int64["to_user_id"], true, true, p.BlockData.Time)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	} else {
 		// записываем cash_request_out_time во всех обещанных суммах, после того, как юзер вызвал актуализацию. акутализацию юзер вызывал т.к. у него есть непогашенные cash_request.
-		log.Println("updPromisedAmountsCashRequestOutTime")
+		log.Debug("updPromisedAmountsCashRequestOutTime")
 		err = p.updPromisedAmountsCashRequestOutTime(p.TxMaps.Int64["to_user_id"])
 		if err != nil {
 			return p.ErrInfo(err)

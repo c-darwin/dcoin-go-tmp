@@ -14,7 +14,7 @@ import (
 //	"time"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"log"
+
 )
 
 
@@ -177,7 +177,7 @@ func (p *Parser) NewReductionFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		log.Println("sumPromisedAmount", sumPromisedAmount)
+		log.Debug("sumPromisedAmount", sumPromisedAmount)
 		// если обещанных сумм менее чем 100% от объема DC на кошельках, то всё норм, если нет - ошибка
 		if sumPromisedAmount >= sumWallets * float64(consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT) {
 			return p.ErrInfo(fmt.Sprintf("error reduction $sum_promised_amount %v >= %v * %v", sumPromisedAmount, sumWallets, consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT))

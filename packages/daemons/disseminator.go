@@ -128,6 +128,10 @@ BEGIN:
 				db.PrintSleep(err, 1)
 				continue BEGIN
 			}
+			if len(transactions) == 0 {
+				db.PrintSleep("len(transactions) == 0", 1)
+				continue BEGIN
+			}
 			for _, data := range transactions {
 				hexHash := utils.BinToHex([]byte(data["hash"]))
 				toBeSent = append(toBeSent, utils.DecToBin(utils.StrToInt64(data["high_rate"]), 1)...)
@@ -160,6 +164,8 @@ BEGIN:
 						}
 						// получаем IV + ключ + зашифрованный текст
 						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
+						log.Debug("key: %s", key)
+						log.Debug("iv: %s", iv)
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -174,6 +180,7 @@ BEGIN:
 
 						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
 						dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
+						log.Debug("dataToBeSent: %x", dataToBeSent)
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее
 						size := utils.DecToBin(len(dataToBeSent), 4)
@@ -196,6 +203,7 @@ BEGIN:
 							return
 						}
 						dataSize := utils.BinToDec(buf)
+						log.Debug("dataSize %d", dataSize)
 						// и если данных менее 1мб, то получаем их
 						if dataSize < 1048576 {
 							encBinaryTxHashes := make([]byte, dataSize)
@@ -210,6 +218,7 @@ BEGIN:
 								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
+							log.Debug("binaryTxHashes %x", binaryTxHashes)
 							var binaryTx []byte
 							for {
 								// Разбираем список транзакций
@@ -219,6 +228,7 @@ BEGIN:
 								}
 								txHash = utils.BinToHex(txHash)
 								tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
+								log.Debug("tx %x", tx)
 								if err != nil {
 									log.Info("%v", utils.ErrInfo(err))
 									return
@@ -231,12 +241,14 @@ BEGIN:
 								}
 							}
 
+							log.Debug("binaryTx %x", binaryTx)
 							// шифруем тр-ии. Вначале encData добавляется IV
 							encData, _, err := utils.EncryptCFB(binaryTx, key, iv)
 							if err != nil {
 								log.Info("%v", utils.ErrInfo(err))
 								return
 							}
+							log.Debug("encData %x", encData)
 
 							// шлем серверу
 							// в первых 4-х байтах пишем размер данных, которые пошлем далее
@@ -267,6 +279,8 @@ BEGIN:
 				remoteNodeHost = ""
 			}
 
+			log.Debug("dataType: %d", dataType)
+
 			var toBeSent []byte // сюда пишем все тр-ии, которые будем слать другим нодам
 			// возьмем хэши и сами тр-ии
 			rows, err := db.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
@@ -275,13 +289,14 @@ BEGIN:
 				continue BEGIN
 			}
 			defer rows.Close()
-			if ok := rows.Next(); ok {
+			for rows.Next() {
 				var hash, data []byte
 				err = rows.Scan(&hash, &data)
 				if err != nil {
 					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
+				log.Debug("hash %x", hash)
 				hashHex := utils.BinToHex(hash)
 				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
 				if err != nil {
@@ -324,19 +339,22 @@ BEGIN:
 						}
 
 						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						_, err = conn.Write(utils.DecToBin(userId, 5))
+						/*_, err = conn.Write(utils.DecToBin(userId, 5))
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
-						}
+						}*/
+						encryptedData = append(utils.DecToBin(userId, 5), encryptedData...)
 
 						// это может быть защищенное локальное соедниение (dataType = 3) и принимающему ноду нужно знать, куда дальше слать данные и чьим они зашифрованы ключем
 						if len(remoteNodeHost) > 0 {
+							/*
 							_, err = conn.Write([]byte(remoteNodeHost))
 							if err != nil {
 								log.Info("%v", utils.ErrInfo(err))
 								return
-							}
+							}*/
+							encryptedData = append([]byte(remoteNodeHost), encryptedData...)
 						}
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее

@@ -48,7 +48,7 @@ func TestblockDisseminator() {
 		log.Debug("nodesIds: %v", nodesIds)
 
 		// получим хосты майнеров, которые на нашем уровне
-		hosts, err := db.GetList("SELECT tcp_host FROM miners_data WHERE user_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
+		hosts, err := db.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
 		if err != nil {
 			db.PrintSleep(err, 1)
 			continue
@@ -71,7 +71,7 @@ func TestblockDisseminator() {
 
 			for _, host := range hosts {
 				go func(host string) {
-
+					log.Debug("host: %v", host)
 					conn, err := utils.TcpConn(host)
 					if err != nil {
 						log.Info("%v", utils.ErrInfo(err))

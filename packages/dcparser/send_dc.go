@@ -7,7 +7,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"math"
 	"database/sql"
-	"log"
+
 )
 
 func (p *Parser) SendDcInit() (error) {
@@ -124,7 +124,7 @@ func (p *Parser) SendDcFront() (error) {
 				err = json.Unmarshal(arbitratorConditionsJson, &arbitratorConditionsMap)
 				// арбитр к этому моменту мог передумать и убрать свои условия, уйдя из арбитров для новых сделок поставив [0] что вызовет тут ошибку
 				if err != nil {
-					log.Println("arbitratorConditionsJson",arbitratorConditionsJson)
+					log.Debug("arbitratorConditionsJson",arbitratorConditionsJson)
 					return p.ErrInfo(err)
 				}
 				// проверим, работает ли выбранный арбитр с валютой данной сделки
@@ -273,7 +273,7 @@ func (p *Parser) SendDc() (error) {
 		return p.ErrInfo(err)
 	}
 
-	log.Println("SendDC updateRecipientWallet")
+	log.Debug("SendDC updateRecipientWallet")
 	// обновим сумму на кошельке получателю
 	err = p.updateRecipientWallet( p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], "from_user", p.TxMaps.Int64["from_user_id"], p.TxMaps.String["comment"], "encrypted", true )
 	if err != nil {
@@ -288,13 +288,13 @@ func (p *Parser) SendDc() (error) {
 		}
 	}
 
-	log.Println("p.BlockData.BlockId", p.BlockData.BlockId)
-	log.Println("consts.ARBITRATION_BLOCK_START", consts.ARBITRATION_BLOCK_START)
+	log.Debug("p.BlockData.BlockId", p.BlockData.BlockId)
+	log.Debug("consts.ARBITRATION_BLOCK_START", consts.ARBITRATION_BLOCK_START)
 	if p.BlockData.BlockId > consts.ARBITRATION_BLOCK_START {
 		// если продавец не согласен на арбитраж, то $arbitration_days_refund будет равно 0
 
-		log.Println("arbitration_days_refund", arbitration_days_refund)
-		log.Println("arbitrators", arbitrators)
+		log.Debug("arbitration_days_refund", arbitration_days_refund)
+		log.Debug("arbitrators", arbitrators)
 		if (arbitration_days_refund > 0 && arbitrators) {
 			holdBackAmount := math.Floor(utils.Round(p.TxMaps.Float64["amount"]*(seller_hold_back_pct/100), 3) * 100) / 100;
 			if holdBackAmount < 0.01 {
@@ -307,9 +307,9 @@ func (p *Parser) SendDc() (error) {
 			// начисляем комиссию арбитрам
 			for i := 0; i < 5; i++ {
 				iStr := utils.IntToStr(i)
-				log.Println("arbitrator_commission "+iStr, p.TxMaps.Float64["arbitrator"+iStr+"_commission"])
+				log.Debug("arbitrator_commission "+iStr, p.TxMaps.Float64["arbitrator"+iStr+"_commission"])
 				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >= 0.01 {
-					log.Println("updateRecipientWallet")
+					log.Debug("updateRecipientWallet")
 					err = p.updateRecipientWallet(p.TxMaps.Int64["arbitrator"+iStr], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["arbitrator"+iStr+"_commission"], "arbitrator_commission", orderId, "", "encrypted", true)
 					if err != nil {
 						return p.ErrInfo(err)

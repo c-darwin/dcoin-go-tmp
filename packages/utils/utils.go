@@ -2192,7 +2192,7 @@ func Sha256(data_ interface{}) []byte {
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
 }
 
-func DeleteHeader(binaryData *[]byte) []byte {
+func DeleteHeader(binaryData []byte) []byte {
 	/*
 	TYPE (0-блок, 1-тр-я)     1
 	BLOCK_ID   				       4
@@ -2202,10 +2202,10 @@ func DeleteHeader(binaryData *[]byte) []byte {
 	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
 	Далее - тело блока (Тр-ии)
 	*/
-	BytesShift(&*binaryData, 15)
-	size := DecodeLength(&*binaryData)
-	BytesShift(&*binaryData, size)
-	return *binaryData
+	BytesShift(&binaryData, 15)
+	size := DecodeLength(&binaryData)
+	BytesShift(&binaryData, size)
+	return binaryData
 }
 
 func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, error) {
@@ -2604,6 +2604,7 @@ func EncryptCFB(text, key, iv []byte) ([]byte,[]byte, error) {
 	encrypter := cipher.NewCFBEncrypter(block, iv)
 	encrypted := make([]byte, len(str))
 	encrypter.XORKeyStream(encrypted, str)
+
 	return append(iv, encrypted...), iv, nil
 }
 
@@ -2614,7 +2615,7 @@ func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
 		panic(err)
 	}
 	decrypter := cipher.NewCFBDecrypter(block, iv)
-	var decrypted []byte
+	decrypted := make([]byte, len(encrypted))
 	decrypter.XORKeyStream(decrypted, encrypted)
 
 	return decrypted, nil
@@ -2623,7 +2624,7 @@ func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
 func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, []byte, []byte, error) {
 
 	// генерим ключ
-	key := DSha256([]byte(RandSeq(32)+randTestblockHash))
+	key := Md5(DSha256([]byte(RandSeq(32)+randTestblockHash)))
 
 	// шифруем ключ публичным ключем получателя
 	pub, err := BinToRsaPubKey(publicKey)
@@ -2640,6 +2641,7 @@ func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, []by
 	if err != nil {
 		return nil, nil, nil, ErrInfo(err)
 	}
+	log.Debug("encData %x", encData)
 
 	// возвращаем ключ + IV + encData
 	return append(EncodeLengthPlusData(encKey), encData...), key, iv, nil
@@ -2850,41 +2852,45 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
+				log.Debug("binaryData: %x", binaryData)
 				/*
-			 * принимаем зашифрованный список тр-ий от демона disseminator, которые есть у отправителя
-			 * Блоки не качаем тут, т.к. может быть цепочка блоков, а их качать долго
-			 * тр-ии качаем тут, т.к. они мелкие и точно скачаются за 60 сек
-			 * */
+				 * принимаем зашифрованный список тр-ий от демона disseminator, которые есть у отправителя
+				 * Блоки не качаем тут, т.к. может быть цепочка блоков, а их качать долго
+				 * тр-ии качаем тут, т.к. они мелкие и точно скачаются за 60 сек
+				 * */
 				key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
 				if err != nil {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
 				/*
-			 * структура данных:
-			 * user_id - 5 байт
-			 * type - 1 байт. 0 - блок, 1 - список тр-ий
-			 * {если type==1}:
-			 * <любое кол-во следующих наборов>
-			 * high_rate - 1 байт
-			 * tx_hash - 16 байт
-			 * </>
-			 * {если type==0}:
-			 * block_id - 3 байта
-			 * hash - 32 байт
-			 * head_hash - 32 байт
-			 * <любое кол-во следующих наборов>
-			 * high_rate - 1 байт
-			 * tx_hash - 16 байт
-			 * </>
-			 * */
+				 * структура данных:
+				 * user_id - 5 байт
+				 * type - 1 байт. 0 - блок, 1 - список тр-ий
+				 * {если type==1}:
+				 * <любое кол-во следующих наборов>
+				 * high_rate - 1 байт
+				 * tx_hash - 16 байт
+				 * </>
+				 * {если type==0}:
+				 * block_id - 3 байта
+				 * hash - 32 байт
+				 * head_hash - 32 байт
+				 * <любое кол-во следующих наборов>
+				 * high_rate - 1 байт
+				 * tx_hash - 16 байт
+				 * </>
+				 * */
 				blockId, err := db.GetBlockId()
 				if err != nil {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
+
+				log.Debug("decryptedBinData: %x", decryptedBinData)
 				// user_id отправителя, чтобы знать у кого брать данные, когда они будут скачиваться другим скриптом
 				newDataUserId := BinToDec(BytesShift(&decryptedBinData, 5))
+				log.Debug("newDataUserId: %d", newDataUserId)
 
 				// данные могут быть отправлены юзером, который уже не майнер
 				minerId, err := db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ? AND miner_id > 0", newDataUserId).Int64()
@@ -2899,10 +2905,12 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 
 				// если 0 - значит вначале идет инфа о блоке, если 1 - значит сразу идет набор хэшей тр-ий
 				newDataType := BinToDecBytesShift(&decryptedBinData, 1)
+				log.Debug("newDataType: %d", newDataType)
 				if newDataType == 0 {
 
 					// ID блока, чтобы не скачать старый блок
 					newDataBlockId := BinToDecBytesShift(&decryptedBinData, 3)
+					log.Debug("newDataBlockId: %d / blockId: %d", newDataBlockId, blockId)
 
 					// нет смысла принимать старые блоки
 					if newDataBlockId >= blockId {
@@ -2936,6 +2944,8 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					}
 				}
 
+				log.Debug("decryptedBinData: %x", decryptedBinData)
+
 				var needTx []byte
 				// Разбираем список транзакций
 				if len(decryptedBinData) == 0 {
@@ -2949,12 +2959,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						log.Debug("%v", ErrInfo("len(decryptedBinData) < 16"))
 						return
 					}
-					log.Debug("newDataHighRate", newDataHighRate)
+					log.Debug("newDataHighRate: %v", newDataHighRate)
 					newDataTxHash := BinToHex(BytesShift(&decryptedBinData, 16))
 					if len(newDataTxHash) == 0 {
 						log.Debug("%v", ErrInfo(err))
 						return
 					}
+					log.Debug("newDataTxHash %s", newDataTxHash)
 					// проверим, нет ли у нас такой тр-ии
 					exists, err := db.Single("SELECT count(hash) FROM log_transactions WHERE hash  =  [hex]", newDataTxHash).Int64()
 					if err != nil {
@@ -2962,6 +2973,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						return
 					}
 					if exists > 0 {
+						log.Debug("exists")
 						continue
 					}
 					needTx = append(needTx, HexToBin(newDataTxHash)...)
@@ -2973,6 +2985,8 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
+
+				log.Debug("needTx: %v", needTx)
 
 				// шифруем данные. ключ $key сеансовый, iv тоже
 				encData, _, err := EncryptCFB(needTx, key, iv)
@@ -2988,6 +3002,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
+
 				// далее шлем сами данные
 				_, err = conn.Write(encData)
 				if err != nil {
@@ -3003,6 +3018,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					return
 				}
 				dataSize := BinToDec(buf)
+				log.Debug("dataSize %v", dataSize)
 				// и если данных менее 10мб, то получаем их
 				if dataSize < 10485760 {
 
@@ -3014,11 +3030,13 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					}
 
 					// разбираем полученные данные
+					log.Debug("encBinaryTxs %x", encBinaryTxs)
 					binaryTxs, err := DecryptCFB(iv, encBinaryTxs, key)
 					if err != nil {
 						log.Debug("%v", ErrInfo(err))
 						return
 					}
+					log.Debug("binaryTxs %x", binaryTxs)
 
 					for {
 						txSize := DecodeLength(&binaryTxs)
@@ -3041,6 +3059,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 
 						// временно для тестов
 						newDataHighRate := 0
+						log.Debug("INSERT INTO queue_tx (hash, high_rate, data) %s, %d, %s", Md5(txBinData), newDataHighRate, txHex)
 						err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(txBinData), newDataHighRate, txHex)
 						if len(txBinData) == 0 {
 							log.Debug("%v", ErrInfo(err))
@@ -3059,6 +3078,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				return
 			}
 			size := BinToDec(buf)
+			log.Debug("size: %d", size)
 			if size < 10485760 {
 
 				// сами данные
@@ -3069,14 +3089,15 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					return
 				}
 				/*
-			 * Прием тр-ий от простых юзеров, а не нодов. Вызывается демоном disseminator
-			 * */
+				 * Прием тр-ий от простых юзеров, а не нодов. Вызывается демоном disseminator
+				 * */
 
 				_, _, decryptedBinData, err := db.DecryptData(&binaryData)
 				if err != nil {
 					log.Debug("%v", ErrInfo(err))
 					return
 				}
+				log.Debug("decryptedBinData: %x", decryptedBinData)
 
 				// проверим размер
 				if int64(len(binaryData)) > variables.Int64["max_tx_size"] {
@@ -3088,19 +3109,29 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					log.Debug("%v", ErrInfo("len(binaryData) < 5"))
 					return
 				}
-				BytesShift(&binaryData, 1) // type
-				BytesShift(&binaryData, 4) // time
-				size := DecodeLength(&binaryData)
-				if int64(len(binaryData)) < size {
+				txType:= BytesShift(&decryptedBinData, 1) // type
+				txTime := BytesShift(&decryptedBinData, 4) // time
+				log.Debug("txType: %d", BinToDec(txType))
+				log.Debug("txTime: %d", BinToDec(txTime))
+				size := DecodeLength(&decryptedBinData)
+				log.Debug("size: %d", size)
+				if int64(len(decryptedBinData)) < size {
 					log.Debug("%v", ErrInfo("len(binaryData) < size"))
 					return
 				}
-				userId := BytesToInt64(BytesShift(&binaryData, size))
+				userId := BytesToInt64(BytesShift(&decryptedBinData, size))
+				log.Debug("userId: %d", userId)
 				highRate := 0
 				if userId == 1 {
 					highRate = 1
 				}
 				// заливаем тр-ию в БД
+				err = db.ExecSql(`DELETE FROM queue_tx WHERE hash = [hex]`, Md5(decryptedBinData))
+				if err!=nil {
+					log.Debug("%v", ErrInfo(err))
+					return
+				}
+				log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)",  Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
 				err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
 				if err!=nil {
 					log.Debug("%v", ErrInfo(err))
@@ -3266,8 +3297,8 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 			- проверяем, находится ли отправитель на одном с нами уровне
 			- получаем  block_id, user_id, mrkl_root, signature
 			- если хэш блока меньше того, что есть у нас в табле testblock, то смотртим, есть ли такой же хэш тр-ий,
-			- если отличается, то загружаем блок от отправителя по адресу http://host/get_testblock.php.
-			- если не отличается, то просто обновляет хэш блока у себя
+			- если отличается, то загружаем блок от отправителя
+			- если не отличается, то просто обновляем хэш блока у себя
 			данные присылает демон testblockDisseminator
 			 */
 			currentBlockId, err := db.GetBlockId()
@@ -3331,6 +3362,15 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				 * Проблема одновременных попыток локнуть. Надо попробовать без локов
 				 * */
 				db.DbLock()
+				exists, err := db.Single(`
+					SELECT block_id
+					FROM testblock
+					WHERE status = "active"
+					`).Int64()
+				if exists == 0 {
+					db.UnlockPrintSleep(ErrInfo("null testblock"), 0)
+					return
+				}
 
 				//prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
 				prevBlock, _, _, _, level, levelsRange, err := db.TestBlock()
@@ -3339,6 +3379,11 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					return
 				}
 				nodesIds := GetOurLevelNodes(level, levelsRange)
+				log.Debug("nodesIds: %v ", nodesIds)
+				log.Debug("prevBlock: %v ", prevBlock)
+				log.Debug("level: %v ", level)
+				log.Debug("levelsRange: %v ", levelsRange)
+				log.Debug("newTestblockBlockId: %v ", newTestblockBlockId)
 
 				// проверим, верный ли ID блока
 				if newTestblockBlockId != prevBlock.BlockId+1 {
@@ -3356,6 +3401,8 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					db.UnlockPrintSleep(ErrInfo("minerId == 0"), 0)
 					return
 				}
+
+				log.Debug("minerId: %v ", minerId)
 				// проверим, точно ли отправитель с нашего уровня
 				if !InSliceInt64(minerId, nodesIds) {
 					db.UnlockPrintSleep(ErrInfo("!InSliceInt64(minerId, nodesIds)"), 0)
@@ -3392,33 +3439,37 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					FROM testblock
 					WHERE status = "active"
 					`).String()
-				if err!=nil {
-					db.UnlockPrintSleep(ErrInfo(err), 0)
-					return
+				if len(myTestblock) > 0 {
+					if err!=nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
+					// получим хэш заголовка
+					myHeaderHash := DSha256(fmt.Sprintf("%v,%v,%v", myTestblock["user_id"], myTestblock["block_id"], prevBlock.HeadHash))
+					// у кого меньше хэш, тот и круче
+					hash1 := big.NewInt(0)
+					hash1.SetString(string(newHeaderHash), 16)
+					hash2 := big.NewInt(0)
+					hash2.SetString(string(myHeaderHash), 16)
+					fmt.Println(hash1.Cmp(hash2))
+					//if HexToDecBig(newHeaderHash) > string(myHeaderHash) {
+					if hash1.Cmp(hash2) == 1 {
+						db.UnlockPrintSleep(ErrInfo(fmt.Sprintf("newHeaderHash > myHeaderHash (%s > %s)", newHeaderHash, myHeaderHash)), 0)
+						return
+					}
+					/* т.к. на данном этапе в большинстве случаев наш текущий блок будет заменен,
+					 * то нужно парсить его, рассылать другим нодам и дождаться окончания проверки
+					 */
+					err = db.ExecSql("UPDATE testblock SET status = 'pending'")
+					if err != nil {
+						db.UnlockPrintSleep(ErrInfo(err), 0)
+						return
+					}
 				}
-				// получим хэш заголовка
-				myHeaderHash := DSha256(fmt.Sprintf("%v,%v,%v", myTestblock["user_id"], myTestblock["block_id"], prevBlock.HeadHash))
-				// у кого меньше хэш, тот и круче
-				hash1 := big.NewInt(0)
-				hash1.SetString(string(newHeaderHash), 16)
-				hash2 := big.NewInt(0)
-				hash2.SetString(string(myHeaderHash), 16)
-				fmt.Println(hash1.Cmp(hash2))
-				//if HexToDecBig(newHeaderHash) > string(myHeaderHash) {
-				if hash1.Cmp(hash2) == 1 {
-					db.UnlockPrintSleep(ErrInfo("newHeaderHash > myHeaderHash"), 0)
-					return
-				}
-				/* т.к. на данном этапе в большинстве случаев наш текущий блок будет заменен,
-				 * то нужно парсить его, рассылать другим нодам и дождаться окончания проверки
-				 */
-				err = db.ExecSql("UPDATE testblock SET status = 'pending'")
-				if err != nil {
-					db.UnlockPrintSleep(ErrInfo(err), 0)
-					return
-				}
+
 				// если отличается, то загружаем недостающии тр-ии от отправителя
 				if string(newTestblockMrklRoot) != myTestblock["mrkl_root"] {
+					log.Debug("download new tx")
 					sendData := ""
 					// получим все имеющиеся у нас тр-ии, которые еще не попали в блоки
 					txArray, err := db.GetMap(`SELECT hex(hash) as hash, data FROM transactions`, "hash", "data")
@@ -3451,6 +3502,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						return
 					}
 					dataSize := BinToDec(buf)
+					log.Debug("dataSize %d", dataSize)
 					// и если данных менее 10мб, то получаем их
 					if dataSize < 10485760 {
 
@@ -3465,6 +3517,10 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						newTestblockTime := BinToDecBytesShift(&binaryData, 4)
 						newTestblockUserId := BinToDecBytesShift(&binaryData, 5)
 						newTestblockSignature := BytesShift(&binaryData, DecodeLength(&binaryData))
+						log.Debug("newTestblockBlockId %v", newTestblockBlockId)
+						log.Debug("newTestblockTime %v", newTestblockTime)
+						log.Debug("newTestblockUserId %v", newTestblockUserId)
+						log.Debug("newTestblockSignature %x", newTestblockSignature)
 
 						// недостающие тр-ии
 						length := DecodeLength(&binaryData) // размер всех тр-ий
@@ -3475,7 +3531,9 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 							if length == 0 {
 								break
 							}
+							log.Debug("length %d", length)
 							tx := BytesShift(&txBinary, length)
+							log.Debug("tx %x", tx)
 							txArray[string(Md5(tx))] = string(tx)
 						}
 						// порядок тр-ий
@@ -3489,20 +3547,20 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						// сортируем и наши и полученные транзакции
 						var transactions []byte
 						for _, txMd5 := range orderHashArray {
-							transactions = append(transactions, []byte(txArray[txMd5])...)
+							transactions = append(transactions, EncodeLengthPlusData([]byte(txArray[txMd5]))...)
 						}
 
 						// формируем блок, который далее будем тщательно проверять
 						/*
-					Заголовок (от 143 до 527 байт )
-					TYPE (0-блок, 1-тр-я)     1
-					BLOCK_ID   				       4
-					TIME       					       4
-					USER_ID                         5
-					LEVEL                              1
-					SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-					Далее - тело блока (Тр-ии)
-					*/
+						Заголовок (от 143 до 527 байт )
+						TYPE (0-блок, 1-тр-я)     1
+						BLOCK_ID   				       4
+						TIME       					       4
+						USER_ID                         5
+						LEVEL                              1
+						SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+						Далее - тело блока (Тр-ии)
+						*/
 						newBlockIdBinary := DecToBin(newTestblockBlockId, 4)
 						timeBinary := DecToBin(newTestblockTime, 4)
 						userIdBinary := DecToBin(newTestblockUserId, 5)
@@ -3513,7 +3571,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 						newBlockHeader = append(newBlockHeader, timeBinary...)
 						newBlockHeader = append(newBlockHeader, userIdBinary...)
 						newBlockHeader = append(newBlockHeader, levelBinary...) // $level пишем, чтобы при расчете времени ожидания в следующем блоке не пришлось узнавать, какой был max_miner_id
-						newBlockHeader = append(newBlockHeader, newTestblockSignature...)
+						newBlockHeader = append(newBlockHeader, EncodeLengthPlusData(newTestblockSignature)...)
 
 						newBlockHex := BinToHex(append(newBlockHeader, transactions...))
 
@@ -3524,6 +3582,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 							db.UnlockPrintSleep(ErrInfo(err), 0)
 							return
 						}
+						log.Debug("INSERT INTO queue_testblock  (head_hash, data)  VALUES (%s, %s)", newHeaderHash, newBlockHex)
 						err = db.ExecSql(`INSERT INTO queue_testblock (head_hash, data) VALUES ([hex], [hex])`, newHeaderHash, newBlockHex)
 						if err != nil {
 							db.UnlockPrintSleep(ErrInfo(err), 0)
@@ -3532,16 +3591,30 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					}
 				} else {
 					// если всё нормально, то пишем в таблу testblock новые данные
-					err = db.ExecSql(`
-						UPDATE testblock
-						SET   time = ?,
-								user_id = ?,
-								header_hash = [hex],
-								signature = [hex]
-						`, newTestblockTime, newTestblockUserId, newHeaderHash, newTestblockSignatureHex)
+					exists, err := db.Single(`SELECT block_id FROM testblock`).Int64()
 					if err != nil {
 						db.UnlockPrintSleep(ErrInfo(err), 0)
 						return
+					}
+					if exists == 0 {
+						err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
+							newTestblockBlockId, newTestblockTime, level, newTestblockUserId, string(newHeaderHash), newTestblockSignatureHex, string(newTestblockMrklRoot))
+						if err != nil {
+							db.UnlockPrintSleep(ErrInfo(err), 0)
+							return
+						}
+					} else {
+						err = db.ExecSql(`
+							UPDATE testblock
+							SET   time = ?,
+									user_id = ?,
+									header_hash = [hex],
+									signature = [hex]
+							`, newTestblockTime, newTestblockUserId, string(newHeaderHash), string(newTestblockSignatureHex))
+						if err != nil {
+							db.UnlockPrintSleep(ErrInfo(err), 0)
+							return
+						}
 					}
 				}
 				err = db.ExecSql("UPDATE testblock SET status = 'active'")
