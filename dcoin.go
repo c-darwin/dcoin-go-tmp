@@ -10,7 +10,7 @@ import (
     "github.com/elazarl/go-bindata-assetfs"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	_ "github.com/mattn/go-sqlite3"
-	"io"
+//	"io"
 	"io/ioutil"
 	"math/rand"
 	"time"
