@@ -1,6 +1,5 @@
 package main
 import (
-	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"os"
 	"net/http"
@@ -10,7 +9,7 @@ import (
     "github.com/elazarl/go-bindata-assetfs"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	_ "github.com/mattn/go-sqlite3"
-//	"io"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
-//	"reflect"
 )
 
 var log = logging.MustGetLogger("example")
@@ -28,33 +26,8 @@ var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfi
 var configIni map[string]string
 
 func main() {
-
-	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
-	defer f.Close()
-	//backend := logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
-	backend := logging.NewLogBackend(f, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
-	backendLeveled := logging.AddModuleLevel(backendFormatter)
-	backendLeveled.SetLevel(logging.DEBUG, "")
-	logging.SetBackend(backendLeveled)
-/*
-	log.Debug("debug")
-	log.Info("info")
-	log.Notice("notice")
-	log.Warning("warning")
-	log.Error("err")
-	log.Critical("crit")
-*/
-
-	rand.Seed( time.Now().UTC().UnixNano())
-
-	if _, err := os.Stat("public"); os.IsNotExist(err) {
-		os.Mkdir("public", 0755)
-	}
-
 	// читаем config.ini
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
-		fmt.Println("NO")
 		d1 := []byte(`
 error_log=1
 log=1
@@ -71,17 +44,50 @@ db_user=
 db_host=
 db_port=
 db_password=
+log_level=DEBUG
+log_output=file
 db_name=`)
 		ioutil.WriteFile("config.ini", d1, 0644)
-	} else {
-		fmt.Println("YES")
 	}
 	configIni_, err := config.NewConfig("ini", "config.ini")
 	if err != nil {
-		//log.Fatal(err)
+		panic(err)
+		os.Exit(1)
 	}
 	configIni, err = configIni_.GetSection("default")
-	fmt.Println("configIni[log]", configIni["log"])
+
+	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	if err != nil {
+		panic(err)
+		os.Exit(1)
+	}
+	defer f.Close()
+	var backend *logging.LogBackend
+	switch configIni["log_output"] {
+	case "file":
+		backend = logging.NewLogBackend(f, "", 0)
+	case "console":
+		backend = logging.NewLogBackend(os.Stderr, "", 0)
+	case "file_console":
+		backend = logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
+	default:
+		backend = logging.NewLogBackend(f, "", 0)
+	}
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	backendLeveled := logging.AddModuleLevel(backendFormatter)
+	backendLeveled.SetLevel(logging.DEBUG, "")
+	logging.SetBackend(backendLeveled)
+
+	rand.Seed( time.Now().UTC().UnixNano())
+
+	if _, err := os.Stat("public"); os.IsNotExist(err) {
+		err = os.Mkdir("public", 0755)
+		if err != nil {
+			log.Error(err)
+			panic(err)
+			os.Exit(1)
+		}
+	}
 
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 
@@ -95,29 +101,6 @@ db_name=`)
 			go fns()
 		}
 	}
-
-	// запускаем всех демонов
-	/*go daemons.TestblockIsReady()
-	go daemons.TestblockGenerator()
-	go daemons.TestblockDisseminator()
-	go daemons.Shop()
-	go daemons.ReductionGenerator()
-	go daemons.QueueParserTx()
-	go daemons.QueueParserTestblock()
-	go daemons.QueueParserBlocks()
-	go daemons.PctGenerator()
-	go daemons.Notifications()
-	go daemons.NodeVoting()
-	go daemons.MaxPromisedAmountGenerator()
-	go daemons.MaxOtherCurrenciesGenerator()
-	go daemons.ElectionsAdmin()
-	go daemons.Disseminator()
-	go daemons.Confirmations()
-	go daemons.Connector()
-	go daemons.Clear()
-	go daemons.CleaningDb()
-	go daemons.CfProjects()
-	go daemons.BlocksCollection()*/
 
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)
@@ -148,15 +131,17 @@ err = fmt.Errorf("unsupported platform")
 		l, err := net.Listen("tcp", ":"+tcpPort)
 		log.Debug("tcpPort: %v", tcpPort)
 		if err != nil {
-			log.Info("Error listening:", err.Error())
+			log.Error("Error listening:", err)
+			panic(err)
 			os.Exit(1)
 		}
-		//defer l.Close()
+		defer l.Close()
 		go func() {
 			for {
 				conn, err := l.Accept()
 				if err != nil {
-					log.Info("Error accepting: ", err.Error())
+					log.Error("Error accepting: ", err)
+					panic(err)
 					os.Exit(1)
 				}
 
@@ -166,8 +151,12 @@ err = fmt.Errorf("unsupported platform")
 	}()
 
 	HttpPort := db.GetHttpPort()
-	http.ListenAndServe(":"+HttpPort, nil)
-
+	err = http.ListenAndServe(":"+HttpPort, nil)
+	if err != nil {
+		log.Error("Error listening:", err)
+		panic(err)
+		os.Exit(1)
+	}
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
