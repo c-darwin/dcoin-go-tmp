@@ -141,7 +141,7 @@ db_name=`)
 			panic(err)
 			os.Exit(1)
 		}
-		defer l.Close()
+		//defer l.Close()
 		go func() {
 			for {
 				conn, err := l.Accept()
