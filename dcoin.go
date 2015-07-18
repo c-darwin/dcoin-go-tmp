@@ -83,7 +83,7 @@ db_name=`)
 	if _, err := os.Stat("public"); os.IsNotExist(err) {
 		err = os.Mkdir("public", 0755)
 		if err != nil {
-			log.Error(err)
+			log.Error("%v", err)
 			panic(err)
 			os.Exit(1)
 		}
@@ -131,7 +131,7 @@ err = fmt.Errorf("unsupported platform")
 		l, err := net.Listen("tcp", ":"+tcpPort)
 		log.Debug("tcpPort: %v", tcpPort)
 		if err != nil {
-			log.Error("Error listening:", err)
+			log.Error("Error listening: %v", err)
 			panic(err)
 			os.Exit(1)
 		}
@@ -140,7 +140,7 @@ err = fmt.Errorf("unsupported platform")
 			for {
 				conn, err := l.Accept()
 				if err != nil {
-					log.Error("Error accepting: ", err)
+					log.Error("Error accepting: %v", err)
 					panic(err)
 					os.Exit(1)
 				}
@@ -153,7 +153,7 @@ err = fmt.Errorf("unsupported platform")
 	HttpPort := db.GetHttpPort()
 	err = http.ListenAndServe(":"+HttpPort, nil)
 	if err != nil {
-		log.Error("Error listening:", err)
+		log.Error("Error listening: %v", err)
 		panic(err)
 		os.Exit(1)
 	}
