@@ -31,7 +31,7 @@ func Confirmations() {
 
 		var hosts []map[string]string
 		if db.ConfigIni["test_mode"] == "1" {
-			hosts = []map[string]string {{"host":"http://localhost:8089/", "user_id":"1"}}
+			hosts = []map[string]string {{"host":"localhost:8089", "user_id":"1"}}
 		} else {
 			maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners_data").Int64()
 			if err != nil {

@@ -17,6 +17,9 @@ import (
 	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
+	"runtime"
+	"os/exec"
+	"fmt"
 )
 
 var log = logging.MustGetLogger("example")
@@ -112,18 +115,6 @@ db_name=`)
 	http.Handle("/public/", noDirListing(http.FileServer(http.Dir("./"))))
 	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
-
-/*
-fmt.Println(runtime.GOOS)
-switch runtime.GOOS {
-case "linux":
-err = exec.Command("xdg-open", "http://localhost:8089/").Start()
-case "windows", "darwin":
-err = exec.Command("open", "http://localhost:8089/").Start()
-default:
-err = fmt.Errorf("unsupported platform")
-}*/
-
 	db := utils.DbConnect(configIni)
 	go func() {
 		tcpPort := db.GetTcpPort()
@@ -157,6 +148,24 @@ err = fmt.Errorf("unsupported platform")
 		panic(err)
 		os.Exit(1)
 	}
+
+
+	log.Debug("runtime.GOOS: %v", runtime.GOOS)
+	err = nil
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", "http://localhost:"+HttpPort+"/").Start()
+	case "windows", "darwin":
+		err = exec.Command("open", "http://localhost:"+HttpPort+"/").Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Error("%v", err)
+		panic(err)
+		os.Exit(1)
+	}
+
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
