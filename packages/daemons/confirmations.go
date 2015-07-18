@@ -65,7 +65,8 @@ func Confirmations() {
 		var st0, st1 int64
 		for i := 0; i < len(hosts); i++ {
 			answer = <-ch
-			log.Info("%v", "answer == hash", answer, hash)
+			log.Info("answer == hash (%x = %x)", answer, hash)
+			log.Info("answer == hash (%s = %s)", answer, hash)
 			if answer == hash {
 				st1 ++
 			} else {
@@ -75,7 +76,7 @@ func Confirmations() {
 		}
 		exists, err := db.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
 		if exists > 0 {
-			log.Debug("UPDATE confirmations SET good = %v, bad = %v, time = %v WHERE block_id = %v", blockId, st1, st0, time.Now().Unix())
+			log.Debug("UPDATE confirmations SET good = %v, bad = %v, time = %v WHERE block_id = %v", st1, st0, time.Now().Unix(), blockId)
 			err = db.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
 			if err != nil {
 				log.Info("%v", err)
