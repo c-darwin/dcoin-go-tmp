@@ -125,8 +125,8 @@ func checkConf(host string, blockId int64) string {
 		return "0"
 	}
 
-	// ответ всегда 16 байт
-	hash := make([]byte, 16)
+	// ответ всегда 32 байта
+	hash := make([]byte, 32)
 	_, err = conn.Read(hash)
 	if err != nil {
 		log.Info("%v", utils.ErrInfo(err))
