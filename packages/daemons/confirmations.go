@@ -132,7 +132,7 @@ func checkConf(host string, blockId int64) string {
 		log.Info("%v", utils.ErrInfo(err))
 		return "0"
 	}
-	return string(utils.BinToHex(hash))
+	return string(hash)
 }
 
 func IsReachable(host string, blockId int64, ch0 chan string) {
