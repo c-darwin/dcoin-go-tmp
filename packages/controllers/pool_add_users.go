@@ -36,10 +36,10 @@ func (c *Controller) PoolAddUsers() (string, error) {
 	}
 
 	for table, arr := range mainMap {
-		err = c.ExecSql(`DELETE FROM `+table)
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
+		_ = c.ExecSql(`DELETE FROM `+table)
+		//if err != nil {
+		//	return "", utils.ErrInfo(err)
+		//}
 		log.Println(table)
 		for i, data := range arr {
 			log.Println(i)
