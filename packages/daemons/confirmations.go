@@ -54,9 +54,9 @@ func Confirmations() {
 
 		ch := make(chan string)
 		for i := 0; i < len(hosts); i++ {
-			log.Info("%v", "hosts[i]", hosts[i])
+			log.Info("hosts[i] %v", hosts[i])
 			host:=hosts[i]["host"];
-			log.Info("%v", "host", host)
+			log.Info("host %v", host)
 			go func() {
 				IsReachable(host, blockId, ch)
 			}()
@@ -91,6 +91,7 @@ func Confirmations() {
 
 func checkConf(host string, blockId int64) string {
 
+	log.Debug("host: %v", host)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
 		log.Info("%v", utils.ErrInfo(err))

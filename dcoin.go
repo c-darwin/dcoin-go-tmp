@@ -78,10 +78,18 @@ db_name=`)
 	}
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
-	backendLeveled.SetLevel(logging.DEBUG, "")
+	logLevel, err := logging.LogLevel(configIni["log_level"])
+	if err!= nil {
+		logLevel = logging.DEBUG
+	}
+
+	log.Debug("logLevel: %v", logLevel)
+	backendLeveled.SetLevel(logLevel, "")
 	logging.SetBackend(backendLeveled)
 
 	rand.Seed( time.Now().UTC().UnixNano())
+
+	log.Debug("IsNotExist public")
 
 	if _, err := os.Stat("public"); os.IsNotExist(err) {
 		err = os.Mkdir("public", 0755)
@@ -92,6 +100,7 @@ db_name=`)
 		}
 	}
 
+	log.Debug("daemonsStart")
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 
 	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {
@@ -115,12 +124,18 @@ db_name=`)
 	http.Handle("/public/", noDirListing(http.FileServer(http.Dir("./"))))
 	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
+	log.Debug("tcp")
 	db := utils.DbConnect(configIni)
 	go func() {
-		tcpPort := db.GetTcpPort()
+		tcpPort := ""
+		if configIni["test_mode"] == "1" {
+			tcpPort = "8088"
+		} else {
+			tcpPort = db.GetTcpPort()
+		}
+		log.Debug("tcpPort: %v", tcpPort)
 		// включаем листинг TCP-сервером и обработку входящих запросов
 		l, err := net.Listen("tcp", ":"+tcpPort)
-		log.Debug("tcpPort: %v", tcpPort)
 		if err != nil {
 			log.Error("Error listening: %v", err)
 			panic(err)

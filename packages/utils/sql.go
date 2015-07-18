@@ -51,7 +51,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	switch ConfigIni["db_type"] {
 	case "sqlite":
 
-		fmt.Println("sqlite")
+		log.Debug("sqlite connect")
 		db, err = sql.Open("sqlite3", "litedb.db")
 		if err!=nil {
 			return &DCDB{}, err
