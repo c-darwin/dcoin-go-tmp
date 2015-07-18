@@ -80,6 +80,7 @@ func Confirmations() {
 				log.Info("%v", err)
 			}
 		} else {
+			log.Debug("INSERT INTO confirmations ( block_id, good, bad, time) VALUES ( %v, %v, %v, %v )", blockId, st1, st0, time.Now().Unix())
 			err = db.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
 			if err != nil {
 				log.Info("%v", err)
