@@ -2019,13 +2019,13 @@ func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)
 }
 
-func (db *DCDB) UnlockPrintSleep(err error, sleep float64) {
+func (db *DCDB) UnlockPrintSleep(err error, sleep time.Duration) {
 	db.DbUnlock();
 	log.Error("%v", err)
 	Sleep(sleep)
 }
 
-func (db *DCDB) PrintSleep(err_ interface {}, sleep float64) {
+func (db *DCDB) PrintSleep(err_ interface {}, sleep time.Duration) {
 	var err error
 	switch err_.(type) {
 	case string:

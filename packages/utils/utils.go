@@ -65,9 +65,9 @@ type prevBlockType struct {
 //var db *sql.DB
 //var err error
 
-func Sleep(sec float64) {
-	log.Debug("time.Duration(sec): %v", time.Duration(sec))
-	time.Sleep(time.Duration(sec) * time.Second)
+func Sleep(sec time.Duration) {
+	log.Debug("time.Duration(sec): %v",sec)
+	time.Sleep(sec * time.Second)
 }
 type SortCfCatalog []map[string]string
 
