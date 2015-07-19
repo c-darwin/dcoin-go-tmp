@@ -76,7 +76,7 @@ func (p *Parser) MessageToAdmin() (error) {
 				return p.ErrInfo(err)
 			}
 		} else {
-			err = p.ExecSql("INSERT IGNORE INTO "+myPrefix+"my_admin_messages ( encrypted, status ) VALUES ( [hex], 'approved' )", p.TxMap["encrypted_message"])
+			err = p.ExecSql("INSERT INTO "+myPrefix+"my_admin_messages ( encrypted, status ) VALUES ( [hex], 'approved' )", p.TxMap["encrypted_message"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}

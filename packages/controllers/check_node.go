@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"time"
-	"log"
+
 )
 
 
@@ -84,7 +84,7 @@ func (c *Controller) CheckNode() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		log.Println(allTables)
+		log.Debug("%s", allTables)
 
 		for _, table := range allTables {
 			vars, err := c.GetAllVariables()
@@ -103,9 +103,9 @@ func (c *Controller) CheckNode() (string, error) {
 			if len(lTable) > 1 && table != "log_time_money_orders" {
 				sqlWhere = fmt.Sprintf(" WHERE time > %d ", blockDataTime - vars.Int64["limit_"+lTable[1]+"_period"])
 				orderBy = "user_id, time";
-				log.Println("lTable", lTable[1])
-				log.Println("blockDataTime", blockDataTime)
-				log.Println("limit_"+lTable[1]+"_period", vars.Int64["limit_"+lTable[1]+"_period"])
+				log.Debug("lTable", lTable[1])
+				log.Debug("blockDataTime", blockDataTime)
+				log.Debug("limit_"+lTable[1]+"_period", vars.Int64["limit_"+lTable[1]+"_period"])
 			} else if ok, _ := regexp.MatchString(`(?i)^(log_transactions)$`, table); ok{
 				sqlWhere =  fmt.Sprintf(" WHERE time > %d ", blockDataTime - 86400*3)
 			} else if ok, _ := regexp.MatchString(`(?i)^(log_votes)$`, table); ok {
@@ -145,12 +145,12 @@ func (c *Controller) CheckNode() (string, error) {
 			}
 
 		}
-		log.Println("allCounts", allCounts)
+		log.Debug("allCounts", allCounts)
 		json:=""
 		for i := 0; i < len(allCounts); i++ {
 			for  k, v := range allCounts[i] {
-				//log.Println("k", k)
-				//log.Println("v", v)
+				//log.Debug("k", k)
+				//log.Debug("v", v)
 				json+=fmt.Sprintf(`"%v":"%v",`, k, v)
 			}
 		}

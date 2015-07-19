@@ -2,7 +2,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 )
 
 
@@ -20,7 +20,7 @@ func (c *Controller) SignLogin() (string, error) {
 	} else {
 		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.Header.Get("REMOTE_ADDR"));
 	}
-	log.Println("hash", hash)
+	log.Debug("hash", hash)
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hash = [hex]`, hash)
 	if err != nil {
 		return "", err

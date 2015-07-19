@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 )
 
 type changeCreditorPage struct {
@@ -25,7 +25,7 @@ func (c *Controller) ChangeCreditor() (string, error) {
 	timeNow := time.Now().Unix()
 
 	creditId := utils.Round(utils.StrToFloat64(c.Parameters["credit_id"]), 0)
-	log.Println("creditId", creditId)
+	log.Debug("creditId", creditId)
 
 	TemplateStr, err := makeTemplate("change_creditor", "changeCreditor", &changeCreditorPage{
 		Alert: c.Alert,

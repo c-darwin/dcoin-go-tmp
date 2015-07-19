@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"errors"
 	"encoding/json"
 )
@@ -17,6 +17,6 @@ func (c *Controller) GenerateNewNodeKey() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Println(json)
+	log.Debug("%v", json)
 	return string(json), nil
 }

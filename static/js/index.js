@@ -142,7 +142,7 @@ function save_key () {
 
 function logout () {
 
-    $.get("ajax/logout.php",
+    $.get("ajax?controllerName=logout",
         function() {
             window.location.href = "index.php";
         });

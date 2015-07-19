@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"fmt"
 	"math"
 	"html/template"
@@ -92,19 +92,19 @@ func (c *Controller) StatisticVoting() (string, error) {
 		maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count:votes})
 	}
 
-	log.Println("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
+	log.Debug("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
 	newMaxOtherCurrencies := make(map[int64]int64)
 	for currencyId, arr := range maxOtherCurrenciesVotes {
 		newMaxOtherCurrencies[currencyId] = utils.GetMaxVote(arr, 0, totalCountCurrencies, 10)
 		js+=fmt.Sprintf("var max_other_currencies_votes_%d = [", currencyId)
 		for _, data:= range arr {
-			log.Println("data", data)
+			log.Debug("data", data)
 			for k, v := range data {
 				js+=fmt.Sprintf("[%v, %v],", k, v)
 			}
 		}
 		js = js[:len(js)-1]+"];\n"
-		log.Println("js", js)
+		log.Debug("js", js)
 		divs = append(divs, fmt.Sprintf("max_other_currencies_votes_%d", currencyId))
 	}
 
@@ -207,7 +207,7 @@ func (c *Controller) StatisticVoting() (string, error) {
 		if err!= nil {
 			return "", utils.ErrInfo(err)
 		}
-		log.Println("newpctcurrency_id", currency_id, "pct", pct, "votes", votes)
+		log.Debug("newpctcurrency_id", currency_id, "pct", pct, "votes", votes)
 		if len(pctVotes[currency_id]) == 0 {
 			pctVotes[currency_id] = make(map[string]map[string]int64)
 		}
@@ -231,7 +231,7 @@ func (c *Controller) StatisticVoting() (string, error) {
 		if err!= nil {
 			return "", utils.ErrInfo(err)
 		}
-		log.Println("currency_id", currency_id, "pct", pct, "votes", votes)
+		log.Debug("currency_id", currency_id, "pct", pct, "votes", votes)
 		if len(pctVotes[currency_id]) == 0 {
 			pctVotes[currency_id] = make(map[string]map[string]int64)
 		}
@@ -241,7 +241,7 @@ func (c *Controller) StatisticVoting() (string, error) {
 		pctVotes[currency_id]["user_pct"][pct] = votes
 	}
 
-	log.Println("pctVotes", pctVotes)
+	log.Debug("pctVotes", pctVotes)
 
 	for currencyId, data := range pctVotes {
 		currencyIdStr := utils.Int64ToStr(currencyId)
@@ -268,17 +268,17 @@ func (c *Controller) StatisticVoting() (string, error) {
 	var userMaxKey int64
 	PctArray := utils.GetPctArray()
 
-	log.Println("pctVotes", pctVotes)
+	log.Debug("pctVotes", pctVotes)
 	for currencyId, data := range pctVotes {
 
 		currencyIdStr := utils.Int64ToStr(currencyId)
 		// определяем % для майнеров
 		pctArr := utils.MakePctArray(data["miner_pct"])
-		log.Println("currencyIdStr:", currencyIdStr)
-		log.Println("miner_pct:", data["miner_pct"])
-		log.Println("pctArr:", pctArr)
+		log.Debug("currencyIdStr:", currencyIdStr)
+		log.Debug("miner_pct:", data["miner_pct"])
+		log.Debug("pctArr:", pctArr)
 		key := utils.GetMaxVote(pctArr, 0, 390, 100)
-		log.Println("key:", key)
+		log.Debug("key:", key)
 		if len(newPct[currencyIdStr]) == 0 {
 			newPct[currencyIdStr] = make(map[string]string)
 		}
@@ -301,8 +301,8 @@ func (c *Controller) StatisticVoting() (string, error) {
 		newPctTpl[currencyIdStr]["user_pct"] = utils.Round((math.Pow(1 + utils.StrToFloat64(utils.GetPctValue(key)), 3600 * 24 * 365) - 1) * 100, 2);
 	}
 
-	log.Println("newPct", newPct)
-	log.Println("newPctTpl", newPctTpl)
+	log.Debug("newPct", newPct)
+	log.Debug("newPctTpl", newPctTpl)
 
 	/*
 	 * %/год

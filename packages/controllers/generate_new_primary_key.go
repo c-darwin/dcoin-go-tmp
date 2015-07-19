@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"encoding/base64"
 	"encoding/json"
 )
@@ -13,21 +13,21 @@ func (c *Controller) GenerateNewPrimaryKey() (string, error) {
 
 	priv, pub := utils.GenKeys()
 	if len(password) > 0 {
-		log.Println("priv:", priv)
+		log.Debug("priv:", priv)
 		encKey, err :=utils.Encrypt(utils.Md5("11"), []byte(priv))
-		log.Println("priv encKey:", encKey)
+		log.Debug("priv encKey:", encKey)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		priv = base64.StdEncoding.EncodeToString(encKey)
-		log.Println("priv ENC:", priv)
+		log.Debug("priv ENC:", priv)
 		//priv = string(encKey)
 	}
 	json, err := json.Marshal(map[string]string{"private_key": priv, "public_key": pub, "password_hash": string(utils.DSha256(password))})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Println(json)
+	log.Debug("%v", json)
 	return string(json), nil
 }
 

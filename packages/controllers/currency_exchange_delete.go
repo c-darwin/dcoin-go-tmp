@@ -5,7 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 	"encoding/json"
 	"fmt"
 )
@@ -35,7 +35,7 @@ func (c *Controller) CurrencyExchangeDelete() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Println("parameters", parameters)
+	log.Debug("parameters", parameters)
 	delId := utils.StrToInt64(parameters["del_id"])
 	signData := fmt.Sprintf("%d,%d,%d,%d", txTypeId, timeNow, c.SessUserId, delId)
 

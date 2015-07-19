@@ -32,16 +32,16 @@
 				'tcp_host': '{{.Data.tcp_host}}',
 				'face_hash': '{{.FaceHash}}',
 				'profile_hash': '{{.ProfileHash}}',
-				'face_coords': '{{.Data.faceCoords}}',
-				'profile_coords': '{{.Data.profileCoords}}',
-				'video_type': '{{.Data.videoType}}',
-				'video_url_id': '{{.Data.videoUrlId}}',
+				'face_coords': '{{.Data.face_coords}}',
+				'profile_coords': '{{.Data.profile_coords}}',
+				'video_type': '{{.Data.video_type}}',
+				'video_url_id': '{{.Data.video_url_id}}',
 				'node_public_key': '{{.NodePublicKey}}',
 				'signature1': $('#signature1').val(),
 				'signature2': $('#signature2').val(),
 				'signature3': $('#signature3').val()
 			}, function (data) {
-				if (!data)
+				if (data.error != "null")
 					var my_alert = '{{.Lang.sent_to_the_net}}';
 				else
 					var my_alert = data;

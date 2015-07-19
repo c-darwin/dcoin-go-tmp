@@ -5,7 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 )
 
 type arbitrationPage struct {
@@ -114,8 +114,8 @@ func (c *Controller) Arbitration() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 
-		log.Println("utils.StrToInt64(refund_data[count])", utils.StrToInt64(refund_data["count"]))
-		log.Println("utils.StrToInt64(refund_data[sum])", utils.StrToInt64(refund_data["sum"]))
+		log.Debug("utils.StrToInt64(refund_data[count])", utils.StrToInt64(refund_data["count"]))
+		log.Debug("utils.StrToInt64(refund_data[sum])", utils.StrToInt64(refund_data["sum"]))
 
 		arbitrators = append(arbitrators, &arbitrationType{Arbitrator_user_id: arbitrator_user_id, Url: url, Count: count, Refund_data_count: utils.StrToInt64(refund_data["count"]), Refund_data_sum: utils.StrToFloat64(refund_data["sum"]), Count_rejected_refunds: count_rejected_refunds})
 

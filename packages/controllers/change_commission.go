@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 )
 
 type changeCommissionPage struct {
@@ -85,7 +85,7 @@ func (c *Controller) ChangeCommission() (string, error) {
 	//limitsText := strings.Replace(c.Lang["change_commission_limits_text"], "[limit]", utils.Int64ToStr(c.Variables.Int64["limit_commission"]), -1)
 	//limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["limit_commission_period"]], -1)
 
-	log.Println("commission:", commission)
+	log.Debug("commission:", commission)
 
 	TemplateStr, err := makeTemplate("change_commission", "changeCommission", &changeCommissionPage{
 		Alert: c.Alert,

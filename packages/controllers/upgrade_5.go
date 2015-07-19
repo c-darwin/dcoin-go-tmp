@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"strings"
 )
 
@@ -18,14 +18,16 @@ type upgrade5Page struct {
 
 func (c *Controller) Upgrade5() (string, error) {
 
-	log.Println("Upgrade5")
+	log.Debug("Upgrade5")
 
 	data, err := c.OneRow("SELECT http_host, tcp_host FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 
-	if c.Community && len(data) == 0 {
+	log.Debug("c.Community: %v", c.Community)
+	log.Debug("c.PoolAdminUserId: %v", c.PoolAdminUserId)
+	if c.Community && len(data["http_host"]) == 0 && len(data["tcp_host"]) == 0 {
 		data, err = c.OneRow("SELECT http_host, tcp_host FROM miners_data WHERE user_id  =  ?", c.PoolAdminUserId).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)

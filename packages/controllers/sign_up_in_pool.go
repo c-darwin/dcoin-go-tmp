@@ -49,7 +49,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 		result, _ := json.Marshal(map[string]string{"error": c.Lang["pool_user_id_is_busy"]})
 		return "", errors.New(string(result))
 	}
-	err = c.ExecSql("INSERT IGNORE INTO community ( user_id ) VALUES ( ? )", c.SessUserId)
+	err = c.ExecSql("INSERT INTO community ( user_id ) VALUES ( ? )", c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -61,11 +61,11 @@ func (c *Controller) SignUpInPool() (string, error) {
 	schema_.GetSchema()
 
 	prefix := utils.Int64ToStr(c.SessUserId)+"_"
-	err = c.ExecSql("INSERT IGNORE INTO "+prefix+"my_table ( user_id, email ) VALUES ( ?, ? )", c.SessUserId, email)
+	err = c.ExecSql("INSERT INTO "+prefix+"my_table ( user_id, email ) VALUES ( ?, ? )", c.SessUserId, email)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	err = c.ExecSql("INSERT IGNORE INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", publicKey)
+	err = c.ExecSql("INSERT INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", publicKey)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

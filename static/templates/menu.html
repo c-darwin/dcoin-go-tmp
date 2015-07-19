@@ -104,14 +104,12 @@
 		<li><a href="#poolAdminControl">Pool admin</a></li>
 		<li><a href="#changeHost">{{.Lang.change_host_title}}</a></li>
 		{{end}}
-		<li><a href="#notifications">{{.Lang.sms_and_email_notifications}}</a>
-		</li>
+		{{if eq ..Restricted 0}}<li><a href="#notifications">{{.Lang.sms_and_email_notifications}}</a></li>{{end}}
 		<li><a href="#changePrimaryKey">{{.Lang.change_master_key}}</a>
 		</li>
 		<li><a href="#restoringAccess">{{.Lang.restoring_access}}</a>
 		</li>
-		<li><a href="#interface">{{.Lang.interface}}</a>
-		</li>
+		{{if eq ..Restricted 0}}<li><a href="#interface">{{.Lang.interface}}</a></li>{{end}}
 
 		{{if .PoolAdmin}}<li><a href="#nodeConfigControl">{{.Lang.config_node}}</a></li>{{end}}
 		<li class="divider"></li>
@@ -247,13 +245,12 @@
 					<li><a href="#changeHost">change host</a></li>
 				{{end}}
 
-				<li><a href="#notifications">{{.Lang.sms_and_email_notifications}}</a></li>
-				<li><a href="#change_primary_key">{{.Lang.change_master_key}}</a>
+				{{if eq ..Restricted 0}}<li><a href="#notifications">{{.Lang.sms_and_email_notifications}}</a></li>{{end}}
+				<li><a href="#changePrimaryKey">{{.Lang.change_master_key}}</a>
 				</li>
 				<li><a href="#restoringAccess">{{.Lang.restoring_access}}</a>
 				</li>
-				<li><a href="#interface">{{.Lang.interface}}</a>
-				</li>
+				{{if eq ..Restricted 0}}<li><a href="#interface">{{.Lang.interface}}</a></li>{{end}}
 				{{if or .PoolAdmin (not .Community)}}
 					<li><a href="#nodeConfigControl">{{.Lang.config_node}}</a></li>
 				{{end}}

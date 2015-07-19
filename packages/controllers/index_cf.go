@@ -3,7 +3,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"log"
+
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"html/template"
@@ -55,7 +55,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		nav = "fc_navigate ('cfCatalog')\n";
 	}
 
-	log.Println(nav)
+	log.Debug(nav)
 
 	c := new(Controller)
 	c.r = r
@@ -67,7 +67,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		} else {
 			defer utils.DbClose(c.DCDB)
@@ -75,7 +75,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
 		_, err = c.DCDB.Single("SELECT progress FROM install").String()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		}
 
@@ -86,7 +86,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		parameters_ := make(map[string]interface {})
 		err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		parameters := make(map[string]string)
 		for k, v := range parameters_ {

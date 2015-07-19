@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 )
 
 type cfCatalogPage struct {
@@ -18,10 +18,10 @@ type cfCatalogPage struct {
 func (c *Controller) CfCatalog() (string, error) {
 
 	var err error
-	log.Println("CfCatalog")
+	log.Debug("CfCatalog")
 
 	categoryId := utils.Int64ToStr(int64(utils.StrToFloat64(c.Parameters["category_id"])))
-	log.Println("categoryId", categoryId)
+	log.Debug("categoryId", categoryId)
 	var curCategory string
 	addSql := ""
 	if categoryId != "0" {

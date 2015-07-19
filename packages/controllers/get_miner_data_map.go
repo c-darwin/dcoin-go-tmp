@@ -19,6 +19,9 @@ func (c *Controller) GetMinerDataMap() (string, error) {
 		}
 		result+="{\"user_id\": "+user_id+",\"longitude\": "+longitude+", \"latitude\": "+latitude+"},";
 	}
+	if len(result) > 0 {
+		result = `{ "info": [`+result[:len(result)-1]+`}`
+	}
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
-	return string(`{ "info": [`+result[:len(result)-1]+`}`), nil
+	return string(result), nil
 }

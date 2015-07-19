@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	"errors"
 )
 
 type notificationsPage struct {
@@ -17,6 +17,10 @@ type notificationsPage struct {
 }
 
 func (c *Controller) Notifications() (string, error) {
+
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
+	}
 
 	var err error
 	data, err := c.OneRow(`
@@ -40,7 +44,7 @@ func (c *Controller) Notifications() (string, error) {
 	for _, data := range myNotifications_ {
 		myNotifications[data["name"]] = map[string]string {"email": data["email"], "sms": data["sms"], "important": data["important"]}
 	}
-	log.Println("myNotifications", myNotifications)
+	log.Debug("myNotifications", myNotifications)
 
 	TemplateStr, err := makeTemplate("notifications", "notifications", &notificationsPage{
 		Alert: c.Alert,

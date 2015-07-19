@@ -6,7 +6,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"time"
-	"log"
+
 	"encoding/json"
 )
 
@@ -46,7 +46,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Println("parameters", parameters)
+	log.Debug("parameters", parameters)
 	addSql := ""
 	if len(parameters["all_currencies"]) == 0 {
 		// по умолчанию выдаем только те валюты, которые есть хоть у кого-то на кошельках

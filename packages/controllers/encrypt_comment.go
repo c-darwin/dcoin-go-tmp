@@ -2,7 +2,7 @@ package controllers
 import (
     "encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"errors"
 	"crypto/rsa"
 	"crypto/rand"
@@ -46,9 +46,9 @@ func (c *Controller) EncryptComment() (string, error) {
 		toIds = []int64{toUserId}
 	}
 
-	log.Println("toId:", toId)
-	log.Println("toIds:", toIds)
-	log.Println("toUserId:", toUserId)
+	log.Debug("toId:", toId)
+	log.Debug("toIds:", toIds)
+	log.Debug("toUserId:", toUserId)
 	enc := make(map[int][]byte)
 	for i:=0; i < len(toIds); i++ {
 		if toIds[i] == 0 {
@@ -80,7 +80,7 @@ func (c *Controller) EncryptComment() (string, error) {
 		}
 		enc[i] = utils.BinToHex(enc_)
 	}
-	log.Println("enc:", enc)
+	log.Debug("enc:", enc)
 	if txType != "arbitration_arbitrators" {
 		return string(enc[0]), nil
 	} else {

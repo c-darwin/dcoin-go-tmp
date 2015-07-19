@@ -2,6 +2,8 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+
 )
 
 type poolAdminPage struct {
@@ -31,7 +33,7 @@ func (c *Controller) PoolAdminControl() (string, error) {
 	delId := int64(utils.StrToFloat64(c.Parameters["del_id"]))
 	if delId > 0 {
 
-		for _, table := range allTable {
+		for _, table := range consts.MyTables {
 			if utils.InSliceString(utils.Int64ToStr(delId)+"_"+table, allTable) {
 				err = c.ExecSql("DROP TABLE "+utils.Int64ToStr(delId)+"_"+table)
 				if err != nil {
@@ -59,8 +61,9 @@ func (c *Controller) PoolAdminControl() (string, error) {
 		}
 	}
 
+	community, err := c.GetCommunityUsers() // получаем новые данные, т.к. выше было удаление
 	var users []map[int64]map[string]string
-	for _, uid := range c.CommunityUsers {
+	for _, uid := range community {
 		if uid != c.SessUserId {
 			if utils.InSliceString(utils.Int64ToStr(uid)+"_my_table", allTable) {
 				data, err := c.OneRow("SELECT miner_id, email FROM "+utils.Int64ToStr(uid)+"_my_table LIMIT 1").String()
@@ -71,6 +74,7 @@ func (c *Controller) PoolAdminControl() (string, error) {
 			}
 		}
 	}
+	log.Debug("users", users)
 
 	// лист ожидания попадания в пул
 	waitingList, err := c.GetAll("SELECT * FROM pool_waiting_list", -1)

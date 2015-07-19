@@ -9,7 +9,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"strconv"
 	"time"
-	"log"
+	"github.com/op/go-logging"
 	"regexp"
 	"unicode"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
@@ -19,6 +19,8 @@ import (
 	"strings"
 	"os"
 )
+
+var log = logging.MustGetLogger("controllers")
 
 type Controller struct {
 	dbInit bool
@@ -79,11 +81,11 @@ func init() {
 			}
 			configIni_, err := config.NewConfig("ini", "config.ini")
 			if err != nil {
-				log.Println(utils.ErrInfo(err))
+				log.Debug("%v", utils.ErrInfo(err))
 			}
 			configIni, err = configIni_.GetSection("default")
 			if err != nil {
-				log.Println(utils.ErrInfo(err))
+				log.Debug("%v", utils.ErrInfo(err))
 			}
 			utils.Sleep(1)
 		}
@@ -114,9 +116,9 @@ func CallController(c *Controller, name string)  (string, error) {
 	fmt.Println("Controller", name)
 	html, err := CallMethod(c, name)
 	if err != nil {
-		log.Print(err)
+		log.Debug("%v", err)
 		html = fmt.Sprintf(`{"error":%q}`, err)
-		log.Println(html)
+		log.Debug("%v", html)
 	}
 	return html, err
 }
@@ -173,11 +175,16 @@ func Content1(w http.ResponseWriter, r *http.Request) {
 
 func GetSessUserId(sess session.SessionStore) int64 {
 	sessUserId := sess.Get("user_id")
+	log.Debug("sessUserId: %v", sessUserId)
 	switch sessUserId.(type) {
-	case int64:
-		return sessUserId.(int64)
-	default:
-		return 0
+		case int64:
+			return sessUserId.(int64)
+		case int:
+			return int64(sessUserId.(int))
+		case string:
+			return utils.StrToInt64(sessUserId.(string))
+		default:
+			return 0
 	}
 	return 0
 }
@@ -293,15 +300,16 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	sessUserId := GetSessUserId(sess)
 	sessRestricted := GetSessRestricted(sess)
 	sessPublicKey := GetSessPublicKey(sess)
-	log.Println("sessUserId", sessUserId)
-	log.Println("sessRestricted", sessRestricted)
-	log.Println("sessPublicKey", sessPublicKey)
-	log.Println("user_id", sess.Get("user_id"))
+	log.Debug("sessUserId", sessUserId)
+	log.Debug("sessRestricted", sessRestricted)
+	log.Debug("sessPublicKey", sessPublicKey)
+	log.Debug("user_id", sess.Get("user_id"))
 
 	c := new(Controller)
 	c.r = r
 	c.w = w
 	c.sess = sess
+	c.SessRestricted = sessRestricted
 	dbInit := false;
 	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
 		dbInit = true
@@ -312,7 +320,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		} else {
 			defer c.DCDB.Close()
@@ -321,7 +329,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		var communityUsers []int64
 		communityUsers, err = c.GetCommunityUsers()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.CommunityUsers = communityUsers
 		if len(communityUsers) > 0 {
@@ -330,11 +338,11 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		if c.Community {
 			poolAdminUserId, err := c.GetPoolAdminUserId()
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
+			c.PoolAdminUserId = poolAdminUserId
 			if c.SessUserId == poolAdminUserId {
 				c.PoolAdmin = true
-				c.PoolAdminUserId = poolAdminUserId
 			}
 			c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
 		} else {
@@ -342,14 +350,14 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		}
 		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 	}
 	c.dbInit = dbInit
 	parameters_ := make(map[string]interface {})
 	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
-		log.Print(err)
+		log.Error("%v", err)
 	}
 	fmt.Println("parameters_=",parameters_)
 	parameters := make(map[string]string)
@@ -372,7 +380,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	if dbInit {
 		myNotice, err := c.GetMyNoticeData(sessRestricted, sessUserId, c.MyPrefix, globalLangReadOnly[lang])
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.MyNotice = myNotice
 	}
@@ -389,7 +397,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		// вызываем контроллер в зависимости от шаблона
 		html, err = CallController(c, controllerName)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 	}
 	w.Write([]byte(html))
@@ -399,7 +407,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 func Tools(w http.ResponseWriter, r *http.Request) {
 
-	log.Println("Tools")
+	log.Debug("Tools")
 	w.Header().Set("Content-type", "text/html")
 
 	c := new(Controller)
@@ -413,7 +421,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		} else {
 			defer c.DCDB.Close()
@@ -428,7 +436,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	// вызываем контроллер в зависимости от шаблона
 	html, err :=  CallController(c, controllerName)
 	if err != nil {
-		log.Print(err)
+		log.Error("%v", err)
 	}
 	w.Write([]byte(html))
 }
@@ -447,9 +455,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	sessRestricted := GetSessRestricted(sess)
 	sessPublicKey := GetSessPublicKey(sess)
 	sessAdmin := GetSessAdmin(sess)
-	log.Println("sessUserId", sessUserId)
-	log.Println("sessRestricted", sessRestricted)
-	log.Println("sessPublicKey", sessPublicKey)
+	log.Debug("sessUserId", sessUserId)
+	log.Debug("sessRestricted", sessRestricted)
+	log.Debug("sessPublicKey", sessPublicKey)
 
 	c := new(Controller)
 	c.r = r
@@ -473,7 +481,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		} else {
 			defer utils.DbClose(c.DCDB)
@@ -493,11 +501,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		var err error
 		installProgress, err = c.DCDB.Single("SELECT progress FROM install").String()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		configExists, err = c.DCDB.Single("SELECT first_load_blockchain_url FROM config").String()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 
 		c.Variables, err = c.GetAllVariables()
@@ -505,7 +513,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		// Инфа о последнем блоке
 		blockData, err := c.DCDB.GetLastBlockData()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		//время последнего блока
 		lastBlockTime = blockData["lastBlockTime"]
@@ -514,29 +522,29 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		// валюты
 		currencyListCf, err := c.GetCurrencyList(true)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.CurrencyListCf = currencyListCf
 		currencyList, err := c.GetCurrencyList(false)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.CurrencyList = currencyList
 
 		confirmedBlockId, err := c.GetConfirmedBlockId()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.ConfirmedBlockId = confirmedBlockId
 
 		c.MinerId, err = c.GetMyMinerId(c.SessUserId)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 
 		paymentSystems, err := c.GetPaymentSystems()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.PaymentSystems = paymentSystems
 	}
@@ -545,7 +553,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	parameters_ := make(map[string]interface {})
 	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
-		log.Print(err)
+		log.Error("%v", err)
 	}
 	fmt.Println("parameters_=",parameters_)
 	parameters := make(map[string]string)
@@ -601,8 +609,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	if dbInit {
 		communityUsers, err = c.DCDB.GetCommunityUsers()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
+		c.CommunityUsers = communityUsers
 		if len(communityUsers) == 0 {
 			c.MyPrefix = "";
 		} else {
@@ -612,13 +621,13 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		// нужна мин. комиссия на пуле для перевода монет
 		config, err := c.GetNodeConfig()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		configCommission_ := make(map[string][]float64)
 		if len(config["commission"]) > 0 {
 			err = json.Unmarshal([]byte(config["commission"]), &configCommission_)
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 		}
 		configCommission := make(map[int64][]float64)
@@ -630,7 +639,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 	}
 
@@ -641,16 +650,16 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	// идет загрузка блокчейна
 	wTime := int64(2)
 	if c.ConfigIni["test_mode"] == "1" {
-		wTime = 365*24
-		log.Println(wTime)
-		log.Println(lastBlockTime)
+		wTime = 2*365*86400
+		log.Debug("%v", wTime)
+		log.Debug("%v", lastBlockTime)
 	}
 	if dbInit && tplName!="installStep0" && (time.Now().Unix()-lastBlockTime > 3600*wTime) && len(configExists)>0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
 			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config").String()
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 			if sessUserId != utils.StrToInt64(poolAdminUserId) {
 				tplName = "updatingBlockchain"
@@ -672,7 +681,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		countSign = 1
 		pk, err := c.DCDB.OneRow("SELECT public_key_1, public_key_2 FROM users WHERE user_id=?", userId).String()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		if len(pk["public_key_1"]) > 0 {
 			countSign = 2
@@ -692,18 +701,19 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.CountSign = countSign
 	c.CountSignArr = CountSignArr
 
-	log.Println("tplName::", tplName, sessUserId, installProgress)
+	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
 	if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
 		userPublicKey, err := c.DCDB.GetUserPublicKey(userId);
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		if userPublicKey != sessPublicKey {
 			sess.Delete("user_id")
 			sess.Delete("private_key")
 			sess.Delete("public_key")
+			log.Debug("sess.Delete user_id private_key public_key")
 			w.Write([]byte("<script language=\"javascript\">window.location.href = \"index.php\"</script>If you are not redirected automatically, follow the <a href=\"index.php\">index.php</a>"))
 			return;
 		}
@@ -713,15 +723,15 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 		c.TplName = tplName
 
-		log.Println("communityUsers:", communityUsers)
+		log.Debug("communityUsers:", communityUsers)
 		if dbInit && len(communityUsers) > 0 {
 			poolAdminUserId, err := c.GetPoolAdminUserId()
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
+			c.PoolAdminUserId = poolAdminUserId
 			if c.SessUserId == poolAdminUserId {
 				c.PoolAdmin = true
-				c.PoolAdminUserId = poolAdminUserId
 			}
 		} else {
 			c.PoolAdmin = true
@@ -731,7 +741,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			// проверим, не идут ли тех. работы на пуле
 			config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
 				tplName = "pool_tech_works"
@@ -742,7 +752,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			if sessRestricted == 0 { // у незареганных в пуле юзеров нет MyPrefix, поэтому сохранять значение show_sign_data им негде
 				showSignData_, err := c.DCDB.Single("SELECT show_sign_data FROM "+c.MyPrefix+"my_table").String()
 				if err != nil {
-					log.Print(err)
+					log.Error("%v", err)
 				}
 				if showSignData_ == "1" {
 					showSignData = true
@@ -760,7 +770,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if dbInit && tplName !="updatingBlockchain" {
 			html, err :=  CallController(c, "AlertMessage")
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 			w.Write([]byte(html))
 		}
@@ -768,7 +778,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 		myNotice, err := c.DCDB.GetMyNoticeData(sessRestricted, sessUserId, c.MyPrefix, globalLangReadOnly[lang])
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		c.MyNotice = myNotice
 
@@ -778,7 +788,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		var blockJs string
 		blockId, err := c.GetBlockId()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		if myNotice["main_status_complete"] != "1" {
 			blockJs = "$('#block_id').html("+utils.Int64ToStr(blockId)+");$('#block_id').css('color', '#ff0000');";
@@ -798,7 +808,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			// вызываем контроллер в зависимости от шаблона
 			html, err :=  CallController(c, tplName)
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 			w.Write([]byte(html))
 		}
@@ -811,14 +821,14 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			// вызываем контроллер в зависимости от шаблона
 			html, err = CallController(c, tplName)
 			if err != nil {
-				log.Print(err)
+				log.Error("%v", err)
 			}
 		}
 		w.Write([]byte(html))
 	} else {
 		html, err :=  CallController(c, "login")
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		w.Write([]byte(html))
 	}

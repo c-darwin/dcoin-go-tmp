@@ -1,7 +1,6 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
 	"regexp"
 	"encoding/json"
 	"strings"
@@ -11,7 +10,7 @@ import (
 func (c *Controller) AlertMessage() (string, error) {
 
 	if c.SessRestricted!=0 {
-		return "", utils.ErrInfo(errors.New("Permission denied"))
+		return "", nil
 	}
 
 	c.r.ParseForm()

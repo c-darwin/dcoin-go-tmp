@@ -5,7 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 	"encoding/json"
 )
 
@@ -58,7 +58,7 @@ func (c *Controller) WalletsList() (string, error) {
 			for id, data := range myDcTransactions {
 				t := time.Unix(utils.StrToInt64(data["time"]), 0)
 				timeFormatted := t.Format(c.TimeFormat)
-				log.Println("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat )
+				log.Debug("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat )
 				myDcTransactions[id]["timeFormatted"] = timeFormatted
 				myDcTransactions[id]["numBlocks"] = "0"
 				blockId := utils.StrToInt64(data["block_id"])
@@ -127,7 +127,7 @@ func (c *Controller) WalletsList() (string, error) {
 			arbitrationTrustList[uidInt][utils.StrToInt64(currenycId)] = data
 		}
 	}
-	log.Println("arbitrationTrustList", arbitrationTrustList)
+	log.Debug("arbitrationTrustList", arbitrationTrustList)
 
 	data, err := static.Asset("static/templates/wallets_list.html")
 	if err != nil {

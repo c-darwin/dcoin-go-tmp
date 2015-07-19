@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"fmt"
 	"errors"
 )
@@ -14,9 +14,9 @@ func (c *Controller) MinersMap() (string, error) {
 
 	c.r.ParseForm()
 
-	log.Println("min_amount:", c.r.FormValue("min_amount"))
+	log.Debug("min_amount:", c.r.FormValue("min_amount"))
 	minAmount := utils.StrToFloat64(c.r.FormValue("min_amount"))
-	log.Println("minAmount:", minAmount)
+	log.Debug("minAmount:", minAmount)
 	if !utils.CheckInputData(c.r.FormValue("min_amount"), "amount") {
 		return "", errors.New("Incorrect min_amount")
 	}
@@ -83,7 +83,7 @@ func (c *Controller) MinersMap() (string, error) {
 	if len(result) > 0 {
 		result = result[:len(result)-1]
 	}
-	log.Println(result)
+	log.Debug(result)
 	result = `{ "info": [`+result+`]}`
 	return result, nil
 }

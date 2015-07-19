@@ -5,7 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"html/template"
 	"bytes"
-	"log"
+
 )
 
 type progressBarPage struct {
@@ -175,7 +175,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 	progressBar["begin"] = 1
 
-	log.Println("ProgressBar end")
+	log.Debug("ProgressBar end")
 	if !c.ContentInc {
 		data, err := static.Asset("static/templates/progress_bar.html")
 		if err != nil {

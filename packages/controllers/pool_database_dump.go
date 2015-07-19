@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
-	"log"
+
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"encoding/json"
 	"regexp"
@@ -55,7 +55,7 @@ func (c *Controller) poolDataBaseDump() (string, error) {
 	}
 
 	jsonData, _ := json.Marshal(mainMap)
-	log.Println(string(jsonData))
+	log.Debug(string(jsonData))
 
 	c.w.Header().Set("Content-Type", "text/plain")
 	c.w.Header().Set("Content-Length", utils.IntToStr(len(jsonData)))
@@ -71,9 +71,9 @@ func (c *Controller) poolDataBaseDump() (string, error) {
 	}
 
 	for table, arr := range mainMap {
-		log.Println(table)
+		log.Debug(table)
 		for i, data := range arr {
-			log.Println(i)
+			log.Debug("%v", i)
 			colNames := ""
 			values := []string{}
 			qq := ""
@@ -89,8 +89,8 @@ func (c *Controller) poolDataBaseDump() (string, error) {
 			colNames = colNames[0:len(colNames)-1]
 			qq = qq[0:len(qq)-1]
 			query := `INSERT INTO `+table+` (`+colNames+`) VALUES (`+qq+`)`
-			log.Println(query)
-			log.Println(values)
+			log.Debug("%v", query)
+			log.Debug("%v", values)
 		}
 	}
 

@@ -2,7 +2,6 @@ package controllers
 import (
     "encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
 	"fmt"
 	"os"
 	"regexp"
@@ -46,11 +45,11 @@ func (c *Controller) SaveQueue() (string, error) {
 	}
 	binSignatures := utils.EncodeLengthPlusData([]byte(sign))
 
-	log.Println("txType_", txType_)
+	log.Debug("txType_", txType_)
 
 	var data []byte
 	switch txType_ {
-	case "new_user":
+	case "NewUser":
 		publicKeyHex := c.r.FormValue("public_key")
 		publicKey := utils.HexToBin([]byte(publicKeyHex))
 		privateKey := c.r.FormValue("private_key")
@@ -80,7 +79,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(publicKey))...)
 		data = append(data, binSignatures...)
 
-	case "del_cf_project" :
+	case "DelCfProject" :
 
 		projectId := []byte(c.r.FormValue("project_id"));
 
@@ -92,7 +91,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "cf_comment" :
+	case "CfComment" :
 
 		projectId := []byte(c.r.FormValue("project_id"));
 		langId := []byte(c.r.FormValue("lang_id"));
@@ -109,7 +108,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "new_credit" :
+	case "NewCredit" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -123,7 +122,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "del_credit" :
+	case "DelCredit" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -133,7 +132,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "repayment_credit" :
+	case "RepaymentCredit" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -144,7 +143,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_creditor" :
+	case "ChangeCreditor" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -155,7 +154,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_credit_part" :
+	case "ChangeCreditPart" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -165,7 +164,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "user_avatar" :
+	case "UserAvatar" :
 
 		name := []byte(c.r.FormValue("name"));
 		avatar := []byte(c.r.FormValue("avatar"));
@@ -179,7 +178,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "del_cf_funding" :
+	case "DelCfFunding" :
 
 		fundingId := []byte(c.r.FormValue("funding_id"));
 
@@ -191,7 +190,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "cf_project_change_category" :
+	case "CfProjectChangeCategory" :
 
 		projectId := []byte(c.r.FormValue("project_id"));
 		categoryId := []byte(c.r.FormValue("category_id"));
@@ -205,7 +204,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "new_cf_project" :
+	case "NewCfProject" :
 
 		currencyId := []byte(c.r.FormValue("currency_id"));
 		amount := []byte(c.r.FormValue("amount"));
@@ -229,7 +228,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "cf_project_data" :
+	case "CfProjectData" :
 
 		projectId := []byte(c.r.FormValue("project_id"));
 		langId := []byte(c.r.FormValue("lang_id"));
@@ -261,7 +260,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "new_miner" :
+	case "NewMiner" :
 
 		race := []byte(c.r.FormValue("race"));
 		country := []byte(c.r.FormValue("country"));
@@ -312,7 +311,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-	case "votes_miner" : // голос за юзера, который хочет стать майнером
+	case "VotesMiner" : // голос за юзера, который хочет стать майнером
 
 		voteId := []byte(c.r.FormValue("vote_id"));
 		result := []byte(c.r.FormValue("result"));
@@ -345,7 +344,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "new_promised_amount" :
+	case "NewPromisedAmount" :
 
 		currencyId := []byte(c.r.FormValue("currency_id"));
 		amount := []byte(c.r.FormValue("amount"));
@@ -386,7 +385,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_promised_amount" :
+	case "ChangePromisedAmount" :
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 		amount := []byte(c.r.FormValue("amount"));
@@ -399,7 +398,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "mining" :
+	case "Mining" :
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 		amount := []byte(c.r.FormValue("amount"));
@@ -412,7 +411,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "votes_promised_amount":
+	case "VotesPromisedAmount":
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 		result := []byte(c.r.FormValue("result"));
@@ -443,7 +442,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "change_geolocation" :
+	case "ChangeGeolocation" :
 
 		latitude := []byte(c.r.FormValue("latitude"));
 		longitude := []byte(c.r.FormValue("longitude"));
@@ -475,7 +474,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "del_promised_amount" :
+	case "DelPromisedAmount" :
 
 		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
 
@@ -486,7 +485,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "del_forex_order" :
+	case "DelForexOrder" :
 
 		orderId := []byte(c.r.FormValue("order_id"));
 
@@ -499,7 +498,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "sendDc" :
+	case "SendDc" :
 
 		toUserId := []byte(c.r.FormValue("to_id"));
 		currencyId := []byte(c.r.FormValue("currency_id"));
@@ -673,7 +672,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
 
-	case "cash_request_out" :
+	case "CashRequestOut" :
 
 		toUserId := []byte(c.r.FormValue("to_user_id"));
 		currencyId := []byte(c.r.FormValue("currency_id"));
@@ -747,7 +746,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "cash_request_in" :
+	case "CashRequestIn" :
 
 		cashRequestId := []byte(c.r.FormValue("cash_request_id"));
 		code := []byte(c.r.FormValue("code"));
@@ -761,7 +760,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "abuses" :
+	case "Abuses" :
 
 		abuses := []byte(c.r.FormValue("abuses"));
 
@@ -784,7 +783,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "admin_ban_miners" :
+	case "AdminBanMiners" :
 
 		usersIds := []byte(c.r.FormValue("users_ids"));
 
@@ -796,7 +795,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_unban_miners" :
+	case "AdminUnbanMiners" :
 
 		usersIds := []byte(c.r.FormValue("users_ids"));
 
@@ -808,7 +807,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_variables" :  // админ изменил variables
+	case "AdminVariables" :  // админ изменил variables
 
 		variables := []byte(c.r.FormValue("variables"));
 
@@ -820,7 +819,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_spots" : // админ обновил набор точек для проверки лиц
+	case "AdminSpots" : // админ обновил набор точек для проверки лиц
 
 		exampleSpots := []byte(c.r.FormValue("example_spots"));
 		segments := []byte(c.r.FormValue("segments"));
@@ -838,7 +837,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_message" : // админ отправил alert message
+	case "AdminMessage" : // админ отправил alert message
 
 		message := []byte(c.r.FormValue("message"));
 		currencyList := []byte(c.r.FormValue("currency_list"));
@@ -852,7 +851,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_primary_key" :
+	case "ChangePrimaryKey" :
 
 		publicKey1 := []byte(c.r.FormValue("public_key_1"));
 		publicKey2 := []byte(c.r.FormValue("public_key_2"));
@@ -914,7 +913,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "change_node_key" :
+	case "ChangeNodeKey" :
 
 		publicKey := []byte(c.r.FormValue("public_key"));
 		privateKey := []byte(c.r.FormValue("private_key"));
@@ -947,7 +946,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "votes_complex" :
+	case "VotesComplex" :
 
 		jsonData := []byte(c.r.FormValue("json_data"));
 
@@ -959,7 +958,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "new_holidays" :
+	case "NewHolidays" :
 
 		startTime := []byte(c.r.FormValue("start_time"));
 		endTime := []byte(c.r.FormValue("end_time"));
@@ -993,7 +992,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "new_miner_update" :
+	case "NewMinerUpdate" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1010,7 +1009,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_add_currency" :
+	case "AdminAddCurrency" :
 
 		currencyName := []byte(c.r.FormValue("currency_name"));
 		currencyFullName := []byte(c.r.FormValue("currency_full_name"));
@@ -1028,7 +1027,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_new_version" :
+	case "AdminNewVersion" :
 
 		softType := []byte(c.r.FormValue("soft_type"));
 		version := []byte(c.r.FormValue("version"));
@@ -1050,7 +1049,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_new_version_alert" :
+	case "AdminNewVersionAlert" :
 
 		softType := []byte(c.r.FormValue("soft_type"));
 		version := []byte(c.r.FormValue("version"));
@@ -1064,7 +1063,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_blog" :
+	case "AdminBlog" :
 
 		title := []byte(c.r.FormValue("title"));
 		message := []byte(c.r.FormValue("message"));
@@ -1077,7 +1076,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "message_to_admin" :
+	case "MessageToAdmin" :
 
 
 
@@ -1116,7 +1115,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_answer" :
+	case "AdminAnswer" :
 
 		//parentId := []byte(c.r.FormValue("parent_id"));
 		//message := []byte(c.r.FormValue("message"));
@@ -1133,7 +1132,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "change_host" :
+	case "ChangeHost" :
 
 		http_host := []byte(c.r.FormValue("http_host"));
 		tcp_host := []byte(c.r.FormValue("tcp_host"));
@@ -1223,7 +1222,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "access error", nil
 		}
 
-	case "new_forex_order" :
+	case "NewForexOrder" :
 
 		sellCurrencyId := []byte(c.r.FormValue("sell_currency_id"));
 		sellRate := []byte(c.r.FormValue("sell_rate"));
@@ -1243,7 +1242,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "for_repaid_fix" :
+	case "ForRepaidFix" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1252,14 +1251,14 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "actualization_promised_amounts" :
+	case "ActualizationPromisedAmounts" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
 
-	case "change_commission" :
+	case "ChangeCommission" :
 
 		commission := []byte(c.r.FormValue("commission"));
 		commissionDecode := make(map[string][3]float64)
@@ -1341,7 +1340,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 
 
-	case "change_key_active" :
+	case "ChangeKeyActive" :
 
 		secret := utils.HexToBin([]byte(c.r.FormValue("secret")));
 
@@ -1353,7 +1352,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_key_close" :
+	case "ChangeKeyClose" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1362,7 +1361,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_key_request" :
+	case "ChangeKeyRequest" :
 
 		toUserId := []byte(c.r.FormValue("to_user_id"));
 
@@ -1374,7 +1373,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "admin_change_primary_key" :
+	case "AdminChangePrimaryKey" :
 
 		forUserId := []byte(c.r.FormValue("for_user_id"));
 		newPublicKey := utils.HexToBin([]byte(c.r.FormValue("new_public_key")));
@@ -1388,7 +1387,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_arbitrator_list" :
+	case "ChangeArbitratorList" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1398,7 +1397,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "money_back_request" :
+	case "MoneyBackRequest" :
 
 		var arbitratorEncText [5]string
 		err := json.Unmarshal([]byte(c.r.PostFormValue("arbitrator_enc_text")), &arbitratorEncText)
@@ -1420,7 +1419,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_seller_hold_back" :
+	case "ChangeSellerHoldBack" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1431,7 +1430,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "money_back" :
+	case "MoneyBack" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1442,7 +1441,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_arbitrator_conditions" :
+	case "ChangeArbitratorConditions" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1453,7 +1452,7 @@ func (c *Controller) SaveQueue() (string, error) {
 
 
 
-	case "change_money_back_time" :
+	case "ChangeMoneyBackTime" :
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1466,7 +1465,7 @@ func (c *Controller) SaveQueue() (string, error) {
 	}
 
 	md5 := utils.Md5(data)
-	if utils.InSliceString(txType_, []string{"new_pct", "new_max_promised_amounts", "new_reduction", "votes_node_new_miner", "new_max_other_currencies"}) {
+	if !utils.InSliceString(txType_, []string{"new_pct", "new_max_promised_amounts", "new_reduction", "votes_node_new_miner", "new_max_other_currencies"}) {
 		err := c.ExecSql(`INSERT INTO transactions_status (
 				hash,
 				time,

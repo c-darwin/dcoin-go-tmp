@@ -2,7 +2,7 @@ package controllers
 import (
     "encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"time"
 )
 
@@ -111,14 +111,14 @@ func (c *Controller) GetSellerData() (string, error) {
 	buyersCountM = buyersCountM - buyersMinersCountM;
 
 	rez := selleData{Trust_list: arbitrationTrustList, Seller_hold_back_pct: sellerHoldBackPct,  Arbitration_days_refund: arbitrationDaysRefund, Buyers_miners_count_m: buyersMinersCountM, Buyers_miners_count: buyersMinersCount, Buyers_count: buyersCount ,Buyers_count_m: buyersCountM ,Seller_turnover_m: sellerTurnoverM, Seller_turnover: sellerTurnover, Hold_amount: holdAmount}
-	log.Println(rez)
-	log.Println(arbitrationTrustList)
+	log.Debug("%v", rez)
+	log.Debug("%v", arbitrationTrustList)
 	result, err := json.Marshal(rez)
 	if err != nil {
-		log.Println(err)
+		log.Error("%v", err)
 		return "", utils.ErrInfo(err)
 	}
-	log.Println(string(result))
+	log.Debug(string(result))
 
 	return string(result), nil
 }

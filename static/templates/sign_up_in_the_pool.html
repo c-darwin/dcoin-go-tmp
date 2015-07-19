@@ -18,10 +18,13 @@
 			'e': e_n_sign['exp']
 		}, function (data) {
 			console.log(data);
-			if (data.success)
-				fc_navigate('mining_menu');
-			else
-				$('#alerts').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
+			if (data.success) {
+				load_menu();
+				fc_navigate('miningMenu');
+			}
+			else {
+				$('#alerts').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>' + data.error + '</div>');
+			}
 		}, 'JSON');
 	});
 

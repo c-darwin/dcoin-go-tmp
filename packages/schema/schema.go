@@ -20,15 +20,7 @@ type SchemaStruct struct {
 /*
 В самом начале разработки dcoin-а таблицы log_ использовались для логирования, потом я их стал использовать для откатов, но название log_ так и осталось
 */
-/*
-- s1["PRIMARY"] = []string{"user_id","type"}
-+ s1["PRIMARY"] = []string{"user_id","voting_id","type"}
-s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
-s["log_votes"] = s1
 
-sqlite votes_miner_pct pct = TEXT
-sqlite votes_user_pct pct = TEXT
-*/
 func (schema *SchemaStruct) GetSchema() {
 
 
@@ -2688,7 +2680,9 @@ s["config"] = s1
 schema.s = s
 schema.printSchema()
 
-
+	if schema.PrefixUserId > 0 {
+		schema.DB.Exec(`INSERT INTO `+utils.IntToStr(schema.PrefixUserId)+`_my_notifications (name, email, sms) VALUES ('admin_messages',1,1),('change_in_status',1,0),('fc_came_from',1,0),('fc_sent',1,0),('incoming_cash_requests',1,1),('new_version',1,1),('node_time',1,1),('system_error',1,1),('update_email',1,0),('update_primary_key',1,0),('update_sms_request',1,0),('voting_results',1,0),('voting_time',1,0)`)
+	}
 
 }
 

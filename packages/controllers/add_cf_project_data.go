@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 )
 
 type AddCfProjectDataPage struct {
@@ -33,7 +33,7 @@ func (c *Controller) AddCfProjectData() (string, error) {
 	id := int64(utils.StrToFloat64(c.Parameters["id"]))
 	cfData := make(map[string]string)
 	if id > 0 {
-		log.Println("id:", id)
+		log.Debug("id:", id)
 		cfData, err = c.OneRow("SELECT * FROM cf_projects_data WHERE id = ?", id).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -47,7 +47,7 @@ func (c *Controller) AddCfProjectData() (string, error) {
 	}
 
 	CfLng, err := c.GetAllCfLng()
-	log.Println("CfData", cfData)
+	log.Debug("CfData", cfData)
 	TemplateStr, err := makeTemplate("add_cf_project_data", "addCfProjectData", &AddCfProjectDataPage{
 		Alert: c.Alert,
 		Lang: c.Lang,

@@ -8,7 +8,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 )
 
 type index struct {
@@ -23,7 +23,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	parameters_ := make(map[string]interface {})
 	err := json.Unmarshal([]byte(r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
-		log.Print(err)
+		log.Error("%v", err)
 	}
 	fmt.Println("parameters_=",parameters_)
 	parameters := make(map[string]string)
@@ -34,7 +34,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	sess, err := globalSessions.SessionStart(w, r)
 	if err != nil {
-		log.Print(err)
+		log.Error("%v", err)
 	}
 	defer sess.SessionRelease(w)
 

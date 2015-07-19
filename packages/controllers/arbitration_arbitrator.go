@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 )
 
 type arbitrationArbitratorPage struct {
@@ -23,7 +23,7 @@ type arbitrationArbitratorPage struct {
 
 func (c *Controller) ArbitrationArbitrator() (string, error) {
 
-	log.Println("ArbitrationArbitrator")
+	log.Debug("ArbitrationArbitrator")
 
 	txType := "MoneyBackRequest";
 	txTypeId := utils.TypeInt(txType)

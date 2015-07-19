@@ -2,7 +2,7 @@ package controllers
 import (
     "encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"math"
 )
 
@@ -112,12 +112,12 @@ func (c *Controller) GetMinerData() (string, error) {
 	}
 
 	result_ := minersDataType{Hosts: hosts, Lnglat:map[string]string{"lng":minersData["longitude"], "lat":minersData["latitude"]}, Html:promisedAmounts+wallets+"<div style=\"clear:both\"></div>"+prognosisHtml+"</p>", Counters:countersIds, PctSec:pctSec}
-	log.Println("result_", result_)
+	log.Debug("result_", result_)
 	result, err := json.Marshal(result_)
 	if err != nil {
 		return "", err
 	}
-	log.Println(string(result))
+	log.Debug(string(result))
 	return string(result), nil
 }
 

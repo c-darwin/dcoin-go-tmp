@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 	"fmt"
 	"math"
 )
@@ -32,8 +32,8 @@ func (c *Controller) MiningPromisedAmount() (string, error) {
 	amount := utils.StrToMoney(c.Parameters["amount"])
 	amount = math.Floor(amount*100)/100;
 	promisedAmountId := int64(utils.StrToFloat64(c.Parameters["promised_amount_id"]))
-	log.Println("c.Parameters[promised_amount_id]):", c.Parameters["promised_amount_id"])
-	log.Println("promisedAmountId:", promisedAmountId)
+	log.Debug("c.Parameters[promised_amount_id]):", c.Parameters["promised_amount_id"])
+	log.Debug("promisedAmountId:", promisedAmountId)
 	TemplateStr, err := makeTemplate("mining_promised_amount", "miningPromisedAmount", &miningPromisedAmountPage{
 		Alert: c.Alert,
 		Lang: c.Lang,

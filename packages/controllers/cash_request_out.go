@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"fmt"
 )
 
@@ -65,7 +65,7 @@ func (c *Controller) CashRequestOut() (string, error) {
 	}
 	jsonCurrencyWallets = jsonCurrencyWallets[:len(jsonCurrencyWallets)-1]
 	//jsonCurrencyWallets = "\""
-	log.Println("jsonCurrencyWallets", jsonCurrencyWallets)
+	log.Debug("jsonCurrencyWallets", jsonCurrencyWallets)
 	code := utils.Md5(utils.RandSeq(50))
 	hashCode := utils.DSha256(utils.RandSeq(50))
 

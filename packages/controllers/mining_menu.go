@@ -2,7 +2,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"log"
+
 )
 
 type miningMenuPage struct {
@@ -21,6 +21,7 @@ type miningMenuPage struct {
 	MyComments []map[string]string
 	MinerVotesAttempt int64
 	Host string
+	Result string
 }
 
 func (c *Controller) MiningMenu() (string, error) {
@@ -175,7 +176,7 @@ func (c *Controller) MiningMenu() (string, error) {
 	lastTxFormatted := ""
 	tplName := ""
 	tplTitle := ""
-	log.Println("result:", result)
+	log.Debug("result:", result)
 	if result == "null" {
 		tplName = "upgrade_0"
 		tplTitle= "upgrade0"
@@ -215,6 +216,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		tplTitle = "upgrade"
 	}
 
+	log.Debug("tplName, tplTitle %v, %v", tplName, tplTitle)
 	TemplateStr, err := makeTemplate(tplName, tplTitle, &miningMenuPage{
 		Alert: c.Alert,
 		Lang: c.Lang,
@@ -225,6 +227,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		CurrencyList: c.CurrencyList,
 		LastTxFormatted: lastTxFormatted,
 		MyComments: myComments,
+		Result: result,
 		MinerVotesAttempt: minerVotesAttempt,
 		Host: hostTpl})
 	if err != nil {

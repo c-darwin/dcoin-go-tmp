@@ -2,7 +2,7 @@ package controllers
 import (
 	"net/http"
 	"regexp"
-	"log"
+
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
 	"encoding/json"
@@ -27,7 +27,7 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		var err error
 		c.DCDB, err = utils.NewDbConnect(configIni)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		} else {
 			defer utils.DbClose(c.DCDB)
@@ -35,7 +35,7 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
 		_, err = c.DCDB.Single("SELECT progress FROM install").String()
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 			dbInit = false
 		}
 
@@ -51,7 +51,7 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		parameters_ := make(map[string]interface {})
 		err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		parameters := make(map[string]string)
 		for k, v := range parameters_ {
@@ -60,13 +60,13 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		c.Parameters = parameters
 		lang := GetLang(w, r, parameters)
 		c.Lang = globalLangReadOnly[lang]
-		log.Println("c.Lang:", c.Lang)
+		log.Debug("c.Lang:", c.Lang)
 		c.LangInt = int64(lang)
 
 		// если в параметрах пришел язык, то установим его
 		newLang := utils.StrToInt(parameters["lang"])
 		if newLang > 0 {
-			log.Println("newLang", newLang)
+			log.Debug("newLang", newLang)
 			SetLang(w, r, newLang)
 		}
 
@@ -87,7 +87,7 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		// вызываем контроллер в зависимости от шаблона
 		html, err :=  CallController(c, tplName)
 		if err != nil {
-			log.Print(err)
+			log.Error("%v", err)
 		}
 		w.Write([]byte(html))
 	}

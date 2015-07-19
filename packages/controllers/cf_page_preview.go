@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"errors"
 	"regexp"
 	"encoding/json"
@@ -81,7 +81,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 
 	langId := int64(utils.StrToFloat64(c.Parameters["lang_id"]))
 	projectId := int64(utils.StrToFloat64(c.Parameters["onlyProjectId"]))
-	log.Println("projectId:", projectId)
+	log.Debug("projectId:", projectId)
 	var blurbImg, headImg, descriptionImg, picture, videoType, videoUrlId, newsImg string
 	imgBlank := cfUrl + "static/img/blank.png"
 
@@ -117,7 +117,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 			var links_ [][]interface{}
 			err = json.Unmarshal([]byte(data["links"]), &links_)
 			if err != nil {
-				log.Println("data links:", data["links"])
+				log.Debug("data links:", data["links"])
 				return "", utils.ErrInfo(err)
 			}
 			for _, v := range links_ {
@@ -133,7 +133,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 			}
 		}
 	} else {
-		log.Println("FormValue", c.r.Form)
+		log.Debug("FormValue", c.r.Form)
 
 		blurbImg = c.r.FormValue("blurb_img")
 		headImg = c.r.FormValue("head_img")

@@ -3,7 +3,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
 	"encoding/json"
-	"log"
+
 )
 func (c *Controller) SaveNotifications() (string, error) {
 
@@ -18,7 +18,7 @@ func (c *Controller) SaveNotifications() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Println("data:",data)
+	log.Debug("data:",data)
 
 	for k, _ :=  range data {
 		err := c.ExecSql(`

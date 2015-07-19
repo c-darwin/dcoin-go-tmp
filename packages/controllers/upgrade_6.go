@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"strings"
 )
 
@@ -17,7 +17,7 @@ type upgrade6Page struct {
 
 func (c *Controller) Upgrade6() (string, error) {
 
-	log.Println("Upgrade6")
+	log.Debug("Upgrade6")
 
 	geolocationLat := ""
 	geolocationLon := ""

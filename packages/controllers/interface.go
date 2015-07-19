@@ -1,6 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"errors"
 )
 
 type InterfacePage struct {
@@ -14,8 +15,11 @@ type InterfacePage struct {
 
 func (c *Controller) Interface() (string, error) {
 
-	var err error
+	if c.SessRestricted != 0 {
+		return "", utils.ErrInfo(errors.New("Permission denied"))
+	}
 
+	var err error
 	name := ""
 	if len(c.Parameters["show_map"]) > 0 {
 		name = "show_map"

@@ -30,10 +30,10 @@
 
 <script>
 	$('#change_node_http_host').bind('click', function () {
-		$('#node_http_host').html('<input class="form-control" style="width:300px" type="text" id="host" value="{{.Host}}"><br>{{.Lang.host_http_example}}');
+		$('#node_http_host').html('<input class="form-control" style="width:300px" type="text" id="http_host" value="{{.HttpHost}}"><br>{{.Lang.host_http_example}}');
 	});
 	$('#change_node_tcp_host').bind('click', function () {
-		$('#node_tcp_host').html('<input class="form-control" style="width:300px" type="text" id="host" value="{{.Host}}"><br>{{.Lang.host_tcp_example}}');
+		$('#node_tcp_host').html('<input class="form-control" style="width:300px" type="text" id="tcp_host" value="{{.TcpHost}}"><br>{{.Lang.host_tcp_example}}');
 	});
 
 	$('#save').bind('click', function () {

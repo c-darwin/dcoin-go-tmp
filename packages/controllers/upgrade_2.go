@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"strings"
 	"os"
 )
@@ -23,7 +23,7 @@ type upgrade2Page struct {
 
 func (c *Controller) Upgrade2() (string, error) {
 
-	log.Println("Upgrade2")
+	log.Debug("Upgrade2")
 
 	userProfile := ""
 	path := "public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"

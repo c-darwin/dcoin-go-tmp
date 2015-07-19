@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"strings"
 )
 
@@ -19,7 +19,7 @@ type upgrade4Page struct {
 
 func (c *Controller) Upgrade4() (string, error) {
 
-	log.Println("Upgrade4")
+	log.Debug("Upgrade4")
 
 	videoUrl := ""
 

@@ -1,7 +1,7 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+
 	"strings"
 	"io/ioutil"
 	"fmt"
@@ -32,7 +32,7 @@ type upgrade7Page struct {
 
 func (c *Controller) Upgrade7() (string, error) {
 
-	log.Println("Upgrade7")
+	log.Debug("Upgrade7")
 
 	txType := "NewMiner"
 	txTypeId := utils.TypeInt(txType)
@@ -49,17 +49,22 @@ func (c *Controller) Upgrade7() (string, error) {
 	if len(myTable["video_type"]) == 0 {
 		myTable["video_type"] = "null"
 	}
+	var profileHash, faceHash string
 
-	file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
-	if err != nil {
-		return "", utils.ErrInfo(err)
+	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"); err == nil {
+		file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		faceHash = string(utils.DSha256(file))
 	}
-	faceHash := string(utils.DSha256(file))
-	file, err = ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
-	if err != nil {
-		return "", utils.ErrInfo(err)
+	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"); err == nil {
+		file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		profileHash = string(utils.DSha256(file))
 	}
-	profileHash := string(utils.DSha256(file))
 
 	latitude := "0"
 	longitude := "0"

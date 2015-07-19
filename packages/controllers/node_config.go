@@ -1,7 +1,6 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
 	"errors"
 	"io/ioutil"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
@@ -29,7 +28,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
-	log.Println("c.Parameters", c.Parameters)
+	log.Debug("c.Parameters", c.Parameters)
 	if _, ok := c.Parameters["save_config"]; ok {
 		err := c.ExecSql("UPDATE config SET in_connections_ip_limit = ?, in_connections = ?, out_connections = ?, cf_url = ?, pool_url = ?, pool_admin_user_id = ?, exchange_api_url = ?, auto_reload = ?", c.Parameters["in_connections_ip_limit"], c.Parameters["in_connections"], c.Parameters["out_connections"] , c.Parameters["cf_url"], c.Parameters["pool_url"], c.Parameters["pool_admin_user_id"], c.Parameters["exchange_api_url"],  c.Parameters["auto_reload"])
 		if err != nil {
@@ -42,7 +41,8 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		if c.ConfigIni["db_type"] == "mysql" {
 			dq = ``
 		}
-		if !c.Community{ // сингл-мод
+		log.Debug("c.Community", c.Community)
+		if !c.Community { // сингл-мод
 
 			// переключаемся в пул-мод
 			myUserId, err := c.GetMyUserId("")
@@ -62,6 +62,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 
+			log.Debug("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
 			err = c.ExecSql("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
 			if err != nil {
 				return "", utils.ErrInfo(err)
