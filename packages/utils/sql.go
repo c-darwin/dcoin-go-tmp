@@ -2005,7 +2005,7 @@ func (db *DCDB) DbLock() error {
 		}
 		mutex.Unlock()
 		if !ok {
-			time.Sleep(time.Duration(RandInt(1000, 2000)) * time.Millisecond)
+			time.Sleep(time.Duration(RandInt(300, 400)) * time.Millisecond)
 		} else {
 			break
 		}
