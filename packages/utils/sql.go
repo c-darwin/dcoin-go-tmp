@@ -1153,10 +1153,10 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 			LEFT JOIN transactions ON transactions.hash = transactions_status.hash
 			LEFT JOIN queue_tx ON queue_tx.hash = transactions_status.hash
 			WHERE  transactions_status.user_id = ? AND
-						 transactions_status.type IN (?)
+						 transactions_status.type IN (`+strings.Join(SliceInt64ToString(types), ",")+`)
 			ORDER BY time DESC
 			LIMIT ?
-			`), userId, strings.Join(SliceInt64ToString(types), ","), limit)
+			`), userId, imit)
 	if err != nil {
 		return result, err
 	}
@@ -1629,7 +1629,7 @@ func (db *DCDB) GetMyMinerId(userId int64) (int64, error) {
 
 func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 	log.Debug("user_id IN %v", strings.Join(SliceInt64ToString(collective), ","))
-	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN (?) AND miner_id > 0", strings.Join(SliceInt64ToString(collective), ",")).Int64()
+	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(SliceInt64ToString(collective), ",")+") AND miner_id > 0").Int64()
 }
 
 func (db *DCDB) GetConfirmedBlockId() (int64, error) {

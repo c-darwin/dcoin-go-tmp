@@ -38,7 +38,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		}
 		if data["currency_list"] != "ALL" {
 			// проверим, есть ли у нас обещанные суммы с такой валютой
-			promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN (?)", data["currency_list"]).Int64()
+			promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN ("+data["currency_list"]+")").Int64()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
