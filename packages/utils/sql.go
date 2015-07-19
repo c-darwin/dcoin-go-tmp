@@ -1156,7 +1156,7 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 						 transactions_status.type IN (`+strings.Join(SliceInt64ToString(types), ",")+`)
 			ORDER BY time DESC
 			LIMIT ?
-			`), userId, imit)
+			`), userId, limit)
 	if err != nil {
 		return result, err
 	}
