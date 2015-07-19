@@ -1629,7 +1629,7 @@ func (db *DCDB) GetMyMinerId(userId int64) (int64, error) {
 
 func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 	log.Debug("user_id IN %v", strings.Join(SliceInt64ToString(collective), ","))
-	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN (?) AND miner_id > 0", strings.Join(SliceInt64ToString(collective), ","))
+	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN (?) AND miner_id > 0", strings.Join(SliceInt64ToString(collective), ",")).Int64()
 }
 
 func (db *DCDB) GetConfirmedBlockId() (int64, error) {
