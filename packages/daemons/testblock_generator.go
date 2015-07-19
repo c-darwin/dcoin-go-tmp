@@ -119,6 +119,7 @@ BEGIN:
             db.DbUnlock();
             if (newHeadHash != prevHeadHash) {
                 log.Debug("newHeadHash!=prevHeadHash  %v  %v", newHeadHash, prevHeadHash)
+                utils.Sleep(1)
                 continue BEGIN
             }
             // из-за задержек с main_lock время уже прошло и выходим раньше, чем закончится цикл
@@ -126,7 +127,7 @@ BEGIN:
                 log.Debug("break")
                 break
             }
-            time.Sleep(1000 * time.Millisecond) // спим 1 сек. общее время = $sleep
+            utils.Sleep(1) // спим 1 сек. общее время = $sleep
         }
 
         /*
@@ -153,7 +154,7 @@ BEGIN:
         if sleep > 0 || prevBlock.HeadHash != prevHeadHash {
             log.Debug("continue")
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
             continue
         }
         log.Debug("blockgeneration begin")
@@ -161,7 +162,7 @@ BEGIN:
         if blockId < 1 {
             log.Debug("continue")
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
             continue
         }
 
@@ -183,7 +184,7 @@ BEGIN:
 		if len(nodePrivateKey) < 1 {
             log.Debug("continue")
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
             continue
         }
         prevHeadHash = prevBlock.HeadHash
@@ -197,13 +198,13 @@ BEGIN:
         if currentUserId < 1 {
             log.Debug("continue")
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
             continue
         }
         if prevBlock.BlockId >= newBlockId {
             log.Debug("continue")
             db.DbUnlock()
-            time.Sleep(1000 * time.Millisecond)
+            utils.Sleep(1)
             continue
         }
         // откатим transactions_testblock
