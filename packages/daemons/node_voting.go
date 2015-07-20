@@ -165,7 +165,7 @@ BEGIN:
 			}
 		}
 		db.DbUnlock()
-		utils.Sleep(1)
+		utils.Sleep(60)
 	}
 
 }

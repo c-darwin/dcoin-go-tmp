@@ -66,7 +66,7 @@ type prevBlockType struct {
 //var err error
 
 func Sleep(sec time.Duration) {
-	log.Debug("time.Duration(sec): %v",sec)
+	log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
 	time.Sleep(sec * time.Second)
 }
 type SortCfCatalog []map[string]string

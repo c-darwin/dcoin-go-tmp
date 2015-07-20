@@ -25,9 +25,14 @@ func BlocksCollection() {
 
 		log.Info("BlocksCollection")
         // проверим, не нужно ли нам выйти из цикла
-        if db.CheckDaemonRestart() {
-			break
-		}
+        select {
+        case <-DaemonCh:
+            log.Debug("exit")
+            utils.Sleep(1)
+            AnswerDaemonCh<-true
+            break BEGIN
+        default:
+        }
 
         config, err := db.GetNodeConfig()
         if err != nil {
@@ -498,7 +503,9 @@ func BlocksCollection() {
         db.Close()
         db = utils.DbConnect(configIni)
 
-        utils.Sleep(10)
+        for i:=0; i < 60; i++ {
+            utils.Sleep(1)
+        }
     }
 }
 

@@ -6,7 +6,8 @@ import (
 	"github.com/op/go-logging"
 )
 var log = logging.MustGetLogger("daemons")
-
+var DaemonCh chan bool
+var AnswerDaemonCh chan bool
 var configIni map[string]string
 
 func init() {

@@ -20,7 +20,34 @@ import (
 	"runtime"
 	"os/exec"
 	"fmt"
+	"os/signal"
+	"syscall"
 )
+
+/*
+#include <stdio.h>
+#include <signal.h>
+
+extern void go_callback_int();
+static inline void SigBreak_Handler(int n_signal){
+      printf("closed\n");
+	go_callback_int();
+}
+static inline void waitSig() {
+    #if (WIN32 || WIN64)
+    signal(SIGBREAK, &SigBreak_Handler);
+    signal(SIGINT, &SigBreak_Handler);
+    #endif
+}
+*/
+import "C"
+
+//export go_callback_int
+func go_callback_int(){
+	SigChan <- syscall.Signal(1)
+}
+
+var SigChan chan os.Signal
 
 var log = logging.MustGetLogger("example")
 //var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}")
@@ -100,19 +127,40 @@ db_name=`)
 		}
 	}
 
+	daemons.DaemonCh = make(chan bool, 1)
+	daemons.AnswerDaemonCh = make(chan bool, 1)
 	log.Debug("daemonsStart")
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 
+	countDaemons := 0
 	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {
 		daemonsConf := strings.Split(configIni["daemons"], ",")
 		for _, fns := range daemonsConf {
 			go daemonsStart[fns]()
+			countDaemons++
 		}
 	} else if configIni["daemons"] != "null" {
 		for _, fns := range daemonsStart {
 			go fns()
+			countDaemons++
 		}
 	}
+
+	SigChan = make(chan os.Signal, 1)
+	C.waitSig()
+	go func() {
+		signal.Notify(SigChan, os.Interrupt, os.Kill)
+		<-SigChan
+		log.Debug("countDaemons %v", countDaemons)
+		for i:=0; i < countDaemons; i++ {
+			daemons.DaemonCh <- true
+			log.Debug("daemons.DaemonCh <- true")
+			answer := <-daemons.AnswerDaemonCh
+			log.Debug("answer: %v", answer)
+		}
+		os.Exit(1)
+	}()
+
 
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc("/", controllers.Index)

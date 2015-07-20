@@ -179,6 +179,6 @@ func Clear() {
 
 		db.DbUnlock()
 
-		utils.Sleep(10)
+		utils.Sleep(60)
 	}
 }
