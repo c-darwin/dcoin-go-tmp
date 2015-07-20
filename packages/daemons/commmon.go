@@ -27,12 +27,21 @@ func init() {
 	}()
 }
 
-func CallDeamons(name string) {
-	//utils.CallMethod(p, name)
+func CheckDaemonsRestart() bool {
+	select {
+	case <-DaemonCh:
+		AnswerDaemonCh<-true
+		return true
+	default:
+	}
+	return false
 }
 
 func DbConnect() *utils.DCDB {
 	for {
+		if CheckDaemonsRestart() {
+			return nil
+		}
 		if len(configIni) == 0 {
 			utils.Sleep(1)
 			continue

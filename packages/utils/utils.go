@@ -1421,13 +1421,13 @@ func GetEndBlockId() (int64, error) {
 	return 0, nil
 }
 
-func DownloadToFile(url, file string, timeoutSec int64) (int64, error) {
+func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh chan bool) (int64, error) {
 
-	out, err := os.Create(file)
+	f, err := os.Create(file)
 	if err != nil {
 		return 0, err
 	}
-	defer out.Close()
+	defer f.Close()
 
 	timeout := time.Duration(time.Duration(timeoutSec) * time.Second)
 	client := http.Client{
@@ -1439,11 +1439,25 @@ func DownloadToFile(url, file string, timeoutSec int64) (int64, error) {
 	}
 	defer resp.Body.Close()
 
-	countBytes, err := io.Copy(out, resp.Body)
-	if err != nil {
-		return countBytes, err
+	var offset int64
+	for {
+		select {
+		case <-DaemonCh:
+			AnswerDaemonCh<-true
+			return offset, fmt.Errorf("daemons restart")
+		default:
+		}
+		data, err := ioutil.ReadAll(io.LimitReader(resp.Body, 10000))
+		if err != nil {
+			return offset, err
+		}
+		f.WriteAt(data, offset)
+		offset+=int64(len(data))
+		if len(data) == 0 {
+			break
+		}
 	}
-	return countBytes, nil
+	return offset, nil
 }
 
 func CheckErr(err error) {

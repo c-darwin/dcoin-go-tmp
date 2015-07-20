@@ -15,20 +15,27 @@ import (
 func TestblockDisseminator() {
 
 	GoroutineName := "TestblockDisseminator"
-	db := DbConnect()
-	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-	for {
 
-		// проверим, не нужно нам выйти, т.к. обновилась версия софта
-		if db.CheckDaemonRestart() {
-			utils.Sleep(1)
-			break
+	db := DbConnect()
+	if db == nil {
+		return
+	}
+	db.GoroutineName = GoroutineName
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
+	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
 		}
 
 		nodeConfig, err := db.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) != 0 {
-			db.PrintSleep("local_gate_ip", 60)
+			db.PrintSleep("local_gate_ip", 1)
 			continue
 		}
 

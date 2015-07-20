@@ -16,35 +16,47 @@ import (
 func ReductionGenerator() {
 
 	const GoroutineName = "ReductionGenerator"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		blockId, err := db.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(err, 60)
+			db.UnlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(errors.New("blockId == 0"), 60)
+			db.UnlockPrintSleep(errors.New("blockId == 0"), 1)
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := db.TestBlock();
 		if err != nil {
-			db.UnlockPrintSleep(err, 60)
+			db.UnlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			db.UnlockPrintSleep(err, 60)
+			db.UnlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		variables, err := db.GetAllVariables()
@@ -68,7 +80,7 @@ BEGIN:
 						) as t1
 				GROUP BY  currency_id`, "currency_id", "count", (curTime - variables.Int64["min_hold_time_promise_amount"]))
 		if err != nil {
-			db.UnlockPrintSleep(err, 60)
+			db.UnlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		log.Info("%v", "promisedAmount", promisedAmount)
@@ -83,7 +95,7 @@ BEGIN:
 				GROUP BY  currency_id, pct
 				`, curTime - variables.Int64["reduction_period"])
 		if err != nil {
-			db.UnlockPrintSleep(err, 60)
+			db.UnlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		for rows.Next() {
@@ -92,7 +104,7 @@ BEGIN:
 			var currency_id string
 			err = rows.Scan(&currency_id, &pct, &votes)
 			if err != nil {
-				db.UnlockPrintSleep(err, 60)
+				db.UnlockPrintSleep(err, 1)
 				continue BEGIN
 			}
 			if len(promisedAmount[currency_id]) == 0 || promisedAmount[currency_id] == "0" {
@@ -103,7 +115,7 @@ BEGIN:
 				// проверим, прошло ли 2 недели с последнего урезания
 				reductionTime, err := db.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'manual'", currency_id).Int64()
 				if err != nil {
-					db.PrintSleep(err, 60)
+					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				if curTime - reductionTime > variables.Int64["reduction_period"] {
@@ -121,7 +133,7 @@ BEGIN:
 		// получаем кол-во DC на кошельках
 		sumWallets_, err := db.GetMap("SELECT currency_id, sum(amount) as sum_amount FROM wallets GROUP BY currency_id", "currency_id", "sum_amount")
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		sumWallets := make(map[int]float64)
@@ -132,7 +144,7 @@ BEGIN:
 		// получаем кол-во TDC на обещанных суммах, плюсуем к тому, что на кошельках
 		sumTdc, err := db.GetMap("SELECT currency_id, sum(tdc_amount) as sum_amount FROM promised_amount GROUP BY currency_id", "currency_id", "sum_amount")
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
@@ -157,7 +169,7 @@ BEGIN:
 				GROUP BY currency_id
 				`, "currency_id", "sum_amount", curTime - variables.Int64["cash_request_time"])
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
@@ -169,7 +181,7 @@ BEGIN:
 				}
 				reductionTime, err := db.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'auto'", currencyId).Int64()
 				if err != nil {
-					db.PrintSleep(err, 60)
+					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				// прошло ли 48 часов
@@ -183,7 +195,7 @@ BEGIN:
 					// проверим, есть ли хотя бы 1000 юзеров, у которых на кошелках есть или была данная валюты
 					countUsers, err := db.Single("SELECT count(user_id) FROM wallets WHERE currency_id  =  ?", currencyId).Int64()
 					if err != nil {
-						db.PrintSleep(err, 60)
+						db.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if countUsers >= consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN {
@@ -202,7 +214,7 @@ BEGIN:
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
 			binSign, err := db.GetBinSign(forSign, myUserId)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			data := utils.DecToBin(utils.TypeInt("NewReduction"), 1)
@@ -215,7 +227,7 @@ BEGIN:
 
 			err = db.InsertReplaceTxInQueue(data)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
@@ -226,12 +238,18 @@ BEGIN:
 			p := new(dcparser.Parser)
 			err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 			if err != nil {
-				db.PrintSleep(err, 60)
+				db.PrintSleep(err, 1)
 				continue BEGIN
 			}
 		}
 		db.DbUnlock()
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 
 }

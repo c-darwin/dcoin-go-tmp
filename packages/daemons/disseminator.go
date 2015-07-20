@@ -14,16 +14,22 @@ import (
 func Disseminator() {
 
 	GoroutineName := "Disseminator"
-	db := DbConnect()
-	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
-	for {
 
-		// проверим, не нужно нам выйти, т.к. обновилась версия софта
-		if db.CheckDaemonRestart() {
-			utils.Sleep(1)
-			break
+	db := DbConnect()
+	if db == nil {
+		return
+	}
+	db.GoroutineName = GoroutineName
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
+	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
 		}
 
 		var hosts []map[string]string

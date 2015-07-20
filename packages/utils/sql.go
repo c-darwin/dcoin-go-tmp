@@ -779,18 +779,28 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 }
 
 
-func (db *DCDB) CheckInstall() {
+func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 	// Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
-	INSTALL:
-	progress, err := db.Single("SELECT progress FROM install").String()
-	if err != nil || progress != "complete" {
-		log.Debug("%v", `progress != "complete"`, db.GoroutineName)
-		if err!=nil {
-			log.Debug("%v", ErrInfo(err))
+	for {
+		select {
+		case <-DaemonCh:
+			log.Debug("Restart from CheckInstall")
+			AnswerDaemonCh<-true
+			return false
+		default:
 		}
-		Sleep(1)
-		goto INSTALL
+		progress, err := db.Single("SELECT progress FROM install").String()
+		if err != nil || progress != "complete" {
+			log.Debug("%v", `progress != "complete"`, db.GoroutineName)
+			if err!=nil {
+				log.Debug("%v", ErrInfo(err))
+			}
+			Sleep(1)
+		} else {
+			break
+		}
 	}
+	return true
 }
 
 func (db *DCDB) GetTcpPort() string {

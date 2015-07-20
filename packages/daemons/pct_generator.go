@@ -15,11 +15,23 @@ import (
 func PctGenerator() {
 
 	const GoroutineName = "PctGenerator"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {

@@ -10,15 +10,25 @@ func CfProjects() {
 	const GoroutineName = "CfProjects"
 
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
 
 	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
@@ -33,7 +43,7 @@ func CfProjects() {
 		for _, cf_projects := range all {
 			gmapData, err := utils.GetHttpTextAnswer("http://maps.googleapis.com/maps/api/geocode/json?latlng="+cf_projects["latitude"]+","+cf_projects["longitude"]+"&sensor=true_or_false")
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 60)
+				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			var gmap map[string][]map[string][]map[string]string
@@ -43,7 +53,7 @@ func CfProjects() {
 				city := gmap["results"][len(gmap["results"])-2]["address_components"][1]["short_name"]
 				err = db.ExecSql("UPDATE cf_projects SET country = ?, city = ?, geo_checked= 1 WHERE id = ?", country, city, cf_projects["id"])
 				if err != nil {
-					db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+					db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 			}
@@ -61,33 +71,39 @@ func CfProjects() {
 			// отмечаем, чтобы больше не брать
 			err = db.ExecSql("UPDATE cf_funding SET checked = 1 WHERE id = ?", data["id"])
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			// сколько собрано средств
 			funding, err := db.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", data["project_id"]).Float64()
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
 			// сколько всего фундеров
 			countFunders, err := db.Single("SELECT count(id) FROM cf_funding WHERE project_id  = ? AND del_block_id  =  0 GROUP BY user_id", data["project_id"]).Int64()
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
 			// обновляем кол-во фундеров и собранные средства
 			err = db.ExecSql("UPDATE cf_projects SET funding = ?, funders = ? WHERE id = ?", funding, countFunders, data["project_id"])
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 		}
 
 		db.DbUnlock()
 
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 }

@@ -9,35 +9,47 @@ import (
 func ElectionsAdmin() {
 
 	const GoroutineName = "ElectionsAdmin"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		blockId, err := db.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := db.TestBlock();
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		variables, err := db.GetAllVariables()
@@ -46,22 +58,22 @@ BEGIN:
 		// проверим, прошло ли 2 недели с момента последнего обновления
 		adminTime, err := db.Single("SELECT time FROM admin").Int64()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if curTime - adminTime <= variables.Int64["new_pct_period"] {
-			db.UnlockPrintSleep(utils.ErrInfo("14 day error"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("14 day error"), 1)
 			continue BEGIN
 		}
 
 		// сколько всего майнеров
 		countMiners, err := db.Single("SELECT count(miner_id) FROM miners WHERE active  =  1").Int64()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if countMiners < 1000 {
-			db.UnlockPrintSleep(utils.ErrInfo("countMiners < 1000"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("countMiners < 1000"), 1)
 			continue BEGIN
 		}
 
@@ -75,7 +87,7 @@ BEGIN:
 				GROUP BY  admin_user_id
 				`, "admin_user_id", "votes", curTime - variables.Int64["new_pct_period"])
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		for admin_user_id, votes := range votes_admin {
@@ -85,7 +97,7 @@ BEGIN:
 			}
 		}
 		if newAdmin == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo("newAdmin == 0"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("newAdmin == 0"), 1)
 			continue BEGIN
 		}
 
@@ -93,7 +105,7 @@ BEGIN:
 		forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewAdmin"), curTime, myUserId, newAdmin)
 		binSign, err := db.GetBinSign(forSign, myUserId)
 		if err!= nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		data := utils.DecToBin(utils.TypeInt("NewAdmin"), 1)
@@ -104,19 +116,25 @@ BEGIN:
 
 		err = db.InsertReplaceTxInQueue(data)
 		if err!= nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
 		p := new(dcparser.Parser)
 		err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
 		db.DbUnlock()
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 
 }

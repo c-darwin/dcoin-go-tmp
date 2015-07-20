@@ -17,11 +17,23 @@ import (
 func Confirmations() {
 
 	const GoroutineName = "Confirmations"
-	db := DbConnect()
-	db.GoroutineName = GoroutineName
-	db.CheckInstall()
 
+	db := DbConnect()
+	if db == nil {
+		return
+	}
+	db.GoroutineName = GoroutineName
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 		blockId, err := db.GetBlockId()
 		hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
 		if err != nil {
@@ -88,7 +100,13 @@ func Confirmations() {
 				log.Info("%v", err)
 			}
 		}
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 }
 

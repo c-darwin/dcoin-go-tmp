@@ -22,27 +22,39 @@ import (
 func Shop() {
 
 	const GoroutineName = "Shop"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		myBlockId, err := db.GetMyBlockId()
 		blockId, err := db.GetBlockId()
 		if myBlockId > blockId {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		currencyList, err := db.GetCurrencyList(false)
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		// нужно знать текущий блок, который есть у большинства нодов
 		blockId, err = db.GetConfirmedBlockId()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 
@@ -52,7 +64,7 @@ BEGIN:
 		// берем всех юзеров по порядку
 		community, err := db.GetCommunityUsers()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		for _, userId := range community {
@@ -60,7 +72,7 @@ BEGIN:
 			myPrefix := utils.Int64ToStr(userId)+"_"
 			allTables, err := db.GetAllTables()
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 60)
+				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			if !utils.InSliceString(myPrefix+"my_keys", allTables) {
@@ -69,14 +81,14 @@ BEGIN:
 			// проверим, майнер ли
 			minerId, err := db.GetMyMinerId(userId)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 60)
+				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			if minerId > 0 {
 				// наш приватный ключ нода, которым будем расшифровывать комменты
 				privateKey, err = db.GetNodePrivateKey(myPrefix)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 60)
+					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 			}
@@ -84,7 +96,7 @@ BEGIN:
 			if len(privateKey) == 0 {
 				privateKey, err = db.GetMyPrivateKey(myPrefix)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 60)
+					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 			}
@@ -94,7 +106,7 @@ BEGIN:
 			}
 			myData, err := db.OneRow("SELECT shop_secret_key, shop_callback_url FROM "+myPrefix+"my_table").String()
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 60)
+				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
@@ -109,7 +121,7 @@ BEGIN:
 					ORDER BY id DESC
 					`, blockId - confirmations)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 60)
+				db.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -119,14 +131,14 @@ BEGIN:
 				var amount float64
 				err = rows.Scan(&id, &block_id, &type_id, &currency_id, &amount, &to_user_id, &comment_status, &comment)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 60)
+					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				if len(myData["shop_callback_url"]) == 0 {
 					// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 					err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 					if err != nil {
-						db.PrintSleep(utils.ErrInfo(err), 60)
+						db.PrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 					continue
@@ -135,7 +147,7 @@ BEGIN:
 				// вначале нужно проверить, точно ли есть такой перевод в блоке
 				binaryData, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 60)
+					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				p := new(dcparser.Parser)
@@ -241,6 +253,12 @@ BEGIN:
 			}
 		}
 
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 }

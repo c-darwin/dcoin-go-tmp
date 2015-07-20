@@ -19,13 +19,23 @@ var err error
 func TestblockGenerator() {
 
     const GoroutineName = "TestblockGenerator"
-    db := DbConnect()
-    db.GoroutineName = GoroutineName
-    db.CheckInstall()
 
-BEGIN:
-	for {
-        log.Debug("START")
+    db := DbConnect()
+    if db == nil {
+        return
+    }
+    db.GoroutineName = GoroutineName
+    if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+        return
+    }
+
+    BEGIN:
+    for {
+        log.Info(GoroutineName)
+        // проверим, не нужно ли нам выйти из цикла
+        if CheckDaemonsRestart() {
+            break BEGIN
+        }
 
         db.DbLock()
 
@@ -365,7 +375,13 @@ BEGIN:
 
         log.Debug("END")
         //break
-        utils.Sleep(10)
+        for i:=0; i < 10; i++ {
+            utils.Sleep(1)
+            // проверим, не нужно ли нам выйти из цикла
+            if CheckDaemonsRestart() {
+                break BEGIN
+            }
+        }
     }
 }
 

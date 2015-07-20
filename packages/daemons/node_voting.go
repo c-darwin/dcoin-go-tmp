@@ -17,16 +17,22 @@ import (
 func NodeVoting() {
 
 	const GoroutineName = "NodeVoting"
-	db := DbConnect()
-	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
-	for {
 
-		// проверим, не нужно нам выйти, т.к. обновилась версия софта
-		if db.CheckDaemonRestart() {
-			utils.Sleep(1)
-			break
+	db := DbConnect()
+	if db == nil {
+		return
+	}
+	db.GoroutineName = GoroutineName
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
+	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
 		}
 
 		err := db.DbLock()
@@ -87,13 +93,13 @@ BEGIN:
 			if len(intersectMyMiners) > 0 {
 				// копируем фото  к себе
 				profilePath := "public/profile_"+user_id+".jpg";
-				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 1)
+				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				facePath := "public/face_"+user_id+".jpg";
-				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 1)
+				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
@@ -137,7 +143,7 @@ BEGIN:
 					forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("VotesNodeNewMiner"), curTime, myUserId, vote_id, vote)
 					binSign, err := db.GetBinSign(forSign, myUserId)
 					if err!= nil {
-						db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+						db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 					data := utils.DecToBin(utils.TypeInt("VotesNodeNewMiner"), 1)
@@ -150,7 +156,7 @@ BEGIN:
 
 					err = db.InsertReplaceTxInQueue(data)
 					if err!= nil {
-						db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+						db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 
@@ -165,7 +171,13 @@ BEGIN:
 			}
 		}
 		db.DbUnlock()
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 
 }

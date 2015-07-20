@@ -9,11 +9,21 @@ func Clear() {
 	const GoroutineName = "Clear"
 
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
 
 	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {
@@ -179,6 +189,12 @@ func Clear() {
 
 		db.DbUnlock()
 
-		utils.Sleep(60)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 }

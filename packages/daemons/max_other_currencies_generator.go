@@ -15,35 +15,47 @@ import (
 func MaxOtherCurrenciesGenerator() {
 
 	const GoroutineName = "MaxOtherCurrenciesGenerator"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
-BEGIN:
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
+	BEGIN:
 	for {
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
+		}
 
 		err := db.DbLock()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 60)
+			db.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		blockId, err := db.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := db.TestBlock();
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		variables, err := db.GetAllVariables()
@@ -51,17 +63,17 @@ BEGIN:
 
 		totalCountCurrencies, err := db.GetCountCurrencies()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		// проверим, прошло ли 2 недели с момента последнего обновления
 		pctTime, err := db.Single("SELECT max(time) FROM max_other_currencies_time").Int64()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if curTime - pctTime <= variables.Int64["new_max_other_currencies"] {
-			db.UnlockPrintSleep(utils.ErrInfo("14 day error"), 60)
+			db.UnlockPrintSleep(utils.ErrInfo("14 day error"), 1)
 			continue BEGIN
 		}
 
@@ -69,7 +81,7 @@ BEGIN:
 		maxOtherCurrenciesVotes := make(map[int64][]map[int64]int64)
 		rows, err := db.Query("SELECT currency_id, count, count(user_id) as votes FROM votes_max_other_currencies GROUP BY currency_id, count ORDER BY currency_id, count ASC")
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		defer rows.Close()
@@ -77,7 +89,7 @@ BEGIN:
 			var currency_id, count, votes int64
 			err = rows.Scan(&currency_id, &count, &votes)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count:votes})
@@ -94,7 +106,7 @@ BEGIN:
 		forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewMaxOtherCurrencies"), curTime, myUserId, jsonData)
 		binSign, err := db.GetBinSign(forSign, myUserId)
 		if err!= nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		data := utils.DecToBin(utils.TypeInt("NewMaxOtherCurrencies"), 1)
@@ -105,7 +117,7 @@ BEGIN:
 
 		err = db.InsertReplaceTxInQueue(data)
 		if err!= nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 60)
+			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
@@ -113,13 +125,13 @@ BEGIN:
 		p.DCDB = db
 		err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
 		if err != nil {
-			db.PrintSleep(err, 60)
+			db.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
 
 		db.DbUnlock()
-		utils.Sleep(60)
+		utils.Sleep(1)
 	}
 
 }

@@ -13,16 +13,22 @@ import (
 func Connector() {
 
 	GoroutineName := "Connector"
+
 	db := DbConnect()
+	if db == nil {
+		return
+	}
 	db.GoroutineName = GoroutineName
-	db.CheckInstall()
+	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+		return
+	}
+
 	BEGIN:
 	for {
-
-		// проверим, не нужно нам выйти, т.к. обновилась версия софта
-		if db.CheckDaemonRestart() {
-			utils.Sleep(1)
-			break
+		log.Info(GoroutineName)
+		// проверим, не нужно ли нам выйти из цикла
+		if CheckDaemonsRestart() {
+			break BEGIN
 		}
 
 		nodeConfig, err := db.GetNodeConfig()

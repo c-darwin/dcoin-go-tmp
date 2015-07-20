@@ -15,23 +15,23 @@ import (
 func BlocksCollection() {
 
     const GoroutineName = "BlocksCollection"
+
     db := DbConnect()
+    if db == nil {
+        return
+    }
     db.GoroutineName = GoroutineName
-    db.CheckInstall()
+    if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+        return
+    }
 
 	var cur bool
     BEGIN:
-	for {
-
-		log.Info("BlocksCollection")
+    for {
+        log.Info(GoroutineName)
         // проверим, не нужно ли нам выйти из цикла
-        select {
-        case <-DaemonCh:
-            log.Debug("exit")
-            utils.Sleep(1)
-            AnswerDaemonCh<-true
+        if CheckDaemonsRestart() {
             break BEGIN
-        default:
         }
 
         config, err := db.GetNodeConfig()
@@ -39,14 +39,6 @@ func BlocksCollection() {
             db.PrintSleep(err, 1)
             continue BEGIN
         }
-
-        /*myPrefix, err:= db.GetMyPrefix()
-        if err != nil {
-            log.Info(utils.ErrInfo(err))
-            utils.Sleep(1)
-            continue BEGIN
-        }
-		log.Info("myPrefix",myPrefix)*/
 
        err = db.DbLock();
         if err != nil {
@@ -69,6 +61,9 @@ func BlocksCollection() {
             currentBlockId = 0
             cur = true
         }
+        parser := new(dcparser.Parser)
+        parser.DCDB = db
+        parser.GoroutineName = GoroutineName
         if currentBlockId==0 {
 
 			if config["first_load_blockchain"]=="file" {
@@ -80,7 +75,7 @@ func BlocksCollection() {
                 } else {
                     blockchain_url = consts.BLOCKCHAIN_URL
                 }
-                blockchainSize, err := utils.DownloadToFile(blockchain_url, "public/blockchain", 3600)
+                blockchainSize, err := utils.DownloadToFile(blockchain_url, "public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
                         log.Info("%v", utils.ErrInfo(err))
@@ -112,7 +107,13 @@ func BlocksCollection() {
                 }
 
                 log.Info("GO!")
+
                 for {
+                    // проверим, не нужно ли нам выйти из цикла
+                    if CheckDaemonsRestart() {
+                        db.UnlockPrintSleep(fmt.Errorf("DaemonsRestart"), 0)
+                        break BEGIN
+                    }
                     b1 := make([]byte, 5)
                     file.Read(b1)
                     dataSize := utils.BinToDec(b1)
@@ -137,10 +138,7 @@ func BlocksCollection() {
                         //if blockId > 244790 {
 
                             // парсинг блока
-                            parser := new(dcparser.Parser)
-                            parser.DCDB = db
                             parser.BinaryData = blockBin;
-                            parser.GoroutineName = GoroutineName
 
                             if first {
                                 parser.CurrentVersion = consts.VERSION
@@ -182,9 +180,6 @@ func BlocksCollection() {
                     db.UnlockPrintSleep(err, 1)
                     break
                 }
-                parser := new(dcparser.Parser)
-                parser.DCDB = db
-                parser.GoroutineName = GoroutineName
                 parser.BinaryData = newBlock
                 parser.CurrentVersion = consts.VERSION
 
@@ -416,10 +411,8 @@ func BlocksCollection() {
                     continue BEGIN
 				}
                 // нужно привести данные в нашей БД в соответствие с данными у того, у кого качаем более свежий блок
-                p := new(dcparser.Parser)
-				p.DCDB = db
 				//func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
-                err := p.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
+                err := parser.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
 				log.Info("%v", err)
 				if err != nil {
                     db.NodesBan(maxBlockIdUserId, fmt.Sprintf(`blockId: %v / %v`, blockId, err))
@@ -456,8 +449,6 @@ func BlocksCollection() {
                         continue BEGIN
 					}
                     // откатываем по фронту все свежие тр-ии
-                    parser := new(dcparser.Parser)
-                    parser.DCDB = db
                     parser.BinaryData = transactions
                     err = parser.ParseDataRollbackFront(false)
                     if err != nil {
@@ -466,8 +457,6 @@ func BlocksCollection() {
 					}
                 }
 
-                parser := new(dcparser.Parser)
-                parser.DCDB = db
                 err = parser.RollbackTransactionsTestblock(true)
                 if err != nil {
                     utils.Sleep(1)
@@ -482,8 +471,6 @@ func BlocksCollection() {
 
             // теперь у нас в таблицах всё тоже самое, что у нода, у которого качаем блок
             // и можем этот блок проверить и занести в нашу БД
-            parser := new(dcparser.Parser)
-            parser.DCDB = db
             parser.BinaryData = binaryBlockFull
             err = parser.ParseDataFull()
 			if err == nil {
@@ -505,6 +492,10 @@ func BlocksCollection() {
 
         for i:=0; i < 60; i++ {
             utils.Sleep(1)
+            // проверим, не нужно ли нам выйти из цикла
+            if CheckDaemonsRestart() {
+                break BEGIN
+            }
         }
     }
 }

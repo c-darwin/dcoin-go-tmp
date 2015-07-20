@@ -670,13 +670,13 @@ func (p *Parser) ParseBlock() error {
 func (p *Parser) CheckBlockHeader() error {
 	var err error
 	// инфа о предыдущем блоке (т.е. последнем занесенном)
-	if p.PrevBlock == nil {
+	//if p.PrevBlock == nil {
 		p.PrevBlock, err = p.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
 		log.Debug("PrevBlock 0",p.PrevBlock)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-	}
+	//}
 	log.Debug("PrevBlock",p.PrevBlock)
 	log.Debug("p.PrevBlock.BlockId",p.PrevBlock.BlockId)
 	// для локальных тестов
