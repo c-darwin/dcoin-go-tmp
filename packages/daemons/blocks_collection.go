@@ -252,7 +252,9 @@ func BlocksCollection() {
         var maxBlockIdUserId int64
         // получим максимальный номер блока
         for i:=0; i < len(hosts); i++ {
-
+            if CheckDaemonsRestart() {
+                break BEGIN
+            }
             conn, err := utils.TcpConn(hosts[i]["host"])
             if err != nil {
                 db.PrintSleep(err, 1)

@@ -3331,9 +3331,11 @@ func (p *Parser) getMyNodeCommission(currencyId, userId int64, amount float64) (
 			}
 		}
 		commissionMap := make(map[string][3]float64)
-		err = json.Unmarshal(commissionJson, &commissionMap)
-		if err != nil {
-			return 0, p.ErrInfo(err)
+		if len(commissionJson) > 0 {
+			err = json.Unmarshal(commissionJson, &commissionMap)
+			if err != nil {
+				return 0, p.ErrInfo(err)
+			}
 		}
 		var tmpNodeCommission float64
 		currencyIdStr:=utils.Int64ToStr(currencyId)
