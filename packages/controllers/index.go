@@ -58,12 +58,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	t := template.New("template")
 	t, err = t.Parse(string(data))
 	if err != nil {
-		log.Error(err)
+		log.Error("%v", err)
 	}
 	b := new(bytes.Buffer)
 	err = t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang})
 	if err != nil {
-		log.Error(err)
+		log.Error("%v", err)
 	}
 	w.Write(b.Bytes())
 }
