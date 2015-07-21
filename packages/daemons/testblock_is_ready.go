@@ -105,8 +105,11 @@ func TestblockIsReady() {
 
 		// блокируем изменения данных в тестблоке
 		// также, нужно блокировать main, т.к. изменение в info_block и block_chain ведут к изменению подписи в testblock
-		db.DbLock()
-
+		err = db.DbLock(DaemonCh, AnswerDaemonCh)
+		if err != nil {
+			db.PrintSleep(utils.ErrInfo(err), 0)
+			break BEGIN
+		}
 		// за промежуток в main_unlock и main_lock мог прийти новый блок
 		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock()
 		if err != nil {

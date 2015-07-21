@@ -124,7 +124,11 @@ func TestblockGenerator() {
         db.DbUnlock()
 
         for i := 0; i < int(sleep); i++ {
-            db.DbLock();
+            err = db.DbLock(DaemonCh, AnswerDaemonCh)
+            if err != nil {
+                db.PrintSleep(utils.ErrInfo(err), 0)
+                break BEGIN
+            }
             log.Debug("i %v", i)
             log.Debug("sleep %v", sleep)
 			var newHeadHash string
