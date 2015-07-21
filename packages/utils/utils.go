@@ -3818,13 +3818,14 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 }
 
 
-func TcpConn(Addr string) (*net.TCPConn, error) {
+func TcpConn(Addr string) (net.Conn, error) {
 	// шлем данные указанному хосту
-	tcpAddr, err := net.ResolveTCPAddr("tcp", Addr)
+	/*tcpAddr, err := net.ResolveTCPAddr("tcp", Addr)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
+	conn, err := net.DialTimeout("tcp", Addr, 5 * time.Second)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
@@ -3866,7 +3867,7 @@ func WriteSizeAndData(binaryData []byte, conn net.Conn) error {
 	return nil
 }
 
-func WriteSizeAndDataTCPConn(binaryData []byte, conn *net.TCPConn) error {
+func WriteSizeAndDataTCPConn(binaryData []byte, conn net.Conn) error {
 	// в 4-х байтах пишем размер данных, которые пошлем далее
 	size := DecToBin(len(binaryData), 4)
 	_, err := conn.Write(size)

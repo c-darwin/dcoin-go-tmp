@@ -286,12 +286,14 @@ type answerType struct {
 
 func check(host string, userId int64) *answerType {
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", host)
+	/*tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
 		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
+	conn, err := net.DialTimeout("tcp", host, 5 * time.Second)
+
 	if err != nil {
 		log.Info("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
