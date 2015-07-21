@@ -10,7 +10,10 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"errors"
 	"encoding/json"
+    "flag"
 )
+var startBlockId = flag.Int("startBlockId", 0, "Start block for blockCollection daemon")
+var endBlockId = flag.Int("endBlockId", 0, "End block for blockCollection daemon")
 
 func BlocksCollection() {
 
@@ -64,7 +67,7 @@ func BlocksCollection() {
         parser := new(dcparser.Parser)
         parser.DCDB = db
         parser.GoroutineName = GoroutineName
-        if currentBlockId==0 {
+        if currentBlockId==0 || startBlockId > 0 {
 
 			if config["first_load_blockchain"]=="file" {
 
@@ -106,7 +109,7 @@ func BlocksCollection() {
                     continue BEGIN
                 }
 
-                log.Info("GO!")
+                log.Debug("GO!")
 
                 for {
                     // проверим, не нужно ли нам выйти из цикла
@@ -117,25 +120,25 @@ func BlocksCollection() {
                     b1 := make([]byte, 5)
                     file.Read(b1)
                     dataSize := utils.BinToDec(b1)
-                    log.Info("dataSize", dataSize)
+                    log.Debug("dataSize", dataSize)
                     if dataSize > 0 {
 
                         data := make([]byte, dataSize)
                         file.Read(data)
-                        log.Info("data %x\n", data)
+                        log.Debug("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
-                        //if blockId == 244790 {
-                        //    break BEGIN
-                        //}
+                        if endBlockId > 0 && blockId == endBlockId {
+                           break BEGIN
+                        }
                         log.Info("blockId", blockId)
                         data2:=data[5:]
                         length := utils.DecodeLength(&data2)
-                        log.Info("length", length)
-                        log.Info("data2 %x\n", data2)
+                        log.Debug("length", length)
+                        log.Debug("data2 %x\n", data2)
                         blockBin := utils.BytesShift(&data2, length)
-                        log.Info("blockBin %x\n", blockBin)
+                        log.Debug("blockBin %x\n", blockBin)
 
-                        //if blockId > 244790 {
+                        if startBlockId == 0 || (startBlockId > 0 && blockId > startBlockId) {
 
                             // парсинг блока
                             parser.BinaryData = blockBin;
@@ -164,7 +167,7 @@ func BlocksCollection() {
                                 file.Close()
                                 break BEGIN
                             }
-                        //}
+                        }
                         // ненужный тут размер в конце блока данных
                         data = make([]byte, 5)
                         file.Read(data)
