@@ -52,9 +52,9 @@ func (c *Controller) PoolAdminControl() (string, error) {
 		poolMaxUsers := int64(utils.StrToFloat64(c.Parameters["pool_max_users"]))
 		commission := c.Parameters["commission"]
 
-		if len(commission) > 0 && !utils.CheckInputData(commission, "commission") {
-			return "", utils.ErrInfo(errors.New("incorrect commission"))
-		}
+		//if len(commission) > 0 && !utils.CheckInputData(commission, "commission") {
+		//	return "", utils.ErrInfo(errors.New("incorrect commission"))
+		//}
 		err = c.ExecSql("UPDATE config SET pool_tech_works = ?, pool_max_users = ?, commission = ?", poolTechWorks, poolMaxUsers, commission)
 		if err != nil {
 			return "", utils.ErrInfo(err)
