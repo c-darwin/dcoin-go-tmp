@@ -57,11 +57,13 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	data, err := static.Asset("static/templates/index.html")
 	t := template.New("template")
 	t, err = t.Parse(string(data))
-	//t, err := template.Parse("templates/index.html")
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 	b := new(bytes.Buffer)
-	t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang})
+	err = t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang})
+	if err != nil {
+		log.Error(err)
+	}
 	w.Write(b.Bytes())
 }
