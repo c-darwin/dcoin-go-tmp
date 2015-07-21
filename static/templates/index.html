@@ -385,7 +385,7 @@
 					})
 		{{else if .Key}}
 			$('#wrapper').spin();
-			$( "#dc_content" ).load( "content", { {{if .setLang}}"parameters": \{"lang":{{.setLang}}\}{{end}} }, function() {
+			$( "#dc_content" ).load( "content", { {{if .SetLang}}"parameters": \{"lang":{{.setLang}}\}{{end}} }, function() {
 			$("#modal_key").val("{{.Key}}");
 			save_key(); doSign('login');$('#wrapper').spin(false);
 			})
