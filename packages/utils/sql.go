@@ -2008,14 +2008,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
 		if err != nil {
 			return ErrInfo(err)
 		}
-		//log.Debug("%s, %s", exists["lock_time"], exists["script_name"])
-		if exists["script_name"] == db.GoroutineName {
-			err = db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
-			if err != nil {
-				return ErrInfo(err)
-			}
-			ok = true
-		} else if len(exists["script_name"])==0 {
+		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
 			if err != nil {
 				return ErrInfo(err)
@@ -2029,10 +2022,35 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
 			break
 		}
 	}
-	//log.Debug("%v", "DbLock")
 	return nil
 }
 
+
+func (db *DCDB) DbLockGate() error {
+	var mutex = &sync.Mutex{}
+	var ok bool
+	for {
+		mutex.Lock()
+		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
+		if err != nil {
+			return ErrInfo(err)
+		}
+		if len(exists["script_name"])==0 {
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
+			if err != nil {
+				return ErrInfo(err)
+			}
+			ok = true
+		}
+		mutex.Unlock()
+		if !ok {
+			time.Sleep(time.Duration(RandInt(300, 400)) * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	return nil
+}
 
 func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)

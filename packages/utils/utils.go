@@ -3378,7 +3378,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				/*
 				 * Проблема одновременных попыток локнуть. Надо попробовать без локов
 				 * */
-				db.DbLock()
+				db.DbLockGate()
 				exists, err := db.Single(`
 					SELECT block_id
 					FROM testblock
