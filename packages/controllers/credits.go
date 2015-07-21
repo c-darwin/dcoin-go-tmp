@@ -66,28 +66,7 @@ func (c *Controller) Credits() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	data, err := static.Asset("static/templates/credits.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	signatures, err := static.Asset("static/templates/signatures.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	alert_success, err := static.Asset("static/templates/alert_success.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	funcMap := template.FuncMap{
-		"noescape": func(s string) template.HTML {
-			return template.HTML(s)
-		},
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-	t = template.Must(t.Parse(string(alert_success)))
-	t = template.Must(t.Parse(string(signatures)))
-	b := new(bytes.Buffer)
-	err = t.ExecuteTemplate(b, "credits", &creditsPage{
+	TemplateStr, err := makeTemplate("credits", "credits", &creditsPage{
 		Alert: c.Alert,
 		Lang: c.Lang,
 		CountSignArr: c.CountSignArr,
@@ -104,5 +83,5 @@ func (c *Controller) Credits() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	return b.String(), nil
+	return TemplateStr, nil
 }
