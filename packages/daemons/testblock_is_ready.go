@@ -67,11 +67,12 @@ func TestblockIsReady() {
 		// Если случится откат или придет новый блок, то testblock станет неактуален
 		startSleep := utils.Time()
 		for i:=0; i < int(sleep); i++ {
-			err = db.DbLock()
+			err = db.DbLock(DaemonCh, AnswerDaemonCh)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 1)
-				continue
+				db.PrintSleep(utils.ErrInfo(err), 0)
+				break BEGIN
 			}
+
 			newHeadHash, err := db.Single("SELECT head_hash FROM info_block").String()
 			if err != nil {
 				db.PrintSleep(utils.ErrInfo(err), 1)

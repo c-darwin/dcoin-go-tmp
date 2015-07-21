@@ -163,32 +163,23 @@ db_name=`)
 
 
 	db := utils.DbConnect(configIni)
-	HttpPort := db.GetHttpPort()
-	host:= ""
-	if len(configIni["host"]) > 0 {
-		host = configIni["host"]+":"+HttpPort
-	}
+	BrowserHttpHost, HandleHttpHost, ListenHttpHost := db.GetHttpHost()
 	// включаем листинг веб-сервером для клиентской части
-	http.HandleFunc(host+"/", controllers.Index)
-	http.HandleFunc(host+"/content", controllers.Content)
-	http.HandleFunc(host+"/ajax", controllers.Ajax)
-	http.HandleFunc(host+"/tools", controllers.Tools)
-	http.HandleFunc(host+"/cf/", controllers.IndexCf)
-	http.HandleFunc(host+"/cf/content", controllers.ContentCf)
-	http.Handle(host+"/public/", noDirListing(http.FileServer(http.Dir("./"))))
-	http.Handle(host+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
+	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
+	http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
+	http.HandleFunc(HandleHttpHost+"/ajax", controllers.Ajax)
+	http.HandleFunc(HandleHttpHost+"/tools", controllers.Tools)
+	http.HandleFunc(HandleHttpHost+"/cf/", controllers.IndexCf)
+	http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
+	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir("./"))))
+	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("tcp")
 	go func() {
-		tcpPort := ""
-		if configIni["test_mode"] == "1" {
-			tcpPort = "8088"
-		} else {
-			tcpPort = db.GetTcpPort()
-		}
-		log.Debug("tcpPort: %v", tcpPort)
+		tcpHost := db.GetTcpHost()
+		log.Debug("tcpPort: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов
-		l, err := net.Listen("tcp", ":"+tcpPort)
+		l, err := net.Listen("tcp", ":"+tcpHost)
 		if err != nil {
 			log.Error("Error listening: %v", err)
 			panic(err)
@@ -210,7 +201,7 @@ db_name=`)
 		}()
 	}()
 
-	err = http.ListenAndServe(":"+HttpPort, nil)
+	err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
 		log.Error("Error listening: %v", err)
 		panic(err)
@@ -222,9 +213,9 @@ db_name=`)
 	err = nil
 	switch runtime.GOOS {
 	case "linux":
-		err = exec.Command("xdg-open", "http://localhost:"+HttpPort+"/").Start()
+		err = exec.Command("xdg-open", BrowserHttpHost).Start()
 	case "windows", "darwin":
-		err = exec.Command("open", "http://localhost:"+HttpPort+"/").Start()
+		err = exec.Command("open", BrowserHttpHost).Start()
 	default:
 		err = fmt.Errorf("unsupported platform")
 	}

@@ -803,7 +803,7 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 	return true
 }
 
-func (db *DCDB) GetTcpPort() string {
+func (db *DCDB) GetTcpHost() string {
 	// Слушать TCP нужно только майнерам
  	for {
 		community, err := db.GetCommunityUsers()
@@ -822,14 +822,14 @@ func (db *DCDB) GetTcpPort() string {
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
 		}
-		re := regexp.MustCompile(`([0-9]+)$`)
+		/*re := regexp.MustCompile(`([0-9]+)$`)
 		match := re.FindStringSubmatch(tcpHost)
 		tcpPort := ""
 		if len(match) != 0 {
 			tcpPort = match[1]
-		}
-		if len(tcpPort) > 0 {
-			return tcpPort
+		}*/
+		if len(tcpHost) > 0 {
+			return tcpHost
 		} else {
 			Sleep(5)
 		}
@@ -838,34 +838,36 @@ func (db *DCDB) GetTcpPort() string {
 }
 
 
-func (db *DCDB) GetHttpPort() string {
-	httpPort := "8089"
+func (db *DCDB) GetHttpHost() (string, string, string) {
+	BrowserHttpHost := "localhost:8089"
+	HandleHttpHost := ""
+	ListenHttpHost := ":8089"
 	// Если первый запуск, то будет висеть на 8089
 	community, err := db.GetCommunityUsers()
 	if err!=nil {
 		log.Error("%v", ErrInfo(err))
-		return httpPort
+		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
 	myPrefix := ""
 	if len(community) > 0 {
 		myUserId, err := db.GetPoolAdminUserId()
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
-			return httpPort
+			return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 		}
 		myPrefix = Int64ToStr(myUserId)+"_"
 	}
 	httpHost, err := db.Single("SELECT http_host FROM "+myPrefix+"my_table").String()
 	if err!=nil {
 		log.Error("%v", ErrInfo(err))
-		return httpPort
+		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
-	re := regexp.MustCompile(`([0-9]+)$`)
-	match := re.FindStringSubmatch(httpHost)
-	if len(match) != 0 {
-		httpPort = match[1]
+	if len(httpHost) > 0 {
+		BrowserHttpHost = httpHost
+		HandleHttpHost = httpHost
+		ListenHttpHost = httpHost
 	}
-	return httpPort
+	return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 }
 
 
@@ -1990,10 +1992,17 @@ func (db *DCDB) CheckDaemonRestart() bool {
 	return false
 }
 
-func (db *DCDB) DbLock() error {
+func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
 	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
+		select {
+		case <-DaemonCh:
+			log.Debug("Restart from DbLock")
+			AnswerDaemonCh<-true
+			return ErrInfo("Restart from DbLock")
+		default:
+		}
 		mutex.Lock()
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {

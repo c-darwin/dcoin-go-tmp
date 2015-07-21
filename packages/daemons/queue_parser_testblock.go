@@ -32,11 +32,12 @@ func QueueParserTestblock() {
 			break BEGIN
 		}
 
-		err := db.DbLock()
+		err = db.DbLock(DaemonCh, AnswerDaemonCh)
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
-			continue
+			db.PrintSleep(utils.ErrInfo(err), 0)
+			break BEGIN
 		}
+
 
 		data, err := db.OneRow("SELECT * FROM queue_testblock ORDER BY head_hash ASC").String()
 		if err != nil {

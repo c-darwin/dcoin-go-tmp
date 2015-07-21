@@ -37,7 +37,12 @@ func TestblockGenerator() {
             break BEGIN
         }
 
-        db.DbLock()
+        err = db.DbLock(DaemonCh, AnswerDaemonCh)
+        if err != nil {
+            db.PrintSleep(utils.ErrInfo(err), 0)
+            break BEGIN
+        }
+
 
         blockId, err := db.GetBlockId()
 		if err != nil {
@@ -144,7 +149,11 @@ func TestblockGenerator() {
 		 *  Закончили спать, теперь генерим блок
 		 * Но, всё, что было до main_unlock может стать недействительным, т.е. надо обновить данные
 		 * */
-        db.DbLock();
+        err = db.DbLock(DaemonCh, AnswerDaemonCh)
+        if err != nil {
+            db.PrintSleep(utils.ErrInfo(err), 0)
+            break BEGIN
+        }
 
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
 		if err != nil {

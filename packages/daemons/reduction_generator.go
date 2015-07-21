@@ -34,11 +34,12 @@ func ReductionGenerator() {
 			break BEGIN
 		}
 
-		err := db.DbLock()
+		err = db.DbLock(DaemonCh, AnswerDaemonCh)
 		if err != nil {
-			db.PrintSleep(err, 1)
-			continue BEGIN
+			db.PrintSleep(utils.ErrInfo(err), 0)
+			break BEGIN
 		}
+
 		blockId, err := db.GetBlockId()
 		if err != nil {
 			db.UnlockPrintSleep(err, 1)

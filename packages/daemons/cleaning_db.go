@@ -26,11 +26,12 @@ func CleaningDb() {
 		if CheckDaemonsRestart() {
 			break BEGIN
 		}
-		err := db.DbLock()
+		err = db.DbLock(DaemonCh, AnswerDaemonCh)
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
-			continue BEGIN
+			db.PrintSleep(utils.ErrInfo(err), 0)
+			break BEGIN
 		}
+
 		curBlockId, err := db.GetBlockId()
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
