@@ -835,7 +835,7 @@ func (db *DCDB) GetTcpHost() string {
 
 
 func (db *DCDB) GetHttpHost() (string, string, string) {
-	BrowserHttpHost := "localhost:8089"
+	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
 	// Если первый запуск, то будет висеть на 8089
@@ -859,9 +859,13 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
 	if len(httpHost) > 0 {
+		re := regexp.MustCompile(`https?:\/\/([0-9a-z\_\.\-\/:]+)`)
+		match := re.FindStringSubmatch(httpHost)
+		if len(match) != 0 {
+			HandleHttpHost = match[1]
+			ListenHttpHost = match[1]
+		}
 		BrowserHttpHost = httpHost
-		HandleHttpHost = httpHost
-		ListenHttpHost = httpHost
 	}
 	return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 }
