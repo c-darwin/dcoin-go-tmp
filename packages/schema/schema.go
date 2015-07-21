@@ -2945,16 +2945,16 @@ func  (schema *SchemaStruct) typeSqlite() {
 			}
 		}
 		result+=fmt.Sprintln(");\n\n")
-		log.Println(result)
+		//log.Println(result)
 		err := schema.DCDB.ExecSql(result)
 		if err != nil {
 			log.Println(err)
 		}
-		log.Println("AI_START=", AI_START)
+		//log.Println("AI_START=", AI_START)
 		if AI_START!="1" {
 			q:=`BEGIN TRANSACTION; UPDATE sqlite_sequence SET seq = 999 WHERE name = 'cf_currency';INSERT INTO sqlite_sequence (name,seq) SELECT 'cf_currency', 999 WHERE NOT EXISTS (SELECT changes() AS change FROM sqlite_sequence WHERE change <> 0);COMMIT;`
 			err := schema.DCDB.ExecSql(q)
-			log.Println(q)
+			//log.Println(q)
 			if err != nil {
 				log.Println(err)
 			}
