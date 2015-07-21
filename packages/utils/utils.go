@@ -1004,8 +1004,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 			return true
 		}
 	case "private_key":
-		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]{256,3072}$`, data); ok{
-			return true
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]+$`, data); ok{
+			if len(data) > 256 && len(data) < 3072 {
+				return true
+			}
 		}
 	case "votes_comment", "cf_comment":
 		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
