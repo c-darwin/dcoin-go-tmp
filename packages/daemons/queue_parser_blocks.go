@@ -41,10 +41,13 @@ func QueueParserBlocks() {
 			break BEGIN
 		}
 
-		err = db.DbLock(DaemonCh, AnswerDaemonCh)
-		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 0)
+		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		if restart {
 			break BEGIN
+		}
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue BEGIN
 		}
 
 		prevBlockData, err := db.OneRow("SELECT * FROM info_block").String()

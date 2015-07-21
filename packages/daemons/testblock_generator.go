@@ -37,10 +37,13 @@ func TestblockGenerator() {
             break BEGIN
         }
 
-        err = db.DbLock(DaemonCh, AnswerDaemonCh)
-        if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 0)
+        err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+        if restart {
             break BEGIN
+        }
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
         }
 
 
@@ -124,15 +127,18 @@ func TestblockGenerator() {
         db.DbUnlock()
 
         for i := 0; i < int(sleep); i++ {
-            err = db.DbLock(DaemonCh, AnswerDaemonCh)
-            if err != nil {
-                db.PrintSleep(utils.ErrInfo(err), 0)
+            err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+            if restart {
                 break BEGIN
+            }
+            if err != nil {
+                db.PrintSleep(err, 1)
+                continue BEGIN
             }
             log.Debug("i %v", i)
             log.Debug("sleep %v", sleep)
 			var newHeadHash string
-            err := db.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
+            err = db.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
             utils.CheckErr(err)
             log.Debug("newHeadHash %v", newHeadHash)
             db.DbUnlock();
@@ -153,10 +159,13 @@ func TestblockGenerator() {
 		 *  Закончили спать, теперь генерим блок
 		 * Но, всё, что было до main_unlock может стать недействительным, т.е. надо обновить данные
 		 * */
-        err = db.DbLock(DaemonCh, AnswerDaemonCh)
-        if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 0)
+        err, restart = db.DbLock(DaemonCh, AnswerDaemonCh)
+        if restart {
             break BEGIN
+        }
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
         }
 
         prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();

@@ -1992,7 +1992,7 @@ func (db *DCDB) CheckDaemonRestart() bool {
 	return false
 }
 
-func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
+func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) (error, bool) {
 	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
@@ -2000,18 +2000,18 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
 		case <-DaemonCh:
 			log.Debug("Restart from DbLock")
 			AnswerDaemonCh<-true
-			return ErrInfo("Restart from DbLock")
+			return ErrInfo("Restart from DbLock"), true
 		default:
 		}
 		mutex.Lock()
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
-			return ErrInfo(err)
+			return ErrInfo(err), false
 		}
 		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
 			if err != nil {
-				return ErrInfo(err)
+				return ErrInfo(err), false
 			}
 			ok = true
 		}
@@ -2022,7 +2022,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) error {
 			break
 		}
 	}
-	return nil
+	return nil, false
 }
 
 

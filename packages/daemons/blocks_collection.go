@@ -43,10 +43,13 @@ func BlocksCollection() {
             continue BEGIN
         }
 
-        err = db.DbLock(DaemonCh, AnswerDaemonCh)
-        if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 0)
+        err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+        if restart {
             break BEGIN
+        }
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
         }
 
         // если это первый запуск во время инсталяции
@@ -290,10 +293,13 @@ func BlocksCollection() {
 
         // получим наш текущий имеющийся номер блока
         // ждем, пока разлочится и лочим сами, чтобы не попасть в тот момент, когда данные из блока уже занесены в БД, а info_block еще не успел обновиться
-        err = db.DbLock(DaemonCh, AnswerDaemonCh)
-        if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 0)
+        err, restart = db.DbLock(DaemonCh, AnswerDaemonCh)
+        if restart {
             break BEGIN
+        }
+        if err != nil {
+            db.PrintSleep(err, 1)
+            continue BEGIN
         }
 
         currentBlockId, err = db.Single("SELECT block_id FROM info_block").Int64()

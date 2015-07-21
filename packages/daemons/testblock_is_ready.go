@@ -67,10 +67,13 @@ func TestblockIsReady() {
 		// Если случится откат или придет новый блок, то testblock станет неактуален
 		startSleep := utils.Time()
 		for i:=0; i < int(sleep); i++ {
-			err = db.DbLock(DaemonCh, AnswerDaemonCh)
-			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 0)
+			err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+			if restart {
 				break BEGIN
+			}
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue BEGIN
 			}
 
 			newHeadHash, err := db.Single("SELECT head_hash FROM info_block").String()
@@ -105,10 +108,13 @@ func TestblockIsReady() {
 
 		// блокируем изменения данных в тестблоке
 		// также, нужно блокировать main, т.к. изменение в info_block и block_chain ведут к изменению подписи в testblock
-		err = db.DbLock(DaemonCh, AnswerDaemonCh)
-		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 0)
+		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		if restart {
 			break BEGIN
+		}
+		if err != nil {
+			db.PrintSleep(err, 1)
+			continue BEGIN
 		}
 		// за промежуток в main_unlock и main_lock мог прийти новый блок
 		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock()
