@@ -19,6 +19,10 @@ func (c *Controller) PoolAddUsers() (string, error) {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
+	if !c.Community {
+		return "", utils.ErrInfo(errors.New("Single mode"))
+	}
+
 	c.r.ParseMultipartForm(32 << 20)
 	file, _, err := c.r.FormFile("file")
 	if err != nil {

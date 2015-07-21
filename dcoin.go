@@ -177,7 +177,7 @@ db_name=`)
 	log.Debug("tcp")
 	go func() {
 		tcpHost := db.GetTcpHost()
-		log.Debug("tcpPort: %v", tcpHost)
+		log.Debug("tcpHost: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов
 		l, err := net.Listen("tcp", ":"+tcpHost)
 		if err != nil {

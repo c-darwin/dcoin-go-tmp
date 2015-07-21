@@ -822,18 +822,14 @@ func (db *DCDB) GetTcpHost() string {
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
 		}
-		/*re := regexp.MustCompile(`([0-9]+)$`)
-		match := re.FindStringSubmatch(tcpHost)
-		tcpPort := ""
-		if len(match) != 0 {
-			tcpPort = match[1]
-		}*/
 		if len(tcpHost) > 0 {
+			log.Debug("tcpHost: (%x)", tcpHost)
 			return tcpHost
 		} else {
 			Sleep(5)
 		}
 	}
+	log.Debug("tcpHost null")
 	return ""
 }
 
