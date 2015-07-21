@@ -2278,14 +2278,14 @@ func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface {
 	return nil
 }
 
-func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, string) {
+func GetTxTypeAndUserId(binaryBlock []byte) (int64, int64, int64) {
 	var userId int64
-	var thirdVar string
+	var thirdVar int64
 	txType := BinToDecBytesShift(&binaryBlock, 1)
 	BytesShift(&binaryBlock, 4) // уберем время
 	userId = BytesToInt64(BytesShift(&binaryBlock, DecodeLength(&binaryBlock)))
 	if InSliceInt64(txType, TypesToIds([]string{"AdminChangePrimaryKey", "ChangeKeyRequest", "CfProjectData", "CfComment", "CfProjectChangeCategory", "CfSendDc", "DelCfProject", "CashRequestOut", "VotesGeolocation", "VotesMiner", "VotesNodeNewMiner", "VotesPct", "VotesPromisedAmount", "DelPromisedAmount"})) {
-		thirdVar = string(BytesShift(&binaryBlock, DecodeLength(&binaryBlock)))
+		thirdVar = BytesToInt64(BytesShift(&binaryBlock, DecodeLength(&binaryBlock)))
 	}
 	log.Debug("txType, userId, thirdVar %v, %v, %v", txType, userId, thirdVar)
 	return txType, userId, thirdVar

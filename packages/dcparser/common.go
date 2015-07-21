@@ -606,6 +606,7 @@ func (p *Parser) checkMiner(userId int64) error {
 
 // общая проверка для всех _front
 func (p *Parser) generalCheck() error {
+	log.Debug("%s", p.TxMap)
 	if !utils.CheckInputData(p.TxMap["user_id"], "int64") {
 		return utils.ErrInfoFmt("incorrect user_id")
 	}
@@ -1235,6 +1236,8 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 	var returnSlice [][]byte
 	var transSlice [][]byte
 	var merkleSlice [][]byte
+	log.Debug("transactionBinaryData: %x", transactionBinaryData)
+	log.Debug("transactionBinaryData: %s", transactionBinaryData)
 
 	if  len(*transactionBinaryData) > 0 {
 
@@ -1252,6 +1255,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		if len(*transactionBinaryData) == 0 {
 			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect tx"))
 		}
+		log.Debug("%s", transSlice)
 
 		// преобразуем бинарные данные транзакции в массив
 		i:=0
@@ -1262,7 +1266,8 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
 				merkleSlice = append(merkleSlice, utils.DSha256(data))
-				log.Debug("utils.DSha256(data) %s\n", utils.DSha256(data))
+				log.Debug("%x", data)
+				log.Debug("%s", data)
 			}
 			i++
 			if length == 0 || i >= 20 { // у нас нет тр-ий с более чем 20 элементами
@@ -1270,7 +1275,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 			}
 		}
 		if len(*transactionBinaryData) > 0 {
-			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect transactionBinaryData"))
+			return transSlice, utils.ErrInfo(fmt.Errorf("incorrect transactionBinaryData %x", transactionBinaryData))
 		}
 	} else {
 		merkleSlice = append(merkleSlice, []byte("0"))
@@ -1886,7 +1891,7 @@ func (p *Parser) UpdBlockInfo() {
 
 
 func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
-	log.Debug("p.TxSlice", p.TxSlice)
+	log.Debug("p.TxSlice %s", p.TxSlice)
 	if len(p.TxSlice) != len(fields)+4 {
 		return fmt.Errorf("bad transaction_array %d != %d (type=%d)",  len(p.TxSlice),  len(fields)+4, p.TxSlice[0])
 	}
@@ -1923,6 +1928,7 @@ func (p *Parser) GetTxMaps(fields []map[string]string) (error) {
 			}
 		}
 	}
+	log.Debug("%s", p.TxMaps)
 	p.TxUserID = p.TxMaps.Int64["user_id"]
 	p.TxTime = p.TxMaps.Int64["time"]
 	p.PublicKeys = nil
@@ -3755,7 +3761,7 @@ func (p *Parser) RollbackIncompatibleTx(typesArr []string) error {
 }
 
 
-func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string, int64, int64, int64, string) {
+func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string, int64, int64, int64, int64) {
 
 	var fatalError, waitError string
 	var toUserId int64
@@ -3774,7 +3780,7 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 	}
 
 	if txType == utils.TypeInt("CashRequestOut") {
-		toUserId = utils.StrToInt64(thirdVar)
+		toUserId = thirdVar
 	}
 	var forSelfUse int64
 	if utils.InSliceInt64(txType, utils.TypesToIds([]string{"NewPct", "NewReduction", "NewMaxPromisedAmounts", "NewMaxOtherCurrencies"})) {
@@ -3785,7 +3791,7 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 		// а т.к. new_pct/NewReduction актуальны только 1 блок, то нужно её удалять
 		if !myTx {
 			fatalError = "old new_pct/NewReduction/NewMaxPromisedAmounts/NewMaxOtherCurrencies"
-			return fatalError, waitError, forSelfUse, txType, userId, utils.Int64ToStr(toUserId)
+			return fatalError, waitError, forSelfUse, txType, userId, toUserId
 		}
 	} else {
 		forSelfUse = 0
@@ -4274,7 +4280,7 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 			waitError = "only 1 tx";
 		}
 	}
-	log.Debug("fatalError", fatalError, "waitError", waitError, "forSelfUse", forSelfUse, "txType", txType, "userId", userId, "thirdVar", thirdVar)
+	log.Debug("fatalError: %v, waitError: %v, forSelfUse: %v, txType: %v, userId: %v, thirdVar: %v", fatalError, waitError, forSelfUse, txType, userId, thirdVar)
 	return fatalError, waitError, forSelfUse, txType, userId, thirdVar
 
 }
@@ -4294,17 +4300,18 @@ func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
 		err = p.ParseDataGate(false)
 	}
 
+	hashHex := utils.BinToHex(hash)
 	if err != nil || len(fatalError) > 0 {
-		p.DeleteQueueTx(binaryTx) // удалим тр-ию из очереди
+		p.DeleteQueueTx(hashHex) // удалим тр-ию из очереди
 	}
-	if err == nil {
+	if err == nil && len(fatalError) > 0 {
 		err = errors.New(fatalError)
 	}
-	if err == nil {
+	if err == nil && len(waitError) > 0 {
 		err = errors.New(waitError)
 	}
-	hashHex := utils.BinToHex(hash)
 	if err != nil {
+		log.Error("err: %v", err)
 		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hash = [hex]", fmt.Sprintf("%s", err), hashHex)
 		if err != nil {
 			return utils.ErrInfo(err)

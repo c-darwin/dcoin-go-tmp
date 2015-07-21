@@ -1,11 +1,7 @@
 package controllers
 import (
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 	"encoding/json"
 )
 
@@ -129,35 +125,7 @@ func (c *Controller) WalletsList() (string, error) {
 	}
 	log.Debug("arbitrationTrustList", arbitrationTrustList)
 
-	data, err := static.Asset("static/templates/wallets_list.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	alert_success, err := static.Asset("static/templates/alert_success.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	signatures, err := static.Asset("static/templates/signatures.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	funcMap := template.FuncMap{
-		"strToInt64": func(text string) int64 {
-			return utils.StrToInt64(text)
-		},
-		"makeCurrencyName": func(currencyId int64) string {
-			if currencyId >= 1000 {
-				return ""
-			} else {
-				return "d"
-			}
-		},
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-	t = template.Must(t.Parse(string(alert_success)))
-	t = template.Must(t.Parse(string(signatures)))
-	b := new(bytes.Buffer)
-	err = t.ExecuteTemplate(b, "walletsList", &walletsListPage{
+	TemplateStr, err := makeTemplate("wallets_list", "walletsList", &walletsListPage{
 		CountSignArr: c.CountSignArr,
 		CfProjectId: cfProjectId,
 		Names: names,
@@ -186,5 +154,5 @@ func (c *Controller) WalletsList() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	return b.String(), nil
+	return TemplateStr, nil
 }

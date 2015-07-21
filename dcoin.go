@@ -162,18 +162,23 @@ db_name=`)
 	}()
 
 
+	db := utils.DbConnect(configIni)
+	HttpPort := db.GetHttpPort()
+	host:= ""
+	if len(configIni["host"]) > 0 {
+		host = configIni["host"]+":"+HttpPort
+	}
 	// включаем листинг веб-сервером для клиентской части
-	http.HandleFunc("/", controllers.Index)
-	http.HandleFunc("/content", controllers.Content)
-	http.HandleFunc("/ajax", controllers.Ajax)
-	http.HandleFunc("/tools", controllers.Tools)
-	http.HandleFunc("/cf/", controllers.IndexCf)
-	http.HandleFunc("/cf/content", controllers.ContentCf)
-	http.Handle("/public/", noDirListing(http.FileServer(http.Dir("./"))))
-	http.Handle("/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
+	http.HandleFunc(host+"/", controllers.Index)
+	http.HandleFunc(host+"/content", controllers.Content)
+	http.HandleFunc(host+"/ajax", controllers.Ajax)
+	http.HandleFunc(host+"/tools", controllers.Tools)
+	http.HandleFunc(host+"/cf/", controllers.IndexCf)
+	http.HandleFunc(host+"/cf/content", controllers.ContentCf)
+	http.Handle(host+"/public/", noDirListing(http.FileServer(http.Dir("./"))))
+	http.Handle(host+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("tcp")
-	db := utils.DbConnect(configIni)
 	go func() {
 		tcpPort := ""
 		if configIni["test_mode"] == "1" {
@@ -205,7 +210,6 @@ db_name=`)
 		}()
 	}()
 
-	HttpPort := db.GetHttpPort()
 	err = http.ListenAndServe(":"+HttpPort, nil)
 	if err != nil {
 		log.Error("Error listening: %v", err)

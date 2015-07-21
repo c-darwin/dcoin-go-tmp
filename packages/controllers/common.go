@@ -87,7 +87,7 @@ func init() {
 			if err != nil {
 				log.Debug("%v", utils.ErrInfo(err))
 			}
-			utils.Sleep(1)
+			utils.Sleep(3)
 		}
 	}()
 	globalLangReadOnly = make(map[int]map[string]string)
@@ -851,6 +851,13 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	funcMap := template.FuncMap{
+		"makeCurrencyName": func(currencyId int64) string {
+			if currencyId >= 1000 {
+				return ""
+			} else {
+				return "d"
+			}
+		},
 		"div": func(a, b interface{}) float64 {
 			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
 		},
@@ -906,6 +913,9 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 				}
 			}
 			return result
+		},
+		"replaceCurrency": func(text, name string) string {
+			return strings.Replace(text, "[currency]", name, -1)
 		},
 		"replaceCurrencyName": func(text, name string) string {
 			return strings.Replace(text, "[currency]", "D"+name, -1)

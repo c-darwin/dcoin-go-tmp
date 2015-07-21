@@ -22,7 +22,7 @@ func init() {
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}
-			utils.Sleep(1)
+			utils.Sleep(3)
 		}
 	}()
 }

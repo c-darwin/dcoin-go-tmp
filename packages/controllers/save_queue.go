@@ -36,12 +36,12 @@ func (c *Controller) SaveQueue() (string, error) {
 	signature1 := c.r.FormValue("signature1")
 	signature2 := c.r.FormValue("signature2")
 	signature3 := c.r.FormValue("signature3")
-	sign := utils.EncodeLengthPlusData([]byte(signature1))
+	sign := utils.EncodeLengthPlusData(utils.HexToBin([]byte(signature1)))
 	if len(signature2) > 0 {
-		sign = append(sign, utils.EncodeLengthPlusData([]byte(signature2))...)
+		sign = append(sign, utils.EncodeLengthPlusData(utils.HexToBin([]byte(signature2)))...)
 	}
 	if len(signature3) > 0 {
-		sign = append(sign, utils.EncodeLengthPlusData([]byte(signature3))...)
+		sign = append(sign, utils.EncodeLengthPlusData(utils.HexToBin([]byte(signature3)))...)
 	}
 	binSignatures := utils.EncodeLengthPlusData([]byte(sign))
 
@@ -587,6 +587,13 @@ func (c *Controller) SaveQueue() (string, error) {
 			comment = utils.HexToBin(comment);
 		}
 
+		log.Debug("commission: %v", []byte(c.r.FormValue("commission")))
+		log.Debug("commission: %s", []byte(c.r.FormValue("commission")))
+		log.Debug("commission: %x", []byte(c.r.FormValue("commission")))
+		log.Debug("commission: %v", utils.EncodeLengthPlusData([]byte(c.r.FormValue("commission"))))
+		log.Debug("commission: %x", utils.EncodeLengthPlusData([]byte(c.r.FormValue("commission"))))
+		log.Debug("%x", utils.EncodeLengthPlusData(comment))
+		log.Debug("%x",binSignatures)
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
@@ -599,13 +606,14 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(arbitrators[2]))...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(arbitrators[3]))...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(arbitrators[4]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(arbitrators_commissions[0]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(arbitrators_commissions[1]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(arbitrators_commissions[2]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(arbitrators_commissions[3]))...)
-		data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(arbitrators_commissions[4]))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(utils.Float64ToStrPct(arbitrators_commissions[0])))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(utils.Float64ToStrPct(arbitrators_commissions[1])))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(utils.Float64ToStrPct(arbitrators_commissions[2])))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(utils.Float64ToStrPct(arbitrators_commissions[3])))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(utils.Float64ToStrPct(arbitrators_commissions[4])))...)
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
+		log.Debug("%x", data)
 
 
 	case "CfSendDc" :

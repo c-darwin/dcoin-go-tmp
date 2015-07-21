@@ -1003,6 +1003,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok{
 			return true
 		}
+	case "private_key":
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]{256,3072}$`, data); ok{
+			return true
+		}
 	case "votes_comment", "cf_comment":
 		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
 			return true
@@ -1350,7 +1354,11 @@ func Float64ToBytes(f float64) []byte {
 	return []byte(strconv.FormatFloat(f,'f', 13, 64))
 }
 func Float64ToStrPct(f float64) string {
-	return strconv.FormatFloat(f,'f', 2, 64)
+	if f == 0 {
+		return "0"
+	} else {
+		return strconv.FormatFloat(f, 'f', 2, 64)
+	}
 }
 func StrToFloat64(s string) float64 {
 	Float64, _ := strconv.ParseFloat(s, 64)
@@ -1754,7 +1762,7 @@ func GetIsReadySleepSum(level int64, data []int64) int64 {
 	return sum;
 }
 
-func EncodeLengthPlusData(data_ interface {}) []byte  {
+func EncodeLengthPlusData(data_ interface {}) []byte {
 	var data []byte
 	switch data_.(type) {
 	case string:
@@ -1762,15 +1770,24 @@ func EncodeLengthPlusData(data_ interface {}) []byte  {
 	case []byte:
 		data = data_.([]byte)
 	}
+	log.Debug("data: %x", data)
+	log.Debug("len data: %d", len(data))
 	return append(EncodeLength(int64(len(data))) , data...)
 }
 
 func EncodeLength(len0 int64) []byte  {
+	log.Debug("len0: %v", len0)
 	if len0<=127 {
-		if len0%2 > 0 {
-			return HexToBin([]byte(fmt.Sprintf("0%x", len0)))
+		if len0 < 16 {
+			result := HexToBin([]byte(fmt.Sprintf("0%x", len0)))
+			log.Debug("%x", result)
+			return result
 		}
-		return HexToBin([]byte(fmt.Sprintf("%x", len0)))
+		result := HexToBin([]byte(fmt.Sprintf("%x", len0)))
+		log.Debug("%s", fmt.Sprintf("%x", len0))
+		log.Debug("%x", []byte(fmt.Sprintf("%x", len0)))
+		log.Debug("%x", result)
+		return result
 	}
 	temphex:= fmt.Sprintf("%x", len0)
 	if len(temphex)%2 > 0 {
@@ -2123,23 +2140,6 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 	}
 
 	for i:=0; i<len(publicKeys); i++ {
-		/*log.Debug("publicKeys[i]", string(publicKeys[i]))
-		key := base64.StdEncoding.EncodeToString(publicKeys[i])
-		key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
-		//fmt.Printf("%x\n", publicKeys[i])
-		log.Debug("key", key)
-		block, _ := pem.Decode([]byte(key))
-		if block == nil {
-			return false, ErrInfo(fmt.Errorf("incorrect key"))
-		}
-		re, err := x509.ParsePKIXPublicKey(block.Bytes)
-		if err != nil {
-			return false, ErrInfo(err)
-		}
-		pub := re.(*rsa.PublicKey)
-		if err != nil {
-			return false,  ErrInfo(err)
-		}*/
 		pub, err := BinToRsaPubKey(publicKeys[i])
 		if err != nil {
 			return false,  ErrInfo(err)

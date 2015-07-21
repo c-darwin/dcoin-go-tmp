@@ -948,7 +948,7 @@
 	</div>
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-info m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "DUSD"}}">
+		<div class="statistic-box bg-info m-bottom-md" title="{{replaceCurrency .Lang.home_dc_text "DUSD"}}">
 			<div class="statistic-title">
 				dUSD
 			</div>
@@ -969,7 +969,7 @@
 
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-euro m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "EUR"}}">
+		<div class="statistic-box bg-euro m-bottom-md" title="{{replaceCurrency .Lang.home_dc_text "EUR"}}">
 			<div class="statistic-title">
 				dEUR
 			</div>
@@ -989,7 +989,7 @@
 
 
 	<div class="col-lg-3 col-sm-6">
-		<div class="statistic-box bg-danger m-bottom-md" title="{{ReplaceCurrency .Lang.home_dc_text "RUB"}}">
+		<div class="statistic-box bg-danger m-bottom-md" title="{{replaceCurrency .Lang.home_dc_text "RUB"}}">
 			<div class="statistic-title">
 				dRUB
 			</div>
@@ -1182,30 +1182,30 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-usd">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_promised_text_personal "dUSD"}}">USD</h5>
+				<h5 title="{{replaceCurrency .Lang.home_promised_text_personal "dUSD"}}">USD</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins" title="{{ReplaceCurrency .Lang.home_promised_text_personal "dUSD"}}">{{index .SumPromisedAmount "72"}}</h1>
+				<h1 class="no-margins" title="{{replaceCurrency .Lang.home_promised_text_personal "dUSD"}}">{{index .SumPromisedAmount "72"}}</h1>
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-euro">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_promised_text_personal "dEUR"}}">EUR</h5>
+				<h5 title="{{replaceCurrency .Lang.home_promised_text_personal "dEUR"}}">EUR</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins" title="{{ReplaceCurrency .Lang.home_promised_text_personal "dEUR"}}">{{index .SumPromisedAmount "23"}}</h1>
+				<h1 class="no-margins" title="{{replaceCurrency .Lang.home_promised_text_personal "dEUR"}}">{{index .SumPromisedAmount "23"}}</h1>
 			</div>
 		</div>
 	</div>
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-rub">
 			<div class="ibox-title">
-				<h5   title="{{ReplaceCurrency .Lang.home_promised_text_personal "dRUB"}}">RUB</h5>
+				<h5   title="{{replaceCurrency .Lang.home_promised_text_personal "dRUB"}}">RUB</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 class="no-margins"  title="{{ReplaceCurrency .Lang.home_promised_text_personal "dRUB"}}">{{index .SumPromisedAmount "58"}}</h1>
+				<h1 class="no-margins"  title="{{replaceCurrency .Lang.home_promised_text_personal "dRUB"}}">{{index .SumPromisedAmount "58"}}</h1>
 			</div>
 		</div>
 	</div>
@@ -1217,10 +1217,10 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-woc">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dWOC"}}">dWOC</h5>
+				<h5 title="{{replaceCurrency .Lang.home_total_coins_personal "dWOC"}}">dWOC</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_1" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dWOC"}}">{{index .SumWallets 1}}</h1>
+				<h1 id="total_currency_1" class="no-margins" title="{{replaceCurrency .Lang.home_total_coins_personal "dWOC"}}">{{index .SumWallets 1}}</h1>
 				{{if gt (index .CurrencyPct 1).UserSec 0.0}}
 					<script>dc_counter({{index .SumWallets 1}}, {{(index .CurrencyPct 1).UserSec}}, 'total_currency_1', 8);</script>
 				{{end}}
@@ -1230,10 +1230,10 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-usd">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dUSD"}}">dUSD</h5>
+				<h5 title="{{replaceCurrency .Lang.home_total_coins_personal "dUSD"}}">dUSD</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_72"  class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dUSD"}}">{{index .SumWallets  72}}</h1>
+				<h1 id="total_currency_72"  class="no-margins" title="{{replaceCurrency .Lang.home_total_coins_personal "dUSD"}}">{{index .SumWallets  72}}</h1>
 				{{if gt (index .CurrencyPct 72).UserSec 0.0}}
 					<script>dc_counter({{index .SumWallets 72}}, {{(index .CurrencyPct 72).UserSec}}, 'total_currency_72', 8);</script>
 				{{end}}
@@ -1243,10 +1243,10 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-euro">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dEUR"}}">dEUR</h5>
+				<h5 title="{{replaceCurrency .Lang.home_total_coins_personal "dEUR"}}">dEUR</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_23" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dEUR"}}">{{index .SumWallets 23}}</h1>
+				<h1 id="total_currency_23" class="no-margins" title="{{replaceCurrency .Lang.home_total_coins_personal "dEUR"}}">{{index .SumWallets 23}}</h1>
 				{{if gt (index .CurrencyPct 23).UserSec 0.0}}
 					<script>dc_counter({{index .SumWallets 23}}, {{(index .CurrencyPct 23).UserSec}}, 'total_currency_23', 8);</script>
 				{{end}}
@@ -1256,10 +1256,10 @@
 	<div class="col-lg-3 col-sm-6">
 		<div class="ibox float-e-margins bg-rub">
 			<div class="ibox-title">
-				<h5 title="{{ReplaceCurrency .Lang.home_total_coins_personal "dRUB"}}">dRUB</h5>
+				<h5 title="{{replaceCurrency .Lang.home_total_coins_personal "dRUB"}}">dRUB</h5>
 			</div>
 			<div class="ibox-content">
-				<h1 id="total_currency_58" class="no-margins" title="{{ReplaceCurrency .Lang.home_total_coins_personal "dRUB"}}	">{{index .SumWallets 58}}</h1>
+				<h1 id="total_currency_58" class="no-margins" title="{{replaceCurrency .Lang.home_total_coins_personal "dRUB"}}	">{{index .SumWallets 58}}</h1>
 				{{if gt (index .CurrencyPct 58).UserSec 0.0}}
 					<script>dc_counter({{index .SumWallets 58}}, {{(index .CurrencyPct 58).UserSec}}, 'total_currency_58', 8);</script>
 				{{end}}
