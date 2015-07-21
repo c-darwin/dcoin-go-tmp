@@ -859,11 +859,15 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
 	if len(httpHost) > 0 {
-		re := regexp.MustCompile(`https?:\/\/([0-9a-z\_\.\-\/:]+)`)
+		re := regexp.MustCompile(`https?:\/\/([0-9a-z\_\.\-:]+)`)
 		match := re.FindStringSubmatch(httpHost)
 		if len(match) != 0 {
-			HandleHttpHost = match[1]
-			ListenHttpHost = match[1]
+			port := ""
+			if ok, _ := regexp.MatchString(`:`, match[1]); !ok{
+				port = ":80";
+			}
+			HandleHttpHost = match[1]+port
+			ListenHttpHost = match[1]+port
 		}
 		BrowserHttpHost = httpHost
 	}
