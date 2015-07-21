@@ -3334,7 +3334,7 @@ func (p *Parser) getMyNodeCommission(currencyId, userId int64, amount float64) (
 		if len(commissionJson) > 0 {
 			err = json.Unmarshal(commissionJson, &commissionMap)
 			if err != nil {
-				return 0, p.ErrInfo(err)
+				return 0, p.ErrInfo(fmt.Sprintf("commissionJson: %v , %v", commissionJson, err))
 			}
 		}
 		var tmpNodeCommission float64
