@@ -216,7 +216,7 @@ func Connector() {
 			}
 		}
 
-		log.Info("%v", "hosts", hosts)
+		log.Debug("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
 		if len(hosts) < 10 {
 			hostsData_, err := ioutil.ReadFile("nodes.inc")
@@ -225,14 +225,16 @@ func Connector() {
 				continue BEGIN
 			}
 			hostsData := strings.Split(string(hostsData_), "\n")
-			log.Info("%v", "hostsData_", hostsData_)
-			log.Info("%v", "hostsData", hostsData)
+			log.Debug("%v", "hostsData_", hostsData_)
+			log.Debug("%v", "hostsData", hostsData)
 			max := 0
+			log.Debug("maxHosts: %v", maxHosts)
 			if len(hosts) > maxHosts-1 {
 				max = maxHosts
 			} else {
 				max = len(hosts)
 			}
+			log.Debug("max: %v", max)
 			for i:=0; i < max; i++ {
 				r := utils.RandInt(0, max)
 				hostUserId := strings.Split(hostsData[r], ";")
