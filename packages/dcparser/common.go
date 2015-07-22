@@ -194,7 +194,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		nodePublicKey, err := p.GetNodePublicKey(blockData.UserId)
 
 		// SIGN от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-		forSign := fmt.Sprintf("0,%v,%v,%v,%v,%v,%v", blockData.BlockId, prevBlockHash, blockData.Time, blockData.UserId, blockData.Level, mrklRoot)
+		forSign := fmt.Sprintf("0,%v,%x,%v,%v,%v,%v", blockData.BlockId, prevBlockHash, blockData.Time, blockData.UserId, blockData.Level, mrklRoot)
 		log.Debug("forSign", forSign)
 
 		// проверяем подпись
