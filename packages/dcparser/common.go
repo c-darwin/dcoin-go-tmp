@@ -99,6 +99,8 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 	if err != nil {
 		return err
 	}
+	parser := new(Parser)
+	parser.DCDB = p.DCDB
 	var count int64
 	blocks := make(map[int64]string)
 	for {
@@ -239,8 +241,6 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return utils.ErrInfo(err)
 		}
 		// откатываем по фронту все свежие тр-ии
-		parser := new(Parser)
-		parser.DCDB = p.DCDB
 		parser.GoroutineName = goroutineName
 		parser.BinaryData = transactions
 		err = parser.ParseDataRollbackFront(false)
@@ -273,8 +273,6 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return p.ErrInfo(err)
 		}
 		log.Debug("We roll away blocks before plug", blockId)
-		parser := new(Parser)
-		parser.DCDB = p.DCDB
 		parser.GoroutineName = goroutineName
 		parser.BinaryData = data
 		err = parser.ParseDataRollbackFront(false)
@@ -284,7 +282,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 	}
 	log.Debug("blocks", blocks)
 
-	prevBlock :=make(map[int64]*utils.BlockData)
+	prevBlock := make(map[int64]*utils.BlockData)
 	// проходимся по новым блокам
 	for intBlockId, tmpFileName := range blocks {
 		log.Debug("Go on new blocks", intBlockId, tmpFileName)
@@ -295,8 +293,6 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return utils.ErrInfo(err)
 		}
 		log.Debug("binaryBlock: %x\n", binaryBlock)
-		parser := new(Parser)
-		parser.DCDB = p.DCDB
 		parser.GoroutineName = goroutineName
 		parser.BinaryData = binaryBlock
 		// передаем инфу о предыдущем блоке, т.к. это новые блоки, то инфа о предыдущих блоках в block_chain будет всё еще старая, т.к. обновление block_chain идет ниже
@@ -335,8 +331,6 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
-				parser := new(Parser)
-				parser.DCDB = p.DCDB
 				parser.GoroutineName = goroutineName
 				parser.BinaryData = binaryBlock
 				err = parser.ParseDataRollback()
@@ -361,9 +355,6 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 					return p.ErrInfo(err)
 				}
 				log.Debug("blockId", blockId, "intBlockId", intBlockId)
-
-				parser := new(Parser)
-				parser.DCDB = p.DCDB
 				parser.GoroutineName = goroutineName
 				parser.BinaryData = data
 				err = parser.ParseDataFull()
