@@ -218,7 +218,7 @@ func Connector() {
 
 		log.Info("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
-		if len(hosts) == 0 {
+		if len(hosts) < 10 {
 			hostsData_, err := ioutil.ReadFile("nodes.inc")
 			if err != nil {
 				db.PrintSleep(err, 1)
