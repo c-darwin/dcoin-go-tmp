@@ -131,7 +131,9 @@ func BlocksCollection() {
                         log.Debug("data %x\n", data)
                         blockId := utils.BinToDec(data[0:5])
                         if *endBlockId > 0 && blockId == *endBlockId {
-                           break BEGIN
+                            db.PrintSleep(err, 1)
+                            file.Close()
+                            continue BEGIN
                         }
                         log.Info("blockId", blockId)
                         data2:=data[5:]
@@ -152,30 +154,31 @@ func BlocksCollection() {
                             }
                             err = parser.ParseDataFull()
                             if err != nil {
-                                db.UnlockPrintSleep(err, 1)
+                                db.PrintSleep(err, 1)
                                 file.Close()
-                                break
+                                continue BEGIN
                             }
                             parser.InsertIntoBlockchain()
 
                             // отметимся, чтобы не спровоцировать очистку таблиц
                             err = parser.DCDB.UpdMainLock()
                             if err != nil {
-                                db.UnlockPrintSleep(err, 1)
+                                db.PrintSleep(err, 1)
                                 file.Close()
-                                break
+                                continue BEGIN
                             }
                             if db.CheckDaemonRestart() {
-                                db.UnlockPrintSleep(err, 1)
+                                db.PrintSleep(err, 1)
                                 file.Close()
-                                break BEGIN
+                                continue BEGIN
                             }
                         }
                         // ненужный тут размер в конце блока данных
                         data = make([]byte, 5)
                         file.Read(data)
                     } else {
-						break
+                        db.PrintSleep(err, 1)
+                        continue BEGIN
 					}
                    // utils.Sleep(1)
                 }
@@ -183,22 +186,22 @@ func BlocksCollection() {
 	        } else {
                 newBlock, err := static.Asset("static/1block.bin")
                 if err != nil {
-                    db.UnlockPrintSleep(err, 1)
-                    break
+                    db.PrintSleep(err, 1)
+                    continue BEGIN
                 }
                 parser.BinaryData = newBlock
                 parser.CurrentVersion = consts.VERSION
 
                 err = parser.ParseDataFull()
                 if err != nil {
-                    db.UnlockPrintSleep(err, 1)
-                    break
+                    db.PrintSleep(err, 1)
+                    continue BEGIN
                 }
                 err = parser.InsertIntoBlockchain()
 
                 if err != nil {
-                    db.UnlockPrintSleep(err, 1)
-                    break
+                    db.PrintSleep(err, 1)
+                    continue BEGIN
                 }
 			}
 
