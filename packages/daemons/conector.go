@@ -237,6 +237,9 @@ func Connector() {
 			log.Debug("max: %v", max)
 			for i:=0; i < max; i++ {
 				r := utils.RandInt(0, max)
+				if len(hostsData) <= r {
+					continue
+				}
 				hostUserId := strings.Split(hostsData[r], ";")
 				if len(hostUserId) == 1 {
 					continue
