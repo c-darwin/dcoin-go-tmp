@@ -60,7 +60,7 @@ func Disseminator() {
 			hosts = append(hosts, map[string]string{"host":nodeConfig["local_gate_ip"], "node_public_key":nodeData["node_public_key"], "user_id":nodeConfig["static_node_user_id"]})
 		}
 
-		myUsersIds, err := db.GetMyUsersIds(false)
+		myUsersIds, err := db.GetMyUsersIds(false, false)
 		myMinersIds, err := db.GetMyMinersIds(myUsersIds)
 
 		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться

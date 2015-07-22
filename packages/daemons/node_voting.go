@@ -82,7 +82,7 @@ func NodeVoting() {
 				break
 			}
 			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true);
-			myUsersIds, err := db.GetMyUsersIds(false)
+			myUsersIds, err := db.GetMyUsersIds(true, true)
 			myMinersIds, err := db.GetMyMinersIds(myUsersIds)
 
 			// нет ли нас среди тех, кто должен скачать фото к себе и проголосовать

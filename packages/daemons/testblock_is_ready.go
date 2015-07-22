@@ -165,7 +165,6 @@ func TestblockIsReady() {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		//0,,[102 48 55 97 48 98 99 98 57 99 97 101 102 56 53 55 49 54 54 56 101 102 51 53 99 57 55 97 52 52 102 52 52 57 102 100 102 102 56 53 55 52 99 49 53 56 53 98 53 49 57 49 53 50 98 100 101 51 56 54 57 56 102 50],1437029217,,2,[]
 		forSign := fmt.Sprintf("0,%v,%s,%v,%v,%v,%s", testBlockData["block_id"], prevBlockHash, testBlockData["time"], testBlockData["user_id"], testBlockData["level"],utils.BinToHex([]byte(testBlockData["mrkl_root"])))
 		log.Debug("forSign %v", forSign)
 		log.Debug("signature %x", testBlockData["signature"])

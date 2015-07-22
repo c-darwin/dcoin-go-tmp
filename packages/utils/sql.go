@@ -21,6 +21,7 @@ import (
 	"github.com/op/go-logging"
 	"runtime"
 	"path/filepath"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 var log = logging.MustGetLogger("daemons")
@@ -1419,7 +1420,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		i++;
 	}
 
-	collective, err := db.GetMyUsersIds(true)
+	collective, err := db.GetMyUsersIds(true, true)
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
@@ -1696,7 +1697,7 @@ func (db *DCDB) GetMyUserId(myPrefix string) (int64, error) {
 	return userId, nil
 }
 
-func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
+func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, error) {
 	var usersIds []int64
 	usersIds, err := db.GetCommunityUsers();
 	if err != nil {
@@ -1726,7 +1727,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 				return usersIds, err
 			}
 			defer rows.Close()
-			if  ok := rows.Next(); ok {
+			for rows.Next() {
 				var commissionJson []byte;
 				err = rows.Scan(&commissionJson)
 				if err != nil {
@@ -1739,15 +1740,15 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 					return usersIds, err
 				}
 
-				rows, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
+				rows2, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
 				if err != nil {
 					return usersIds, err
 				}
-				defer rows.Close()
-				if  ok := rows.Next(); ok {
+				defer rows2.Close()
+				for rows2.Next() {
 					var uid int64;
 					var commJson []byte;
-					err = rows.Scan(&uid, &commJson)
+					err = rows2.Scan(&uid, &commJson)
 					if err != nil {
 						return usersIds, err
 					}
@@ -1761,7 +1762,6 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 					for currencyId, Commissions := range commissionUserMap {
 
 						if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
-							//fmt.Println("del_user_id_from_array")
 							DelUserIdFromArray(&usersIds, uid);
 						}
 					}
@@ -1769,6 +1769,31 @@ func (db *DCDB) GetMyUsersIds(checkCommission bool) ([]int64, error) {
 
 			}
 		}
+		/*// нельзя чтобы блок сгенерировал майнер, чьего нодовского приватного ключа нет у нас,
+		// т.к. это приведет к ступору в testBlockIsReady в проверке подписи
+		if checkNodeKey {
+
+			rows, err := db.Query("SELECT user_id, node_public_key FROM miners_data WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
+			if err != nil {
+				return usersIds, err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var uid, nodePublicKey string;
+				err = rows.Scan(&uid, &nodePublicKey)
+				if err != nil {
+					return usersIds, err
+				}
+				publicKey, err := db.Single("SELECT public_key FROM "+uid+"_my_node_keys").String()
+				if err != nil {
+					return usersIds, err
+				}
+				if publicKey != nodePublicKey {
+					int64, _ := strconv.ParseInt(uid, 10, 64)
+					DelUserIdFromArray(&usersIds, int64);
+				}
+			}
+		}*/
 	}
 	return usersIds, nil;
 }
