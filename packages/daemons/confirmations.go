@@ -43,7 +43,7 @@ func Confirmations() {
 
 		var hosts []map[string]string
 		if db.ConfigIni["test_mode"] == "1" {
-			hosts = []map[string]string {{"host":"localhost:8088", "user_id":"1"}}
+			hosts = []map[string]string {{"tcp_host":"localhost:8088", "user_id":"1"}}
 		} else {
 			maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners_data").Int64()
 			if err != nil {
@@ -67,7 +67,7 @@ func Confirmations() {
 		ch := make(chan string)
 		for i := 0; i < len(hosts); i++ {
 			log.Info("hosts[i] %v", hosts[i])
-			host:=hosts[i]["host"];
+			host:=hosts[i]["tcp_host"];
 			log.Info("host %v", host)
 			go func() {
 				IsReachable(host, blockId, ch)
@@ -155,7 +155,7 @@ func checkConf(host string, blockId int64) string {
 }
 
 func IsReachable(host string, blockId int64, ch0 chan string) {
-	log.Info("%v", "IsReachable", host)
+	log.Info("IsReachable %v", host)
 	ch := make(chan string, 1)
 	go func() {
 		ch <- checkConf(host, blockId)
