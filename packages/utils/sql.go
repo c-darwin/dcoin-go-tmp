@@ -2020,7 +2020,7 @@ func (db *DCDB) UpdMainLock() error {
 	return db.ExecSql("UPDATE main_lock SET lock_time = ?", time.Now().Unix())
 }
 
-func (db *DCDB) CheckDaemonRestart() bool {
+func (db *DCDB) CheckDaemonsRestart() bool {
 	return false
 }
 
