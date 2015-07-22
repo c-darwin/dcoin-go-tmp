@@ -3381,7 +3381,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 				/*
 				 * Проблема одновременных попыток локнуть. Надо попробовать без локов
 				 * */
-				db.DbLockGate("6")
+				//db.DbLockGate("6")
 				exists, err := db.Single(`
 					SELECT block_id
 					FROM testblock
@@ -3642,7 +3642,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					db.UnlockPrintSleep(ErrInfo(err), 0)
 					return
 				}
-				db.DbUnlockGate("6")
+				//db.DbUnlockGate("6")
 			}
 		case 7:
 			/* Выдаем тело указанного блока
