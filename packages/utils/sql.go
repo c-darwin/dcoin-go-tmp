@@ -1762,6 +1762,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 						for currencyId, Commissions := range commissionUserMap {
 							if len(commissionPoolMap[currencyId]) > 0 {
 								if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
+									log.Debug("DelUserIdFromArray %v > %v || %v > %v / %v", Commissions[0], commissionPoolMap[currencyId][0], Commissions[1], commissionPoolMap[currencyId][1], uid)
 									DelUserIdFromArray(&usersIds, uid);
 								}
 							}
@@ -1791,6 +1792,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 					return usersIds, err
 				}
 				if publicKey != nodePublicKey {
+					log.Debug("publicKey != nodePublicKey (%s != %s) %v", publicKey, nodePublicKey, uid)
 					DelUserIdFromArray(&usersIds, StrToInt64(uid));
 				}
 			}
