@@ -164,6 +164,7 @@ db_name=`)
 
 	db := utils.DbConnect(configIni)
 	BrowserHttpHost, HandleHttpHost, ListenHttpHost := db.GetHttpHost()
+	log.Error("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
 	http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
@@ -203,7 +204,7 @@ db_name=`)
 
 	err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
-		log.Error("Error listening: %v", err)
+		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 		panic(err)
 		os.Exit(1)
 	}
