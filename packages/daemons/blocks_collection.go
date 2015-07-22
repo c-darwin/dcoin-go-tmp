@@ -63,10 +63,10 @@ func BlocksCollection() {
         log.Info("currentBlockId", currentBlockId)
 
 		// на время тесто
-		if !cur {
+		/*if !cur {
             currentBlockId = 0
             cur = true
-        }
+        }*/
         parser := new(dcparser.Parser)
         parser.DCDB = db
         parser.GoroutineName = GoroutineName
