@@ -56,7 +56,7 @@ func TestblockIsReady() {
 		log.Info("%v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId == 0 {
-			db.PrintSleep(utils.ErrInfo(errors.New("myMinerId == 0 ")), 1)
+			db.PrintSleepInfo(utils.ErrInfo(errors.New("myMinerId == 0 ")), 1)
 			continue
 		}
 

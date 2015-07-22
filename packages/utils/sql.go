@@ -2089,15 +2089,33 @@ func (db *DCDB) UnlockPrintSleep(err error, sleep time.Duration) {
 	Sleep(sleep)
 }
 
+func (db *DCDB) UnlockPrintSleepInfo(err error, sleep time.Duration) {
+	db.DbUnlock();
+	log.Info("%v", err)
+	Sleep(sleep)
+}
+
 func (db *DCDB) PrintSleep(err_ interface {}, sleep time.Duration) {
 	var err error
 	switch err_.(type) {
-	case string:
+		case string:
 		err = errors.New(err_.(string))
-	case error:
+		case error:
 		err = err_.(error)
 	}
 	log.Error("%v (%v)", err, GetParent())
+	Sleep(sleep)
+}
+
+func (db *DCDB) PrintSleepInfo(err_ interface {}, sleep time.Duration) {
+	var err error
+	switch err_.(type) {
+		case string:
+		err = errors.New(err_.(string))
+		case error:
+		err = err_.(error)
+	}
+	log.Info("%v (%v)", err, GetParent())
 	Sleep(sleep)
 }
 

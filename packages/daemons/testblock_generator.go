@@ -46,12 +46,9 @@ func TestblockGenerator() {
             continue BEGIN
         }
 
-
         blockId, err := db.GetBlockId()
 		if err != nil {
-            db.DbUnlock()
-			log.Error("%v", err)
-            utils.Sleep(1)
+            db.UnlockPrintSleepInfo(err, 1)
             continue BEGIN
         }
         newBlockId := blockId + 1;

@@ -325,32 +325,34 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		} else {
 			defer c.DCDB.Close()
 		}
-		c.Variables, err = c.GetAllVariables()
-		var communityUsers []int64
-		communityUsers, err = c.GetCommunityUsers()
-		if err != nil {
-			log.Error("%v", err)
-		}
-		c.CommunityUsers = communityUsers
-		if len(communityUsers) > 0 {
-			c.Community = true
-		}
-		if c.Community {
-			poolAdminUserId, err := c.GetPoolAdminUserId()
+		if dbInit {
+			c.Variables, err = c.GetAllVariables()
+			var communityUsers []int64
+			communityUsers, err = c.GetCommunityUsers()
 			if err != nil {
 				log.Error("%v", err)
 			}
-			c.PoolAdminUserId = poolAdminUserId
-			if c.SessUserId == poolAdminUserId {
+			c.CommunityUsers = communityUsers
+			if len(communityUsers) > 0 {
+				c.Community = true
+			}
+			if c.Community {
+				poolAdminUserId, err := c.GetPoolAdminUserId()
+				if err != nil {
+					log.Error("%v", err)
+				}
+				c.PoolAdminUserId = poolAdminUserId
+				if c.SessUserId == poolAdminUserId {
+					c.PoolAdmin = true
+				}
+				c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
+			} else {
 				c.PoolAdmin = true
 			}
-			c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
-		} else {
-			c.PoolAdmin = true
-		}
-		c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
-		if err != nil {
-			log.Error("%v", err)
+			c.NodeAdmin, err = c.NodeAdminAccess(c.SessUserId, c.SessRestricted)
+			if err != nil {
+				log.Error("%v", err)
+			}
 		}
 	}
 	c.dbInit = dbInit
@@ -487,11 +489,13 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			defer utils.DbClose(c.DCDB)
 			//defer c.DCDB.Close()
 		}
-		// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
-		_, err = c.DCDB.Single("SELECT progress FROM install").String()
-		if err != nil {
-			fmt.Println(err)
-			dbInit = false
+		if dbInit {
+			// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг
+			_, err = c.DCDB.Single("SELECT progress FROM install").String()
+			if err != nil {
+				fmt.Println(err)
+				dbInit = false
+			}
 		}
 	}
 
