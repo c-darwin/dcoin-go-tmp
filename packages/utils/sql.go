@@ -2056,7 +2056,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) (error, bool) {
 }
 
 
-func (db *DCDB) DbLockGate() error {
+func (db *DCDB) DbLockGate(name string) error {
 	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
@@ -2066,7 +2066,7 @@ func (db *DCDB) DbLockGate() error {
 			return ErrInfo(err)
 		}
 		if len(exists["script_name"])==0 {
-			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), name)
 			if err != nil {
 				return ErrInfo(err)
 			}
