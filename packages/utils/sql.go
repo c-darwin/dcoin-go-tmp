@@ -866,7 +866,7 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 			if ok, _ := regexp.MatchString(`:`, match[1]); !ok{
 				port = ":80";
 			}
-			HandleHttpHost = match[1]+port
+			HandleHttpHost = match[1]
 			ListenHttpHost = match[1]+port
 		}
 		BrowserHttpHost = httpHost
