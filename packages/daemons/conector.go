@@ -238,6 +238,9 @@ func Connector() {
 			for i:=0; i < max; i++ {
 				r := utils.RandInt(0, max)
 				hostUserId := strings.Split(hostsData[r], ";")
+				if len(hostUserId) == 1 {
+					continue
+				}
 				host, userId := hostUserId[0], hostUserId[1]
 				if utils.InSliceInt64(utils.StrToInt64(userId), collective) {
 					continue
