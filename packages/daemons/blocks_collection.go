@@ -28,7 +28,7 @@ func BlocksCollection() {
         return
     }
 
-	var cur bool
+	//var cur bool
     BEGIN:
     for {
         log.Info(GoroutineName)
