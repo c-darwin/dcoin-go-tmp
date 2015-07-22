@@ -2259,6 +2259,9 @@ func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, e
 	} else {
 		mrklSlice = append(mrklSlice, []byte("0"))
 	}
+	if len(mrklSlice) == 0 {
+		mrklSlice = append(mrklSlice,  []byte("0"))
+	}
 	return MerkleTreeRoot(mrklSlice), nil
 }
 

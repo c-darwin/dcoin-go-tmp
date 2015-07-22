@@ -1281,6 +1281,9 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		merkleSlice = append(merkleSlice, []byte("0"))
 	}
 	log.Debug("merkleSlice", merkleSlice)
+	if len(merkleSlice) == 0 {
+		merkleSlice = append(merkleSlice,  []byte("0"))
+	}
 	p.MerkleRoot = utils.MerkleTreeRoot(merkleSlice)
 	log.Debug("MerkleRoot %s\n", p.MerkleRoot)
 	return append(transSlice, returnSlice...), nil
