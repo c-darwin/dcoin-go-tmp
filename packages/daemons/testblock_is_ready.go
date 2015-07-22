@@ -169,12 +169,12 @@ func TestblockIsReady() {
 		log.Debug("forSign %v", forSign)
 		log.Debug("signature %x", testBlockData["signature"])
 
+		p := new(dcparser.Parser)
+		p.DCDB = db
 		// проверяем подпись
 		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true);
 		if err != nil {
 			log.Error("incorrect signature %v")
-			p := new(dcparser.Parser)
-			p.DCDB = db
 			p.RollbackTransactionsTestblock(true)
 			err = db.ExecSql("DELETE FROM testblock")
 			if err != nil {
@@ -188,8 +188,6 @@ func TestblockIsReady() {
 		if utils.StrToInt64(testBlockData["block_id"]) == prevBlock.BlockId {
 			log.Error("testBlockData block_id =  prevBlock.BlockId (%v=%v)", testBlockData["block_id"], prevBlock.BlockId)
 
-			p := new(dcparser.Parser)
-			p.DCDB=db
 			err = p.RollbackTransactionsTestblock(true)
 			if err != nil {
 				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
@@ -225,9 +223,7 @@ func TestblockIsReady() {
 		log.Debug("block %x", block)
 
 		// теперь нужно разнести блок по таблицам и после этого мы будем его слать всем нодам скриптом disseminator.php
-		p := new(dcparser.Parser)
 		p.BinaryData = block
-		p.DCDB = db
 		err = p.ParseDataFront()
 		if err != nil {
 			db.PrintSleep(utils.ErrInfo(err), 1)
