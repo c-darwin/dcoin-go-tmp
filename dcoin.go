@@ -180,7 +180,7 @@ db_name=`)
 		tcpHost := db.GetTcpHost()
 		log.Debug("tcpHost: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов
-		l, err := net.Listen("tcp", ":"+tcpHost)
+		l, err := net.Listen("tcp", tcpHost)
 		if err != nil {
 			log.Error("Error listening: %v", err)
 			panic(err)
