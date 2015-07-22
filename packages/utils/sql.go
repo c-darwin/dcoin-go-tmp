@@ -1762,6 +1762,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 						log.Error("commissionUserMap %v", commissionUserMap)
 						for currencyId, Commissions := range commissionUserMap {
 							log.Error("Commissions %v", Commissions)
+							log.Error("currencyId %v", currencyId)
 							log.Error("commissionPoolMap[currencyId] %v", commissionPoolMap[currencyId])
 							if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
 								DelUserIdFromArray(&usersIds, uid);
