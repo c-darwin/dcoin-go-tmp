@@ -284,7 +284,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 	}
 	log.Debug("blocks", blocks)
 
-	var prevBlock map[int64]*utils.BlockData
+	prevBlock :=make(map[int64]*utils.BlockData)
 	// проходимся по новым блокам
 	for intBlockId, tmpFileName := range blocks {
 		log.Debug("Go on new blocks", intBlockId, tmpFileName)
