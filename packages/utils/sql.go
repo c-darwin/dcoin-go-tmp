@@ -21,7 +21,6 @@ import (
 	"github.com/op/go-logging"
 	"runtime"
 	"path/filepath"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 var log = logging.MustGetLogger("daemons")
@@ -1769,7 +1768,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 
 			}
 		}
-		/*// нельзя чтобы блок сгенерировал майнер, чьего нодовского приватного ключа нет у нас,
+		// нельзя чтобы блок сгенерировал майнер, чьего нодовского приватного ключа нет у нас,
 		// т.к. это приведет к ступору в testBlockIsReady в проверке подписи
 		if checkNodeKey {
 
@@ -1789,11 +1788,10 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 					return usersIds, err
 				}
 				if publicKey != nodePublicKey {
-					int64, _ := strconv.ParseInt(uid, 10, 64)
-					DelUserIdFromArray(&usersIds, int64);
+					DelUserIdFromArray(&usersIds, StrToInt64(uid));
 				}
 			}
-		}*/
+		}
 	}
 	return usersIds, nil;
 }
