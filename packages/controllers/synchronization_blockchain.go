@@ -4,9 +4,7 @@ import (
 	"time"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
     "encoding/json"
-
 )
-
 
 func (c *Controller) SynchronizationBlockchain() (string, error) {
 
@@ -29,13 +27,14 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 		wTime = 2*365*86400
 		wTimeReady = 2*365*86400
 	}
+	log.Debug("wTime: %v / utils.Time(): %v / blockData[time]: %v", wTime, utils.Time(), utils.StrToInt64(blockData["time"]))
 	// если время менее 12 часов от текущего, то выдаем не подвержденные, а просто те, что есть в блокчейне
-	if time.Now().Unix() - utils.StrToInt64(blockData["time"]) < 3600*wTime  {
+	if utils.Time() - utils.StrToInt64(blockData["time"]) < 3600*wTime  {
 		lastBlockData, err := c.DCDB.GetLastBlockData()
 		if err != nil {
 			return "", err
 		}
-		log.Debug("lastBlockData", lastBlockData)
+		log.Debug("lastBlockData[lastBlockTime]: %v", lastBlockData["lastBlockTime"])
 		// если уже почти собрали все блоки
 		if time.Now().Unix() - lastBlockData["lastBlockTime"] < 3600*wTimeReady {
 			blockId = "-1"
