@@ -1751,17 +1751,18 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 					if err != nil {
 						return usersIds, err
 					}
+					if len(commJson) > 0 {
+						var commissionUserMap map[string][]float64
+						err := json.Unmarshal(commJson, &commissionUserMap)
+						if err != nil {
+							return usersIds, err
+						}
 
-					var commissionUserMap map[string][]float64
-					err := json.Unmarshal(commJson, &commissionUserMap)
-					if err != nil {
-						return usersIds, err
-					}
+						for currencyId, Commissions := range commissionUserMap {
 
-					for currencyId, Commissions := range commissionUserMap {
-
-						if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
-							DelUserIdFromArray(&usersIds, uid);
+							if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
+								DelUserIdFromArray(&usersIds, uid);
+							}
 						}
 					}
 				}
