@@ -167,7 +167,7 @@ func BlocksCollection() {
                                 file.Close()
                                 continue BEGIN
                             }
-                            if db.CheckDaemonRestart() {
+                            if CheckDaemonRestart() {
                                 db.PrintSleep(err, 1)
                                 file.Close()
                                 continue BEGIN
@@ -290,7 +290,7 @@ func BlocksCollection() {
                 maxBlockIdHost = hosts[i]["host"]
                 maxBlockIdUserId = utils.StrToInt64(hosts[i]["user_id"])
 			}
-            if db.CheckDaemonRestart() {
+            if CheckDaemonRestart() {
                 utils.Sleep(1)
                 break BEGIN
             }
@@ -321,7 +321,7 @@ func BlocksCollection() {
         // в цикле собираем блоки, пока не дойдем до максимального
         for blockId := currentBlockId+1; blockId < maxBlockId+1; blockId++ {
 			db.UpdMainLock()
-            if db.CheckDaemonRestart() {
+            if CheckDaemonRestart() {
                 db.UnlockPrintSleep(utils.ErrInfo(err), 1)
                 break BEGIN
             }

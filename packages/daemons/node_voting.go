@@ -77,7 +77,7 @@ func NodeVoting() {
 			}
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
-			if db.CheckDaemonRestart() {
+			if CheckDaemonRestart() {
 				utils.Sleep(1)
 				break
 			}

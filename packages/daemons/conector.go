@@ -87,7 +87,7 @@ func Connector() {
 		for _, data := range nodesConnections {
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
-			if db.CheckDaemonRestart() {
+			if CheckDaemonRestart() {
 				utils.Sleep(1)
 				break BEGIN
 			}
@@ -278,7 +278,7 @@ func Connector() {
 		}
 
 		for i:=0; i < 10; i++ {
-			if db.CheckDaemonRestart() {
+			if CheckDaemonRestart() {
 				utils.Sleep(1)
 				break BEGIN
 			}
