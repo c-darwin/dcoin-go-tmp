@@ -2131,6 +2131,10 @@ func (db *DCDB) DbUnlock() error {
 	return nil
 }
 
+func (db *DCDB) DbUnlockGate(name string) error {
+	return  db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
+}
+
 func (db *DCDB) GetIsReadySleep(level int64, data []int64) int64 {
 	//SleepData := db.GetSleepData();
 	return GetIsReadySleep0(level, data)

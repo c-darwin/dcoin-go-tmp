@@ -3642,7 +3642,7 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 					db.UnlockPrintSleep(ErrInfo(err), 0)
 					return
 				}
-				db.DbUnlock()
+				db.DbUnlockGate("6")
 			}
 		case 7:
 			/* Выдаем тело указанного блока
