@@ -1792,7 +1792,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 					return usersIds, err
 				}
 				if publicKey != nodePublicKey {
-					log.Debug("publicKey != nodePublicKey (%s != %s) %v", publicKey, nodePublicKey, uid)
+					log.Debug("DelUserIdFromArray publicKey != nodePublicKey (%x != %x) %v", publicKey, nodePublicKey, uid)
 					DelUserIdFromArray(&usersIds, StrToInt64(uid));
 				}
 			}
