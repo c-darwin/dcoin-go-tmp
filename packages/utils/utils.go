@@ -3576,21 +3576,24 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		/* Выдаем тело указанного блока
 		 * запрос шлет демон blocksCollection и queue_parser_blocks через p.GetBlocks()
 		 */
-    		buf := make([]byte, 4)
+    	buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
 			log.Debug("%v", ErrInfo(err))
 			return
 		}
 		blockId := BinToDec(buf)
-    		block, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).String()
+    	block, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).String()
 		if err != nil {
 			log.Debug("%v", ErrInfo(err))
 			return
 		}
+		if len(block) > 500000 {
+			ioutil.WriteFile("7-block-"+string(utils.DSha256(block)), block, 0644)
+		}
 		log.Debug("blockId %x", blockId)
 		log.Debug("block %x", block)
-    		err = WriteSizeAndData([]byte(block), conn)
+    	err = WriteSizeAndData([]byte(block), conn)
 		if err != nil {
 			log.Debug("%v", ErrInfo(err))
 			return
