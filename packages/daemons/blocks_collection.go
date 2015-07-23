@@ -333,9 +333,7 @@ func BlocksCollection() {
             }
             // качаем тело блока с хоста maxBlockIdHost
             binaryBlock, err := utils.GetBlockBody(maxBlockIdHost, blockId, dataTypeBlockBody, nodeHost)
-            if len(binaryBlock) > 500000 {
-                ioutil.WriteFile("GetBlockBody-block-"+string(utils.DSha256(binaryBlock)), binaryBlock, 0644)
-            }
+
             if len(binaryBlock) == 0 {
                 // баним на 1 час хост, который дал нам пустой блок, хотя должен был дать все до максимального
                 // для тестов убрал, потом вставить.

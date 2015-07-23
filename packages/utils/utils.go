@@ -3816,6 +3816,9 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 	}
 	defer conn.Close()
 
+	conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
+	conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
+
 	log.Debug("dataTypeBlockBody: %v", dataTypeBlockBody)
 	// шлем тип данных
 	_, err = conn.Write(DecToBin(dataTypeBlockBody, 1))
@@ -3839,23 +3842,25 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 
 	// в ответ получаем размер данных, которые нам хочет передать сервер
 	buf := make([]byte, 4)
-	_, err =conn.Read(buf)
+	n, err =conn.Read(buf)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
-	log.Debug("buf: %x", buf)
-
-	var binaryBlock []byte
+	log.Debug("dataSize buf: %x / get: %v", buf, n)
 
 	// и если данных менее 10мб, то получаем их
 	dataSize := BinToDec(buf)
+	binaryBlock := make([]byte, dataSize)
 	log.Debug("dataSize: %v", dataSize)
 	if dataSize < 10485760 && dataSize > 0 {
-		binaryBlock = make([]byte, dataSize)
+		//binaryBlock = make([]byte, dataSize)
 		n, err := conn.Read(binaryBlock)
 		log.Debug("dataSize: %v / get: %v", dataSize, n)
 		if err != nil {
 			return nil, ErrInfo(err)
+		}
+		if len(binaryBlock) > 500000 {
+			ioutil.WriteFile(IntToStr(n)+"-block-"+string(DSha256(binaryBlock)), binaryBlock, 0644)
 		}
 	} else {
 		return nil, ErrInfo("null block")
