@@ -690,7 +690,7 @@ func (p *Parser) CheckBlockHeader() error {
 	// меркель рут нужен для проверки подписи блока, а также проверки лимитов MAX_TX_SIZE и MAX_TX_COUNT
 	log.Debug("p.Variables: %v", p.Variables)
 	p.MrklRoot, err = utils.GetMrklroot(p.BinaryData, p.Variables, first)
-	log.Debug("p.MrklRoot: %v", p.MrklRoot)
+	log.Debug("p.MrklRoot: %s", p.MrklRoot)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}

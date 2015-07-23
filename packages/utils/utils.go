@@ -2259,9 +2259,11 @@ func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, e
 	} else {
 		mrklSlice = append(mrklSlice, []byte("0"))
 	}
+	log.Debug("mrklSlice: %s", mrklSlice)
 	if len(mrklSlice) == 0 {
 		mrklSlice = append(mrklSlice,  []byte("0"))
 	}
+	log.Debug("mrklSlice: %s", mrklSlice)
 	return MerkleTreeRoot(mrklSlice), nil
 }
 
@@ -2273,6 +2275,9 @@ func SliceReverse(s []int64) []int64 {
 }
 
 func MerkleTreeRoot(dataArray [][]byte) []byte {
+
+	log.Debug("dataArray: %s", dataArray)
+
 	result := make(map[int32][][]byte)
 	for _, v := range dataArray {
 		result[0] = append(result[0], DSha256(v))
@@ -2296,6 +2301,9 @@ func MerkleTreeRoot(dataArray [][]byte) []byte {
 		}
 		j++
 	}
+
+	log.Debug("result_: %s", result_)
+
 	result_ := result[int32(len(result)-1)];
 	return []byte(result_[0])
 }
