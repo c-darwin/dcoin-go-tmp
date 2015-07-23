@@ -225,7 +225,8 @@ db_name=`)
 		panic(err)
 		//os.Exit(1)
 	}
-
+	var input string
+	fmt.Scanln(&input)
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
