@@ -780,7 +780,7 @@ func (p *Parser) CheckLogTx(tx_binary []byte) error {
 		return utils.ErrInfo(err)
 	}
 	if len(hash) > 0 {
-		return utils.ErrInfo(fmt.Errorf("double log_transactions"))
+		return utils.ErrInfo(fmt.Errorf("double log_transactions %x", utils.Md5(tx_binary)))
 	}
 	return nil
 }
@@ -1755,21 +1755,21 @@ func (p *Parser) ParseDataFull() error {
 
 			err = p.CheckLogTx(transactionBinaryDataFull)
 			if err != nil {
-				//log.Debug("err", err)
-				//log.Debug("RollbackTo")
 				p.RollbackTo(txForRollbackTo, true, false);
-				return err
+				return utils.ErrInfo(err)
 			}
 
-			p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			err = p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			if err != nil {
+				p.RollbackTo(txForRollbackTo, true, false);
+				return utils.ErrInfo(err)
+			}
 			//log.Debug("transactionBinaryData", transactionBinaryData)
 			p.TxHash = utils.Md5(transactionBinaryData)
 			log.Debug("p.TxHash", p.TxHash)
 			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
 			log.Debug("p.TxSlice", p.TxSlice)
 			if err !=nil {
-				log.Debug("err", err)
-				log.Debug("RollbackTo")
 				p.RollbackTo (txForRollbackTo, true, false)
 				return err
 			}
@@ -1819,14 +1819,14 @@ func (p *Parser) ParseDataFull() error {
 			log.Debug("MethodName", MethodName+"Init")
 			err_ := utils.CallMethod(p,MethodName+"Init")
 			if _, ok := err_.(error); ok {
-				log.Debug("error: %v", err)
+				log.Error("error: %v", err)
 				return utils.ErrInfo(err_.(error))
 			}
 
 			log.Debug("MethodName", MethodName+"Front")
 			err_ = utils.CallMethod(p,MethodName+"Front")
 			if _, ok := err_.(error); ok {
-				log.Debug("error: %v", err)
+				log.Error("error: %v", err)
 				p.RollbackTo(txForRollbackTo, true, false);
 				return utils.ErrInfo(err_.(error))
 			}
@@ -1834,7 +1834,7 @@ func (p *Parser) ParseDataFull() error {
 			log.Debug("MethodName", MethodName)
 			err_ = utils.CallMethod(p,MethodName)
 			if _, ok := err_.(error); ok {
-				log.Debug("error: %v", err)
+				log.Error("error: %v", err)
 				return utils.ErrInfo(err_.(error))
 			}
 
