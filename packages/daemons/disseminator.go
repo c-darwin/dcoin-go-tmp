@@ -153,7 +153,7 @@ func Disseminator() {
 			if len(toBeSent) > 0 {
 				for _, host := range hosts {
 					userId := utils.StrToInt64(host["user_id"])
-					go func() {
+					go func(userId int64) {
 
 						// шлем данные указанному хосту
 						conn, err := utils.TcpConn(host["host"])
@@ -271,7 +271,7 @@ func Disseminator() {
 								return
 							}
 						}
-					}()
+					}(userId)
 				}
 			}
 		} else {
