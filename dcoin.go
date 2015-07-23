@@ -189,6 +189,7 @@ db_name=`)
 		//defer l.Close()
 		go func() {
 			for {
+				log.Debug("l.Accept()")
 				conn, err := l.Accept()
 				if err != nil {
 					log.Error("Error accepting: %v", err)
