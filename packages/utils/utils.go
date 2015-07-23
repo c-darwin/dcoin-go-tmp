@@ -2810,10 +2810,8 @@ func RSortMap(m map[int64]string) []map[int64]string {
 }
 
 
-func HandleTcpRequest(conn net.Conn, conf map[string]string) {
+func HandleTcpRequest(conn net.Conn, db *DCDB) {
 
-	db := DbConnect(conf)
-	defer db.Close()
 	var err error
 
 	log.Debug("HandleTcpRequest from %v", conn.RemoteAddr())

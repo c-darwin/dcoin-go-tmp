@@ -18,7 +18,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"runtime"
-	//"os/exec"
+	"os/exec"
 	"fmt"
 	"os/signal"
 	"syscall"
@@ -189,7 +189,6 @@ db_name=`)
 		//defer l.Close()
 		go func() {
 			for {
-				log.Debug("l.Accept()")
 				conn, err := l.Accept()
 				if err != nil {
 					log.Error("Error accepting: %v", err)
@@ -197,21 +196,21 @@ db_name=`)
 					//os.Exit(1)
 				}
 
-				go utils.HandleTcpRequest(conn, configIni)
+				go utils.HandleTcpRequest(conn, db)
 			}
 		}()
 	}()
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
-	/*err = http.ListenAndServe(ListenHttpHost, nil)
+	err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
 		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 		panic(err)
 		//os.Exit(1)
-	}*/
+	}
 
 	log.Debug("runtime.GOOS: %v", runtime.GOOS)
-	/*err = nil
+	err = nil
 	switch runtime.GOOS {
 	case "linux":
 		err = exec.Command("xdg-open", BrowserHttpHost).Start()
@@ -224,9 +223,8 @@ db_name=`)
 		log.Error("%v", err)
 		panic(err)
 		//os.Exit(1)
-	}*/
-	var input string
-	fmt.Scanln(&input)
+	}
+
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
