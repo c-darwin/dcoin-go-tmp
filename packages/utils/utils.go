@@ -2844,9 +2844,9 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		}
 		size := BinToDec(buf)
 		if size < 10485760 {
-    			// сами данные
+    		// сами данные
 			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3011,7 +3011,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// и если данных менее 10мб, то получаем их
 			if dataSize < 10485760 {
     			encBinaryTxs := make([]byte, dataSize)
-				_, err := conn.Read(encBinaryTxs)
+				encBinaryTxs, err = ioutil.ReadAll(conn)
 				if err != nil {
 					log.Debug("%v", ErrInfo(err))
 					return
@@ -3065,7 +3065,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		if size < 10485760 {
     		// сами данные
 			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3128,9 +3128,9 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		}
 		size := BinToDec(buf)
 		if size < 10485760 {
-    			// сами данные
+    		// сами данные
 			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3288,8 +3288,8 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		size:=BinToDec(buf)
 		log.Debug("size: %v", size)
 		if size < 10485760 {
-    			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+   			binaryData := make([]byte, size)
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3459,8 +3459,8 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				log.Debug("dataSize %d", dataSize)
 				// и если данных менее 10мб, то получаем их
 				if dataSize < 10485760 {
-    					binaryData := make([]byte, dataSize)
-					_, err := conn.Read(binaryData)
+   					binaryData := make([]byte, dataSize)
+					binaryData, err = ioutil.ReadAll(conn)
 					if err != nil {
 						db.UnlockPrintSleep(ErrInfo(err), 0)
 						return
@@ -3611,7 +3611,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		if size < 10485760 {
     			// сами данные
 			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3652,7 +3652,12 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// и если данных менее 10мб, то получаем их
 			if dataSize < 10485760 {
 				blockBinary := make([]byte, dataSize)
-				_, err := conn2.Read(blockBinary)
+				/*_, err := conn2.Read(blockBinary)
+				if err != nil {
+					log.Debug("%v", ErrInfo(err))
+					return
+				}*/
+				blockBinary, err = ioutil.ReadAll(conn2)
 				if err != nil {
 					log.Debug("%v", ErrInfo(err))
 					return
@@ -3679,9 +3684,14 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		}
 		size := BinToDec(buf)
 		if size < 10485760 {
-    			// сами данные
+    		// сами данные
 			binaryData := make([]byte, size)
-			_, err = conn.Read(binaryData)
+			/*_, err = conn.Read(binaryData)
+			if err != nil {
+				log.Debug("%v", ErrInfo(err))
+				return
+			}*/
+			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3816,9 +3826,6 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 	}
 	defer conn.Close()
 
-	conn.SetReadDeadline(time.Now().Add(consts.READ_TIMEOUT * time.Second))
-	conn.SetWriteDeadline(time.Now().Add(consts.WRITE_TIMEOUT * time.Second))
-
 	log.Debug("dataTypeBlockBody: %v", dataTypeBlockBody)
 	// шлем тип данных
 	_, err = conn.Write(DecToBin(dataTypeBlockBody, 1))
@@ -3850,17 +3857,21 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 
 	// и если данных менее 10мб, то получаем их
 	dataSize := BinToDec(buf)
-	binaryBlock := make([]byte, dataSize)
+	var binaryBlock []byte
 	log.Debug("dataSize: %v", dataSize)
 	if dataSize < 10485760 && dataSize > 0 {
-		//binaryBlock = make([]byte, dataSize)
-		n, err := conn.Read(binaryBlock)
+		binaryBlock = make([]byte, dataSize)
+		/*n, err := conn.Read(binaryBlock)
 		log.Debug("dataSize: %v / get: %v", dataSize, n)
 		if err != nil {
 			return nil, ErrInfo(err)
 		}
 		if len(binaryBlock) > 500000 {
 			ioutil.WriteFile(IntToStr(n)+"-block-"+string(DSha256(binaryBlock)), binaryBlock, 0644)
+		}*/
+		binaryBlock, err = ioutil.ReadAll(conn)
+		if err != nil {
+			return nil, ErrInfo(err)
 		}
 	} else {
 		return nil, ErrInfo("null block")

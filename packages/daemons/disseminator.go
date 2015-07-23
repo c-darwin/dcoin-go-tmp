@@ -2,8 +2,8 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
 	"strings"
+	"io/ioutil"
 )
 
 /*
@@ -215,9 +215,9 @@ func Disseminator() {
 						// и если данных менее 1мб, то получаем их
 						if dataSize < 1048576 {
 							encBinaryTxHashes := make([]byte, dataSize)
-							_, err := conn.Read(encBinaryTxHashes)
+							encBinaryTxHashes, err = ioutil.ReadAll(conn)
 							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
+								log.Debug("%v", utils.ErrInfo(err))
 								return
 							}
 							// разбираем полученные данные
