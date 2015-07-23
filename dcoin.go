@@ -14,7 +14,7 @@ import (
 	"math/rand"
 	"time"
 	"strings"
-	"net"
+//	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"runtime"
