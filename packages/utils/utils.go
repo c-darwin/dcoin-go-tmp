@@ -3842,7 +3842,7 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 
 	// в ответ получаем размер данных, которые нам хочет передать сервер
 	buf := make([]byte, 4)
-	n, err =conn.Read(buf)
+	n, err := conn.Read(buf)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
