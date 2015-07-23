@@ -766,7 +766,7 @@ func (p *Parser) CheckBlockHeader() error {
 			return utils.ErrInfo(err)
 		}
 		if !resultCheckSign {
-			return utils.ErrInfo(fmt.Errorf("incorrect signature"))
+			return utils.ErrInfo(fmt.Errorf("incorrect signature / p.PrevBlock.BlockId: %s", p.PrevBlock.BlockId))
 		}
 	}
 	return nil
