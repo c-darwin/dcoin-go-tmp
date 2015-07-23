@@ -176,7 +176,7 @@ db_name=`)
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("tcp")
-	go func() {
+	/*go func() {
 		tcpHost := db.GetTcpHost()
 		log.Debug("tcpHost: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов
@@ -200,7 +200,7 @@ db_name=`)
 				go utils.HandleTcpRequest(conn, configIni)
 			}
 		}()
-	}()
+	}()*/
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
 	err = http.ListenAndServe(ListenHttpHost, nil)
