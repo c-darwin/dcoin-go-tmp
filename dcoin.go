@@ -18,7 +18,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"runtime"
-	"os/exec"
+	//"os/exec"
 	"fmt"
 	"os/signal"
 	"syscall"
