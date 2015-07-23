@@ -4,6 +4,8 @@ import (
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
+	"runtime"
+	"fmt"
 )
 var log = logging.MustGetLogger("daemons")
 var DaemonCh chan bool
@@ -22,6 +24,9 @@ func init() {
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}
+			fmt.Println("NumCPU:", runtime.NumCPU(),
+				" NumCgoCall:", runtime.NumCgoCall(),
+				" NumGoRoutine:", runtime.NumGoroutine())
 			utils.Sleep(3)
 		}
 	}()

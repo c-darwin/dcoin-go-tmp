@@ -2680,6 +2680,20 @@ s["config"] = s1
 schema.s = s
 schema.printSchema()
 
+
+	s=make(recmap)
+	s1=make(recmap)
+	s2=make(recmapi)
+	s2[0] = map[string]string{"name":"id", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[1] = map[string]string{"name":"private_key", "mysql":"text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite":"text NOT NULL DEFAULT ''","postgresql":"text NOT NULL DEFAULT ''", "comment": ""}
+	s2[2] = map[string]string{"name":"used_time", "mysql":"int(11) NOT NULL DEFAULT '0'", "sqlite":"int(11) NOT NULL DEFAULT '0'","postgresql":"int NOT NULL DEFAULT '0'", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["comment"] = "Ключи для tools/available_keys"
+	s["_my_refs"] = s1
+	schema.s = s
+	schema.printSchema()
+
 	if schema.PrefixUserId > 0 {
 		schema.DB.Exec(`INSERT INTO `+utils.IntToStr(schema.PrefixUserId)+`_my_notifications (name, email, sms) VALUES ('admin_messages',1,1),('change_in_status',1,0),('fc_came_from',1,0),('fc_sent',1,0),('incoming_cash_requests',1,1),('new_version',1,1),('node_time',1,1),('system_error',1,1),('update_email',1,0),('update_primary_key',1,0),('update_sms_request',1,0),('voting_results',1,0),('voting_time',1,0)`)
 	}
