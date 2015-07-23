@@ -43,6 +43,7 @@ func Clear() {
 			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 10)
 			continue BEGIN
 		}
+		log.Debug("blockId: %d", blockId)
 		variables, err := db.GetAllVariables()
 		if err != nil {
 			db.UnlockPrintSleep(utils.ErrInfo(err), 10)
@@ -190,6 +191,7 @@ func Clear() {
 				continue BEGIN
 			}
 		}
+		log.Debug("variables.Int64[rollback_blocks_2]: %v", variables.Int64["rollback_blocks_2"])
 
 		db.DbUnlock()
 
