@@ -2302,9 +2302,9 @@ func MerkleTreeRoot(dataArray [][]byte) []byte {
 		j++
 	}
 
-	log.Debug("result_: %s", result_)
-
+	log.Debug("result: %s", result)
 	result_ := result[int32(len(result)-1)];
+	log.Debug("result_: %s", result_)
 	return []byte(result_[0])
 }
 
