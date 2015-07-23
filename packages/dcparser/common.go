@@ -780,7 +780,7 @@ func (p *Parser) CheckLogTx(tx_binary []byte) error {
 		return utils.ErrInfo(err)
 	}
 	if len(hash) > 0 {
-		return utils.ErrInfo(fmt.Errorf("double log_transactions %x", utils.Md5(tx_binary)))
+		return utils.ErrInfo(fmt.Errorf("double log_transactions %s", utils.Md5(tx_binary)))
 	}
 	return nil
 }
