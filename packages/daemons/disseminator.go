@@ -154,6 +154,9 @@ func Disseminator() {
 				for _, host := range hosts {
 					userId := utils.StrToInt64(host["user_id"])
 					go func(host string, userId int64, node_public_key string) {
+
+						log.Debug("host %v / userId %v", host, userId)
+						
 						// шлем данные указанному хосту
 						conn, err := utils.TcpConn(host)
 						if err != nil {
