@@ -763,10 +763,10 @@ func (p *Parser) CheckBlockHeader() error {
 		// проверим подпись
 		resultCheckSign, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.BlockData.Sign, true);
 		if err != nil {
-			return utils.ErrInfo(err)
+			return utils.ErrInfo(fmt.Errorf("err: %v / p.PrevBlock.BlockId: %d", err, p.PrevBlock.BlockId))
 		}
 		if !resultCheckSign {
-			return utils.ErrInfo(fmt.Errorf("incorrect signature / p.PrevBlock.BlockId: %s", p.PrevBlock.BlockId))
+			return utils.ErrInfo(fmt.Errorf("incorrect signature / p.PrevBlock.BlockId: %d", p.PrevBlock.BlockId))
 		}
 	}
 	return nil
