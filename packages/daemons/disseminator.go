@@ -156,7 +156,7 @@ func Disseminator() {
 					go func(host string, userId int64, node_public_key string) {
 
 						log.Debug("host %v / userId %v", host, userId)
-						
+
 						// шлем данные указанному хосту
 						conn, err := utils.TcpConn(host)
 						if err != nil {
@@ -321,6 +321,8 @@ func Disseminator() {
 					userId := utils.StrToInt64(host["user_id"])
 					go func(host string, userId int64, node_public_key string) {
 
+						log.Debug("host %v / userId %v", host, userId)
+
 						conn, err := utils.TcpConn(host)
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
@@ -365,6 +367,8 @@ func Disseminator() {
 							}*/
 							encryptedData = append([]byte(remoteNodeHost), encryptedData...)
 						}
+
+						log.Debug("encryptedData %x", encryptedData)
 
 						// в 4-х байтах пишем размер данных, которые пошлем далее
 						size := utils.DecToBin(len(encryptedData), 4)
