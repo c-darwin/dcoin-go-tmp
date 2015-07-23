@@ -203,12 +203,12 @@ db_name=`)
 	}()
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
-	err = http.ListenAndServe(ListenHttpHost, nil)
+	/*err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
 		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 		panic(err)
 		//os.Exit(1)
-	}
+	}*/
 
 	log.Debug("runtime.GOOS: %v", runtime.GOOS)
 	err = nil
