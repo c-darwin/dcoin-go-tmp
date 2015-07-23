@@ -38,14 +38,14 @@ func (c *Controller) DcoinKey() (string, error) {
 		}
 		c.w.Header().Set("Content-Type", "image/png")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(buffer.Bytes())))
-		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.png`)
+		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.png"`)
 		if _, err := c.w.Write(buffer.Bytes()); err != nil {
 			return "", utils.ErrInfo(errors.New("unable to write image"))
 		}
 	} else {
 		c.w.Header().Set("Content-Type", "text/plain")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(privateKey)))
-		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.txt`)
+		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.txt"`)
 		if _, err := c.w.Write([]byte(privateKey)); err != nil {
 			return "", utils.ErrInfo(errors.New("unable to write text"))
 		}

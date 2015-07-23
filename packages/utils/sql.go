@@ -1355,12 +1355,7 @@ func (db *DCDB) GetPrivateKey(myPrefix string) (string, error) {
 }
 
 func (db *DCDB) GetNodeConfig() (map[string]string, error) {
-	var result map[string]string
-	result, err := db.OneRow("SELECT * FROM config").String()
-	if err != nil{
-		return result, ErrInfo(err)
-	}
-	return result, nil
+	return  db.OneRow("SELECT * FROM config").String()
 }
 
 func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]int64, error) {
@@ -2180,11 +2175,11 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 			if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
 				err = db.QueryRow("SELECT log_id FROM "+table).Scan(&exists)
 				if err != nil {
-					return "", err
+					return "", ErrInfo(err)
 				}
 				column = "log_id"
 			} else {
-				return "", err
+				return "", ErrInfo(err)
 			}
 		}
 	case "postgresql":

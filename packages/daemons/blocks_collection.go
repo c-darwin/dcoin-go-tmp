@@ -37,12 +37,14 @@ func BlocksCollection() {
             break BEGIN
         }
 
+        log.Debug("0")
         config, err := db.GetNodeConfig()
         if err != nil {
             db.PrintSleep(err, 1)
             continue BEGIN
         }
 
+        log.Debug("1")
         err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
         if restart {
             break BEGIN
@@ -52,6 +54,7 @@ func BlocksCollection() {
             continue BEGIN
         }
 
+        log.Debug("2")
         // если это первый запуск во время инсталяции
         currentBlockId, err := db.GetBlockId()
         if err != nil {
