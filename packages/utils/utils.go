@@ -2855,6 +2855,8 @@ func HandleTcpRequest(conn net.Conn, configIni map[string]string) {
 		switch dataType {
 		case 1:
 
+			log.Debug("dataType 1")
+
 			// размер данных
 			buf := make([]byte, 4)
 			_, err = conn.Read(buf)

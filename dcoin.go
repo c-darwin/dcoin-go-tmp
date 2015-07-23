@@ -202,6 +202,7 @@ db_name=`)
 		}()
 	}()
 
+	log.Debug("ListenHttpHost", ListenHttpHost)
 	err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
 		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
