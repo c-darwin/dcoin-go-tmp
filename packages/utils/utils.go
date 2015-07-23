@@ -3051,7 +3051,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		size := BinToDec(buf)
 		log.Debug("size: %d", size)
 		if size < 10485760 {
-    			// сами данные
+    		// сами данные
 			binaryData := make([]byte, size)
 			_, err = conn.Read(binaryData)
 			if err != nil {
@@ -3061,7 +3061,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			/*
 			 * Прием тр-ий от простых юзеров, а не нодов. Вызывается демоном disseminator
 			 * */
-    			_, _, decryptedBinData, err := db.DecryptData(&binaryData)
+    		_, _, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
 				log.Debug("%v", ErrInfo(err))
 				return
@@ -3076,6 +3076,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				log.Debug("%v", ErrInfo("len(binaryData) < 5"))
 				return
 			}
+			decryptedBinDataFull := decryptedBinData
 			txType:= BytesShift(&decryptedBinData, 1) // type
 			txTime := BytesShift(&decryptedBinData, 4) // time
 			log.Debug("txType: %d", BinToDec(txType))
@@ -3093,13 +3094,13 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				highRate = 1
 			}
 			// заливаем тр-ию в БД
-			err = db.ExecSql(`DELETE FROM queue_tx WHERE hash = [hex]`, Md5(decryptedBinData))
+			err = db.ExecSql(`DELETE FROM queue_tx WHERE hash = [hex]`, Md5(decryptedBinDataFull))
 			if err!=nil {
 				log.Debug("%v", ErrInfo(err))
 				return
 			}
-			log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)",  Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
-			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinData), highRate, BinToHex(decryptedBinData))
+			log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)",  Md5(decryptedBinDataFull), highRate, BinToHex(decryptedBinDataFull))
+			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinDataFull), highRate, BinToHex(decryptedBinDataFull))
 			if err!=nil {
 				log.Debug("%v", ErrInfo(err))
 				return
