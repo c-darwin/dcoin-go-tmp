@@ -197,7 +197,7 @@ db_name=`)
 					//os.Exit(1)
 				}
 
-				go utils.HandleTcpRequest(conn, db)
+				go utils.HandleTcpRequest(conn, configIni)
 			}
 		}()
 	}()
