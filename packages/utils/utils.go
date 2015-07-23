@@ -3852,7 +3852,8 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 	log.Debug("dataSize: %v", dataSize)
 	if dataSize < 10485760 && dataSize > 0 {
 		binaryBlock = make([]byte, dataSize)
-		_, err := conn.Read(binaryBlock)
+		n, err := conn.Read(binaryBlock)
+		log.Debug("dataSize: %v / get: %v", dataSize, n)
 		if err != nil {
 			return nil, ErrInfo(err)
 		}
