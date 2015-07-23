@@ -211,7 +211,7 @@ db_name=`)
 	}*/
 
 	log.Debug("runtime.GOOS: %v", runtime.GOOS)
-	err = nil
+	/*err = nil
 	switch runtime.GOOS {
 	case "linux":
 		err = exec.Command("xdg-open", BrowserHttpHost).Start()
@@ -224,7 +224,7 @@ db_name=`)
 		log.Error("%v", err)
 		panic(err)
 		//os.Exit(1)
-	}
+	}*/
 	var input string
 	fmt.Scanln(&input)
 }
