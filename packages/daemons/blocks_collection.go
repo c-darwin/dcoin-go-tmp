@@ -11,7 +11,6 @@ import (
 	"errors"
 	"encoding/json"
     "flag"
-    "io/ioutil"
 )
 var startBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var endBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
