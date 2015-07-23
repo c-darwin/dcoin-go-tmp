@@ -153,10 +153,9 @@ func Disseminator() {
 			if len(toBeSent) > 0 {
 				for _, host := range hosts {
 					userId := utils.StrToInt64(host["user_id"])
-					go func(userId int64) {
-
+					go func(host string, userId int64, node_public_key string) {
 						// шлем данные указанному хосту
-						conn, err := utils.TcpConn(host["host"])
+						conn, err := utils.TcpConn(host)
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -169,7 +168,7 @@ func Disseminator() {
 							return
 						}
 						// получаем IV + ключ + зашифрованный текст
-						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
+						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(node_public_key), randTestblockHash)
 						log.Debug("key: %s", key)
 						log.Debug("iv: %s", iv)
 						if err != nil {
@@ -271,7 +270,7 @@ func Disseminator() {
 								return
 							}
 						}
-					}(userId)
+					}(host["host"], userId, host["node_public_key"])
 				}
 			}
 		} else {
@@ -315,10 +314,11 @@ func Disseminator() {
 			// шлем тр-ии
 			if len(toBeSent) > 0 {
 				for _, host := range hosts {
-					userId := utils.StrToInt64(host["user_id"])
-					go func() {
 
-						conn, err := utils.TcpConn(host["host"])
+					userId := utils.StrToInt64(host["user_id"])
+					go func(host string, userId int64, node_public_key string) {
+
+						conn, err := utils.TcpConn(host)
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -331,7 +331,7 @@ func Disseminator() {
 							return
 						}
 						// получаем IV + ключ + зашифрованный текст
-						encryptedData, _, _, err := utils.EncryptData(toBeSent, []byte(host["node_public_key"]), randTestblockHash)
+						encryptedData, _, _, err := utils.EncryptData(toBeSent, []byte(node_public_key), randTestblockHash)
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -377,7 +377,7 @@ func Disseminator() {
 							return
 						}
 
-					}()
+					}(host["host"], userId, host["node_public_key"])
 				}
 			}
 		}
