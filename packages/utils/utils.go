@@ -3588,9 +3588,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			log.Debug("%v", ErrInfo(err))
 			return
 		}
-		if len(block) > 500000 {
-			ioutil.WriteFile("7-block-"+string(DSha256(block)), block, 0644)
-		}
+
 		log.Debug("blockId %x", blockId)
 		log.Debug("block %x", block)
     	err = WriteSizeAndData(block, conn)
@@ -3780,6 +3778,9 @@ func WriteSizeAndData(binaryData []byte, conn net.Conn) error {
 	}
 	// далее шлем сами данные
 	if len(binaryData) > 0 {
+		if len(binaryData) > 500000 {
+			ioutil.WriteFile("WriteSizeAndData-7-block-"+IntToStr(len(binaryData))+string(DSha256(binaryData)), binaryData, 0644)
+		}
 		_, err = conn.Write(binaryData)
 		if err != nil {
 			return ErrInfo(err)
