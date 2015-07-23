@@ -14,7 +14,7 @@ import (
 	"math/rand"
 	"time"
 	"strings"
-//	"net"
+	"net"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"runtime"
@@ -176,7 +176,7 @@ db_name=`)
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("tcp")
-	/*go func() {
+	go func() {
 		tcpHost := db.GetTcpHost()
 		log.Debug("tcpHost: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов
@@ -184,7 +184,7 @@ db_name=`)
 		if err != nil {
 			log.Error("Error listening: %v", err)
 			panic(err)
-			os.Exit(1)
+			//os.Exit(1)
 		}
 		//defer l.Close()
 		go func() {
@@ -193,23 +193,21 @@ db_name=`)
 				if err != nil {
 					log.Error("Error accepting: %v", err)
 					panic(err)
-					os.Exit(1)
+					//os.Exit(1)
 				}
-
 
 				go utils.HandleTcpRequest(conn, configIni)
 			}
 		}()
-	}()*/
+	}()
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
 	err = http.ListenAndServe(ListenHttpHost, nil)
 	if err != nil {
 		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 		panic(err)
-		os.Exit(1)
+		//os.Exit(1)
 	}
-
 
 	log.Debug("runtime.GOOS: %v", runtime.GOOS)
 	err = nil
@@ -224,7 +222,7 @@ db_name=`)
 	if err != nil {
 		log.Error("%v", err)
 		panic(err)
-		os.Exit(1)
+		//os.Exit(1)
 	}
 
 }
