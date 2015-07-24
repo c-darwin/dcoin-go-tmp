@@ -3,7 +3,8 @@ package daemons
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
-	"io/ioutil"
+	"io"
+//	"io"
 )
 
 /*
@@ -152,128 +153,7 @@ func Disseminator() {
 			// отправляем блок и хэши тр-ий, если есть что отправлять
 			if len(toBeSent) > 0 {
 				for _, host := range hosts {
-					userId := utils.StrToInt64(host["user_id"])
-					go func(host string, userId int64, node_public_key string) {
-
-						log.Debug("host %v / userId %v", host, userId)
-
-						// шлем данные указанному хосту
-						conn, err := utils.TcpConn(host)
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-						defer conn.Close()
-
-						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-						// получаем IV + ключ + зашифрованный текст
-						dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(node_public_key), randTestblockHash)
-						log.Debug("key: %s", key)
-						log.Debug("iv: %s", iv)
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-
-						// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
-						_, err = conn.Write(utils.DecToBin(dataType, 1))
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-
-						// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
-						dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
-						log.Debug("dataToBeSent: %x", dataToBeSent)
-
-						// в 4-х байтах пишем размер данных, которые пошлем далее
-						size := utils.DecToBin(len(dataToBeSent), 4)
-						_, err = conn.Write(size)
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-						// далее шлем сами данные
-						_, err = conn.Write(dataToBeSent)
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-						// в ответ получаем размер данных, которые нам хочет передать сервер
-						buf := make([]byte, 4)
-						_, err =conn.Read(buf)
-						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
-							return
-						}
-						dataSize := utils.BinToDec(buf)
-						log.Debug("dataSize %d", dataSize)
-						// и если данных менее 1мб, то получаем их
-						if dataSize < 1048576 {
-							encBinaryTxHashes := make([]byte, dataSize)
-							encBinaryTxHashes, err = ioutil.ReadAll(conn)
-							if err != nil {
-								log.Debug("%v", utils.ErrInfo(err))
-								return
-							}
-							// разбираем полученные данные
-							binaryTxHashes, err := utils.DecryptCFB(iv, encBinaryTxHashes, key)
-							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
-								return
-							}
-							log.Debug("binaryTxHashes %x", binaryTxHashes)
-							var binaryTx []byte
-							for {
-								// Разбираем список транзакций
-								txHash := make([]byte, 16)
-								if len(binaryTxHashes) >= 16 {
-									txHash = utils.BytesShift(&binaryTxHashes, 16)
-								}
-								txHash = utils.BinToHex(txHash)
-								tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
-								log.Debug("tx %x", tx)
-								if err != nil {
-									log.Info("%v", utils.ErrInfo(err))
-									return
-								}
-								if len(tx) > 0 {
-									binaryTx = append(binaryTx, utils.EncodeLengthPlusData(tx)...)
-								}
-								if len (binaryTxHashes) == 0 {
-									break
-								}
-							}
-
-							log.Debug("binaryTx %x", binaryTx)
-							// шифруем тр-ии. Вначале encData добавляется IV
-							encData, _, err := utils.EncryptCFB(binaryTx, key, iv)
-							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
-								return
-							}
-							log.Debug("encData %x", encData)
-
-							// шлем серверу
-							// в первых 4-х байтах пишем размер данных, которые пошлем далее
-							size := utils.DecToBin(len(encData), 4)
-							_, err = conn.Write(size)
-							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
-								return
-							}
-							// далее шлем сами данные
-							_, err = conn.Write(encData)
-							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
-								return
-							}
-						}
-					}(host["host"], userId, host["node_public_key"])
+					go DisseminatorType1(host["host"], utils.StrToInt64(host["user_id"]), host["node_public_key"], db, toBeSent, dataType)
 				}
 			}
 		} else {
@@ -399,4 +279,128 @@ func Disseminator() {
 
 }
 
+func DisseminatorType1(host string, userId int64, node_public_key string, db *utils.DCDB, toBeSent []byte, dataType int64) {
 
+		log.Debug("host %v / userId %v", host, userId)
+
+		// шлем данные указанному хосту
+		conn, err := utils.TcpConn(host)
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		defer conn.Close()
+
+		randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		// получаем IV + ключ + зашифрованный текст
+		dataToBeSent, key, iv, err := utils.EncryptData(toBeSent, []byte(node_public_key), randTestblockHash)
+		log.Debug("key: %s", key)
+		log.Debug("iv: %s", iv)
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+
+		// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
+		n, err := conn.Write(utils.DecToBin(dataType, 1))
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		log.Debug("n: %x", n)
+
+		// т.к. на приеме может быть пул, то нужно дописать в начало user_id, чьим нодовским ключем шифруем
+		dataToBeSent = append(utils.DecToBin(userId, 5), dataToBeSent...)
+		log.Debug("dataToBeSent: %x", dataToBeSent)
+
+		// в 4-х байтах пишем размер данных, которые пошлем далее
+		size := utils.DecToBin(len(dataToBeSent), 4)
+		n, err = conn.Write(size)
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		log.Debug("n: %x", n)
+		n, err = conn.Write(dataToBeSent)
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		log.Debug("n: %d / size: %v / len: %d", n, utils.BinToDec(size), len(dataToBeSent))
+
+		// в ответ получаем размер данных, которые нам хочет передать сервер
+		buf := make([]byte, 4)
+		n, err =conn.Read(buf)
+		if err != nil {
+			log.Info("%v", utils.ErrInfo(err))
+			return
+		}
+		log.Debug("n: %x", n)
+		dataSize := utils.BinToDec(buf)
+		log.Debug("dataSize %d", dataSize)
+		// и если данных менее 1мб, то получаем их
+		if dataSize < 1048576 {
+			encBinaryTxHashes := make([]byte, dataSize)
+			_, err = io.ReadFull(conn, encBinaryTxHashes)
+			if err != nil {
+				log.Debug("%v", utils.ErrInfo(err))
+				return
+			}
+			// разбираем полученные данные
+			binaryTxHashes, err := utils.DecryptCFB(iv, encBinaryTxHashes, key)
+			if err != nil {
+				log.Info("%v", utils.ErrInfo(err))
+				return
+			}
+			log.Debug("binaryTxHashes %x", binaryTxHashes)
+			var binaryTx []byte
+			for {
+				// Разбираем список транзакций
+				txHash := make([]byte, 16)
+				if len(binaryTxHashes) >= 16 {
+					txHash = utils.BytesShift(&binaryTxHashes, 16)
+				}
+				txHash = utils.BinToHex(txHash)
+				tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
+				log.Debug("tx %x", tx)
+				if err != nil {
+					log.Info("%v", utils.ErrInfo(err))
+					return
+				}
+				if len(tx) > 0 {
+					binaryTx = append(binaryTx, utils.EncodeLengthPlusData(tx)...)
+				}
+				if len (binaryTxHashes) == 0 {
+					break
+				}
+			}
+
+			log.Debug("binaryTx %x", binaryTx)
+			// шифруем тр-ии. Вначале encData добавляется IV
+			encData, _, err := utils.EncryptCFB(binaryTx, key, iv)
+			if err != nil {
+				log.Info("%v", utils.ErrInfo(err))
+				return
+			}
+			log.Debug("encData %x", encData)
+
+			// шлем серверу
+			// в первых 4-х байтах пишем размер данных, которые пошлем далее
+			size := utils.DecToBin(len(encData), 4)
+			_, err = conn.Write(size)
+			if err != nil {
+				log.Info("%v", utils.ErrInfo(err))
+				return
+			}
+			// далее шлем сами данные
+			_, err = conn.Write(encData)
+			if err != nil {
+				log.Info("%v", utils.ErrInfo(err))
+				return
+			}
+		}
+}

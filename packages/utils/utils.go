@@ -66,7 +66,7 @@ type prevBlockType struct {
 //var err error
 
 func Sleep(sec time.Duration) {
-	log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
+	//log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
 	time.Sleep(sec * time.Second)
 }
 type SortCfCatalog []map[string]string
@@ -2848,7 +2848,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     		// сами данные
 			binaryData := make([]byte, size)
 			log.Debug("ReadAll 0")
-			binaryData, err = ioutil.ReadAll(conn)
+			_, err = ioReadFull(conn, binaryData)
 			log.Debug("ReadAll 1")
 			if err != nil {
 				log.Error("%v", ErrInfo(err))
@@ -3014,7 +3014,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// и если данных менее 10мб, то получаем их
 			if dataSize < 10485760 {
     			encBinaryTxs := make([]byte, dataSize)
-				encBinaryTxs, err = ioutil.ReadAll(conn)
+				_, err = io.ReadFull(encBinaryTxs, conn)
 				if err != nil {
 					log.Error("%v", ErrInfo(err))
 					return
