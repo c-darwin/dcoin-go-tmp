@@ -39,9 +39,9 @@ func Connector() {
 
 		var delMiners []string
 		var hosts []map[string]string
-		var nodesInc string
 		var nodeCount int64
 		idArray := make(map[int]int64)
+		nodesInc := make(map[string]string)
 
 		// ровно стольким нодам мы будем слать хэши блоков и тр-ий
 		var maxHosts = consts.OUT_CONNECTIONS
@@ -118,7 +118,7 @@ func Connector() {
 			}
 
 			hosts = append(hosts, map[string]string{"host": data["host"], "user_id": data["user_id"]})
-			nodesInc += data["host"]+";"+data["user_id"]+"\n"
+			nodesInc[data["host"]] = data["user_id"]
 			nodeCount++
 		}
 
@@ -265,14 +265,18 @@ func Connector() {
 					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
-				nodesInc += host+";"+userId+"\n"
+				nodesInc[host] = userId
 
 			}
 		}
 
 		if nodeCount > 5 {
-			nodesInc = nodesInc[:len(nodesInc)-1]
-			err := ioutil.WriteFile("nodes.inc", []byte(nodesInc), 0644)
+			nodesFile := ""
+			for k, v := range nodesInc {
+				nodesFile+=k+";"+v+"\n"
+			}
+			nodesFile = nodesFile[:len(nodesFile)-1]
+			err := ioutil.WriteFile("nodes.inc", []byte(nodesFile), 0644)
 			if err != nil {
 				db.PrintSleep(err, 1)
 				continue BEGIN
