@@ -2848,7 +2848,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     		// сами данные
 			binaryData := make([]byte, size)
 			log.Debug("ReadAll 0")
-			_, err = ioReadFull(conn, binaryData)
+			_, err = io.ReadFull(conn, binaryData)
 			log.Debug("ReadAll 1")
 			if err != nil {
 				log.Error("%v", ErrInfo(err))
@@ -3014,7 +3014,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// и если данных менее 10мб, то получаем их
 			if dataSize < 10485760 {
     			encBinaryTxs := make([]byte, dataSize)
-				_, err = io.ReadFull(encBinaryTxs, conn)
+				_, err = io.ReadFull(conn, encBinaryTxs)
 				if err != nil {
 					log.Error("%v", ErrInfo(err))
 					return
