@@ -793,7 +793,7 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 		if err != nil || progress != "complete" {
 			log.Debug("%v", `progress != "complete"`, db.GoroutineName)
 			if err!=nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 			}
 			Sleep(1)
 		} else {

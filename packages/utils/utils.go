@@ -2819,7 +2819,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 
 	variables, err := db.GetAllVariables()
 	if err != nil {
-		log.Debug("%v", ErrInfo(err))
+		log.Error("%v", ErrInfo(err))
 		return
 	}
 
@@ -2827,28 +2827,32 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 	buf := make([]byte, 1)
 	_, err = conn.Read(buf)
 	if err != nil {
-		log.Debug("%v", ErrInfo(err))
+		log.Error("%v", ErrInfo(err))
 		return
 	}
 	dataType := BinToDec(buf)
 	log.Debug("dataType %v", dataType)
    	switch dataType {
 	case 1:
-    	log.Debug("dataType 1")
+    	log.Debug("dataType: 1")
     	// размер данных
 		buf := make([]byte, 4)
-		_, err = conn.Read(buf)
+		n, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size := BinToDec(buf)
+		log.Debug("size: %v / n: %v", size, n)
 		if size < 10485760 {
     		// сами данные
 			binaryData := make([]byte, size)
+			log.Debug("ReadAll 0")
 			binaryData, err = ioutil.ReadAll(conn)
+			log.Debug("ReadAll 1")
+			log.Debug("size: %v / n: %v", size, n)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("binaryData: %x", binaryData)
@@ -2859,7 +2863,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			 * */
 			key, iv, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("key: %v / iv: %v", key, iv)
@@ -2883,7 +2887,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			 * */
 			blockId, err := db.GetBlockId()
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     		log.Debug("decryptedBinData: %x", decryptedBinData)
@@ -2893,12 +2897,12 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     		// данные могут быть отправлены юзером, который уже не майнер
 			minerId, err := db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ? AND miner_id > 0", newDataUserId).Int64()
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("minerId: %v", minerId)
 			if minerId == 0 {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     		// если 0 - значит вначале идет инфа о блоке, если 1 - значит сразу идет набор хэшей тр-ий
@@ -2916,7 +2920,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 					newDataHeadHash := BinToHex(BytesShift(&decryptedBinData, 32))
 					err = db.ExecSql(`DELETE FROM queue_blocks WHERE hash = [hex]`, newDataHash)
 					if err != nil {
-						log.Debug("%v", ErrInfo(err))
+						log.Error("%v", ErrInfo(err))
 						return
 					}
 					err = db.ExecSql(`
@@ -2932,7 +2936,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 							?
 						)`, newDataHash, newDataHeadHash, newDataUserId, newDataBlockId)
 					if err != nil {
-						log.Debug("%v", ErrInfo(err))
+						log.Error("%v", ErrInfo(err))
 						return
 					}
 				}
@@ -2954,14 +2958,14 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				log.Debug("newDataHighRate: %v", newDataHighRate)
 				newDataTxHash := BinToHex(BytesShift(&decryptedBinData, 16))
 				if len(newDataTxHash) == 0 {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
 				log.Debug("newDataTxHash %s", newDataTxHash)
 				// проверим, нет ли у нас такой тр-ии
 				exists, err := db.Single("SELECT count(hash) FROM log_transactions WHERE hash  =  [hex]", newDataTxHash).Int64()
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
 				if exists > 0 {
@@ -2974,21 +2978,21 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				}
 			}
 			if len(needTx) == 0 {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     		log.Debug("needTx: %v", needTx)
     		// шифруем данные. ключ $key сеансовый, iv тоже
 			encData, _, err := EncryptCFB(needTx, key, iv)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     		// в 4-х байтах пишем размер данных, которые пошлем далее
 			size := DecToBin(len(encData), 4)
 			_, err = conn.Write(size)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("size: %v", size)
@@ -2996,14 +3000,14 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// далее шлем сами данные
 			_, err = conn.Write(encData)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     		// в ответ получаем размер данных, которые нам хочет передать сервер
 			buf := make([]byte, 4)
 			_, err =conn.Read(buf)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			dataSize := BinToDec(buf)
@@ -3013,26 +3017,26 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     			encBinaryTxs := make([]byte, dataSize)
 				encBinaryTxs, err = ioutil.ReadAll(conn)
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
     			// разбираем полученные данные
 				log.Debug("encBinaryTxs %x", encBinaryTxs)
 				binaryTxs, err := DecryptCFB(iv, encBinaryTxs, key)
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
 				log.Debug("binaryTxs %x", binaryTxs)
     			for {
 					txSize := DecodeLength(&binaryTxs)
 					if int64(len(binaryTxs)) < txSize {
-						log.Debug("%v", ErrInfo(err))
+						log.Error("%v", ErrInfo(err))
 						return
 					}
 					txBinData := BytesShift(&binaryTxs, txSize)
 					if len(txBinData) == 0 {
-						log.Debug("%v", ErrInfo(err))
+						log.Error("%v", ErrInfo(err))
 						return
 					}
 					txHex := BinToHex(txBinData)
@@ -3046,7 +3050,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 					log.Debug("INSERT INTO queue_tx (hash, high_rate, data) %s, %d, %s", Md5(txBinData), newDataHighRate, txHex)
 					err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(txBinData), newDataHighRate, txHex)
 					if len(txBinData) == 0 {
-						log.Debug("%v", ErrInfo(err))
+						log.Error("%v", ErrInfo(err))
 						return
 					}
 				}
@@ -3057,7 +3061,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size := BinToDec(buf)
@@ -3067,7 +3071,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			binaryData := make([]byte, size)
 			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			/*
@@ -3075,7 +3079,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			 * */
     		_, _, decryptedBinData, err := db.DecryptData(&binaryData)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("decryptedBinData: %x", decryptedBinData)
@@ -3108,13 +3112,13 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// заливаем тр-ию в БД
 			err = db.ExecSql(`DELETE FROM queue_tx WHERE hash = [hex]`, Md5(decryptedBinDataFull))
 			if err!=nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)",  Md5(decryptedBinDataFull), highRate, BinToHex(decryptedBinDataFull))
 			err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(decryptedBinDataFull), highRate, BinToHex(decryptedBinDataFull))
 			if err!=nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 		}
@@ -3123,7 +3127,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size := BinToDec(buf)
@@ -3132,7 +3136,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			binaryData := make([]byte, size)
 			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			/*
@@ -3141,25 +3145,25 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			* */
 			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
     			// шлем тип данных
 			_, err = conn2.Write(DecToBin(2, 1))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			err = WriteSizeAndDataTCPConn(binaryData, conn2)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 		}
@@ -3168,28 +3172,28 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		blockId := BinToDec(buf)
     		// используется для учета кол-ва подвержденных блоков, т.е. тех, которые есть у большинства нодов
 		hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			conn.Write(DecToBin(0, 1))
 			return
 		}
     		_, err = conn.Write([]byte(hash))
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
-    	case 5:
+    case 5:
     		// данные присылает демон connector
     		buf := make([]byte, 5)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		userId := BinToDec(buf)
@@ -3250,14 +3254,14 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			// всё норм, шлем 1
 			_, err = conn.Write(DecToBin(1, 1))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 		} else {
 			// всё норм, шлем 1
 			_, err = conn.Write(DecToBin(1, 1))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 		}
@@ -3272,7 +3276,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		 */
 		currentBlockId, err := db.GetBlockId()
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		if currentBlockId == 0 {
@@ -3282,7 +3286,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size:=BinToDec(buf)
@@ -3291,7 +3295,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
    			binaryData := make([]byte, size)
 			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			log.Debug("binaryData: %x", binaryData)
@@ -3579,13 +3583,13 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     	buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		blockId := BinToDec(buf)
     	block, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 
@@ -3593,7 +3597,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		log.Debug("block %x", block)
     	err = WriteSizeAndData(block, conn)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
     	case 8:
@@ -3604,7 +3608,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size := BinToDec(buf)
@@ -3613,39 +3617,39 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			binaryData := make([]byte, size)
 			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			blockId := BinToDecBytesShift(&binaryData, 4)
     			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
     			// шлем тип данных
 			_, err = conn2.Write(DecToBin(7, 1))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			// шлем ID блока
 			_, err = conn2.Write(DecToBin(blockId, 4))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     			// в ответ получаем размер данных, которые нам хочет передать сервер
 			buf := make([]byte, 4)
 			_, err =conn2.Read(buf)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			dataSize := BinToDec(buf)
@@ -3654,18 +3658,18 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				blockBinary := make([]byte, dataSize)
 				/*_, err := conn2.Read(blockBinary)
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}*/
 				blockBinary, err = ioutil.ReadAll(conn2)
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
 				// шлем тому, кто запросил блок из демона
 				_, err = conn.Write(blockBinary)
 				if err != nil {
-					log.Debug("%v", ErrInfo(err))
+					log.Error("%v", ErrInfo(err))
 					return
 				}
 			}
@@ -3679,7 +3683,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		buf := make([]byte, 4)
 		_, err = conn.Read(buf)
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		size := BinToDec(buf)
@@ -3688,44 +3692,44 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			binaryData := make([]byte, size)
 			/*_, err = conn.Read(binaryData)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}*/
 			binaryData, err = ioutil.ReadAll(conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			//blockId := BinToDecBytesShift(&binaryData, 4)
 			host, err := ProtectedCheckRemoteAddrAndGetHost(&binaryData, conn)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			// шлем данные указанному хосту
 			conn2, err := TcpConn(host)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			defer conn2.Close()
 			// шлем тип данных
 			_, err = conn2.Write(DecToBin(10, 1))
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 			// в ответ получаем номер блока
 			blockIdBin := make([]byte, 4)
 			_, err = conn2.Read(blockIdBin)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
     			// и возвращаем номер блока демону, который этот запрос прислал
 			_, err = conn.Write(blockIdBin)
 			if err != nil {
-				log.Debug("%v", ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
 				return
 			}
 		}
@@ -3735,12 +3739,12 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 		*/
 		blockId, err := db.Single("SELECT block_id FROM info_block").Int64()
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 		_, err = conn.Write(DecToBin(blockId, 4))
 		if err != nil {
-			log.Debug("%v", ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
 			return
 		}
 	}
