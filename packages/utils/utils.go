@@ -3021,6 +3021,9 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				}
     			// разбираем полученные данные
 				log.Debug("encBinaryTxs %x", encBinaryTxs)
+				// уберем IV из начала
+				BytesShift(&encBinaryTxs, 16)
+				// декриптуем
 				binaryTxs, err := DecryptCFB(iv, encBinaryTxs, key)
 				if err != nil {
 					log.Error("%v", ErrInfo(err))
