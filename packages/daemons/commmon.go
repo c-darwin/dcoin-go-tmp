@@ -27,7 +27,7 @@ func init() {
 				fmt.Println(err)
 				os.Exit(1)
 			}*/
-			configIni_, err := config.NewConfig("ini", "/home/z/IdeaProjects/src/github.com/c-darwin/dcoin-go-tmp/config.ini")
+			configIni_, err := config.NewConfig("ini", "config.ini")
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}

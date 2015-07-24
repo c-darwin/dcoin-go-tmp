@@ -53,7 +53,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	case "sqlite":
 
 		log.Debug("sqlite connect")
-		db, err = sql.Open("sqlite3", "/home/z/IdeaProjects/src/github.com/c-darwin/dcoin-go-tmp/litedb.db")
+		db, err = sql.Open("sqlite3", "litedb.db")
 		if err!=nil {
 			log.Debug("%v", err)
 			return &DCDB{}, err
