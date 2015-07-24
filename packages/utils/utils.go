@@ -2837,7 +2837,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
     	log.Debug("dataType: 1")
     	// размер данных
 		buf := make([]byte, 4)
-		n, err = conn.Read(buf)
+		n, err := conn.Read(buf)
 		if err != nil {
 			log.Error("%v", ErrInfo(err))
 			return
@@ -2850,7 +2850,6 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 			log.Debug("ReadAll 0")
 			binaryData, err = ioutil.ReadAll(conn)
 			log.Debug("ReadAll 1")
-			log.Debug("size: %v / n: %v", size, n)
 			if err != nil {
 				log.Error("%v", ErrInfo(err))
 				return
