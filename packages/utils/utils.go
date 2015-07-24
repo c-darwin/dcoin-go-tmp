@@ -2994,7 +2994,7 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 				log.Error("%v", ErrInfo(err))
 				return
 			}
-			log.Debug("size: %v", size)
+			log.Debug("size: %v", len(encData))
 			log.Debug("encData: %x", encData)
 			// далее шлем сами данные
 			_, err = conn.Write(encData)
@@ -3039,13 +3039,13 @@ func HandleTcpRequest(conn net.Conn, db *DCDB) {
 						return
 					}
 					txHex := BinToHex(txBinData)
-    					// проверим размер
+    				// проверим размер
 					if int64(len(txBinData)) > variables.Int64["max_tx_size"] {
 						log.Debug("%v", ErrInfo("len(txBinData) > max_tx_size"))
 						return
 					}
-    				// временно для тестов
-					newDataHighRate := 0
+    				newDataHighRate := 0 // временно для тестов
+
 					log.Debug("INSERT INTO queue_tx (hash, high_rate, data) %s, %d, %s", Md5(txBinData), newDataHighRate, txHex)
 					err = db.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, Md5(txBinData), newDataHighRate, txHex)
 					if len(txBinData) == 0 {

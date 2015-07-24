@@ -365,6 +365,7 @@ func DisseminatorType1(host string, userId int64, node_public_key string, db *ut
 					txHash = utils.BytesShift(&binaryTxHashes, 16)
 				}
 				txHash = utils.BinToHex(txHash)
+				log.Debug("txHash %s", txHash)
 				tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
 				log.Debug("tx %x", tx)
 				if err != nil {
