@@ -265,6 +265,8 @@ func Connector() {
 					db.PrintSleep(err, 1)
 					continue BEGIN
 				}
+				nodesInc += host+";"+userId+"\n"
+
 			}
 		}
 
