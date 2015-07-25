@@ -62,6 +62,9 @@ func (c *Controller) AvailableKeys() (string, error) {
 		}
 		key = strings.Replace(key, `\r\n`, "\n", -1)
 		if checkAvailableKey(key, c.DCDB) == nil || i > 10 {
+			if i > 10 {
+				key = ""
+			}
 			break
 		}
 	}

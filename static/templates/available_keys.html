@@ -19,22 +19,21 @@
 </head>
 <body>
 <div style="margin: 50px auto 0 auto; width: 650px; height: 500px; overflow: auto; text-align: center" >
-    {{if not .AutoLogin}}
-		{{if .Key}}
+    {{if .Key}}
+        {{if not .AutoLogin}}
 		    <a type="button" class="btn btn-primary" href='/tools?controllerName=availableKeys&download=1'>Download</a>
         {{else}}
-            <div class="center-block" style="width: 250px"><h3>Sorry, all the keys over.</h3></div>
+            <form id="target" action="http://pool.dcoin.me/" method="post">
+                <input type="hidden" name="key" value="{{.Key}}">
+                <input type="hidden" name="lang" value="{{.LangId}}">
+                <input type="submit" style="display: none">
+            </form>
+            <script>$( "#target" ).submit();</script>
         {{end}}
+    {{else}}
+        <div class="center-block" style="width: 250px"><h3>Sorry, all the keys over.</h3></div>
     {{end}}
 </div>
-<form id="target" action="http://pool.dcoin.me/" method="post">
-    <input type="hidden" name="key" value="{{.Key}}">
-    <input type="hidden" name="lang" value="{{.LangId}}">
-    <input type="submit" style="display: none">
-</form>
-{{ if .AutoLogin}}
-	<script>$( "#target" ).submit();</script>
-{{end}}
 </body>
 
 {{end}}
