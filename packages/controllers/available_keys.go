@@ -50,6 +50,9 @@ func (c *Controller) AvailableKeys() (string, error) {
 		autoLogin = true
 	}
 	langId := utils.StrToInt(c.r.FormValue("langId"))
+	if langId == 0 {
+		langId = 1
+	}
 	for i:=0;;i++ {
 		maxId, err := c.Single("SELECT max(id) FROM _my_refs", utils.Time()-1800).Int()
 		randId := utils.RandInt(1, maxId+1)
