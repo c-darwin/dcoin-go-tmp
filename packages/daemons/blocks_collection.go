@@ -180,7 +180,7 @@ func BlocksCollection() {
                         data = make([]byte, 5)
                         file.Read(data)
                     } else {
-                        db.PrintSleep(err, 1)
+                        db.UnlockPrintSleep(err, 1)
                         continue BEGIN
 					}
                    // utils.Sleep(1)
@@ -425,7 +425,7 @@ func BlocksCollection() {
 			}
 
             // качаем предыдущие блоки до тех пор, пока отличается хэш предыдущего.
-            // другими словами, пока подпись с $prev_block_hash будет неверной, т.е. пока что-то есть в $error
+            // другими словами, пока подпись с prevBlockHash будет неверной, т.е. пока что-то есть в $error
 			if err != nil {
                 log.Info("%v", utils.ErrInfo(err))
 				if blockId < 1 {

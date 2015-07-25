@@ -224,7 +224,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 	}
 
 	// чтобы брать блоки по порядку
-	utils.SortMap(blocks)
+	blocksSorted := utils.SortMap(blocks)
 	log.Debug("blocks", blocks)
 
 	// получим наши транзакции в 1 бинарнике, просто для удобства
@@ -280,98 +280,102 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			return utils.ErrInfo(err)
 		}
 	}
-	log.Debug("blocks", blocks)
+	log.Debug("blocks", blocksSorted)
 
 	prevBlock := make(map[int64]*utils.BlockData)
+
 	// проходимся по новым блокам
-	for intBlockId, tmpFileName := range blocks {
-		log.Debug("Go on new blocks", intBlockId, tmpFileName)
+	for _, data := range blocksSorted {
+		for intBlockId, tmpFileName := range data {
+			log.Debug("Go on new blocks", intBlockId, tmpFileName)
 
-		// проверяем и заносим данные
-		binaryBlock, err := ioutil.ReadFile(tmpFileName)
-		if err != nil {
-			return utils.ErrInfo(err)
-		}
-		log.Debug("binaryBlock: %x\n", binaryBlock)
-		parser.GoroutineName = goroutineName
-		parser.BinaryData = binaryBlock
-		// передаем инфу о предыдущем блоке, т.к. это новые блоки, то инфа о предыдущих блоках в block_chain будет всё еще старая, т.к. обновление block_chain идет ниже
-		if prevBlock[intBlockId-1] != nil {
-			parser.PrevBlock.Hash = prevBlock[intBlockId-1].Hash
-			parser.PrevBlock.HeadHash = prevBlock[intBlockId-1].HeadHash
-			parser.PrevBlock.Time = prevBlock[intBlockId-1].Time
-			parser.PrevBlock.Level = prevBlock[intBlockId-1].Level
-			parser.PrevBlock.BlockId = prevBlock[intBlockId-1].BlockId
-		}
-
-		// если вернулась ошибка, значит переданный блок уже откатился
-		// info_block и config.my_block_id обновляются только если ошибки не было
-		err = parser.ParseDataFull()
-		// для последующей обработки получим хэши и time
-		if err == nil {
-			prevBlock[intBlockId] = parser.GetBlockInfo()
-		}
-		// если есть ошибка, то откатываем все предыдущие блоки из новой цепочки
-		if err != nil {
-			log.Debug("there is an error is rolled back all previous blocks of a new chain: %v", err)
-
-			// баним на 1 час хост, который дал нам ложную цепочку
-			err = p.NodesBan(userId, fmt.Sprintf("%s", err))
+			// проверяем и заносим данные
+			binaryBlock, err := ioutil.ReadFile(tmpFileName)
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
-			// обязательно проходимся по блокам в обратном порядке
-			utils.RSortMap(blocks)
-			for int2BlockId, tmpFileName := range blocks {
-				log.Debug("int2BlockId", int2BlockId)
-				if int2BlockId >= intBlockId {
-					continue
-				}
-				binaryBlock, err := ioutil.ReadFile(tmpFileName)
-				if err != nil {
-					return utils.ErrInfo(err)
-				}
-				parser.GoroutineName = goroutineName
-				parser.BinaryData = binaryBlock
-				err = parser.ParseDataRollback()
-				if err != nil {
-					return utils.ErrInfo(err)
-				}
+			log.Debug("binaryBlock: %x\n", binaryBlock)
+			parser.GoroutineName = goroutineName
+			parser.BinaryData = binaryBlock
+			// передаем инфу о предыдущем блоке, т.к. это новые блоки, то инфа о предыдущих блоках в block_chain будет всё еще старая, т.к. обновление block_chain идет ниже
+			if prevBlock[intBlockId-1] != nil {
+				parser.PrevBlock.Hash = prevBlock[intBlockId-1].Hash
+				parser.PrevBlock.HeadHash = prevBlock[intBlockId-1].HeadHash
+				parser.PrevBlock.Time = prevBlock[intBlockId-1].Time
+				parser.PrevBlock.Level = prevBlock[intBlockId-1].Level
+				parser.PrevBlock.BlockId = prevBlock[intBlockId-1].BlockId
 			}
-			// заносим наши данные из block_chain, которые были ранее
-			log.Debug("We push data from our block_chain, which were previously")
-			rows, err := p.Query(p.FormatQuery(`
+
+			// если вернулась ошибка, значит переданный блок уже откатился
+			// info_block и config.my_block_id обновляются только если ошибки не было
+			err = parser.ParseDataFull()
+			// для последующей обработки получим хэши и time
+			if err == nil {
+				prevBlock[intBlockId] = parser.GetBlockInfo()
+			}
+			// если есть ошибка, то откатываем все предыдущие блоки из новой цепочки
+			if err != nil {
+				log.Debug("there is an error is rolled back all previous blocks of a new chain: %v", err)
+
+				// баним на 1 час хост, который дал нам ложную цепочку
+				err = p.NodesBan(userId, fmt.Sprintf("%s", err))
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+				// обязательно проходимся по блокам в обратном порядке
+				blocksSorted := utils.RSortMap(blocks)
+				for _, data := range blocksSorted {
+					for int2BlockId, tmpFileName := range data {
+						log.Debug("int2BlockId", int2BlockId)
+						if int2BlockId >= intBlockId {
+							continue
+						}
+						binaryBlock, err := ioutil.ReadFile(tmpFileName)
+						if err != nil {
+							return utils.ErrInfo(err)
+						}
+						parser.GoroutineName = goroutineName
+						parser.BinaryData = binaryBlock
+						err = parser.ParseDataRollback()
+						if err != nil {
+							return utils.ErrInfo(err)
+						}
+					}
+				}
+				// заносим наши данные из block_chain, которые были ранее
+				log.Debug("We push data from our block_chain, which were previously")
+				rows, err := p.Query(p.FormatQuery(`
 					SELECT data
 					FROM block_chain
 					WHERE id > ?
 					ORDER BY id ASC`), blockId)
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-			for rows.Next() {
-				var data []byte
-				err = rows.Scan(&data)
 				if err != nil {
 					return p.ErrInfo(err)
 				}
-				log.Debug("blockId", blockId, "intBlockId", intBlockId)
-				parser.GoroutineName = goroutineName
-				parser.BinaryData = data
-				err = parser.ParseDataFull()
+				for rows.Next() {
+					var data []byte
+					err = rows.Scan(&data)
+					if err != nil {
+						return p.ErrInfo(err)
+					}
+					log.Debug("blockId", blockId, "intBlockId", intBlockId)
+					parser.GoroutineName = goroutineName
+					parser.BinaryData = data
+					err = parser.ParseDataFull()
+					if err != nil {
+						return utils.ErrInfo(err)
+					}
+				}
+				// т.к. в предыдущем запросе к block_chain могло не быть данных, т.к. $block_id больше чем наш самый большой id в block_chain
+				// то значит info_block мог не обновится и остаться от занесения новых блоков, что приведет к пропуску блока в block_chain
+				lastMyBlock, err := p.OneRow("SELECT * FROM block_chain ORDER BY id DESC").String()
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
-			}
-			// т.к. в предыдущем запросе к block_chain могло не быть данных, т.к. $block_id больше чем наш самый большой id в block_chain
-			// то значит info_block мог не обновится и остаться от занесения новых блоков, что приведет к пропуску блока в block_chain
-			lastMyBlock, err := p.OneRow("SELECT * FROM block_chain ORDER BY id DESC").String()
-			if err != nil {
-				return utils.ErrInfo(err)
-			}
-			binary := []byte(lastMyBlock["data"])
-			utils.BytesShift(&binary, 1)  // уберем 1-й байт - тип (блок/тр-я)
-			lastMyBlockData := utils.ParseBlockHeader(&binary)
-			err = p.ExecSql(`
+				binary := []byte(lastMyBlock["data"])
+				utils.BytesShift(&binary, 1)  // уберем 1-й байт - тип (блок/тр-я)
+				lastMyBlockData := utils.ParseBlockHeader(&binary)
+				err = p.ExecSql(`
 					UPDATE info_block
 					SET   hash = [hex],
 							head_hash = [hex],
@@ -380,19 +384,20 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 							level = ?,
 							sent = 0
 					`, lastMyBlock["hash"], lastMyBlock["head_hash"], lastMyBlockData.BlockId, lastMyBlockData.Time, lastMyBlockData.Level)
-			if err != nil {
-				return utils.ErrInfo(err)
-			}
-			err = p.ExecSql(`
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+				err = p.ExecSql(`
 					UPDATE config
 					SET my_block_id = ?
 					WHERE my_block_id < ?
 					`, lastMyBlockData.BlockId, lastMyBlockData.BlockId)
-			if err != nil {
-				return utils.ErrInfo(err)
+				if err != nil {
+					return utils.ErrInfo(err)
+				}
+				ClearTmp(blocks)
+				return utils.ErrInfo(err)  // переходим к следующему блоку в queue_blocks
 			}
-			ClearTmp(blocks)
-			return utils.ErrInfo(err)  // переходим к следующему блоку в queue_blocks
 		}
 	}
 	log.Debug("remove the blocks and enter new block_chain")
