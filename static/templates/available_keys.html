@@ -21,9 +21,10 @@
 <div style="margin: 50px auto 0 auto; width: 650px; height: 500px; overflow: auto; text-align: center" >
     {{if not .AutoLogin}}
 		{{if .Key}}
-		    <a type="button" class="btn btn-primary" href='?download=1'>Download</a>
+		    <a type="button" class="btn btn-primary" href='/tools?controllerName=availableKeys&download=1'>Download</a>
         {{else}}
             <div class="center-block" style="width: 250px"><h3>Sorry, all the keys over.</h3></div>
+        {{end}}
     {{end}}
 </div>
 <form id="target" action="http://pool.dcoin.me/" method="post">

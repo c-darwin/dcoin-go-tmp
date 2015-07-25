@@ -1,6 +1,6 @@
 package controllers
 import (
-	"net/http"
+//	"net/http"
 	"encoding/pem"
 	"errors"
 	"crypto/x509"
@@ -8,6 +8,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"html/template"
 	"bytes"
+	"strings"
 )
 
 type availableKeysPage struct {
@@ -16,7 +17,7 @@ type availableKeysPage struct {
 	LangId int
 }
 
-func checkAvailableKey(key string, db *utils.DCDB) (string, error) {
+func checkAvailableKey(key string, db *utils.DCDB) (error) {
 	block, _ := pem.Decode([]byte(key))
 	if block == nil {
 		return errors.New("bad key data")
@@ -42,20 +43,21 @@ func checkAvailableKey(key string, db *utils.DCDB) (string, error) {
 
 func (c *Controller) AvailableKeys() (string, error) {
 
-	r.ParseForm()
+	c.r.ParseForm()
 	var key string
 	var autoLogin bool
-	if len(r.FormValue("auto_login")) > 0 {
+	if len(c.r.FormValue("auto_login")) > 0 {
 		autoLogin = true
 	}
-	langId := utils.StrToInt(r.FormValue("langId"))
+	langId := utils.StrToInt(c.r.FormValue("langId"))
 	for i:=0;;i++ {
 		maxId, err := c.Single("SELECT max(id) FROM _my_refs", utils.Time()-1800).Int()
 		randId := utils.RandInt(1, maxId+1)
 		key, err = c.Single("SELECT private_key FROM _my_refs WHERE used_time < ? AND id = ?", utils.Time()-1800, randId).String()
 		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
+			return "", utils.ErrInfo(err)
 		}
+		key = strings.Replace(key, `\r\n`, "\n", -1)
 		if checkAvailableKey(key, c.DCDB) == nil || i > 10 {
 			break
 		}
@@ -64,23 +66,20 @@ func (c *Controller) AvailableKeys() (string, error) {
 		c.ExecSql("UPDATE _my_refs SET used_time = ? WHERE private_key = ?", utils.Time(), key)
 	}
 
-	if len(r.FormValue("download")) > 0 {
+	if len(c.r.FormValue("download")) > 0 {
 		c.w.Header().Set("Content-Type", "application/octet-stream")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(key)))
 		c.w.Header().Set("Content-Disposition", `attachment; filename="key.txt"`)
-		w.Write([]byte(key))
+		c.w.Write([]byte(key))
 	} else {
 		data, err := static.Asset("static/templates/available_keys.html")
-		t := template.New("template")
-		t, err = t.Parse(string(data))
-		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
-		}
+		t := template.Must(template.New("template").Parse(string(data)))
 		b := new(bytes.Buffer)
-		err = t.Execute(b, &availableKeysPage{AutoLogin: autoLogin, Key: key, LangId: langId})
+		err = t.ExecuteTemplate(b, "availableKeys", &availableKeysPage{AutoLogin: autoLogin, Key: key, LangId: langId})
 		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
+			return "", utils.ErrInfo(err)
 		}
-		w.Write(b.Bytes())
+		return b.String(), nil
 	}
+	return "", nil
 }

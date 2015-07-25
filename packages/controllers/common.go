@@ -169,9 +169,7 @@ func CallMethod(i interface{}, methodName string) (string, error) {
 	return "", fmt.Errorf("not found")
 }
 
-func Content1(w http.ResponseWriter, r *http.Request) {
 
-}
 
 func GetSessUserId(sess session.SessionStore) int64 {
 	sessUserId := sess.Get("user_id")
