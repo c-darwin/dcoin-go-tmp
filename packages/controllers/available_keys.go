@@ -16,7 +16,7 @@ type availableKeysPage struct {
 	LangId int
 }
 
-func checkAvailableKey(key string, db *utils.DCDB) (error) {
+func checkAvailableKey(key string, db *utils.DCDB) (string, error) {
 	block, _ := pem.Decode([]byte(key))
 	if block == nil {
 		return errors.New("bad key data")
@@ -40,7 +40,7 @@ func checkAvailableKey(key string, db *utils.DCDB) (error) {
 	return nil
 }
 
-func (c *Controller) AvailableKeys(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) AvailableKeys() (string, error) {
 
 	r.ParseForm()
 	var key string

@@ -414,6 +414,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 
 	c := new(Controller)
 	c.r = r
+	c.w = w
 	dbInit := false;
 	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
 		dbInit = true

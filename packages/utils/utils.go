@@ -2245,9 +2245,9 @@ func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, e
 				transactionBinaryData := BytesShift(&binaryData, txSize)
 				dSha256Hash := DSha256(transactionBinaryData)
 				mrklSlice = append(mrklSlice, dSha256Hash)
-				if len(transactionBinaryData) > 500000 {
-					ioutil.WriteFile(string(dSha256Hash)+"-"+Int64ToStr(txSize), transactionBinaryData, 0644)
-				}
+				//if len(transactionBinaryData) > 500000 {
+				//	ioutil.WriteFile(string(dSha256Hash)+"-"+Int64ToStr(txSize), transactionBinaryData, 0644)
+				//}
 			}
 
 			// чтобы исключить атаку на переполнение памяти

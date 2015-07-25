@@ -1719,9 +1719,9 @@ func (p *Parser) ParseDataFull() error {
 		return utils.ErrInfo(err)
 	}
 
-	if len(p.BinaryData) > 500000 {
-		ioutil.WriteFile("block-"+string(utils.DSha256(p.BinaryData)), p.BinaryData, 0644)
-	}
+	//if len(p.BinaryData) > 500000 {
+	//	ioutil.WriteFile("block-"+string(utils.DSha256(p.BinaryData)), p.BinaryData, 0644)
+	//}
 
 	err = p.ParseBlock()
 	if err != nil {
