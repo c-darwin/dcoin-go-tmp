@@ -225,7 +225,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 
 	// чтобы брать блоки по порядку
 	blocksSorted := utils.SortMap(blocks)
-	log.Debug("blocks", blocks)
+	log.Debug("blocks", blocksSorted)
 
 	// получим наши транзакции в 1 бинарнике, просто для удобства
 	var transactions []byte
@@ -383,7 +383,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 							time = ?,
 							level = ?,
 							sent = 0
-					`, lastMyBlock["hash"], lastMyBlock["head_hash"], lastMyBlockData.BlockId, lastMyBlockData.Time, lastMyBlockData.Level)
+					`, utils.BinToHex(lastMyBlock["hash"]), utils.BinToHex(lastMyBlock["head_hash"]), lastMyBlockData.BlockId, lastMyBlockData.Time, lastMyBlockData.Level)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -666,14 +666,15 @@ func (p *Parser) ParseBlock() error {
 
 func (p *Parser) CheckBlockHeader() error {
 	var err error
-	// инфа о предыдущем блоке (т.е. последнем занесенном)
-	//if p.PrevBlock == nil {
+	// инфа о предыдущем блоке (т.е. последнем занесенном).
+	// в GetBlocks p.PrevBlock определяется снаружи, поэтому тут важно не перезаписать данными из block_chain
+	if p.PrevBlock == nil || p.PrevBlock.BlockId != p.BlockData.BlockId-1  {
 		p.PrevBlock, err = p.GetBlockDataFromBlockChain(p.BlockData.BlockId-1)
 		log.Debug("PrevBlock 0",p.PrevBlock)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
-	//}
+	}
 	log.Debug("PrevBlock",p.PrevBlock)
 	log.Debug("p.PrevBlock.BlockId",p.PrevBlock.BlockId)
 	// для локальных тестов
