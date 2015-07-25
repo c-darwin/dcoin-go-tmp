@@ -299,6 +299,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			parser.BinaryData = binaryBlock
 			// передаем инфу о предыдущем блоке, т.к. это новые блоки, то инфа о предыдущих блоках в block_chain будет всё еще старая, т.к. обновление block_chain идет ниже
 			if prevBlock[intBlockId-1] != nil {
+				log.Debug("prevBlock[intBlockId-1] != nil : %v", prevBlock[intBlockId-1])
 				parser.PrevBlock.Hash = prevBlock[intBlockId-1].Hash
 				parser.PrevBlock.HeadHash = prevBlock[intBlockId-1].HeadHash
 				parser.PrevBlock.Time = prevBlock[intBlockId-1].Time
@@ -312,6 +313,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 			// для последующей обработки получим хэши и time
 			if err == nil {
 				prevBlock[intBlockId] = parser.GetBlockInfo()
+				log.Debug("prevBlock[%d] = %v", intBlockId, prevBlock[intBlockId])
 			}
 			// если есть ошибка, то откатываем все предыдущие блоки из новой цепочки
 			if err != nil {
