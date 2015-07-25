@@ -1870,11 +1870,10 @@ func BinToHex(bin_ interface {}) []byte {
 }
 
 func HexToBin(hex_ []byte) []byte {
-	// без проверки на ошибки т.к. эта функция используется только там где валидность была проверена ранее
 	var str []byte
 	str, err := hex.DecodeString(string(hex_))
 	if err!=nil {
-		fmt.Println(err)
+		log.Error("%v / %v", err, GetParent())
 	}
 	return str
 }

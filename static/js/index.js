@@ -144,7 +144,7 @@ function logout () {
 
     $.get("ajax?controllerName=logout",
         function() {
-            window.location.href = "index.php";
+            window.location.href = "/";
         });
 }
 

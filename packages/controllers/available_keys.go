@@ -1,6 +1,5 @@
 package controllers
 import (
-//	"net/http"
 	"encoding/pem"
 	"errors"
 	"crypto/x509"
@@ -9,6 +8,7 @@ import (
 	"html/template"
 	"bytes"
 	"strings"
+	"fmt"
 )
 
 type availableKeysPage struct {
@@ -22,14 +22,21 @@ func checkAvailableKey(key string, db *utils.DCDB) (error) {
 	if block == nil {
 		return errors.New("bad key data")
 	}
+	log.Debug("%v", block)
 	if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
 		return errors.New("unknown key type "+got+", want "+want)
 	}
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	log.Debug("privateKey %v", privateKey)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	publicKeyAsn := utils.MakeAsn1(privateKey.PublicKey.N.Bytes(), []byte(utils.IntToStr(privateKey.PublicKey.E)))
+	e := fmt.Sprintf("%x", privateKey.PublicKey.E)
+	if len(e)%2 > 0 {
+		e = "0"+e
+	}
+	log.Debug("%s / %v", utils.BinToHex(privateKey.PublicKey.N.Bytes()), e)
+	publicKeyAsn := utils.MakeAsn1(utils.BinToHex(privateKey.PublicKey.N.Bytes()), []byte(e))
 	log.Debug("publicKeyAsn: %s", publicKeyAsn)
 	userId, err := db.Single("SELECT user_id FROM users WHERE public_key_0  =  [hex]", publicKeyAsn).Int64()
 	if err != nil {
@@ -64,6 +71,7 @@ func (c *Controller) AvailableKeys() (string, error) {
 		if checkAvailableKey(key, c.DCDB) == nil || i > 10 {
 			if i > 10 {
 				key = ""
+				log.Debug("%v", err)
 			}
 			break
 		}

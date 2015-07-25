@@ -717,7 +717,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			sess.Delete("private_key")
 			sess.Delete("public_key")
 			log.Debug("sess.Delete user_id private_key public_key")
-			w.Write([]byte("<script language=\"javascript\">window.location.href = \"index.php\"</script>If you are not redirected automatically, follow the <a href=\"index.php\">index.php</a>"))
+			w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
 			return;
 		}
 		if tplName == "login" {
