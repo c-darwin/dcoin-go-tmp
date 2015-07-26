@@ -875,7 +875,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 
-		if len(privateKey)>0 && !utils.CheckInputData(privateKey, "private_key") {
+		if len(privateKey)>1 && !utils.CheckInputData(privateKey, "private_key") {
 			return `incorrect private_key`, nil
 		}
 
