@@ -822,6 +822,11 @@ func (db *DCDB) GetTcpHost() string {
 				log.Error("%v", ErrInfo(err))
 			}
 			//myPrefix = Int64ToStr(myUserId)+"_"
+		} else {
+			myUserId, err = db.GetMyUserId("")
+			if err!=nil {
+				log.Error("%v", ErrInfo(err))
+			}
 		}
 		tcpHost, err := db.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", myUserId).String()
 		if err!=nil {
