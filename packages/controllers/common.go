@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 	"github.com/op/go-logging"
-	"regexp"
 	"unicode"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"bytes"
