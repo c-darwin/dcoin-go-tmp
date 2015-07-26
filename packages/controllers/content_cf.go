@@ -2,7 +2,6 @@ package controllers
 import (
 	"net/http"
 	"regexp"
-
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
 	"encoding/json"
