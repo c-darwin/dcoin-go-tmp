@@ -3,6 +3,10 @@ package utils
 import (
 	"testing"
 	"fmt"
+	"encoding/base64"
+	"crypto/aes"
+	"crypto/cipher"
+	"bytes"
 )
 
 func TestDecryptCFB(t *testing.T) {
@@ -14,9 +18,47 @@ func TestDecryptCFB(t *testing.T) {
 }
 
 
-func TestFormatQueryArgs(t *testing.T) {
-  	newQuery, newArgs := FormatQueryArgs("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", "sqlite", []interface {}{1, 1, 1, "FFFFFFFFFFFF"}...)
-	fmt.Println(newQuery)
-	fmt.Println(newArgs)
+func TestEncrypt(t *testing.T) {
 
+	privKey, _ := GenKeys()
+	password := Md5("111")
+
+	// encrypt
+
+	iv := []byte(RandSeq(aes.BlockSize))
+	c, err := aes.NewCipher(password)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(iv)
+	plaintext := PKCS5Padding([]byte(privKey), c.BlockSize())
+	cfbdec := cipher.NewCBCEncrypter(c, iv)
+	EncPrivateKeyBin := make([]byte, len(plaintext))
+	cfbdec.CryptBlocks(EncPrivateKeyBin, plaintext)
+	EncPrivateKeyBin = append(iv, EncPrivateKeyBin...)
+	EncPrivateKeyB64 := base64.StdEncoding.EncodeToString(EncPrivateKeyBin)
+	if err!=nil {
+		t.Error(err)
+	}
+	fmt.Println(EncPrivateKeyB64)
+
+
+	// decrypt
+
+	privateKeyBin, err := base64.StdEncoding.DecodeString(EncPrivateKeyB64)
+	if err!=nil {
+		t.Error(err)
+	}
+
+
+	c, err = aes.NewCipher([]byte(password))
+	if err != nil {
+		t.Error(err)
+	}
+	mode := cipher.NewCBCDecrypter(c, iv)
+	mode.CryptBlocks(privateKeyBin, privateKeyBin)
+	fmt.Printf("nodelpad %s\n", privateKeyBin)
+	privateKeyBin = PKCS5UnPadding(privateKeyBin)
+	fmt.Printf("delpad %s\n", privateKeyBin)
 }
+

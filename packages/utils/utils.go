@@ -2048,6 +2048,18 @@ func CopyFileContents(src, dst string) (err error) {
 	return
 }
 
+func PKCS5Padding(src []byte, blockSize int) []byte {
+	padding := blockSize - len(src)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(src, padtext...)
+}
+
+func PKCS5UnPadding(src []byte) []byte {
+	length := len(src)
+	unpadding := int(src[length-1])
+	return src[:(length - unpadding)]
+}
+
 func RandSeq(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	rand.Seed(time.Now().UnixNano())
@@ -2593,22 +2605,19 @@ func GenKeys() (string, string) {
 }
 
 func Encrypt(key, text []byte) ([]byte, error) {
-	/*block, err := aes.NewCipher(key)
+	iv := []byte(RandSeq(aes.BlockSize))
+	c, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return nil, ErrInfo(err)
 	}
-	//b := base64.StdEncoding.EncodeToString(text)
-	b := text
-	ciphertext := make([]byte, aes.BlockSize+len(b))
-	iv := ciphertext[:aes.BlockSize]
-	//iv, _ := base64.StdEncoding.DecodeString("AAAAAAAAAAAAAAAAAAAAAA==")
-
-	if _, err := io.ReadFull(crand.Reader, iv); err != nil {
-		return nil, err
-	}
-	cfb := cipher.NewCFBEncrypter(block, iv)
-	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
-	return ciphertext, nil*/
+	plaintext := PKCS5Padding([]byte(text), c.BlockSize())
+	cfbdec := cipher.NewCBCEncrypter(c, iv)
+	EncPrivateKeyBin := make([]byte, len(plaintext))
+	cfbdec.CryptBlocks(EncPrivateKeyBin, plaintext)
+	EncPrivateKeyBin = append(iv, EncPrivateKeyBin...)
+	//EncPrivateKeyB64 := base64.StdEncoding.EncodeToString(EncPrivateKeyBin)
+	return EncPrivateKeyBin, nil
+/*
 	plaintext := []byte(strpad(string(text)))
 	ivtext := make([]byte, aes.BlockSize+len(plaintext))
 	iv := ivtext[:aes.BlockSize]
@@ -2621,7 +2630,7 @@ func Encrypt(key, text []byte) ([]byte, error) {
 	ciphertext := make([]byte, len(plaintext))
 	cfbdec.CryptBlocks(ciphertext, plaintext)
 	//crypt1 := base64.StdEncoding.EncodeToString((ciphertext))
-	return ciphertext, nil
+	return ciphertext, nil*/
 }
 
 

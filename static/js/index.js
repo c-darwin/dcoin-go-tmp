@@ -392,12 +392,26 @@ function get_e_n_sign(key, pass, mcrypt_iv, forsignature, alert_div) {
         var decrypt_PEM = '-----BEGIN RSA PRIVATE KEY-----'+key+'-----END RSA PRIVATE KEY-----';
     else if (pass && key.indexOf('RSA PRIVATE KEY')==-1) {
         try{
+
+            ivAndText = atob(key)
+            iv = ivAndText.substr(0, 16)
+            encText = ivAndText.substr(16)
+            cipherParams = CryptoJS.lib.CipherParams.create({
+                ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+            });
+            pass = CryptoJS.enc.Latin1.parse(hex_md5(pass))
+            var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+            var decrypt_PEM = hex2a(decrypted.toString());
+/*
             cipherParams = CryptoJS.lib.CipherParams.create({
                 ciphertext: CryptoJS.enc.Base64.parse((key.replace(/\n|\r/g, "")))
             });
             key = CryptoJS.enc.Latin1.parse(hex_md5(pass))
             var decrypted = CryptoJS.AES.decrypt(cipherParams, key, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Base64.parse("AAAAAAAAAAAAAAAAAAAAAA=="), padding: CryptoJS.pad.NoPadding });
             var decrypt_PEM = hex2a(decrypted.toString());
+*/
+
+
         } catch(e) {
            var decrypt_PEM = 'invalid base64 code';
        }
