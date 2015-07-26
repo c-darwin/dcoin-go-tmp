@@ -2811,6 +2811,10 @@ func RSortMap(m map[int64]string) []map[int64]string {
 
 func HandleTcpRequest(conn net.Conn, db *DCDB) {
 
+	fmt.Println("NumCPU:", runtime.NumCPU(),
+		" NumCgoCall:", runtime.NumCgoCall(),
+		" NumGoRoutine:", runtime.NumGoroutine())
+
 	var err error
 
 	log.Debug("HandleTcpRequest from %v", conn.RemoteAddr())

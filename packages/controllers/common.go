@@ -87,6 +87,9 @@ func init() {
 			if err != nil {
 				log.Debug("%v", utils.ErrInfo(err))
 			}
+			if len(configIni["db_type"]) > 0 {
+				break
+			}
 			utils.Sleep(3)
 		}
 	}()
@@ -391,13 +394,17 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 	html := ""
 
-	if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, controllerName); !ok && c.SessUserId <= 0 {
+	if ok, _ := regexp.MatchString(`^(?i)AvailableKeys|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
 		html = "Access denied"
 	} else {
-		// вызываем контроллер в зависимости от шаблона
-		html, err = CallController(c, controllerName)
-		if err != nil {
-			log.Error("%v", err)
+		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, controllerName); !ok && c.SessUserId <= 0 {
+			html = "Access denied"
+		} else {
+			// вызываем контроллер в зависимости от шаблона
+			html, err = CallController(c, controllerName)
+			if err != nil {
+				log.Error("%v", err)
+			}
 		}
 	}
 	w.Write([]byte(html))
@@ -407,6 +414,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 func Tools(w http.ResponseWriter, r *http.Request) {
 
+	var err error
 	log.Debug("Tools")
 	w.Header().Set("Content-type", "text/html")
 
@@ -434,10 +442,16 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	controllerName := r.FormValue("controllerName")
 	fmt.Println("controllerName=",controllerName)
-	// вызываем контроллер в зависимости от шаблона
-	html, err :=  CallController(c, controllerName)
-	if err != nil {
-		log.Error("%v", err)
+
+	html := ""
+	if ok, _ := regexp.MatchString(`^(?i)GetBlock|AvailableKeys$`, controllerName); !ok {
+		html = "Access denied"
+	} else {
+		// вызываем контроллер в зависимости от шаблона
+		html, err = CallController(c, controllerName)
+		if err != nil {
+			log.Error("%v", err)
+		}
 	}
 	w.Write([]byte(html))
 }
@@ -706,7 +720,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
-	if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
+	if ok, _ := regexp.MatchString(`^(?i)PoolAdminControl|Credits|Home|WalletsList|Information|Notifications|Interface|MiningMenu|Upgrade5|NodeConfigControl|Upgrade7|Upgrade6|Upgrade5|Upgrade4|Upgrade3|Upgrade2|Upgrade1|Upgrade0|StatisticVoting|ProgressBar|MiningPromisedAmount|CurrencyExchangeDelete|CurrencyExchange|ChangeCreditor|ChangeCommission|CashRequestOut|ArbitrationSeller|ArbitrationBuyer|ArbitrationArbitrator|Arbitration|InstallStep2|InstallStep1|InstallStep0|DbInfo|ChangeHost|Assignments|NewUser|NewPhoto|Voting|VoteForMe|RepaymentCredit|PromisedAmountList|PromisedAmountActualization|NewPromisedAmount|Login|ForRepaidFix|DelPromisedAmount|DelCredit|ChangePromisedAmount|ChangePrimaryKey|ChangeNodeKey|ChangeAvatar|BugReporting|Abuse|UpgradeResend|UpdatingBlockchain|Statistic|RewritePrimaryKey|RestoringAccess|PoolTechWorks|Points|NewHolidays|NewCredit|MoneyBackRequest|MoneyBack|ChangeMoneyBack|ChangeKeyRequest|ChangeKeyClose|ChangeGeolocation|ChangeCountryRace|ChangeArbitratorConditions|CashRequestIn|BlockExplorer
+$`, tplName); !ok {
+		w.Write([]byte("Access denied"))
+	} else if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
 		userPublicKey, err := c.DCDB.GetUserPublicKey(userId);
 		if err != nil {

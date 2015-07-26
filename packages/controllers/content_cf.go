@@ -84,10 +84,15 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 			tplName = "cfCatalog"
 		}
 
-		// вызываем контроллер в зависимости от шаблона
-		html, err :=  CallController(c, tplName)
-		if err != nil {
-			log.Error("%v", err)
+		html := ""
+		if ok, _ := regexp.MatchString(`^(?i)CfPagePreview|CfCatalog|AddCfProjectData|CfProjectChangeCategory|NewCfProject|MyCfProjects|DelCfProject|DelCfFunding|CfStart$`, tplName); !ok {
+			html = "Access denied"
+		} else {
+			// вызываем контроллер в зависимости от шаблона
+			html, err = CallController(c, tplName)
+			if err != nil {
+				log.Error("%v", err)
+			}
 		}
 		w.Write([]byte(html))
 	}
