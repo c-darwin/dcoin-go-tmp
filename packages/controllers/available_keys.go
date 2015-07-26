@@ -35,8 +35,10 @@ func checkAvailableKey(key string, db *utils.DCDB) (error) {
 	if len(e)%2 > 0 {
 		e = "0"+e
 	}
-	log.Debug("%s / %v", utils.BinToHex(privateKey.PublicKey.N.Bytes()), e)
-	publicKeyAsn := utils.MakeAsn1(utils.BinToHex(privateKey.PublicKey.N.Bytes()), []byte(e))
+	n := utils.BinToHex(privateKey.PublicKey.N.Bytes())
+	n = append([]byte("00"), n...)
+	log.Debug("%s / %v", n, e)
+	publicKeyAsn := utils.MakeAsn1(n, []byte(e))
 	log.Debug("publicKeyAsn: %s", publicKeyAsn)
 	userId, err := db.Single("SELECT user_id FROM users WHERE public_key_0  =  [hex]", publicKeyAsn).Int64()
 	if err != nil {
