@@ -4219,7 +4219,7 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 								FROM transactions_testblock
 								WHERE user_id = ?
 							)  AS x
-							`, thirdVar).Int64()
+							`, thirdVar, thirdVar).Int64()
 			if err != nil {
 				fatalError = fmt.Sprintf("%s", err)
 			}
