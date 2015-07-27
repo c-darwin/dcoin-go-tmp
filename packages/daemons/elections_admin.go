@@ -125,7 +125,7 @@ func ElectionsAdmin() {
 		}
 
 		p := new(dcparser.Parser)
-		err = p.TxParser(data, utils.HexToBin(utils.Md5(data)), true)
+		err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 		if err != nil {
 			db.PrintSleep(err, 1)
 			continue BEGIN
