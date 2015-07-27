@@ -193,15 +193,17 @@ db_name=`)
 				conn, err := l.Accept()
 				if err != nil {
 					log.Error("Error accepting: %v", err)
-					panic(err)
+					utils.Sleep(1)
+					//panic(err)
 					//os.Exit(1)
+				} else {
+					go func(conn net.Conn) {
+						t := new(tcpserver.TcpServer)
+						t.DCDB = db
+						t.Conn = conn
+						t.HandleTcpRequest()
+					}(conn)
 				}
-				go func(conn net.Conn) {
-					t := new(tcpserver.TcpServer)
-					t.DCDB = db
-					t.Conn = conn
-					t.HandleTcpRequest()
-				}(conn)
 			}
 		}()
 	}()
