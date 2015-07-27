@@ -657,7 +657,7 @@ func (p *Parser) ParseBlock() error {
 	Далее - тело блока (Тр-ии)
 	*/
 	p.BlockData = utils.ParseBlockHeader(&p.BinaryData)
-	log.Debug(p.BlockData)
+	log.Debug("%v", p.BlockData)
 
 	p.CurrentBlockId = p.BlockData.BlockId
 
