@@ -23,6 +23,7 @@ func (t *TcpServer) deferClose() {
 	var mutex = &sync.Mutex{}
 	mutex.Lock()
 	counter--
+	fmt.Println(counter)
 	mutex.Unlock()
 }
 
@@ -45,6 +46,7 @@ func (t *TcpServer) HandleTcpRequest() {
 		return
 	} else {
 		counter++
+		fmt.Println(counter)
 	}
 	mutex.Unlock()
 
