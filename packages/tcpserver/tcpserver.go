@@ -11,6 +11,7 @@ import (
 
 var log = logging.MustGetLogger("tcpserver")
 var counter int64
+var mutex = &sync.Mutex{}
 
 type TcpServer struct {
 	*utils.DCDB
@@ -20,7 +21,6 @@ type TcpServer struct {
 
 func (t *TcpServer) deferClose() {
 	t.Conn.Close()
-	var mutex = &sync.Mutex{}
 	mutex.Lock()
 	counter--
 	fmt.Println("--", counter)
@@ -28,8 +28,6 @@ func (t *TcpServer) deferClose() {
 }
 
 func (t *TcpServer) HandleTcpRequest() {
-
-	var mutex = &sync.Mutex{}
 
 	fmt.Println("NumCPU:", runtime.NumCPU(),
 		" NumCgoCall:", runtime.NumCgoCall(),

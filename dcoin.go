@@ -209,7 +209,12 @@ db_name=`)
 	}()
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
-	err = http.ListenAndServe(ListenHttpHost, nil)
+	//err = http.ListenAndServe(ListenHttpHost, nil)
+	l, err := net.Listen("tcp", ListenHttpHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
 	if err != nil {
 		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 		panic(err)
@@ -243,5 +248,36 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 		}
 		h.ServeHTTP(w, r)
 	})
+}
+
+
+func NewBoundListener(maxActive int, l net.Listener) net.Listener {
+	return &boundListener{l, make(chan bool, maxActive)}
+}
+
+type boundListener struct {
+	net.Listener
+	active chan bool
+}
+
+type boundConn struct {
+	net.Conn
+	active chan bool
+}
+
+func (l *boundListener) Accept() (net.Conn, error) {
+	l.active <- true
+	c, err := l.Listener.Accept()
+	if err != nil {
+		<-l.active
+		return nil, err
+	}
+	return &boundConn{c, l.active}, err
+}
+
+func (l *boundConn) Close() error {
+	err := l.Conn.Close()
+	<-l.active
+	return err
 }
 
