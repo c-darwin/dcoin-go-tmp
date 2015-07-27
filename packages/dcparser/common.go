@@ -657,9 +657,9 @@ func (p *Parser) ParseBlock() error {
 	Далее - тело блока (Тр-ии)
 	*/
 	p.BlockData = utils.ParseBlockHeader(&p.BinaryData)
+	log.Debug(p.BlockData)
 
 	p.CurrentBlockId = p.BlockData.BlockId
-	//log.Debug(p.BlockData)
 
 	return nil
 }
@@ -728,6 +728,7 @@ func (p *Parser) CheckBlockHeader() error {
 	log.Debug("generatorSleep", generatorSleep)
 
 	// сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
+	log.Debug("p.BlockData %v", p.BlockData)
 	isReadySleep2 := utils.GetIsReadySleepSum(p.BlockData.Level , sleepData["is_ready"])
 	log.Debug("isReadySleep2", isReadySleep2)
 

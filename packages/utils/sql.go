@@ -1478,6 +1478,7 @@ func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 			return sleepDataMap, ErrInfo(err)
 		}
 	}
+	log.Debug("sleepDataMap: %v", sleepDataMap)
 	return sleepDataMap, nil;
 }
 

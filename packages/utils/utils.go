@@ -1758,6 +1758,9 @@ func GetGeneratorSleep(level int64, data []int64) int64 {
 // сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
 func GetIsReadySleepSum(level int64, data []int64) int64 {
 	var sum int64;
+	if len(data) <= int(level) {
+		log.Error("data: %v / level: %d", data, level)
+	}
 	for i := 0; i < int(level); i++ {
 		sum += data[i];
 	}
