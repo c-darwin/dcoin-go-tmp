@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os/signal"
 	"syscall"
+	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
 )
 
 /*
@@ -195,8 +196,11 @@ db_name=`)
 					panic(err)
 					//os.Exit(1)
 				}
-
-				go utils.HandleTcpRequest(conn, db)
+				go func(conn net.Conn) {
+					t := new(tcpserver.TcpServer)
+					t.DCDB = db
+					t.Conn = conn
+				}(conn)
 			}
 		}()
 	}()
