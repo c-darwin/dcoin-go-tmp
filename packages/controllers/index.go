@@ -25,7 +25,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("%v", err)
 	}
-	fmt.Println("parameters_=",parameters_)
+	log.Debug("parameters_=%",parameters_)
 	parameters := make(map[string]string)
 	for k, v := range parameters_ {
 		parameters[k] = utils.InterfaceToStr(v)

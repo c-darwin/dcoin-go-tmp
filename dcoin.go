@@ -200,6 +200,7 @@ db_name=`)
 					t := new(tcpserver.TcpServer)
 					t.DCDB = db
 					t.Conn = conn
+					t.HandleTcpRequest()
 				}(conn)
 			}
 		}()
