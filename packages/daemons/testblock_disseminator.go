@@ -63,12 +63,18 @@ func TestblockDisseminator() {
 		log.Debug("hosts: %v", hosts)
 
 		// шлем block_id, user_id, mrkl_root, signature
-		data, err := db.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active'").String()
+		data, err := db.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active' AND sent=0").String()
 		if err != nil {
 			db.PrintSleep(err, 1)
 			continue
 		}
 		if len(data) > 0 {
+
+			err = db.ExecSql("UPDATE testblock SET sent=1")
+			if err != nil {
+				db.PrintSleep(err, 1)
+				continue
+			}
 
 			dataToBeSent := utils.DecToBin(utils.StrToInt64(data["block_id"]), 4)
 			dataToBeSent = append(dataToBeSent, utils.DecToBin(data["time"], 4)...)

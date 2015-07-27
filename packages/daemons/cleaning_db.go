@@ -51,7 +51,7 @@ func CleaningDb() {
 			blocks, err := db.GetMap(`
 					SELECT id, data
 					FROM block_chain
-					WHERE id > ? AND id < = ?
+					WHERE id > ? AND id <= ?
 					ORDER BY id
 					`, "id", "data", endBlockId, curBlockId-30)
 			if err != nil {
