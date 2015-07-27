@@ -10,10 +10,10 @@ import (
 )
 
 var log = logging.MustGetLogger("tcpserver")
+var counter int64
 
 type TcpServer struct {
 	*utils.DCDB
-	counter int64
 	Conn net.Conn
 	variables *utils.Variables
 }
@@ -22,7 +22,7 @@ func (t *TcpServer) deferClose() {
 	t.Conn.Close()
 	var mutex = &sync.Mutex{}
 	mutex.Lock()
-	t.counter--
+	counter--
 	mutex.Unlock()
 }
 
@@ -33,7 +33,7 @@ func (t *TcpServer) HandleTcpRequest() {
 	fmt.Println("NumCPU:", runtime.NumCPU(),
 		" NumCgoCall:", runtime.NumCgoCall(),
 		" NumGoRoutine:", runtime.NumGoroutine(),
-		" t.counter:", t.counter)
+		" t.counter:", counter)
 
 	var err error
 
@@ -41,10 +41,10 @@ func (t *TcpServer) HandleTcpRequest() {
 	defer t.deferClose()
 
 	mutex.Lock()
-	if t.counter > 20 {
+	if counter > 20 {
 		return
 	} else {
-		t.counter++
+		counter++
 	}
 	mutex.Unlock()
 
