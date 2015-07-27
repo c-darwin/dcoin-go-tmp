@@ -107,9 +107,9 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 			return p.ErrInfo(err)
 		}
 		maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count:votes})
-		fmt.Println("currency_id", currency_id)
+		//fmt.Println("currency_id", currency_id)
 	}
-	fmt.Println("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
+	//fmt.Println("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
 
 	newMaxOtherCurrenciesVotes := make(map[string]int64)
 	for currencyId, countAndVotes := range maxOtherCurrenciesVotes {

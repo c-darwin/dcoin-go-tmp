@@ -97,7 +97,7 @@ func MaxPromisedAmountGenerator() {
 				continue BEGIN
 			}
 			maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount:votes})
-			fmt.Println("currency_id", currency_id)
+			//fmt.Println("currency_id", currency_id)
 		}
 
 		NewMaxPromisedAmountsVotes := make(map[string]int64)
