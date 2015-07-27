@@ -726,13 +726,13 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok {
 		switch dbType {
 		case "sqlite":
-			log.Debug(q)
+			//log.Debug(q)
 			r, _ := regexp.Compile(`(\[hex\]|\?)`)
 			indexArr := r.FindAllStringSubmatchIndex(q, -1)
-			log.Debug("indexArr %v", indexArr)
+			//log.Debug("indexArr %v", indexArr)
 			for i := 0; i < len(indexArr); i++ {
 				str := q[indexArr[i][0]:indexArr[i][1]]
-				log.Debug("i: %v, len: %v str: %v, q: %v", i, len(args), str, q)
+				//log.Debug("i: %v, len: %v str: %v, q: %v", i, len(args), str, q)
 				if str!="[hex]" {
 					switch args[i].(type) {
 						case []byte:
@@ -884,6 +884,13 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 	return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 }
 
+func (db *DCDB) GetQuotes() string {
+	dq := `"`;
+	if db.ConfigIni["db_type"] == "mysql" {
+		dq = ``
+	}
+	return dq
+}
 
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)

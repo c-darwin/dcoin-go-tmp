@@ -37,10 +37,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	}
 
 	if _, ok := c.Parameters["switch_pool_mode"]; ok {
-		dq := `"`;
-		if c.ConfigIni["db_type"] == "mysql" {
-			dq = ``
-		}
+		dq := c.GetQuotes();
 		log.Debug("c.Community", c.Community)
 		if !c.Community { // сингл-мод
 
