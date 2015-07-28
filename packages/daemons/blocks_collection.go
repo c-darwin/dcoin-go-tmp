@@ -263,19 +263,21 @@ func BlocksCollection() {
             }
             conn, err := utils.TcpConn(hosts[i]["host"])
             if err != nil {
+                conn.Close()
                 db.PrintSleep(err, 1)
                 continue
             }
-            defer conn.Close()
             // шлем тип данных
             _, err = conn.Write(utils.DecToBin(dataTypeMaxBlockId, 1))
             if err != nil {
+                conn.Close()
                 db.PrintSleep(err, 1)
                 continue
             }
             if len(nodeHost) > 0 { // защищенный режим
                 err = utils.WriteSizeAndData([]byte(nodeHost), conn)
                 if err != nil {
+                    conn.Close()
                     db.PrintSleep(err, 1)
                     continue
                 }
@@ -284,9 +286,11 @@ func BlocksCollection() {
             blockIdBin := make([]byte, 4)
             _, err = conn.Read(blockIdBin)
             if err != nil {
+                conn.Close()
                 db.PrintSleep(err, 1)
                 continue
             }
+            conn.Close()
 			id := utils.BinToDec(blockIdBin)
             if id > maxBlockId || i == 0 {
                 maxBlockId = id
