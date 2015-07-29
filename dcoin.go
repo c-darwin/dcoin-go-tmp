@@ -230,6 +230,7 @@ db_name=`)
 		}
 	}()
 
+	utils.Sleep(3)
 	var console = flag.Int64("console", 0, "Start from console")
 	if *console == 0 {
 		log.Debug("runtime.GOOS: %v", runtime.GOOS)
@@ -248,7 +249,8 @@ db_name=`)
 			//os.Exit(1)
 		}
 	}
-	
+
+	utils.Sleep(9999999999)
 	fmt.Scanln()
 
 }
