@@ -2,6 +2,7 @@ package main
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"os"
+	"flag"
 	"net/http"
 	_ "image/png"
 	"github.com/c-darwin/dcoin-go-tmp/packages/controllers"
@@ -219,28 +220,36 @@ db_name=`)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
-	if err != nil {
-		log.Error("Error listening: %v (%v)", err, ListenHttpHost)
-		panic(err)
-		//os.Exit(1)
-	}
 
-	log.Debug("runtime.GOOS: %v", runtime.GOOS)
-	err = nil
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", BrowserHttpHost).Start()
-	case "windows", "darwin":
-		err = exec.Command("open", BrowserHttpHost).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
+	go func() {
+		err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
+		if err != nil {
+			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
+			panic(err)
+			//os.Exit(1)
+		}
+	}()
+
+	var console = flag.Int64("console", 0, "Start from console")
+	if *console == 0 {
+		log.Debug("runtime.GOOS: %v", runtime.GOOS)
+		err = nil
+		switch runtime.GOOS {
+		case "linux":
+			err = exec.Command("xdg-open", BrowserHttpHost).Start()
+		case "windows", "darwin":
+			err = exec.Command("open", BrowserHttpHost).Start()
+		default:
+			err = fmt.Errorf("unsupported platform")
+		}
+		if err != nil {
+			log.Error("%v", err)
+			panic(err)
+			//os.Exit(1)
+		}
 	}
-	if err != nil {
-		log.Error("%v", err)
-		panic(err)
-		//os.Exit(1)
-	}
+	
+	fmt.Scanln()
 
 }
 
