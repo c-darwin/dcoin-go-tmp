@@ -122,10 +122,8 @@ db_name=`)
 
 	rand.Seed( time.Now().UTC().UnixNano())
 
-	log.Debug("IsNotExist public")
-
-	if _, err := os.Stat("public"); os.IsNotExist(err) {
-		err = os.Mkdir("public", 0755)
+	if _, err := os.Stat(dir+"/public"); os.IsNotExist(err) {
+		err = os.Mkdir(dir+"/public", 0755)
 		if err != nil {
 			log.Error("%v", err)
 			panic(err)
