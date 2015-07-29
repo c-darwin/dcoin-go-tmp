@@ -59,7 +59,11 @@ func main() {
 	blockData.Time = utils.StrToInt64(txTime)
 	blockData.UserId = utils.BytesToInt64(userId)
 
-	configIni_, err := config.NewConfig("ini", "config.ini")
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		log.Debug("%v", utils.ErrInfo(err))
+	}
+	configIni_, err := config.NewConfig("ini", dir+"/config.ini")
 	if err != nil {
 		fmt.Println(err)
 	}

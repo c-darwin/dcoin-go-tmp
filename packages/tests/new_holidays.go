@@ -62,7 +62,11 @@ func main() {
 	log.SetOutput(f)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	config, err := configparser.Read("config.ini")
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	config, err := configparser.Read(dir+"/config.ini")
 	if err != nil {
 		log.Fatal(err)
 	}

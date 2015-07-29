@@ -22,6 +22,7 @@ import (
 	"github.com/op/go-logging"
 	"runtime"
 	"path/filepath"
+	"os"
 )
 
 var log = logging.MustGetLogger("daemons")
@@ -53,7 +54,12 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	case "sqlite":
 
 		log.Debug("sqlite connect")
-		db, err = sql.Open("sqlite3", "litedb.db")
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err!=nil {
+			log.Debug("%v", err)
+			return &DCDB{}, err
+		}
+		db, err = sql.Open("sqlite3", dir+"/litedb.db")
 		if err!=nil {
 			log.Debug("%v", err)
 			return &DCDB{}, err

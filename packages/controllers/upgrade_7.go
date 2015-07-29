@@ -32,6 +32,11 @@ type upgrade7Page struct {
 
 func (c *Controller) Upgrade7() (string, error) {
 
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return "", err
+	}
+
 	log.Debug("Upgrade7")
 
 	txType := "NewMiner"
@@ -51,15 +56,15 @@ func (c *Controller) Upgrade7() (string, error) {
 	}
 	var profileHash, faceHash string
 
-	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"); err == nil {
-		file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
+	if _, err := os.Stat(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"); err == nil {
+		file, err := ioutil.ReadFile(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		faceHash = string(utils.DSha256(file))
 	}
-	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"); err == nil {
-		file, err := ioutil.ReadFile("public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
+	if _, err := os.Stat(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"); err == nil {
+		file, err := ioutil.ReadFile(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -95,7 +100,7 @@ func (c *Controller) Upgrade7() (string, error) {
 	upgradeMenu := utils.MakeUpgradeMenu(7)
 
 	var noExistsMp4 bool
-	if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
+	if _, err := os.Stat(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
 		noExistsMp4 = true
 	}
 

@@ -23,7 +23,11 @@ func init() {
 				fmt.Println(err)
 				os.Exit(1)
 			}*/
-			configIni_, err := config.NewConfig("ini", "config.ini")
+			dir, err := utils.GetCurrentDir()
+			if err != nil {
+				log.Debug("%v", utils.ErrInfo(err))
+			}
+			configIni_, err := config.NewConfig("ini", dir+"/config.ini")
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}

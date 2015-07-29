@@ -19,6 +19,11 @@ func CleaningDb() {
 		return
 	}
 
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return
+	}
+
 	BEGIN:
 	for {
 		log.Info(GoroutineName)
@@ -61,7 +66,7 @@ func CleaningDb() {
 			for id, data := range blocks {
 				blockData := append(utils.DecToBin(id, 5), utils.EncodeLengthPlusData(data)...)
 				sizeAndData := append(utils.DecToBin(len(data), 5), blockData...)
-				err := ioutil.WriteFile("public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
+				err := ioutil.WriteFile(dir+"/public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
 				if err != nil {
 					db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN

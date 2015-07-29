@@ -17,6 +17,11 @@ type progressBarPage struct {
 
 func (c *Controller) ProgressBar() (string, error) {
 
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return "", err
+	}
+
 	if !c.dbInit {
 		return "", nil
 	}
@@ -98,7 +103,7 @@ func (c *Controller) ProgressBar() (string, error) {
 		if len(upgradeData["profile_coords"]) > 0 {
 			progressBar["upgrade_profile_coords"] = 1
 		}
-		if _, err := os.Stat("public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsExist(err) {
+		if _, err := os.Stat(dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsExist(err) {
 			if len(upgradeData["video_url_id"]) > 0 {
 				progressBar["upgrade_video"] = 1
 			}

@@ -84,10 +84,15 @@ func BlocksCollection() {
                 } else {
                     blockchain_url = consts.BLOCKCHAIN_URL
                 }
-                blockchainSize, err := utils.DownloadToFile(blockchain_url, "public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
+                dir, err := utils.GetCurrentDir()
+                if err != nil {
+                    db.UnlockPrintSleep(err, 1)
+                    continue BEGIN
+                }
+                blockchainSize, err := utils.DownloadToFile(blockchain_url, dir+"/public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
-                        log.Info("%v", utils.ErrInfo(err))
+                        log.Error("%v", utils.ErrInfo(err))
                     } else {
                         log.Info(fmt.Sprintf("%v < %v", blockchainSize, consts.BLOCKCHAIN_SIZE))
 					}
@@ -97,7 +102,7 @@ func BlocksCollection() {
 
                 first := true
                 // блокчейн мог быть загружен ранее. проверим его размер
-                file, err := os.Open("public/blockchain")
+                file, err := os.Open(dir+"/public/blockchain")
                 if err != nil {
                     db.UnlockPrintSleep(err, 1)
                     continue BEGIN

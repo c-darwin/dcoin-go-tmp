@@ -26,6 +26,11 @@ type newUserPage struct {
 
 func (c *Controller) NewUser() (string, error) {
 
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
 	txType := "NewUser";
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
@@ -59,7 +64,7 @@ func (c *Controller) NewUser() (string, error) {
 			} else {
 				myRefsKeys[user_id] =  map[string]string{"user_id": StrUserId, "private_key": private_key}
 				md5:=string(utils.Md5(private_key))
-				kPath := "public/"+md5[0:16]
+				kPath := dir+"/public/"+md5[0:16]
 				kPathPng := kPath+".png"
 				kPathTxt := kPath+".txt"
 				if _, err := os.Stat(kPathPng); os.IsNotExist(err) {

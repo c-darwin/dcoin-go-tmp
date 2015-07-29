@@ -72,12 +72,15 @@ func init() {
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
-
-			if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
+			dir, err := utils.GetCurrentDir()
+			if err != nil {
+				log.Debug("%v", utils.ErrInfo(err))
+			}
+			if _, err := os.Stat(dir+"/config.ini"); os.IsNotExist(err) {
 				utils.Sleep(1)
 				continue
 			}
-			configIni_, err := config.NewConfig("ini", "config.ini")
+			configIni_, err := config.NewConfig("ini", dir+"/config.ini")
 			if err != nil {
 				log.Debug("%v", utils.ErrInfo(err))
 			}

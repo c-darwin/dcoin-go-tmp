@@ -87,6 +87,12 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 
 
 func (p *Parser) VotesNodeNewMiner() (error) {
+
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return err
+	}
+
 	var votes [2]int64
 	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
@@ -170,8 +176,8 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	} else if (p.minersCheckMyMinerIdAndVotes0(minerData)) {
 		// если набрано >5 голосов "против" и мы среди тех X майнеров, которые копировали фото к себе
 		// либо если набранное кол-во голосов = кол-ву майнеров (актуально в самом начале запуска проекта)
-		facePath := fmt.Sprintf("public/face_%v.jpg", votesData["user_id"])
-		profilePath := fmt.Sprintf("public/profile_%v.jpg", votesData["user_id"])
+		facePath := fmt.Sprintf(dir+"/public/face_%v.jpg", votesData["user_id"])
+		profilePath := fmt.Sprintf(dir+"/public/profile_%v.jpg", votesData["user_id"])
 
 		faceRandName := ""
 		profileRandName := ""
@@ -242,6 +248,11 @@ type MinerData struct {
 }
 
 func (p *Parser) VotesNodeNewMinerRollback() (error) {
+
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return err
+	}
 
 	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
@@ -326,8 +337,8 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 
 		// перемещаем фото из корзины, если есть, что перемещать
 		if len(data["profile_file_name"])>0 && len(data["face_file_name"])>0 {
-			utils.CopyFileContents("recycle_bin/"+data["face_file_name"], "public/face_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
-			utils.CopyFileContents("recycle_bin/"+data["profile_file_name"], "public/profile_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
+			utils.CopyFileContents("recycle_bin/"+data["face_file_name"], dir+"/public/face_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
+			utils.CopyFileContents("recycle_bin/"+data["profile_file_name"], dir+"/public/profile_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
 		}
 		p.generalRollback("recycle_bin", votesData["user_id"], "", false)
 	}

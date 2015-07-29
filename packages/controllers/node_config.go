@@ -107,7 +107,12 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	if c.Community {
 		myMode = "Pool"
 	}
-	configIni, err := ioutil.ReadFile("config.ini")
+
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	configIni, err := ioutil.ReadFile(dir+"/config.ini")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

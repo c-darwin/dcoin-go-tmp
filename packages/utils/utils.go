@@ -1390,11 +1390,17 @@ func StrToMoney(str string) float64 {
 }
 
 func GetEndBlockId() (int64, error) {
-	if _, err := os.Stat("public/blockchain"); os.IsNotExist(err) {
+
+	dir, err := GetCurrentDir()
+	if err != nil {
+		return 0, ErrInfo(err)
+	}
+
+	if _, err := os.Stat(dir+"/public/blockchain"); os.IsNotExist(err) {
 		return 0, ErrInfo(err)
 	} else {
 		// размер блока, записанный в 5-и последних байтах файла blockchain
-		fname := "public/blockchain"
+		fname := dir+"/public/blockchain"
 		file, err := os.Open(fname)
 		if err != nil {
 			return 0, ErrInfo(err)
@@ -2895,7 +2901,9 @@ func WriteSizeAndDataTCPConn(binaryData []byte, conn net.Conn) error {
 	return nil
 }
 
-
+func GetCurrentDir() (string, error) {
+	return filepath.Abs(filepath.Dir(os.Args[0]))
+}
 
 func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost string) ([]byte, error) {
 

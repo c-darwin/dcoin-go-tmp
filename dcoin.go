@@ -57,8 +57,13 @@ var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfi
 var configIni map[string]string
 
 func main() {
+	dir, err := utils.GetCurrentDir()
+	if err != nil {
+		panic(err)
+		os.Exit(1)
+	}
 	// читаем config.ini
-	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
+	if _, err := os.Stat(dir+"config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
 error_log=1
 log=1
@@ -78,9 +83,9 @@ db_password=
 log_level=DEBUG
 log_output=file
 db_name=`)
-		ioutil.WriteFile("config.ini", d1, 0644)
+		ioutil.WriteFile(dir+"/config.ini", d1, 0644)
 	}
-	configIni_, err := config.NewConfig("ini", "config.ini")
+	configIni_, err := config.NewConfig("ini", dir+"/config.ini")
 	if err != nil {
 		panic(err)
 		os.Exit(1)
