@@ -92,7 +92,7 @@ db_name=`)
 	}
 	configIni, err = configIni_.GetSection("default")
 
-	f, err := os.OpenFile("dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	f, err := os.OpenFile(dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
 		panic(err)
 		os.Exit(1)
