@@ -250,9 +250,9 @@ db_name=`)
 		}
 	}
 
-	utils.Sleep(9999999999)
-	fmt.Scanln()
-
+	log.Debug("ALL RIGHT")
+	utils.Sleep(3600*24*90)
+	log.Debug("EXIT")
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
