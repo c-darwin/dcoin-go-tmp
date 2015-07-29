@@ -263,7 +263,6 @@ func BlocksCollection() {
             }
             conn, err := utils.TcpConn(hosts[i]["host"])
             if err != nil {
-                conn.Close()
                 db.PrintSleep(err, 1)
                 continue
             }
