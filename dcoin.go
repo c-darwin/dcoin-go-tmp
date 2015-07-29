@@ -153,8 +153,9 @@ db_name=`)
 
 	SigChan = make(chan os.Signal, 1)
 	C.waitSig()
+	var Term os.Signal = syscall.SIGTERM
 	go func() {
-		signal.Notify(SigChan, os.Interrupt, os.Kill)
+		signal.Notify(SigChan, os.Interrupt, os.Kill, Term)
 		<-SigChan
 		log.Debug("countDaemons %v", countDaemons)
 		for i:=0; i < countDaemons; i++ {
