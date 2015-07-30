@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
 )
-
 /*
 #include <stdio.h>
 #include <signal.h>
@@ -57,6 +56,12 @@ var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfi
 
 var configIni map[string]string
 
+var console = flag.Int64("console", 0, "Start from console")
+
+/*func init() {
+	flag.StringVar(console, "console", 0, "Description")
+}
+*/
 func main() {
 	dir, err := utils.GetCurrentDir()
 	if err != nil {
@@ -231,7 +236,8 @@ db_name=`)
 	}()
 
 	utils.Sleep(3)
-	var console = flag.Int64("console", 0, "Start from console")
+
+	flag.Parse()
 	if *console == 0 {
 		log.Debug("runtime.GOOS: %v", runtime.GOOS)
 		err = nil
