@@ -246,12 +246,15 @@ db_name=`)
 			err = exec.Command("xdg-open", BrowserHttpHost).Start()
 		case "windows", "darwin":
 			err = exec.Command("open", BrowserHttpHost).Start()
+			if err!=nil {
+				exec.Command("cmd", "/c", "start", BrowserHttpHost).Start()
+			}
 		default:
 			err = fmt.Errorf("unsupported platform")
 		}
 		if err != nil {
 			log.Error("%v", err)
-			panic(err)
+			//panic(err)
 			//os.Exit(1)
 		}
 	}
