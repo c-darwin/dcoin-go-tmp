@@ -242,7 +242,7 @@ func ReductionGenerator() {
 			p := new(dcparser.Parser)
 			err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 			if err != nil {
-				db.PrintSleep(err, 1)
+				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 		}

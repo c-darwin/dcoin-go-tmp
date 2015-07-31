@@ -7,11 +7,18 @@ import (
 	"fmt"
 	"github.com/op/go-logging"
 	"sync"
+	"flag"
 )
 
-var log = logging.MustGetLogger("tcpserver")
-var counter int64
-var mutex = &sync.Mutex{}
+var (
+	log = logging.MustGetLogger("tcpserver")
+	counter int64
+	mutex = &sync.Mutex{}
+)
+
+func init() {
+	flag.Parse()
+}
 
 type TcpServer struct {
 	*utils.DCDB

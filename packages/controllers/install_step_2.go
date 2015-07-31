@@ -37,11 +37,7 @@ func (c *Controller) InstallStep2() (string, error) {
 		}
 	}
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	confIni, err := config.NewConfig("ini", dir+"/config.ini")
+	confIni, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	confIni.Set("error_log", "1")
 	confIni.Set("log", "0")
 	confIni.Set("log_block_id_begin", "0")
@@ -68,7 +64,7 @@ func (c *Controller) InstallStep2() (string, error) {
 		confIni.Set("db_password", dbPassword)
 		confIni.Set("db_name", dbName)
 	}
-	err = confIni.SaveConfigFile(dir+"/config.ini")
+	err = confIni.SaveConfigFile(*utils.Dir+"/config.ini")
 	if err != nil {
 		return "", err
 	}

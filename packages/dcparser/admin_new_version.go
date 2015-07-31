@@ -68,11 +68,7 @@ func (p *Parser) AdminNewVersionFront() (error) {
 }
 
 func (p *Parser) AdminNewVersion() (error) {
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	err = ioutil.WriteFile(dir+"/public/"+p.TxMaps.String["version"]+"."+p.TxMaps.String["format"], p.TxMaps.Bytes["file"], 0644)
+	err := ioutil.WriteFile(*utils.Dir+"/public/"+p.TxMaps.String["version"]+"."+p.TxMaps.String["format"], p.TxMaps.Bytes["file"], 0644)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

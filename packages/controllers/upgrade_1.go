@@ -23,11 +23,6 @@ type upgrade1Page struct {
 
 func (c *Controller) Upgrade1() (string, error) {
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", err
-	}
-
 	log.Debug("Upgrade1")
 
 	userFace := ""
@@ -38,7 +33,7 @@ func (c *Controller) Upgrade1() (string, error) {
 		userProfile = path
 	}*/
 
-	path := dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
+	path := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
 	if _, err := os.Stat(path); err == nil {
 		userFace = path
 	}

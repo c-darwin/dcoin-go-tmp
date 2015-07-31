@@ -24,15 +24,10 @@ type upgrade3Page struct {
 
 func (c *Controller) Upgrade3() (string, error) {
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", err
-	}
-
 	log.Debug("Upgrade3")
 
-	userProfile := dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
-	userFace := dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
+	userProfile := *utils.Dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
+	userFace := *utils.Dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
 
 	if _, err := os.Stat(userProfile); os.IsNotExist(err) {
 		userProfile = ""

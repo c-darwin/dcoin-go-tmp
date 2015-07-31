@@ -27,11 +27,6 @@ func NodeVoting() {
 		return
 	}
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return
-	}
-
 	BEGIN:
 	for {
 		log.Info(GoroutineName)
@@ -100,13 +95,13 @@ func NodeVoting() {
 			var vote int64
 			if len(intersectMyMiners) > 0 {
 				// копируем фото  к себе
-				profilePath := dir+"/public/profile_"+user_id+".jpg";
+				profilePath := *utils.Dir+"/public/profile_"+user_id+".jpg";
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					db.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
-				facePath := dir+"/public/face_"+user_id+".jpg";
+				facePath := *utils.Dir+"/public/face_"+user_id+".jpg";
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					db.PrintSleep(utils.ErrInfo(err), 1)

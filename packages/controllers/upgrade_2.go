@@ -23,15 +23,10 @@ type upgrade2Page struct {
 
 func (c *Controller) Upgrade2() (string, error) {
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", err
-	}
-
 	log.Debug("Upgrade2")
 
 	userProfile := ""
-	path := dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
+	path := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	if _, err := os.Stat(path); err == nil {
 		userProfile = path
 	}

@@ -21,11 +21,6 @@ func (c *Controller) SaveQueue() (string, error) {
 	var err error
 	c.r.ParseForm()
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", err
-	}
-
 	userId := []byte(c.r.FormValue("user_id"))
 	if !utils.CheckInputData(userId, "int") {
 		return `{"result":"incorrect userId"}`, nil
@@ -286,7 +281,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "empty", nil
 		}
 		if string(videoType) == "null" || string(videoUrlId) == "null" {
-			if _, err := os.Stat(dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
+			if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
 				return "empty video", nil
 			}
 		}
@@ -1047,7 +1042,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		version := []byte(c.r.FormValue("version"));
 		format := []byte(c.r.FormValue("format"));
 
-		newFile, err := ioutil.ReadFile(dir+"/public/new.zip")
+		newFile, err := ioutil.ReadFile(*utils.Dir+"/public/new.zip")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

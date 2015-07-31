@@ -12,11 +12,6 @@ import (
 
 func (c *Controller) CropPhoto() (string, error) {
 
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		return "", utils.ErrInfo(errors.New("GetCurrentDir"))
-	}
-
 	if c.SessRestricted != 0 {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
@@ -36,9 +31,9 @@ func (c *Controller) CropPhoto() (string, error) {
 	}
 	path := ""
 	if c.r.FormValue("type") == "face" {
-		path = dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
+		path = *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
 	} else {
-		path = dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
+		path = *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	}
 	out, err := os.Create(path)
 	if err != nil {

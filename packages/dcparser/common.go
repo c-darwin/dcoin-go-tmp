@@ -15,9 +15,16 @@ import (
 	"io/ioutil"
 	"os"
 	"github.com/op/go-logging"
+	"flag"
 )
 
-var log = logging.MustGetLogger("daemons")
+var (
+	log = logging.MustGetLogger("daemons")
+)
+
+func init() {
+	flag.Parse()
+}
 
 type vComplex struct {
 	Currency map[string][]float64 `json:"currency"`

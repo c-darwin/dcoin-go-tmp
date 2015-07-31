@@ -4,17 +4,24 @@ import (
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
+	"flag"
 )
-var log = logging.MustGetLogger("daemons")
-var DaemonCh chan bool
-var AnswerDaemonCh chan bool
-var configIni map[string]string
+
+var (
+	log = logging.MustGetLogger("daemons")
+	DaemonCh chan bool
+	AnswerDaemonCh chan bool
+	configIni map[string]string
+)
 
 func init() {
+
+	flag.Parse()
+
   	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
-			/*dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+			/*utils.Dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}*/
@@ -23,11 +30,8 @@ func init() {
 				fmt.Println(err)
 				os.Exit(1)
 			}*/
-			dir, err := utils.GetCurrentDir()
-			if err != nil {
-				log.Debug("%v", utils.ErrInfo(err))
-			}
-			configIni_, err := config.NewConfig("ini", dir+"/config.ini")
+
+			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}

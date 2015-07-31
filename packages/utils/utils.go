@@ -41,6 +41,7 @@ import (
 	"crypto/cipher"
 	"encoding/json"
 	"io/ioutil"
+	"flag"
 )
 
 
@@ -62,8 +63,11 @@ type prevBlockType struct {
 	Level int64
 }
 
-//var db *sql.DB
-//var err error
+var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
+
+func init() {
+	flag.Parse()
+}
 
 func Sleep(sec time.Duration) {
 	//log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
@@ -1391,16 +1395,11 @@ func StrToMoney(str string) float64 {
 
 func GetEndBlockId() (int64, error) {
 
-	dir, err := GetCurrentDir()
-	if err != nil {
-		return 0, ErrInfo(err)
-	}
-
-	if _, err := os.Stat(dir+"/public/blockchain"); os.IsNotExist(err) {
+	if _, err := os.Stat(*Dir+"/public/blockchain"); os.IsNotExist(err) {
 		return 0, ErrInfo(err)
 	} else {
 		// размер блока, записанный в 5-и последних байтах файла blockchain
-		fname := dir+"/public/blockchain"
+		fname := *Dir+"/public/blockchain"
 		file, err := os.Open(fname)
 		if err != nil {
 			return 0, ErrInfo(err)
@@ -2901,8 +2900,12 @@ func WriteSizeAndDataTCPConn(binaryData []byte, conn net.Conn) error {
 	return nil
 }
 
-func GetCurrentDir() (string, error) {
-	return filepath.Abs(filepath.Dir(os.Args[0]))
+func GetCurrentDir() string {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "."
+	}
+	return dir
 }
 
 func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost string) ([]byte, error) {

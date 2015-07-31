@@ -24,6 +24,8 @@ import (
 	"os/signal"
 	"syscall"
 	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
+	"github.com/astaxie/beego/session"
+
 )
 /*
 #include <stdio.h>
@@ -48,28 +50,23 @@ func go_callback_int(){
 	SigChan <- syscall.Signal(1)
 }
 
-var SigChan chan os.Signal
+var (
+	SigChan chan os.Signal
+	log = logging.MustGetLogger("example")
+	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
+	configIni map[string]string
+	console *int64
+	globalSessions *session.Manager
+)
 
-var log = logging.MustGetLogger("example")
-//var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}")
-var format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
-
-var configIni map[string]string
-
-var console = flag.Int64("console", 0, "Start from console")
-
-/*func init() {
-	flag.StringVar(console, "console", 0, "Description")
+func init() {
+	console = flag.Int64("console", 0, "Start from console")
+	flag.Parse()
 }
-*/
+
 func main() {
-	dir, err := utils.GetCurrentDir()
-	if err != nil {
-		panic(err)
-		os.Exit(1)
-	}
 	// читаем config.ini
-	if _, err := os.Stat(dir+"config.ini"); os.IsNotExist(err) {
+	if _, err := os.Stat(*utils.Dir+"config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
 error_log=1
 log=1
@@ -89,16 +86,16 @@ db_password=
 log_level=DEBUG
 log_output=file
 db_name=`)
-		ioutil.WriteFile(dir+"/config.ini", d1, 0644)
+		ioutil.WriteFile(*utils.Dir+"/config.ini", d1, 0644)
 	}
-	configIni_, err := config.NewConfig("ini", dir+"/config.ini")
+	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
 		panic(err)
 		os.Exit(1)
 	}
 	configIni, err = configIni_.GetSection("default")
 
-	f, err := os.OpenFile(dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
 		panic(err)
 		os.Exit(1)
@@ -128,8 +125,8 @@ db_name=`)
 
 	rand.Seed( time.Now().UTC().UnixNano())
 
-	if _, err := os.Stat(dir+"/public"); os.IsNotExist(err) {
-		err = os.Mkdir(dir+"/public", 0755)
+	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
+		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
 			log.Error("%v", err)
 			panic(err)
@@ -237,7 +234,6 @@ db_name=`)
 
 	utils.Sleep(3)
 
-	flag.Parse()
 	if *console == 0 {
 		log.Debug("runtime.GOOS: %v", runtime.GOOS)
 		err = nil

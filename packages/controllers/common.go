@@ -16,6 +16,7 @@ import (
 	"html/template"
 	"strings"
 	"os"
+	"flag"
 )
 
 var log = logging.MustGetLogger("controllers")
@@ -60,27 +61,29 @@ type Controller struct {
 	Races map[int64]string
 }
 
-var configIni map[string]string
-var globalSessions *session.Manager
-
-// в гоурутинах используется только для чтения
-var globalLangReadOnly map[int]map[string]string
+var (
+	configIni map[string]string
+	globalSessions *session.Manager
+	// в гоурутинах используется только для чтения
+	globalLangReadOnly map[int]map[string]string
+)
 
 func init() {
-	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"./tmp"}`)
+
+	flag.Parse()
+
+	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+*utils.Dir+`/tmp"}`)
 	go globalSessions.GC()
+
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
-			dir, err := utils.GetCurrentDir()
-			if err != nil {
-				log.Debug("%v", utils.ErrInfo(err))
-			}
-			if _, err := os.Stat(dir+"/config.ini"); os.IsNotExist(err) {
+
+			if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
 				utils.Sleep(1)
 				continue
 			}
-			configIni_, err := config.NewConfig("ini", dir+"/config.ini")
+			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 			if err != nil {
 				log.Debug("%v", utils.ErrInfo(err))
 			}
