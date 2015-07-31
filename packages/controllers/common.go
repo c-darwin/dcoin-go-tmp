@@ -70,9 +70,13 @@ var (
 
 func init() {
 
+	var err error
 	flag.Parse()
 
-	globalSessions, _ = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+*utils.Dir+`/tmp"}`)
+	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+*utils.Dir+`/tmp"}`)
+	if err != nil {
+		log.Debug("%v", utils.ErrInfo(err))
+	}
 	go globalSessions.GC()
 
 	// мониторим config.ini на наличие изменений
