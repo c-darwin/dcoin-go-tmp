@@ -17,6 +17,7 @@ import (
 	"strings"
 	"os"
 	"flag"
+	"runtime"
 )
 
 var log = logging.MustGetLogger("controllers")
@@ -73,7 +74,11 @@ func init() {
 	var err error
 	flag.Parse()
 
-	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+*utils.Dir+`/tmp"}`)
+	path := *utils.Dir+`/tmp`
+	if runtime.GOOS =="windows" {
+		path = *utils.Dir+`\tmp`
+	}
+	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`}`)
 	if err != nil {
 		log.Debug("%v", utils.ErrInfo(err))
 	}
