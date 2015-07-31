@@ -2,7 +2,7 @@ package main
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"os"
-	"flag"
+//	"flag"
 	"net/http"
 	_ "image/png"
 	"github.com/c-darwin/dcoin-go-tmp/packages/controllers"
@@ -55,14 +55,9 @@ var (
 	log = logging.MustGetLogger("example")
 	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
 	configIni map[string]string
-	console *int64
 	globalSessions *session.Manager
 )
 
-func init() {
-	console = flag.Int64("console", 0, "Start from console")
-	flag.Parse()
-}
 
 func main() {
 	// читаем config.ini
@@ -234,7 +229,7 @@ db_name=`)
 
 	utils.Sleep(3)
 
-	if *console == 0 {
+	if *utils.Console == 0 {
 		log.Debug("runtime.GOOS: %v", runtime.GOOS)
 		err = nil
 		switch runtime.GOOS {

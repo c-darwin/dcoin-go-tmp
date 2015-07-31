@@ -64,6 +64,7 @@ type prevBlockType struct {
 }
 
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
+var Console = flag.Int64("console", 0, "Start from console")
 
 func init() {
 	flag.Parse()
