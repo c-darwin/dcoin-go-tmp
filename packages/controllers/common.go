@@ -76,7 +76,7 @@ func init() {
 
 	path := *utils.Dir+`/tmp`
 	if runtime.GOOS =="windows" {
-		path = *utils.Dir+`\tmp`
+		path = "tmp"
 	}
 	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)
 	if err != nil {
