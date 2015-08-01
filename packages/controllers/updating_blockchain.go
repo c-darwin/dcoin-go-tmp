@@ -16,6 +16,8 @@ type updatingBlockchainStruct struct {
 	StartDaemons string
 	BlockMeter int64
 	CheckTime string
+	LastBlock int64
+	BlockChainSize int64
 }
 
 
@@ -83,6 +85,6 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 
 	blockMeter := int64(utils.Round(float64((blockId/consts.LAST_BLOCK)*100), 0))
 	b := new(bytes.Buffer)
-	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter:blockMeter, CheckTime: checkTime})
+	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter:blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE})
 	return b.String(), nil
 }

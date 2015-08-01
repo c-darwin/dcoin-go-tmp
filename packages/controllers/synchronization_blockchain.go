@@ -4,13 +4,32 @@ import (
 	"time"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
     "encoding/json"
+	"os"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 func (c *Controller) SynchronizationBlockchain() (string, error) {
 
 	blockData, err:=c.DCDB.GetInfoBlock()
 	if err != nil {
-		return "", err
+		log.Debug("%v", utils.ErrInfo(err))
+		// качается блок
+		file, err := os.Open(*utils.Dir+"/public/blockchain")
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+		stat, err := file.Stat()
+		if err != nil {
+			return "", err
+		}
+		if stat.Size() > 0 {
+			log.Debug("stat.Size(): %v", int(stat.Size()))
+			log.Debug("consts.BLOCKCHAIN_SIZE: %v", consts.BLOCKCHAIN_SIZE)
+			return `{"download": "`+utils.Int64ToStr(int64(utils.Round(float64((float64(stat.Size())/float64(consts.BLOCKCHAIN_SIZE))*100), 0)))+`"}`, nil
+		} else {
+			return `{"download": "0"}`, nil
+		}
 	}
 	blockId := blockData["block_id"]
 	blockTime := blockData["time"]
@@ -35,6 +54,7 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 			return "", err
 		}
 		log.Debug("lastBlockData[lastBlockTime]: %v", lastBlockData["lastBlockTime"])
+		log.Debug("time.Now().Unix(): %v", time.Now().Unix())
 		// если уже почти собрали все блоки
 		if time.Now().Unix() - lastBlockData["lastBlockTime"] < 3600*wTimeReady {
 			blockId = "-1"

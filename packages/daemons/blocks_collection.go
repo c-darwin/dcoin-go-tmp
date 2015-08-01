@@ -75,7 +75,11 @@ func BlocksCollection() {
         parser.GoroutineName = GoroutineName
         if currentBlockId==0 || *startBlockId > 0 {
 
-			if config["first_load_blockchain"]=="file" {
+            IsNotExistBlockChain := false
+            if _, err := os.Stat(*utils.Dir+"/public/blockchain"); os.IsNotExist(err) {
+                IsNotExistBlockChain = true
+            }
+			if config["first_load_blockchain"]=="file" && IsNotExistBlockChain {
 
                 log.Info("first_load_blockchain=file")
                 blockchain_url:=""
@@ -84,8 +88,15 @@ func BlocksCollection() {
                 } else {
                     blockchain_url = consts.BLOCKCHAIN_URL
                 }
-                blockchainSize, err := utils.DownloadToFile(blockchain_url, *utils.Dir+"/public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
                 log.Debug("blockchain_url: %s", blockchain_url)
+                // возможно сервер отдаст блокчейн не с первой попытки
+                var blockchainSize int64
+                for i:=0;i<10;i++ {
+                    blockchainSize, err = utils.DownloadToFile(blockchain_url, *utils.Dir+"/public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
+                    if blockchainSize > consts.BLOCKCHAIN_SIZE {
+                        break
+                    }
+                }
                 if err != nil || blockchainSize < consts.BLOCKCHAIN_SIZE {
                     if err != nil {
                         log.Error("%v", utils.ErrInfo(err))
@@ -97,12 +108,8 @@ func BlocksCollection() {
                 }
 
                 first := true
-                // блокчейн мог быть загружен ранее. проверим его размер
-                file, err := os.Open(*utils.Dir+"/public/blockchain")
-                if err != nil {
-                    db.UnlockPrintSleep(err, 1)
-                    continue BEGIN
-                }
+                /*// блокчейн мог быть загружен ранее. проверим его размер
+
 
                 stat, err := file.Stat()
                 if err != nil {
@@ -114,10 +121,14 @@ func BlocksCollection() {
                     db.UnlockPrintSleep(fmt.Errorf("%v < %v", stat.Size(), consts.BLOCKCHAIN_SIZE), 1)
                     file.Close()
                     continue BEGIN
-                }
+                }*/
 
                 log.Debug("GO!")
-
+                file, err := os.Open(*utils.Dir+"/public/blockchain")
+                if err != nil {
+                    db.UnlockPrintSleep(err, 1)
+                    continue BEGIN
+                }
                 for {
                     // проверим, не нужно ли нам выйти из цикла
                     if CheckDaemonsRestart() {

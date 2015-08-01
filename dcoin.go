@@ -179,6 +179,29 @@ db_name=`)
 	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir("./"))))
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
+	log.Debug("ListenHttpHost", ListenHttpHost)
+	//err = http.ListenAndServe(ListenHttpHost, nil)
+	l, err := net.Listen("tcp", ListenHttpHost)
+	if err != nil {
+		log.Error("%v", err)
+		// Если это повторный запуск и он не из консоли, то открываем окно браузера, т.к. скорее всего юзер тыкнул по иконке
+		if *utils.Console == 0 {
+			openBrowser(BrowserHttpHost)
+		}
+		panic(err)
+		os.Exit(1)
+	}
+
+	go func() {
+		err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
+		if err != nil {
+			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
+			panic(err)
+			//os.Exit(1)
+		}
+	}()
+
+
 	log.Debug("tcp")
 	go func() {
 		tcpHost := db.GetTcpHost()
@@ -211,43 +234,12 @@ db_name=`)
 		}()
 	}()
 
-	log.Debug("ListenHttpHost", ListenHttpHost)
-	//err = http.ListenAndServe(ListenHttpHost, nil)
-	l, err := net.Listen("tcp", ListenHttpHost)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	go func() {
-		err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
-		if err != nil {
-			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
-			panic(err)
-			//os.Exit(1)
-		}
-	}()
 
 	utils.Sleep(3)
 
 	if *utils.Console == 0 {
-		log.Debug("runtime.GOOS: %v", runtime.GOOS)
-		err = nil
-		switch runtime.GOOS {
-		case "linux":
-			err = exec.Command("xdg-open", BrowserHttpHost).Start()
-		case "windows", "darwin":
-			err = exec.Command("open", BrowserHttpHost).Start()
-			if err!=nil {
-				exec.Command("cmd", "/c", "start", BrowserHttpHost).Start()
-			}
-		default:
-			err = fmt.Errorf("unsupported platform")
-		}
-		if err != nil {
-			log.Error("%v", err)
-			//panic(err)
-			//os.Exit(1)
-		}
+		openBrowser(BrowserHttpHost)
 	}
 
 	log.Debug("ALL RIGHT")
@@ -266,6 +258,25 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 	})
 }
 
+
+func openBrowser(BrowserHttpHost string) {
+	log.Debug("runtime.GOOS: %v", runtime.GOOS)
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", BrowserHttpHost).Start()
+	case "windows", "darwin":
+		err = exec.Command("open", BrowserHttpHost).Start()
+		if err!=nil {
+			exec.Command("cmd", "/c", "start", BrowserHttpHost).Start()
+		}
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Error("%v", err)
+	}
+}
 
 func NewBoundListener(maxActive int, l net.Listener) net.Listener {
 	return &boundListener{l, make(chan bool, maxActive)}
