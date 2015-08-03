@@ -139,7 +139,13 @@ func MaxPromisedAmountGenerator() {
 		}
 
 		db.DbUnlock()
-		utils.Sleep(1)
+		for i:=0; i < 60; i++ {
+			utils.Sleep(1)
+			// проверим, не нужно ли нам выйти из цикла
+			if CheckDaemonsRestart() {
+				break BEGIN
+			}
+		}
 	}
 
 }

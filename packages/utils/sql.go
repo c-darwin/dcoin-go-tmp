@@ -458,7 +458,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	}
 	var result []map[string]string
 	// Execute the query
-	//fmt.Println("query", query)
+	fmt.Println("query", query)
 	rows, err := db.Query(newQuery, newArgs...)
 	if err != nil {
 		return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
@@ -2056,11 +2056,13 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) (error, bool) {
 		mutex.Lock()
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
+			mutex.Unlock()
 			return ErrInfo(err), false
 		}
 		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
 			if err != nil {
+				mutex.Unlock()
 				return ErrInfo(err), false
 			}
 			ok = true

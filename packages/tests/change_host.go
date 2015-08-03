@@ -61,7 +61,7 @@ func main() {
 
 	dir, err := utils.GetCurrentDir()
 	if err != nil {
-		log.Debug("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 	}
 	configIni_, err := config.NewConfig("ini", dir+"/config.ini")
 	if err != nil {

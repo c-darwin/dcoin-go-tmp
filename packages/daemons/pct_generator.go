@@ -238,8 +238,8 @@ func PctGenerator() {
 			if CheckDaemonsRestart() {
 				break BEGIN
 			}
-		}	}
-
+		}
+	}
 }
 
 type newPctType struct {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"fmt"
 )
 
 
@@ -97,6 +98,8 @@ func Connector() {
 				LEFT JOIN nodes_ban ON nodes_ban.user_id = nodes_connection.user_id
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_connection.user_id
 				`, -1)
+		fmt.Println("nodesConnections", nodesConnections)
+		log.Debug("nodesConnections: %v", nodesConnections)
 		for _, data := range nodesConnections {
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
@@ -105,7 +108,7 @@ func Connector() {
 				break BEGIN
 			}
 
-			// проверим соотвествие хоста и user_id
+			/*// проверим соотвествие хоста и user_id
 			ok, err := db.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND tcp_host  =  ?", data["user_id"], data["host"]).Int64()
 			if err != nil {
 				utils.Sleep(1)
@@ -117,7 +120,7 @@ func Connector() {
 					utils.Sleep(1)
 					continue BEGIN
 				}
-			}
+			}*/
 
 			// если нода забанена недавно
 			if utils.StrToInt64(data["ban_start"]) > utils.Time() - consts.NODE_BAN_TIME {
@@ -154,6 +157,7 @@ func Connector() {
 			}(userId, host["host"])
 		}
 
+		log.Debug("%v", "hosts", hosts)
 		// если нода не отвечает, то удалем её из таблы nodes_connection
 		for i := 0; i < len(hosts); i++ {
 			result := <-ch
@@ -163,9 +167,18 @@ func Connector() {
 				if err != nil {
 					db.PrintSleep(err, 1)
 				}
+				for j, data := range hosts {
+					for _, uid := range data {
+						if utils.StrToInt64(uid) == result.userId {
+							hosts = append(hosts[:j], hosts[j+1:]...)
+							//log.Debug("delete hosts[i] %v", hosts[j])
+						}
+					}
+				}
 			}
 			log.Info("answer: %v", result)
 		}
+		log.Debug("%v", "hosts", hosts)
 
 		// добьем недостающие хосты до $max_hosts
 		if len(hosts) < maxHosts {
@@ -232,7 +245,7 @@ func Connector() {
 		log.Debug("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
 		if len(hosts) < 10 {
-			hostsData_, err := ioutil.ReadFile("nodes.inc")
+			hostsData_, err := ioutil.ReadFile(*utils.Dir+"/nodes.inc")
 			if err != nil {
 				db.PrintSleep(err, 1)
 				continue BEGIN
@@ -245,7 +258,7 @@ func Connector() {
 			if len(hosts) > maxHosts-1 {
 				max = maxHosts
 			} else {
-				max = len(hosts)
+				max = len(hostsData)
 			}
 			log.Debug("max: %v", max)
 			for i:=0; i < max; i++ {
@@ -289,7 +302,7 @@ func Connector() {
 				nodesFile+=k+";"+v+"\n"
 			}
 			nodesFile = nodesFile[:len(nodesFile)-1]
-			err := ioutil.WriteFile("nodes.inc", []byte(nodesFile), 0644)
+			err := ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(nodesFile), 0644)
 			if err != nil {
 				db.PrintSleep(err, 1)
 				continue BEGIN

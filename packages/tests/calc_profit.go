@@ -627,6 +627,6 @@ func main() {
 	for i:=0; i<21; i++{
 		p:=new(dcparser.Parser)
 		profit, _ := p.CalcProfit_24946(test_data[i].amount, test_data[i].time_start, test_data[i].time_finish, test_data[i].pct_array, test_data[i].points_status_array, test_data[i].holidays_array, test_data[i].max_promised_amount_array, test_data[i].currency_id, test_data[i].repaid_amount)
-		fmt.Println(i, utils.Round(test_data[i].result, 8), utils.Round(profit, 8))
+		//fmt.Println(i, utils.Round(test_data[i].result, 8), utils.Round(profit, 8))
 	}
 }
