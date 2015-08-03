@@ -153,13 +153,11 @@ func (c *Controller) Check_sign() (string, error) {
 		// Если ключ еще не успели установить
 		if len(publicKey) == 0 {
 
-			fmt.Println("len(publicKey) == 0")
 			// пока не собрана цепочка блоков не даем ввести ключ
 			infoBlock, err := c.DCDB.GetInfoBlock()
 			if err != nil {
 				return "{\"result\":0}", err
 			}
-			fmt.Println("infoBlock", infoBlock)
 			// если последний блок не старше 2-х часов
 			wTime := int64(2)
 			if c.ConfigIni["test_mode"] == "1" {

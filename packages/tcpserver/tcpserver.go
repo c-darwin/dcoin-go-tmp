@@ -37,7 +37,6 @@ func (t *TcpServer) deferClose() {
 func (t *TcpServer) HandleTcpRequest() {
 
 	fmt.Println("NumCPU:", runtime.NumCPU(),
-		" NumCgoCall:", runtime.NumCgoCall(),
 		" NumGoRoutine:", runtime.NumGoroutine(),
 		" t.counter:", counter)
 

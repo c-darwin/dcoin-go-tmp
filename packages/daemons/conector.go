@@ -7,10 +7,23 @@ import (
 	"net"
 	"io/ioutil"
 	"strings"
+	"os"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 )
 
 
 func Connector() {
+
+	if _, err := os.Stat(*utils.Dir+"/nodes.inc"); os.IsNotExist(err) {
+		data, err := static.Asset("static/nodes.inc")
+		if err != nil {
+			log.Error("%v", err)
+		}
+		err = ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(data), 0644)
+		if err != nil {
+			log.Error("%v", err)
+		}
+	}
 
 	GoroutineName := "Connector"
 

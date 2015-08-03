@@ -49,7 +49,6 @@ func (p *Parser) NewUserFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["public_key_hex"])
-	fmt.Println("forSign", forSign)
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
 		return p.ErrInfo(err)

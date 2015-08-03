@@ -1,9 +1,7 @@
 package controllers
 import (
-	"fmt"
 	"net/http"
 	"regexp"
-
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"html/template"
@@ -98,7 +96,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		t := template.New("template")
 		t, err = t.Parse(string(data))
 		if err != nil {
-			fmt.Println(err)
+			log.Error("%v", err)
 		}
 		b := new(bytes.Buffer)
 		t.Execute(b, &indexCf{CfUrl: cfUrl, Lang: utils.IntToStr(lang), Nav: template.JS(nav), CfLang: cfLang })

@@ -17,7 +17,6 @@ func (c *Controller) CheckNode() (string, error) {
 	}
 
 	c.r.ParseForm()
-	fmt.Println(c.r.Form)
 	block_id := utils.StrToInt64(c.r.FormValue("block_id"))
 	nodes := c.r.FormValue("nodes")
 	//col := c.r.FormValue("col")

@@ -59,7 +59,6 @@ func (p *Parser) AdminSpotsFront() (error) {
 		return p.ErrInfo("incorrect tolerances")
 	}
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["example_spots"], p.TxMap["segments"], p.TxMap["tolerances"], p.TxMap["compatibility"])
-	fmt.Println("forSign", forSign)
 	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
 	if err != nil {
 		return p.ErrInfo(err)

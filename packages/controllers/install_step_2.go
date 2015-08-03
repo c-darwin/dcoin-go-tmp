@@ -1,6 +1,5 @@
 package controllers
 import (
-	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
@@ -48,7 +47,6 @@ func (c *Controller) InstallStep2() (string, error) {
 	confIni.Set("log_fns", "")
 	confIni.Set("sign_hash", "ip")
 
-	fmt.Println(dbType)
 	if dbType=="sqlite" {
 		confIni.Set("db_user", "")
 		confIni.Set("db_host", "")
@@ -56,7 +54,6 @@ func (c *Controller) InstallStep2() (string, error) {
 		confIni.Set("db_password", "")
 		confIni.Set("db_name", "")
 	} else if dbType=="postgresql" || dbType=="mysql" {
-		fmt.Println(dbUsername, dbHost, dbPort)
 		confIni.Set("db_type", dbType)
 		confIni.Set("db_user", dbUsername)
 		confIni.Set("db_host", dbHost)
@@ -68,7 +65,6 @@ func (c *Controller) InstallStep2() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(confIni)
 
 	configIni, err = confIni.GetSection("default")
 	c.DCDB, err = utils.NewDbConnect(configIni)

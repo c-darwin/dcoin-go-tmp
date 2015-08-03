@@ -25,10 +25,10 @@ func (p *Parser) AbusesFront() (error) {
 	var abuses map[string]string
 	err = json.Unmarshal(p.TxMap["abuses"], &abuses)
 	if err != nil {
-		fmt.Println(err)
+		return p.ErrInfo(err)
 	}
 	if len(abuses) > 100 {
-		fmt.Println(">100")
+		return fmt.Errorf(">100")
 	}
 	for userId, comment := range abuses {
 		if !utils.CheckInputData(userId, "user_id")  {
@@ -65,7 +65,7 @@ func (p *Parser) Abuses() (error) {
 	var abuses map[string]string
 	err := json.Unmarshal(p.TxMap["abuses"], &abuses)
 	if err != nil {
-		fmt.Println(err)
+		return p.ErrInfo(err)
 	}
 	for userId, comment := range abuses {
 		err = p.ExecSql("INSERT INTO abuses ( user_id, from_user_id, comment, time ) VALUES ( ?, ?, ?, ? )", userId, p.TxUserID, comment, p.BlockData.Time)
@@ -80,7 +80,7 @@ func (p *Parser) AbusesRollback() (error) {
 	var abuses map[string]string
 	err := json.Unmarshal(p.TxMap["abuses"], &abuses)
 	if err != nil {
-		fmt.Println(err)
+		return p.ErrInfo(err)
 	}
 	for userId, _ := range abuses {
 		err = p.ExecSql("DELETE FROM abuses WHERE user_id = ? AND from_user_id = ? AND time = ?", userId, p.TxUserID, p.BlockData.Time)

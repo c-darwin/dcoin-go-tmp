@@ -80,7 +80,7 @@ func init() {
 	}
 	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)
 	if err != nil {
-		log.Debug("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 	}
 	go globalSessions.GC()
 
@@ -94,11 +94,11 @@ func init() {
 			}
 			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 			if err != nil {
-				log.Debug("%v", utils.ErrInfo(err))
+				log.Error("%v", utils.ErrInfo(err))
 			}
 			configIni, err = configIni_.GetSection("default")
 			if err != nil {
-				log.Debug("%v", utils.ErrInfo(err))
+				log.Error("%v", utils.ErrInfo(err))
 			}
 			if len(configIni["db_type"]) > 0 {
 				break
@@ -110,11 +110,11 @@ func init() {
 	for _, v := range consts.LangMap{
 		data, err := static.Asset(fmt.Sprintf("static/lang/%d.ini", v))
 		if err != nil {
-			fmt.Println(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 		iniconf_, err := config.NewConfigData("ini", []byte(data))
 		if err != nil {
-			fmt.Println(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 		//fmt.Println(iniconf_)
 		iniconf, err := iniconf_.GetSection("default")
@@ -129,7 +129,7 @@ func CallController(c *Controller, name string)  (string, error) {
 	a := []rune(name)
 	a[0] = unicode.ToUpper(a[0])
 	name = string(a)
-	fmt.Println("Controller", name)
+	log.Debug("Controller %v", name)
 	html, err := CallMethod(c, name)
 	if err != nil {
 		log.Debug("%v", err)

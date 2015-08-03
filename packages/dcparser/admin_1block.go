@@ -1,7 +1,6 @@
 package dcparser
 
 import (
-	"fmt"
 	"encoding/json"
 	"regexp"
 )
@@ -12,7 +11,6 @@ func (p *Parser) Admin1BlockInit() (error) {
 	TxMap := make(map[string][]byte)
 	TxMap, err := p.GetTxMap(fields);
 	p.TxMap = TxMap;
-	fmt.Println("TxMap", p.TxMap)
 	if err != nil {
 		return err
 	}
@@ -40,7 +38,6 @@ func (p *Parser) Admin1Block() (error) {
 		return err
 	}
 	for _, currencyData := range firstBlock.Currency {
-		fmt.Println(currencyData[0], currencyData[1], currencyData[2])
 		// Этой первый блок от админа, поэтому .(float64) можно юзать
 		currencyId, err := p.ExecSqlGetLastInsertId("INSERT INTO currency (name, full_name, max_other_currencies) VALUES (?,?,?)", "id",
 			currencyData[0], currencyData[1], int(currencyData[3].(float64)))

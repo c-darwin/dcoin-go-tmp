@@ -1,6 +1,5 @@
 package controllers
 import (
-	"fmt"
 	"html/template"
 	"bytes"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
@@ -65,7 +64,6 @@ func (c *Controller) Login() (string, error) {
 	} else {
 		pool_tech_works = 0
 	}
-	fmt.Println(c.Lang["login_help_text"])
 	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword})
 	return b.String(), nil
 }

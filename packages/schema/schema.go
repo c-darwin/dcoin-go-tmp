@@ -2714,7 +2714,7 @@ func  (schema *SchemaStruct) typeMysql() {
 		schema.replMy(&table_name)
 		err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS "+table_name)
 		if err != nil {
-			fmt.Println("1", err, table_name)
+			log.Println("1", err, table_name)
 		}
 		result=fmt.Sprintf("CREATE TABLE IF NOT EXISTS %[1]s (\n", table_name)
 		var tableComment string

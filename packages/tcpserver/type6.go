@@ -153,7 +153,7 @@ func (t *TcpServer) Type6() {
 			hash1.SetString(string(newHeaderHash), 16)
 			hash2 := big.NewInt(0)
 			hash2.SetString(string(myHeaderHash), 16)
-			fmt.Println(hash1.Cmp(hash2))
+			log.Debug("%v", hash1.Cmp(hash2))
 			//if HexToDecBig(newHeaderHash) > string(myHeaderHash) {
 			if hash1.Cmp(hash2) == 1 {
 				t.UnlockPrintSleep(utils.ErrInfo(fmt.Sprintf("newHeaderHash > myHeaderHash (%s > %s)", newHeaderHash, myHeaderHash)), 0)

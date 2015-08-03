@@ -121,7 +121,6 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	fmt.Println("latitude", latitude)
 	if latitude == 0 && p.TxUserID!=1 {
 		return p.ErrInfo("!geo")
 	}

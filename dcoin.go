@@ -58,8 +58,13 @@ var (
 	globalSessions *session.Manager
 )
 
+func init() {
+
+}
 
 func main() {
+
+
 	// читаем config.ini
 	if _, err := os.Stat(*utils.Dir+"config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
@@ -193,7 +198,7 @@ db_name=`)
 	}
 
 	go func() {
-		err = http.Serve(NewBoundListener(20, l), http.DefaultServeMux)
+		err = http.Serve(NewBoundListener(50, l), http.DefaultServeMux)
 		if err != nil {
 			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 			panic(err)

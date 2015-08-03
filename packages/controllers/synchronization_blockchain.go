@@ -1,6 +1,5 @@
 package controllers
 import (
-	"fmt"
 	"time"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
     "encoding/json"
@@ -12,7 +11,7 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 
 	blockData, err:=c.DCDB.GetInfoBlock()
 	if err != nil {
-		log.Debug("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		// качается блок
 		file, err := os.Open(*utils.Dir+"/public/blockchain")
 		if err != nil {
@@ -64,7 +63,6 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 
 	result := map[string]string{"block_id": blockId, "block_time": blockTime}
 	resultJ, _ := json.Marshal(result)
-	fmt.Println(string(resultJ))
 
 	return string(resultJ), nil
 }

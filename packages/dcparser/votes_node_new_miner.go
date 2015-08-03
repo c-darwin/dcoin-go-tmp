@@ -49,7 +49,6 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["vote_id"], p.TxMap["result"])
-	fmt.Println("forSign", forSign)
 	CheckSignResult, err := utils.CheckSign([][]byte{p.nodePublicKey}, forSign, p.TxMap["sign"], true);
 	if err != nil {
 		return p.ErrInfo(err)

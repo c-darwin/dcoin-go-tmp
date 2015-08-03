@@ -14,7 +14,6 @@ func (p *Parser) AdminVariablesInit() (error) {
 	TxMap := make(map[string][]byte)
 	TxMap, err := p.GetTxMap(fields);
 	p.TxMap = TxMap;
-	fmt.Println("TxMap", p.TxMap)
 	if err != nil {
 		return err
 	}
@@ -99,20 +98,17 @@ func (p *Parser) AdminVariables() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	fmt.Println("sleep", logData["sleep"])
 
 	sleepVar := new(sleepVar)
 	err = json.Unmarshal([]byte(logData["sleep"]), &sleepVar)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	fmt.Println("sleepVar", sleepVar)
 
 	jsonData, err := json.Marshal(logData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	fmt.Println("jsonData", string(jsonData))
 
 	err =p.DCDB.ExecSql("INSERT INTO log_variables (data) VALUES (?)", jsonData)
 	if err != nil {

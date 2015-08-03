@@ -1190,8 +1190,6 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString(r, data); ok{
 			return true
 		}
-		fmt.Println(r)
-		fmt.Println(data)
 	case "lang":
 		if ok, _ := regexp.MatchString("^(en|ru)$", data); ok{
 			return true
@@ -2745,7 +2743,6 @@ func GetNetworkTime() (*time.Time, error) {
 	ntpAddr := []string{"0.pool.ntp.org", "europe.pool.ntp.org", "asia.pool.ntp.org", "oceania.pool.ntp.org", "north-america.pool.ntp.org", "south-america.pool.ntp.org", "africa.pool.ntp.org"}
 	for i:=0; i < len(ntpAddr); i++ {
 		host := ntpAddr[i]
-		fmt.Println(host)
 		raddr, err := net.ResolveUDPAddr("udp", host+":123")
 		if err != nil {
 			continue

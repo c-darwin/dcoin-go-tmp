@@ -274,7 +274,7 @@ func TestblockGenerator() {
             log.Debug("hash %v", hash)
             transactionType := data[1:2];
             log.Debug("%v", transactionType)
-            fmt.Printf("%x", transactionType)
+            log.Debug("%x", transactionType)
             mrklArray = append(mrklArray, utils.DSha256(data));
             log.Debug("mrklArray %v", mrklArray)
 

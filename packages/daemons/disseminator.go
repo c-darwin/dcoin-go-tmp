@@ -347,7 +347,7 @@ func DisseminatorType1(host string, userId int64, node_public_key string, db *ut
 			encBinaryTxHashes := make([]byte, dataSize)
 			_, err = io.ReadFull(conn, encBinaryTxHashes)
 			if err != nil {
-				log.Debug("%v", utils.ErrInfo(err))
+				log.Error("%v", utils.ErrInfo(err))
 				return
 			}
 			// разбираем полученные данные
