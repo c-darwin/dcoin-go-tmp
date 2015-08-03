@@ -458,7 +458,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	}
 	var result []map[string]string
 	// Execute the query
-	fmt.Println("query", query)
+	//fmt.Println("query", query)
 	rows, err := db.Query(newQuery, newArgs...)
 	if err != nil {
 		return result, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
