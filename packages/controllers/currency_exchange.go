@@ -1,12 +1,8 @@
 package controllers
 import (
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"time"
-
 	"encoding/json"
 )
 
@@ -161,7 +157,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		walletsAmounts[currency_id] = amount
 	}
 
-
+/*
 	data, err := static.Asset("static/templates/currency_exchange.html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -213,4 +209,31 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	return b.String(), nil
+	*/
+
+
+	TemplateStr, err := makeTemplate("currency_exchange", "currencyExchange", &currencyExchangePage{
+		Lang: c.Lang,
+		CountSignArr: c.CountSignArr,
+		ShowSignData: c.ShowSignData,
+		WalletsAmounts: walletsAmounts,
+		CurrencyListName: currencyListName,
+		BuyCurrencyId: buyCurrencyId,
+		SellCurrencyId: sellCurrencyId,
+		BuyCurrencyName: buyCurrencyName,
+		SellCurrencyName: sellCurrencyName,
+		CurrencyListFullName : currencyListFullName,
+		ConfigCommission: c.ConfigCommission,
+		TimeNow: timeNow,
+		SellOrders: sellOrders,
+		BuyOrders: buyOrders,
+		MyOrders: myOrders,
+		UserId: c.SessUserId,
+		TxType: txType,
+		TxTypeId: txTypeId,
+		SignData: ""})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return TemplateStr, nil
 }

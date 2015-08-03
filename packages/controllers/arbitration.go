@@ -1,11 +1,7 @@
 package controllers
 import (
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
 
 type arbitrationPage struct {
@@ -146,6 +142,7 @@ func (c *Controller) Arbitration() (string, error) {
 	}
 	pendingTx := pendingTx_[txTypeId]
 
+	/*
 	data, err := static.Asset("static/templates/arbitration.html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -191,4 +188,27 @@ func (c *Controller) Arbitration() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	return b.String(), nil
+	*/
+
+	TemplateStr, err := makeTemplate("arbitration", "arbitration", &arbitrationPage{
+		Alert: c.Alert,
+		Lang: c.Lang,
+		CountSignArr: c.CountSignArr,
+		ShowSignData: c.ShowSignData,
+		UserId: c.SessUserId,
+		TimeNow: timeNow,
+		TxType: txType,
+		TxTypeId: txTypeId,
+		SignData: "",
+		Arbitrators: arbitrators,
+		MyTrustList: myTrustList,
+		PendingTx: pendingTx,
+		Arbitrator: arbitrator,
+		ArbitrationDaysRefund: arbitrationDaysRefund,
+		LastTxFormatted: lastTxFormatted,
+		ArbitrationTrustList: arbitrationTrustList})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return TemplateStr, nil
 }

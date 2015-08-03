@@ -1,11 +1,7 @@
 package controllers
 import (
-	"html/template"
-	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 	"encoding/json"
 	"fmt"
 )
@@ -39,7 +35,7 @@ func (c *Controller) CurrencyExchangeDelete() (string, error) {
 	delId := utils.StrToInt64(parameters["del_id"])
 	signData := fmt.Sprintf("%d,%d,%d,%d", txTypeId, timeNow, c.SessUserId, delId)
 
-	data, err := static.Asset("static/templates/currency_exchange_delete.html")
+	/*data, err := static.Asset("static/templates/currency_exchange_delete.html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -65,5 +61,20 @@ func (c *Controller) CurrencyExchangeDelete() (string, error) {
 		TxTypeId: txTypeId,
 		DelId: delId,
 		SignData: signData})
-	return b.String(), nil
+	return b.String(), nil*/
+
+	TemplateStr, err := makeTemplate("currency_exchange_delete", "currencyExchangeDelete", &currencyExchangeDeletePage{
+		Lang: c.Lang,
+		CountSignArr: c.CountSignArr,
+		ShowSignData: c.ShowSignData,
+		UserId: c.SessUserId,
+		TimeNow: timeNow,
+		TxType: txType,
+		TxTypeId: txTypeId,
+		DelId: delId,
+		SignData: signData})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return TemplateStr, nil
 }
