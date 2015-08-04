@@ -82,6 +82,11 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 			db.Close()
 			return &DCDB{}, err
 		}*/
+		_, err = db.Exec(`VACUUM`);
+		if err != nil {
+			db.Close()
+			return &DCDB{}, err
+		}
 	case "postgresql":
 		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
 		//fmt.Println(db)
