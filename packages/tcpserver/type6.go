@@ -77,13 +77,13 @@ func (t *TcpServer) Type6() {
 				WHERE status = "active"
 				`).Int64()
 		if exists == 0 {
-			t.UnlockPrintSleep(utils.ErrInfo("null testblock"), 0)
+			t.PrintSleep(utils.ErrInfo("null testblock"), 0)
 			return
 		}
 		//prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := t.TestBlock()
 		prevBlock, _, _, _, level, levelsRange, err := t.TestBlock()
 		if err != nil {
-			t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+			t.PrintSleep(utils.ErrInfo(err), 0)
 			return
 		}
 		nodesIds := utils.GetOurLevelNodes(level, levelsRange)
@@ -94,23 +94,23 @@ func (t *TcpServer) Type6() {
 		log.Debug("newTestblockBlockId: %v ", newTestblockBlockId)
 		// проверим, верный ли ID блока
 		if newTestblockBlockId != prevBlock.BlockId+1 {
-			t.UnlockPrintSleep(utils.ErrInfo(fmt.Sprintf("newTestblockBlockId != prevBlock.BlockId+1 %d!=%d+1", newTestblockBlockId, prevBlock.BlockId)), 1)
+			t.PrintSleep(utils.ErrInfo(fmt.Sprintf("newTestblockBlockId != prevBlock.BlockId+1 %d!=%d+1", newTestblockBlockId, prevBlock.BlockId)), 1)
 			return
 		}
 		// проверим, есть ли такой майнер
 		minerId, err := t.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", newTestblockUserId).Int64()
 		if err != nil {
-			t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+			t.PrintSleep(utils.ErrInfo(err), 0)
 			return
 		}
 		if minerId == 0 {
-			t.UnlockPrintSleep(utils.ErrInfo("minerId == 0"), 0)
+			t.PrintSleep(utils.ErrInfo("minerId == 0"), 0)
 			return
 		}
 		log.Debug("minerId: %v ", minerId)
 		// проверим, точно ли отправитель с нашего уровня
 		if !utils.InSliceInt64(minerId, nodesIds) {
-			t.UnlockPrintSleep(utils.ErrInfo("!InSliceInt64(minerId, nodesIds)"), 0)
+			t.PrintSleep(utils.ErrInfo("!InSliceInt64(minerId, nodesIds)"), 0)
 			return
 		}
 		// допустимая погрешность во времени генерации блока
@@ -118,17 +118,17 @@ func (t *TcpServer) Type6() {
 		// получим значения для сна
 		sleep, err := t.GetGenSleep(prevBlock, level)
 		if err!=nil {
-			t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+			t.PrintSleep(utils.ErrInfo(err), 0)
 			return
 		}
 		// исключим тех, кто сгенерил блок слишком рано
 		if prevBlock.Time + sleep - newTestblockTime > maxErrorTime {
-			t.UnlockPrintSleep(utils.ErrInfo("prevBlock.Time + sleep - newTestblockTime > maxErrorTime"), 0)
+			t.PrintSleep(utils.ErrInfo("prevBlock.Time + sleep - newTestblockTime > maxErrorTime"), 0)
 			return
 		}
 		// исключим тех, кто сгенерил блок с бегущими часами
 		if newTestblockTime > utils.Time() {
-			t.UnlockPrintSleep(utils.ErrInfo("newTestblockTime > Time()"), 0)
+			t.PrintSleep(utils.ErrInfo("newTestblockTime > Time()"), 0)
 			return
 		}
 		// получим хэш заголовка
@@ -143,7 +143,7 @@ func (t *TcpServer) Type6() {
 				`).String()
 		if len(myTestblock) > 0 {
 			if err!=nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 			// получим хэш заголовка
@@ -156,7 +156,7 @@ func (t *TcpServer) Type6() {
 			log.Debug("%v", hash1.Cmp(hash2))
 			//if HexToDecBig(newHeaderHash) > string(myHeaderHash) {
 			if hash1.Cmp(hash2) == 1 {
-				t.UnlockPrintSleep(utils.ErrInfo(fmt.Sprintf("newHeaderHash > myHeaderHash (%s > %s)", newHeaderHash, myHeaderHash)), 0)
+				t.PrintSleep(utils.ErrInfo(fmt.Sprintf("newHeaderHash > myHeaderHash (%s > %s)", newHeaderHash, myHeaderHash)), 0)
 				return
 			}
 			/* т.к. на данном этапе в большинстве случаев наш текущий блок будет заменен,
@@ -164,7 +164,7 @@ func (t *TcpServer) Type6() {
 			 */
 			err = t.ExecSql("UPDATE testblock SET status = 'pending'")
 			if err != nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 		}
@@ -175,7 +175,7 @@ func (t *TcpServer) Type6() {
 			// получим все имеющиеся у нас тр-ии, которые еще не попали в блоки
 			txArray, err := t.GetMap(`SELECT hex(hash) as hash, data FROM transactions`, "hash", "data")
 			if err != nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 			for hash, _ := range txArray {
@@ -183,7 +183,7 @@ func (t *TcpServer) Type6() {
 			}
 			err = utils.WriteSizeAndData([]byte(sendData), t.Conn)
 			if err != nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 			/*
@@ -198,7 +198,7 @@ func (t *TcpServer) Type6() {
 			buf := make([]byte, 4)
 			_, err =t.Conn.Read(buf)
 			if err != nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 			dataSize := utils.BinToDec(buf)
@@ -208,7 +208,7 @@ func (t *TcpServer) Type6() {
 				binaryData := make([]byte, dataSize)
 				binaryData, err = ioutil.ReadAll(t.Conn)
 				if err != nil {
-					t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+					t.PrintSleep(utils.ErrInfo(err), 0)
 					return
 				}
 				// Разбираем полученные бинарные данные
@@ -273,13 +273,13 @@ func (t *TcpServer) Type6() {
 				// т.к. есть запросы к log_time_, а их можно выполнять только по очереди
 				err = t.ExecSql(`DELETE FROM queue_testblock WHERE head_hash = [hex]`, newHeaderHash)
 				if err != nil {
-					t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+					t.PrintSleep(utils.ErrInfo(err), 0)
 					return
 				}
 				log.Debug("INSERT INTO queue_testblock  (head_hash, data)  VALUES (%s, %s)", newHeaderHash, newBlockHex)
 				err = t.ExecSql(`INSERT INTO queue_testblock (head_hash, data) VALUES ([hex], [hex])`, newHeaderHash, newBlockHex)
 				if err != nil {
-					t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+					t.PrintSleep(utils.ErrInfo(err), 0)
 					return
 				}
 			}
@@ -287,14 +287,14 @@ func (t *TcpServer) Type6() {
 			// если всё нормально, то пишем в таблу testblock новые данные
 			exists, err := t.Single(`SELECT block_id FROM testblock`).Int64()
 			if err != nil {
-				t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
 			if exists == 0 {
 				err = t.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
 					newTestblockBlockId, newTestblockTime, level, newTestblockUserId, string(newHeaderHash), newTestblockSignatureHex, string(newTestblockMrklRoot))
 				if err != nil {
-					t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+					t.PrintSleep(utils.ErrInfo(err), 0)
 					return
 				}
 			} else {
@@ -306,14 +306,14 @@ func (t *TcpServer) Type6() {
 								signature = [hex]
 						`, newTestblockTime, newTestblockUserId, string(newHeaderHash), string(newTestblockSignatureHex))
 				if err != nil {
-					t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+					t.PrintSleep(utils.ErrInfo(err), 0)
 					return
 				}
 			}
 		}
 		err = t.ExecSql("UPDATE testblock SET status = 'active'")
 		if err != nil {
-			t.UnlockPrintSleep(utils.ErrInfo(err), 0)
+			t.PrintSleep(utils.ErrInfo(err), 0)
 			return
 		}
 		//t.DbUnlockGate("6")

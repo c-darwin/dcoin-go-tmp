@@ -34,12 +34,11 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	c.SessUserId = sessUserId
 	if dbInit {
 		var err error
-		c.DCDB, err = utils.NewDbConnect(configIni)
-		if err != nil {
-			log.Error("%v", err)
+		//c.DCDB, err = utils.NewDbConnect(configIni)
+		c.DCDB = utils.DB
+		if c.DCDB == nil {
+			log.Error("utils.DB == nil")
 			dbInit = false
-		} else {
-			defer c.DCDB.Close()
 		}
 		if dbInit {
 			c.Variables, err = c.GetAllVariables()

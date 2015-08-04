@@ -16,13 +16,13 @@ import (
 func ReductionGenerator() {
 
 	const GoroutineName = "ReductionGenerator"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -34,36 +34,36 @@ func ReductionGenerator() {
 			break BEGIN
 		}
 
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
-		blockId, err := db.GetBlockId()
+		blockId, err := d.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(err, 1)
+			d.unlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(errors.New("blockId == 0"), 1)
+			d.unlockPrintSleep(errors.New("blockId == 0"), 1)
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := db.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock();
 		if err != nil {
-			db.UnlockPrintSleep(err, 1)
+			d.unlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			db.UnlockPrintSleep(err, 1)
+			d.unlockPrintSleep(err, 1)
 			continue BEGIN
 		}
-		variables, err := db.GetAllVariables()
+		variables, err := d.GetAllVariables()
 		curTime := utils.Time()
 		var reductionType string
 		var reductionCurrencyId int
@@ -71,7 +71,7 @@ func ReductionGenerator() {
 
 		// ===== ручное урезание денежной массы
 		// получаем кол-во обещанных сумм у разных юзеров по каждой валюте. start_time есть только у тех, у кого статус mining/repaid
-		promisedAmount, err := db.GetMap(`
+		promisedAmount, err := d.GetMap(`
 				SELECT currency_id, count(user_id) as count
 				FROM (
 						SELECT currency_id, user_id
@@ -84,13 +84,13 @@ func ReductionGenerator() {
 						) as t1
 				GROUP BY  currency_id`, "currency_id", "count", (curTime - variables.Int64["min_hold_time_promise_amount"]))
 		if err != nil {
-			db.UnlockPrintSleep(err, 1)
+			d.unlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		log.Info("%v", "promisedAmount", promisedAmount)
 
 		// берем все голоса юзеров
-		rows, err := db.Query(`
+		rows, err := d.Query(`
 				SELECT currency_id,
 				  		  pct,
 						  count(currency_id) as votes
@@ -99,7 +99,7 @@ func ReductionGenerator() {
 				GROUP BY  currency_id, pct
 				`, curTime - variables.Int64["reduction_period"])
 		if err != nil {
-			db.UnlockPrintSleep(err, 1)
+			d.unlockPrintSleep(err, 1)
 			continue BEGIN
 		}
 		for rows.Next() {
@@ -108,7 +108,7 @@ func ReductionGenerator() {
 			var currency_id string
 			err = rows.Scan(&currency_id, &pct, &votes)
 			if err != nil {
-				db.UnlockPrintSleep(err, 1)
+				d.unlockPrintSleep(err, 1)
 				continue BEGIN
 			}
 			if len(promisedAmount[currency_id]) == 0 || promisedAmount[currency_id] == "0" {
@@ -117,9 +117,9 @@ func ReductionGenerator() {
 			// если голосов за урезание > 50% от числа всех держателей данной валюты
 			if votes >= utils.StrToInt64(promisedAmount[currency_id])/2 {
 				// проверим, прошло ли 2 недели с последнего урезания
-				reductionTime, err := db.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'manual'", currency_id).Int64()
+				reductionTime, err := d.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'manual'", currency_id).Int64()
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				if curTime - reductionTime > variables.Int64["reduction_period"] {
@@ -135,9 +135,9 @@ func ReductionGenerator() {
 		// =======  авто-урезание денежной массы из-за малого объема обещанных сумм
 
 		// получаем кол-во DC на кошельках
-		sumWallets_, err := db.GetMap("SELECT currency_id, sum(amount) as sum_amount FROM wallets GROUP BY currency_id", "currency_id", "sum_amount")
+		sumWallets_, err := d.GetMap("SELECT currency_id, sum(amount) as sum_amount FROM wallets GROUP BY currency_id", "currency_id", "sum_amount")
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		sumWallets := make(map[int]float64)
@@ -146,9 +146,9 @@ func ReductionGenerator() {
 		}
 
 		// получаем кол-во TDC на обещанных суммах, плюсуем к тому, что на кошельках
-		sumTdc, err := db.GetMap("SELECT currency_id, sum(tdc_amount) as sum_amount FROM promised_amount GROUP BY currency_id", "currency_id", "sum_amount")
+		sumTdc, err := d.GetMap("SELECT currency_id, sum(tdc_amount) as sum_amount FROM promised_amount GROUP BY currency_id", "currency_id", "sum_amount")
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
@@ -162,7 +162,7 @@ func ReductionGenerator() {
 		}
 
 		// получаем суммы обещанных сумм
-		sumPromisedAmount, err := db.GetMap(`
+		sumPromisedAmount, err := d.GetMap(`
 				SELECT currency_id,
 					   		sum(amount) as sum_amount
 				FROM promised_amount
@@ -173,7 +173,7 @@ func ReductionGenerator() {
 				GROUP BY currency_id
 				`, "currency_id", "sum_amount", curTime - variables.Int64["cash_request_time"])
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
@@ -183,9 +183,9 @@ func ReductionGenerator() {
 				if currencyId == 1 {
 					continue
 				}
-				reductionTime, err := db.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'auto'", currencyId).Int64()
+				reductionTime, err := d.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'auto'", currencyId).Int64()
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				// прошло ли 48 часов
@@ -197,9 +197,9 @@ func ReductionGenerator() {
 				if utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount * consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
 
 					// проверим, есть ли хотя бы 1000 юзеров, у которых на кошелках есть или была данная валюты
-					countUsers, err := db.Single("SELECT count(user_id) FROM wallets WHERE currency_id  =  ?", currencyId).Int64()
+					countUsers, err := d.Single("SELECT count(user_id) FROM wallets WHERE currency_id  =  ?", currencyId).Int64()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if countUsers >= consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN {
@@ -214,11 +214,11 @@ func ReductionGenerator() {
 		}
 		if reductionCurrencyId > 0 && reductionPct > 0 {
 
-			_, myUserId, _, _, _, _, err := db.TestBlock();
+			_, myUserId, _, _, _, _, err := d.TestBlock();
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
-			binSign, err := db.GetBinSign(forSign, myUserId)
+			binSign, err := d.GetBinSign(forSign, myUserId)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			data := utils.DecToBin(utils.TypeInt("NewReduction"), 1)
@@ -229,9 +229,9 @@ func ReductionGenerator() {
 			data = append(data, utils.EncodeLengthPlusData([]byte(reductionType))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
-			err = db.InsertReplaceTxInQueue(data)
+			err = d.InsertReplaceTxInQueue(data)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
@@ -242,11 +242,11 @@ func ReductionGenerator() {
 			p := new(dcparser.Parser)
 			err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 		}
-		db.DbUnlock()
+		d.dbUnlock()
 		for i:=0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла

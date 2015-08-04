@@ -22,11 +22,10 @@ import (
 	"github.com/op/go-logging"
 	"runtime"
 	"path/filepath"
-	"os"
 )
 
 var log = logging.MustGetLogger("daemons")
-
+var DB *DCDB
 type DCDB struct {
 	 *sql.DB
 	ConfigIni map[string]string
@@ -54,17 +53,13 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	case "sqlite":
 
 		log.Debug("sqlite connect")
-		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		db, err = sql.Open("sqlite3", *Dir+"/litedb.db")
+		log.Debug("%v", db)
 		if err!=nil {
 			log.Debug("%v", err)
 			return &DCDB{}, err
 		}
-		db, err = sql.Open("sqlite3", dir+"/litedb.db")
-		if err!=nil {
-			log.Debug("%v", err)
-			return &DCDB{}, err
-		}
-		ddl := `
+		/*ddl := `
 				PRAGMA automatic_index = ON;
 				PRAGMA cache_size = 32768;
 				PRAGMA cache_spill = OFF;
@@ -80,11 +75,13 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 				PRAGMA wal_autocheckpoint = 16384;
 				PRAGMA encoding = "UTF-8";
 				`
+		log.Debug("Exec ddl0")
 		_, err = db.Exec(ddl);
+		log.Debug("Exec ddl")
 		if err != nil {
 			db.Close()
 			return &DCDB{}, err
-		}
+		}*/
 	case "postgresql":
 		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
 		//fmt.Println(db)
@@ -100,7 +97,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 			return &DCDB{}, err
 		}
 	}
-
+	log.Debug("return")
 	return &DCDB{db, ConfigIni, ""}, err
 }
 /*
@@ -2042,7 +2039,7 @@ func (db *DCDB) CheckDaemonsRestart() bool {
 	return false
 }
 
-func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) (error, bool) {
+func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string) (error, bool) {
 	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
@@ -2060,7 +2057,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool) (error, bool) {
 			return ErrInfo(err), false
 		}
 		if len(exists["script_name"])==0 {
-			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), db.GoroutineName)
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), goRoutineName)
 			if err != nil {
 				mutex.Unlock()
 				return ErrInfo(err), false
@@ -2108,17 +2105,7 @@ func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)
 }
 
-func (db *DCDB) UnlockPrintSleep(err error, sleep time.Duration) {
-	db.DbUnlock();
-	log.Error("%v", err)
-	Sleep(sleep)
-}
 
-func (db *DCDB) UnlockPrintSleepInfo(err error, sleep time.Duration) {
-	db.DbUnlock();
-	log.Info("%v", err)
-	Sleep(sleep)
-}
 
 func (db *DCDB) PrintSleep(err_ interface {}, sleep time.Duration) {
 	var err error
@@ -2144,8 +2131,10 @@ func (db *DCDB) PrintSleepInfo(err_ interface {}, sleep time.Duration) {
 	Sleep(sleep)
 }
 
-func (db *DCDB) DbUnlock() error {
-	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", db.GoroutineName)
+
+
+func (db *DCDB) DbUnlock(goRoutineName string) error {
+	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
 	if err != nil {
 		return err
 	}

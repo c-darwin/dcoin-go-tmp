@@ -19,13 +19,13 @@ var err error
 func TestblockGenerator() {
 
     const GoroutineName = "TestblockGenerator"
-
-    db := DbConnect()
-    if db == nil {
+    d := new(daemon)
+    d.DCDB = DbConnect()
+    if d.DCDB == nil {
         return
     }
-    db.GoroutineName = GoroutineName
-    if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+    d.goRoutineName = GoroutineName
+    if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
         return
     }
 
@@ -37,25 +37,25 @@ func TestblockGenerator() {
             break BEGIN
         }
 
-        err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+        err, restart := d.dbLock()
         if restart {
             break BEGIN
         }
         if err != nil {
-            db.PrintSleep(err, 1)
+            d.PrintSleep(err, 1)
             continue BEGIN
         }
 
-        blockId, err := db.GetBlockId()
+        blockId, err := d.GetBlockId()
 		if err != nil {
-            db.UnlockPrintSleepInfo(err, 1)
+            d.unlockPrintSleepInfo(err, 1)
             continue BEGIN
         }
         newBlockId := blockId + 1;
         log.Debug("newBlockId: %v", newBlockId)
-        testBlockId, err := db.GetTestBlockId()
+        testBlockId, err := d.GetTestBlockId()
         if err != nil {
-            db.DbUnlock()
+            d.dbUnlock()
             log.Error("%v", err)
             utils.Sleep(1)
             continue BEGIN
@@ -63,26 +63,26 @@ func TestblockGenerator() {
 
         log.Debug("testBlockId %v", testBlockId)
 
-        if x, err := db.GetMyLocalGateIp(); x!="" {
+        if x, err := d.GetMyLocalGateIp(); x!="" {
             if err != nil {
                 log.Error("%v", err)
 			}
             log.Info("%v", "continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue BEGIN
         }
 
         if testBlockId==newBlockId {
-            db.DbUnlock()
+            d.dbUnlock()
             log.Error("%v", err)
             utils.Sleep(1)
             continue
         }
 
-        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
+        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := d.TestBlock()
         if err != nil {
-            db.DbUnlock()
+            d.dbUnlock()
             log.Error("%v", err)
             utils.Sleep(1)
             continue BEGIN
@@ -90,15 +90,15 @@ func TestblockGenerator() {
         log.Debug("%v %v %v %v %v %v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId==0 {
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
 			continue
 		}
 
-		sleep, err := db.GetGenSleep(prevBlock, level)
+		sleep, err := d.GetGenSleep(prevBlock, level)
         if err!=nil {
             log.Error("%v", err)
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
@@ -121,24 +121,24 @@ func TestblockGenerator() {
         startSleep := time.Now().Unix();
         log.Debug("startSleep %v", startSleep)
 
-        db.DbUnlock()
+        d.dbUnlock()
 
         for i := 0; i < int(sleep); i++ {
-            err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+            err, restart := d.dbLock()
             if restart {
                 break BEGIN
             }
             if err != nil {
-                db.PrintSleep(err, 1)
+                d.PrintSleep(err, 1)
                 continue BEGIN
             }
             log.Debug("i %v", i)
             log.Debug("sleep %v", sleep)
 			var newHeadHash string
-            err = db.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
+            err = d.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
             utils.CheckErr(err)
             log.Debug("newHeadHash %v", newHeadHash)
-            db.DbUnlock();
+            d.dbUnlock();
             if (newHeadHash != prevHeadHash) {
                 log.Debug("newHeadHash!=prevHeadHash  %v  %v", newHeadHash, prevHeadHash)
                 utils.Sleep(1)
@@ -156,19 +156,19 @@ func TestblockGenerator() {
 		 *  Закончили спать, теперь генерим блок
 		 * Но, всё, что было до main_unlock может стать недействительным, т.е. надо обновить данные
 		 * */
-        err, restart = db.DbLock(DaemonCh, AnswerDaemonCh)
+        err, restart = d.dbLock()
         if restart {
             break BEGIN
         }
         if err != nil {
-            db.PrintSleep(err, 1)
+            d.PrintSleep(err, 1)
             continue BEGIN
         }
 
-        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock();
+        prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = d.TestBlock();
 		if err != nil {
 			log.Error("%v", err)
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
 		}
@@ -182,7 +182,7 @@ func TestblockGenerator() {
         // если нужно доспать, то просто вернемся в начало и доспим нужное время. И на всякий случай убедимся, что блок не изменился
         if sleep > 0 || prevBlock.HeadHash != prevHeadHash {
             log.Debug("continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
@@ -190,17 +190,17 @@ func TestblockGenerator() {
         blockId = prevBlock.BlockId;
         if blockId < 1 {
             log.Debug("continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
 
         newBlockId = blockId + 1;
 		var myPrefix string
-        CommunityUser, err := db.GetCommunityUsers()
+        CommunityUser, err := d.GetCommunityUsers()
         if err != nil {
             log.Error("%v", err)
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
@@ -209,10 +209,10 @@ func TestblockGenerator() {
 		} else {
             myPrefix = ""
 	    }
-        nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
+        nodePrivateKey, err := d.GetNodePrivateKey(myPrefix)
 		if len(nodePrivateKey) < 1 {
             log.Debug("continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
@@ -226,19 +226,19 @@ func TestblockGenerator() {
         log.Debug("%v %v", newBlockId, currentUserId)
         if currentUserId < 1 {
             log.Debug("continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
         if prevBlock.BlockId >= newBlockId {
             log.Debug("continue")
-            db.DbUnlock()
+            d.dbUnlock()
             utils.Sleep(1)
             continue
         }
         // откатим transactions_testblock
 		p := new(dcparser.Parser)
-        p.DCDB = db
+        p.DCDB = d.DCDB
         p.RollbackTransactionsTestblock(true)
 
        Time := time.Now().Unix()
@@ -246,7 +246,7 @@ func TestblockGenerator() {
         // переведем тр-ии в `verified` = 1
         err = p.AllTxParser()
         if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 1)
+            d.PrintSleep(utils.ErrInfo(err), 1)
             continue
         }
 
@@ -254,9 +254,9 @@ func TestblockGenerator() {
 		var usedTransactions string
 		var mrklRoot []byte
         // берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
-        rows, err := db.Query(db.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1"))
+        rows, err := d.Query(d.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1"))
         if err != nil {
-            db.PrintSleep(utils.ErrInfo(err), 1)
+            d.PrintSleep(utils.ErrInfo(err), 1)
             continue
         }
         for rows.Next() {
@@ -267,7 +267,7 @@ func TestblockGenerator() {
             var thirdVar string
             err = rows.Scan(&data, &hash, &txType, &txUserId, &thirdVar)
             if err != nil {
-                db.PrintSleep(utils.ErrInfo(err), 1)
+                d.PrintSleep(utils.ErrInfo(err), 1)
                 continue
             }
             log.Debug("data %v", data)
@@ -284,16 +284,16 @@ func TestblockGenerator() {
             dataHex := fmt.Sprintf("%x", data)
             log.Debug("dataHex %v", dataHex)
 
-            exists, err := db.Single("SELECT hash FROM transactions_testblock WHERE hash = [hex]", hashMd5).String()
+            exists, err := d.Single("SELECT hash FROM transactions_testblock WHERE hash = [hex]", hashMd5).String()
             if err != nil {
-                db.PrintSleep(utils.ErrInfo(err), 1)
+                d.PrintSleep(utils.ErrInfo(err), 1)
                 continue
             }
             if len(exists) == 0 {
-                err = db.ExecSql(`INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)`,
+                err = d.ExecSql(`INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)`,
                     hashMd5, dataHex, txType, txUserId, thirdVar)
                 if err != nil {
-                    db.PrintSleep(utils.ErrInfo(err), 1)
+                    d.PrintSleep(utils.ErrInfo(err), 1)
                     continue
                 }
             }
@@ -353,16 +353,16 @@ func TestblockGenerator() {
 
         // хэш шапки блока. нужен для сравнивания с другими и у кого будет меньше - у того блок круче
         headerHash := utils.DSha256([]byte(fmt.Sprintf("%s,%s,%s", myUserId, newBlockId, prevHeadHash)));
-        err = db.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
+        err = d.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
         if err != nil {
-            db.PrintSleep(err, 1)
+            d.PrintSleep(err, 1)
             continue BEGIN
         }
-        err = db.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
+        err = d.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
             newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
         log.Debug("newBlockId: %v / Time: %v / level: %v / myUserId: %v / headerHash: %v / signatureHex: %v / mrklRoot: %v / ", newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
         if err != nil {
-            db.PrintSleep(err, 1)
+            d.PrintSleep(err, 1)
             continue BEGIN
         }
 
@@ -373,9 +373,9 @@ func TestblockGenerator() {
         if len(usedTransactions)>0 {
             usedTransactions := usedTransactions[:len(usedTransactions)-1]
             log.Debug("usedTransactions %v", usedTransactions)
-            err = db.ExecSql("UPDATE transactions SET used=1 WHERE hash IN ("+usedTransactions+")")
+            err = d.ExecSql("UPDATE transactions SET used=1 WHERE hash IN ("+usedTransactions+")")
             if err != nil {
-                db.PrintSleep(err, 1)
+                d.PrintSleep(err, 1)
                 continue BEGIN
             }
             // для теста удаляем, т.к. она уже есть в transactions_testblock
@@ -386,11 +386,7 @@ func TestblockGenerator() {
         }
         // ############################################
 
-        db.DbUnlock();
-
-		// в sqllite данные в db-файл пишутся только после закрытия всех соединений с БД.
-        db.Close()
-        db = utils.DbConnect(configIni)
+        d.dbUnlock();
 
         log.Debug("END")
         //break

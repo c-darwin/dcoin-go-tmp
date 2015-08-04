@@ -18,14 +18,14 @@ import (
 
 func TestblockIsReady() {
 
-	GoroutineName := "TestblockIsReady"
-
-	db := DbConnect()
-	if db == nil {
+	const GoroutineName = "TestblockIsReady"
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -37,54 +37,54 @@ func TestblockIsReady() {
 			break BEGIN
 		}
 
-		LocalGateIp, err := db.GetMyLocalGateIp()
+		LocalGateIp, err := d.GetMyLocalGateIp()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		if len(LocalGateIp) > 0 {
-			db.PrintSleep(utils.ErrInfo(errors.New("len(LocalGateIp) > 0")), 5)
+			d.PrintSleep(utils.ErrInfo(errors.New("len(LocalGateIp) > 0")), 5)
 			continue
 		}
 
 		// сколько нужно спать
-		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := db.TestBlock()
+		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := d.TestBlock()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		log.Info("%v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		if myMinerId == 0 {
-			db.PrintSleepInfo(utils.ErrInfo(errors.New("myMinerId == 0 ")), 1)
+			d.PrintSleepInfo(utils.ErrInfo(errors.New("myMinerId == 0 ")), 1)
 			continue
 		}
 
-		sleepData, err := db.GetSleepData();
-		sleep := db.GetIsReadySleep(prevBlock.Level, sleepData["is_ready"])
+		sleepData, err := d.GetSleepData();
+		sleep := d.GetIsReadySleep(prevBlock.Level, sleepData["is_ready"])
 		prevHeadHash := prevBlock.HeadHash
 
 		// Если случится откат или придет новый блок, то testblock станет неактуален
 		startSleep := utils.Time()
 		for i:=0; i < int(sleep); i++ {
-			err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+			err, restart := d.dbLock()
 			if restart {
 				break BEGIN
 			}
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 
-			newHeadHash, err := db.Single("SELECT head_hash FROM info_block").String()
+			newHeadHash, err := d.Single("SELECT head_hash FROM info_block").String()
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 1)
+				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue
 			}
-			db.DbUnlock()
+			d.dbUnlock()
 			newHeadHash = string(utils.BinToHex([]byte(newHeadHash)))
 			if newHeadHash != prevHeadHash {
-				db.PrintSleep(utils.ErrInfo(err), 1)
+				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			log.Info("%v", "i", i, "time", utils.Time())
@@ -108,44 +108,44 @@ func TestblockIsReady() {
 
 		// блокируем изменения данных в тестблоке
 		// также, нужно блокировать main, т.к. изменение в info_block и block_chain ведут к изменению подписи в testblock
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		// за промежуток в main_unlock и main_lock мог прийти новый блок
-		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = db.TestBlock()
+		prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err = d.TestBlock()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue
 		}
 		log.Info("%v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
 		// на всякий случай убедимся, что блок не изменился
 		if prevBlock.HeadHash != prevHeadHash {
-			db.UnlockPrintSleep(utils.ErrInfo(errors.New("prevBlock.HeadHash != prevHeadHash")), 1)
+			d.unlockPrintSleep(utils.ErrInfo(errors.New("prevBlock.HeadHash != prevHeadHash")), 1)
 			continue
 		}
 
 		// составим блок. заголовок + тело + подпись
-		testBlockData, err := db.OneRow("SELECT * FROM testblock WHERE status  =  'active'").String()
+		testBlockData, err := d.OneRow("SELECT * FROM testblock WHERE status  =  'active'").String()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(errors.New("prevBlock.HeadHash != prevHeadHash")), 1)
+			d.unlockPrintSleep(utils.ErrInfo(errors.New("prevBlock.HeadHash != prevHeadHash")), 1)
 			continue
 		}
 		log.Debug("testBlockData: %v", testBlockData)
 		if len(testBlockData) == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo(errors.New("null $testblock_data")), 1)
+			d.unlockPrintSleep(utils.ErrInfo(errors.New("null $testblock_data")), 1)
 			continue
 		}
 		// получим транзакции
 		var testBlockDataTx []byte
-		transactionsTestBlock, err := db.GetList("SELECT data FROM transactions_testblock ORDER BY id ASC").String()
+		transactionsTestBlock, err := d.GetList("SELECT data FROM transactions_testblock ORDER BY id ASC").String()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		for _, data := range transactionsTestBlock {
@@ -154,15 +154,15 @@ func TestblockIsReady() {
 
 		// в промежутке межде тем, как блок был сгенерирован и запуском данного скрипта может измениться текущий блок
 		// поэтому нужно проверять подпись блока из тестблока
-		prevBlockHash, err := db.Single("SELECT hash FROM info_block").Bytes()
+		prevBlockHash, err := d.Single("SELECT hash FROM info_block").Bytes()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		prevBlockHash = utils.BinToHex(prevBlockHash)
-		nodePublicKey, err := db.GetNodePublicKey(utils.StrToInt64(testBlockData["user_id"]))
+		nodePublicKey, err := d.GetNodePublicKey(utils.StrToInt64(testBlockData["user_id"]))
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		forSign := fmt.Sprintf("0,%v,%s,%v,%v,%v,%s", testBlockData["block_id"], prevBlockHash, testBlockData["time"], testBlockData["user_id"], testBlockData["level"],utils.BinToHex([]byte(testBlockData["mrkl_root"])))
@@ -170,18 +170,18 @@ func TestblockIsReady() {
 		log.Debug("signature %x", testBlockData["signature"])
 
 		p := new(dcparser.Parser)
-		p.DCDB = db
+		p.DCDB = d.DCDB
 		// проверяем подпись
 		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true);
 		if err != nil {
 			log.Error("incorrect signature %v")
 			p.RollbackTransactionsTestblock(true)
-			err = db.ExecSql("DELETE FROM testblock")
+			err = d.ExecSql("DELETE FROM testblock")
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		// БАГ
@@ -190,15 +190,15 @@ func TestblockIsReady() {
 
 			err = p.RollbackTransactionsTestblock(true)
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			err = db.ExecSql("DELETE FROM testblock")
+			err = d.ExecSql("DELETE FROM testblock")
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
@@ -226,26 +226,26 @@ func TestblockIsReady() {
 		p.BinaryData = block
 		err = p.ParseDataFront()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
 		// и можно удалять данные о тестблоке, т.к. они перешел в нормальный блок
-		err = db.ExecSql("DELETE FROM transactions_testblock")
+		err = d.ExecSql("DELETE FROM transactions_testblock")
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		err = db.ExecSql("DELETE FROM testblock")
+		err = d.ExecSql("DELETE FROM testblock")
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
 		// между testblock_generator и testbock_is_ready
 		p.RollbackTransactionsTestblock(false)
 
-		db.DbUnlock()
+		d.dbUnlock()
 
 		log.Info("%v", "Happy end")
 

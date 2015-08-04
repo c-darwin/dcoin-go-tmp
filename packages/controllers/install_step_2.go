@@ -4,6 +4,7 @@ import (
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"fmt"
 )
 
 type installStep2Struct struct {
@@ -67,14 +68,10 @@ func (c *Controller) InstallStep2() (string, error) {
 	}
 
 	configIni, err = confIni.GetSection("default")
-	c.DCDB, err = utils.NewDbConnect(configIni)
-	if err != nil {
-		return "", err
-	} else {
-		defer c.DCDB.Close()
+	c.DCDB = utils.DB
+	if c.DCDB == nil {
+		return "", fmt.Errorf("utils.DB == nil")
 	}
-	//fmt.Println("c.DCDB", c.DCDB)
-
 
 	schema_ := &schema.SchemaStruct{}
 	schema_.DCDB = c.DCDB

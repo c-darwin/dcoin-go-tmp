@@ -15,13 +15,13 @@ import (
 func PctGenerator() {
 
 	const GoroutineName = "PctGenerator"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -33,51 +33,51 @@ func PctGenerator() {
 			break BEGIN
 		}
 
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
-		blockId, err := db.GetBlockId()
+		blockId, err := d.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := db.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock();
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		variables, err := db.GetAllVariables()
+		variables, err := d.GetAllVariables()
 		curTime := utils.Time()
 
 		// проверим, прошло ли 2 недели с момента последнего обновления pct
-		pctTime, err := db.Single("SELECT max(time) FROM pct").Int64()
+		pctTime, err := d.Single("SELECT max(time) FROM pct").Int64()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if curTime - pctTime > variables.Int64["new_pct_period"] {
 
 			// берем все голоса miner_pct
 			pctVotes := make(map[int64]map[string]map[string]int64)
-			rows, err := db.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_miner_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
+			rows, err := d.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_miner_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1) 			
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -86,7 +86,7 @@ func PctGenerator() {
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
 				if err!= nil {
-					db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				log.Info("%v", "newpctcurrency_id", currency_id, "pct", pct, "votes", votes)
@@ -100,9 +100,9 @@ func PctGenerator() {
 			}
 	
 			// берем все голоса user_pct
-			rows, err = db.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
+			rows, err = d.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -111,7 +111,7 @@ func PctGenerator() {
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
 				if err!= nil {
-					db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				log.Info("%v", "currency_id", currency_id, "pct", pct, "votes", votes)
@@ -177,9 +177,9 @@ func PctGenerator() {
 				level := refLevels[i]
 				var votesReferral []map[int64]int64
 	        	// берем все голоса
-				rows, err := db.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+" ORDER BY "+level+" ASC ")
+				rows, err := d.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+" ORDER BY "+level+" ASC ")
 				if err != nil {
-					db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				defer rows.Close()
@@ -187,7 +187,7 @@ func PctGenerator() {
 					var level_, votes int64
 					err = rows.Scan(&level_, &votes)
 					if err!= nil {
-						db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 					votesReferral = append(votesReferral, map[int64]int64{level_:votes})
@@ -196,15 +196,15 @@ func PctGenerator() {
 			}
 			jsonData, err := json.Marshal(newPct_)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
-			_, myUserId, _, _, _, _, err := db.TestBlock();
+			_, myUserId, _, _, _, _, err := d.TestBlock();
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewPct"), curTime, myUserId, jsonData)
-			binSign, err := db.GetBinSign(forSign, myUserId)
+			binSign, err := d.GetBinSign(forSign, myUserId)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 			data := utils.DecToBin(utils.TypeInt("NewPct"), 1)
@@ -213,9 +213,9 @@ func PctGenerator() {
 			data = append(data, utils.EncodeLengthPlusData(jsonData)...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
-			err = db.InsertReplaceTxInQueue(data)
+			err = d.InsertReplaceTxInQueue(data)
 			if err!= nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
@@ -224,14 +224,14 @@ func PctGenerator() {
 			// а если придет другой блок и станет verified=0, то эта тр-ия просто удалится.
 
 			p := new(dcparser.Parser)
-			p.DCDB = db
+			p.DCDB = d.DCDB
 			err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 		}
-		db.DbUnlock()
+		d.dbUnlock()
 		for i:=0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла

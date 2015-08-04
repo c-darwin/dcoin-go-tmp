@@ -15,13 +15,13 @@ import (
 func Disseminator() {
 
 	GoroutineName := "Disseminator"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -35,16 +35,16 @@ func Disseminator() {
 
 		var hosts []map[string]string
 		var nodeData map[string]string
-		nodeConfig, err := db.GetNodeConfig()
+		nodeConfig, err := d.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) == 0 {
 			// обычный режим
-			hosts, err = db.GetAll(`
+			hosts, err = d.GetAll(`
 					SELECT miners_data.user_id, miners_data.tcp_host as host, node_public_key
 					FROM nodes_connection
 					LEFT JOIN miners_data ON nodes_connection.user_id = miners_data.user_id
 					`, -1)
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue
 			}
 			if len(hosts) == 0 {
@@ -53,29 +53,29 @@ func Disseminator() {
 			}
 		} else {
 			// защищенный режим
-			nodeData, err = db.OneRow("SELECT node_public_key, tcp_host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
+			nodeData, err = d.OneRow("SELECT node_public_key, tcp_host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue
 			}
 			hosts = append(hosts, map[string]string{"host":nodeConfig["local_gate_ip"], "node_public_key":nodeData["node_public_key"], "user_id":nodeConfig["static_node_user_id"]})
 		}
 
-		myUsersIds, err := db.GetMyUsersIds(false, false)
-		myMinersIds, err := db.GetMyMinersIds(myUsersIds)
+		myUsersIds, err := d.GetMyUsersIds(false, false)
+		myMinersIds, err := d.GetMyMinersIds(myUsersIds)
 
 		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться
 		// т.к. при некорректном нодовском ключе придет зашифрованый запрос на отдачу данных, а мы его не сможем расшифровать т.к. ключ у нас неверный
 		var changeNodeKey int64
 		if len(myUsersIds) > 0 {
-			changeNodeKey, err = db.Single(`
+			changeNodeKey, err = d.Single(`
 				SELECT count(*)
 				FROM transactions
 				WHERE type = ? AND
 							 user_id IN (`+strings.Join(utils.SliceInt64ToString(myUsersIds), ",")+`)
 				`, utils.TypeInt("ChangeNodeKey")).Int64()
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 		}
@@ -90,22 +90,22 @@ func Disseminator() {
 			// определим, от кого будем слать
 			r := utils.RandInt(0, len(myMinersIds))
 			myMinerId := myMinersIds[r]
-			myUserId, err := db.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
+			myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 
 			// возьмем хэш текущего блока и номер блока
 			// для теста ролбеков отключим на время
-			data, err := db.OneRow("SELECT block_id, hash, head_hash FROM info_block WHERE sent  =  0").Bytes()
+			data, err := d.OneRow("SELECT block_id, hash, head_hash FROM info_block WHERE sent  =  0").Bytes()
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
-			err = db.ExecSql("UPDATE info_block SET sent = 1")
+			err = d.ExecSql("UPDATE info_block SET sent = 1")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 
@@ -120,9 +120,9 @@ func Disseminator() {
 				toBeSent = append(toBeSent, utils.DecToBin(utils.BytesToInt64(data["block_id"]), 3)...)
 				toBeSent = append(toBeSent, data["hash"]...)
 				toBeSent = append(toBeSent, data["head_hash"]...)
-				err = db.ExecSql("UPDATE info_block SET sent = 1")
+				err = d.ExecSql("UPDATE info_block SET sent = 1")
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 			} else { // тр-ии без блока
@@ -130,22 +130,22 @@ func Disseminator() {
 			}
 
 			// возьмем хэши тр-ий
-			transactions, err := db.GetAll("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0", -1)
+			transactions, err := d.GetAll("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0", -1)
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 			if len(transactions) == 0 {
-				db.PrintSleep("len(transactions) == 0", 1)
+				d.PrintSleep("len(transactions) == 0", 1)
 				continue BEGIN
 			}
 			for _, data := range transactions {
 				hexHash := utils.BinToHex([]byte(data["hash"]))
 				toBeSent = append(toBeSent, utils.DecToBin(utils.StrToInt64(data["high_rate"]), 1)...)
 				toBeSent = append(toBeSent, []byte(data["hash"])...)
-				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hexHash)
+				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hexHash)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 			}
@@ -153,7 +153,7 @@ func Disseminator() {
 			// отправляем блок и хэши тр-ий, если есть что отправлять
 			if len(toBeSent) > 0 {
 				for _, host := range hosts {
-					go DisseminatorType1(host["host"], utils.StrToInt64(host["user_id"]), host["node_public_key"], db, toBeSent, dataType)
+					go d.DisseminatorType1(host["host"], utils.StrToInt64(host["user_id"]), host["node_public_key"],toBeSent, dataType)
 				}
 			}
 		} else {
@@ -171,9 +171,9 @@ func Disseminator() {
 
 			var toBeSent []byte // сюда пишем все тр-ии, которые будем слать другим нодам
 			// возьмем хэши и сами тр-ии
-			rows, err := db.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
+			rows, err := d.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -181,14 +181,14 @@ func Disseminator() {
 				var hash, data []byte
 				err = rows.Scan(&hash, &data)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				log.Debug("hash %x", hash)
 				hashHex := utils.BinToHex(hash)
-				err = db.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
+				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				toBeSent = append(toBeSent, data...)
@@ -210,7 +210,7 @@ func Disseminator() {
 						}
 						defer conn.Close()
 
-						randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
+						randTestblockHash, err := d.Single("SELECT head_hash FROM queue_testblock").String()
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -269,7 +269,7 @@ func Disseminator() {
 			}
 		}
 
-		db.DbUnlock()
+		d.dbUnlock()
 
 		utils.Sleep(1)
 
@@ -279,7 +279,7 @@ func Disseminator() {
 
 }
 
-func DisseminatorType1(host string, userId int64, node_public_key string, db *utils.DCDB, toBeSent []byte, dataType int64) {
+func (d *daemon) DisseminatorType1(host string, userId int64, node_public_key string, toBeSent []byte, dataType int64) {
 
 		log.Debug("host %v / userId %v", host, userId)
 
@@ -291,7 +291,7 @@ func DisseminatorType1(host string, userId int64, node_public_key string, db *ut
 		}
 		defer conn.Close()
 
-		randTestblockHash, err := db.Single("SELECT head_hash FROM queue_testblock").String()
+		randTestblockHash, err := d.Single("SELECT head_hash FROM queue_testblock").String()
 		if err != nil {
 			log.Info("%v", utils.ErrInfo(err))
 			return
@@ -366,7 +366,7 @@ func DisseminatorType1(host string, userId int64, node_public_key string, db *ut
 				}
 				txHash = utils.BinToHex(txHash)
 				log.Debug("txHash %s", txHash)
-				tx, err := db.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
+				tx, err := d.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
 				log.Debug("tx %x", tx)
 				if err != nil {
 					log.Info("%v", utils.ErrInfo(err))

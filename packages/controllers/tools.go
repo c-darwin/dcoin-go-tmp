@@ -20,13 +20,10 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dbInit {
-		var err error
-		c.DCDB, err = utils.NewDbConnect(configIni)
-		if err != nil {
-			log.Error("%v", err)
+		c.DCDB = utils.DB
+		if c.DCDB == nil {
+			log.Error("utils.DB == nil")
 			dbInit = false
-		} else {
-			defer c.DCDB.Close()
 		}
 		c.Variables, err = c.GetAllVariables()
 

@@ -23,13 +23,13 @@ import (
 func QueueParserBlocks() {
 
 	const GoroutineName = "QueueParserBlocks"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -41,27 +41,27 @@ func QueueParserBlocks() {
 			break BEGIN
 		}
 
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
-		prevBlockData, err := db.OneRow("SELECT * FROM info_block").String()
+		prevBlockData, err := d.OneRow("SELECT * FROM info_block").String()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		newBlockData, err := db.OneRow("SELECT * FROM queue_blocks").String()
+		newBlockData, err := d.OneRow("SELECT * FROM queue_blocks").String()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if len(newBlockData) == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		newBlockData["head_hash_hex"] = string(utils.BinToHex(newBlockData["head_hash"]))
@@ -69,9 +69,9 @@ func QueueParserBlocks() {
 		newBlockData["hash_hex"] = string(utils.BinToHex(newBlockData["hash"]))
 		prevBlockData["hash_hex"] = string(utils.BinToHex(prevBlockData["hash"]))
 
-		variables, err := db.GetAllVariables()
+		variables, err := d.GetAllVariables()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
@@ -81,15 +81,15 @@ func QueueParserBlocks() {
 
 		// проверим, укладывается ли блок в лимит rollback_blocks_1
 		if utils.StrToInt64(newBlockData["block_id"]) > utils.StrToInt64(prevBlockData["block_id"]) + variables.Int64["rollback_blocks_1"] {
-			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-			db.UnlockPrintSleep(utils.ErrInfo("rollback_blocks_1"), 1)
+			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+			d.unlockPrintSleep(utils.ErrInfo("rollback_blocks_1"), 1)
 			continue BEGIN
 		}
 
 		// проверим не старый ли блок в очереди
 		if utils.StrToInt64(newBlockData["block_id"]) < utils.StrToInt64(prevBlockData["block_id"]) {
-			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-			db.UnlockPrintSleep(utils.ErrInfo("old block"), 1)
+			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+			d.unlockPrintSleep(utils.ErrInfo("old block"), 1)
 			continue BEGIN
 		}
 
@@ -112,14 +112,14 @@ func QueueParserBlocks() {
 					hash2.SetString(string(prevBlockData["hash_hex"]), 16)
 					// newBlockData["head_hash_hex"]) >= prevBlockData["head_hash_hex"]
 					if hash1.Cmp(hash2) >= 0 {
-						db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-						db.UnlockPrintSleep(utils.ErrInfo("newBlockData hash_hex == prevBlockData hash_hex"), 1)
+						d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+						d.unlockPrintSleep(utils.ErrInfo("newBlockData hash_hex == prevBlockData hash_hex"), 1)
 						continue BEGIN
 					}
 				}
 			} else {
-				db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-				db.UnlockPrintSleep(utils.ErrInfo("newBlockData head_hash_hex >  prevBlockData head_hash_hex"), 1)
+				d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+				d.unlockPrintSleep(utils.ErrInfo("newBlockData head_hash_hex >  prevBlockData head_hash_hex"), 1)
 				continue BEGIN
 			}
 		}
@@ -127,10 +127,10 @@ func QueueParserBlocks() {
 		/*
 		 * Загрузка блоков для детальной проверки
 		 */
-		host, err := db.Single("SELECT tcp_host FROM miners_data WHERE user_id  =  ?", newBlockData["user_id"]).String()
+		host, err := d.Single("SELECT tcp_host FROM miners_data WHERE user_id  =  ?", newBlockData["user_id"]).String()
 		if err != nil {
-			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		blockId := utils.StrToInt64(newBlockData["block_id"])
@@ -139,13 +139,13 @@ func QueueParserBlocks() {
 		//func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName, getBlockScriptName, addNodeHost string) error {
 		err = p.GetBlocks(blockId, host, utils.StrToInt64(newBlockData["user_id"]), "rollback_blocks_1", GoroutineName, 7, "")
 		if err != nil {
-			db.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-			db.NodesBan(utils.StrToInt64(newBlockData["user_id"]), fmt.Sprintf("%v", err))
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
+			d.NodesBan(utils.StrToInt64(newBlockData["user_id"]), fmt.Sprintf("%v", err))
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
-		db.DbUnlock()
+		d.dbUnlock()
 		for i:=0; i < 10; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла

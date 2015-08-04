@@ -26,13 +26,13 @@ func Connector() {
 	}
 
 	GoroutineName := "Connector"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -44,7 +44,7 @@ func Connector() {
 			break BEGIN
 		}
 
-		nodeConfig, err := db.GetNodeConfig()
+		nodeConfig, err := d.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) > 0 {
 			utils.Sleep(5)
 			continue
@@ -62,33 +62,33 @@ func Connector() {
 			maxHosts = utils.StrToInt(nodeConfig["out_connections"])
 		}
 		log.Info("%v", maxHosts)
-		collective, err := db.GetCommunityUsers()
+		collective, err := d.GetCommunityUsers()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue
 		}
 		if len(collective) == 0 {
-			myUserId, err := db.GetMyUserId("")
+			myUserId, err := d.GetMyUserId("")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue
 			}
 			collective = append(collective, myUserId)
 		}
 		// в сингл-моде будет только $my_miners_ids[0]
-		myMinersIds, err := db.GetMyMinersIds(collective);
+		myMinersIds, err := d.GetMyMinersIds(collective);
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue
 		}
 		log.Info("%v", myMinersIds)
-		nodesBan, err := db.GetMap(`
+		nodesBan, err := d.GetMap(`
 				SELECT tcp_host, ban_start
 				FROM nodes_ban
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_ban.user_id
 				`, "tcp_host", "ban_start")
 		log.Info("%v", nodesBan)
-		nodesConnections, err := db.GetAll(`
+		nodesConnections, err := d.GetAll(`
 				SELECT nodes_connection.host,
 							 nodes_connection.user_id,
 							 ban_start,
@@ -108,13 +108,13 @@ func Connector() {
 			}
 
 			/*// проверим соотвествие хоста и user_id
-			ok, err := db.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND tcp_host  =  ?", data["user_id"], data["host"]).Int64()
+			ok, err := d.Single("SELECT user_id FROM miners_data WHERE user_id  = ? AND tcp_host  =  ?", data["user_id"], data["host"]).Int64()
 			if err != nil {
 				utils.Sleep(1)
 				continue BEGIN
 			}
 			if ok == 0 {
-				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
+				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
 				if err != nil {
 					utils.Sleep(1)
 					continue BEGIN
@@ -124,7 +124,7 @@ func Connector() {
 			// если нода забанена недавно
 			if utils.StrToInt64(data["ban_start"]) > utils.Time() - consts.NODE_BAN_TIME {
 				delMiners = append(delMiners, data["miner_id"])
-				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
+				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
 				if err != nil {
 					utils.Sleep(1)
 					continue BEGIN
@@ -162,9 +162,9 @@ func Connector() {
 			result := <-ch
 			if result.answer == 0 {
 				log.Info("delete %v", result.userId)
-				err = db.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
+				err = d.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 				}
 				for j, data := range hosts {
 					for _, uid := range data {
@@ -182,9 +182,9 @@ func Connector() {
 		// добьем недостающие хосты до $max_hosts
 		if len(hosts) < maxHosts {
 			need := maxHosts - len(hosts)
-			max, err := db.Single("SELECT max(miner_id) FROM miners").Int()
+			max, err := d.Single("SELECT max(miner_id) FROM miners").Int()
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 			i0:=0
@@ -215,7 +215,7 @@ func Connector() {
 					ids+=utils.IntToStr(id)+","
 				}
 				ids = ids[:len(ids)-1]
-				minersHosts, err := db.GetMap(`
+				minersHosts, err := d.GetMap(`
 						SELECT tcp_host, user_id
 						FROM miners_data
 						WHERE miner_id IN (`+ids+`)`, "tcp_host", "user_id")
@@ -226,15 +226,15 @@ func Connector() {
 						}
 					}
 					hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
-					err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
+					err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					log.Debug(host)
-					err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+					err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 				}
@@ -246,7 +246,7 @@ func Connector() {
 		if len(hosts) < 10 {
 			hostsData_, err := ioutil.ReadFile(*utils.Dir+"/nodes.inc")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 			hostsData := strings.Split(string(hostsData_), "\n")
@@ -279,15 +279,15 @@ func Connector() {
 					}
 				}
 
-				err = db.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
+				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				log.Debug(host)
-				err = db.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+				err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				nodesInc[host] = userId
@@ -303,7 +303,7 @@ func Connector() {
 			nodesFile = nodesFile[:len(nodesFile)-1]
 			err := ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(nodesFile), 0644)
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 		}

@@ -52,7 +52,7 @@ func go_callback_int(){
 
 var (
 	SigChan chan os.Signal
-	log = logging.MustGetLogger("example")
+	log = logging.MustGetLogger("dcoin")
 	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
 	configIni map[string]string
 	globalSessions *session.Manager
@@ -64,9 +64,8 @@ func init() {
 
 func main() {
 
-
 	// читаем config.ini
-	if _, err := os.Stat(*utils.Dir+"config.ini"); os.IsNotExist(err) {
+	if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
 error_log=1
 log=1
@@ -94,6 +93,15 @@ db_name=`)
 		os.Exit(1)
 	}
 	configIni, err = configIni_.GetSection("default")
+
+	go func() {
+		utils.DB, err = utils.NewDbConnect(configIni)
+		log.Debug("%v", utils.DB)
+		if err != nil {
+			panic(err)
+			os.Exit(1)
+		}
+	}()
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
@@ -125,6 +133,8 @@ db_name=`)
 
 	rand.Seed( time.Now().UTC().UnixNano())
 
+
+	log.Debug("public")
 	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
 		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
@@ -167,13 +177,24 @@ db_name=`)
 			answer := <-daemons.AnswerDaemonCh
 			log.Debug("answer: %v", answer)
 		}
+		utils.Sleep(2)
+		err = utils.DB.Close()
+		utils.Sleep(2)
+		if err != nil {
+			log.Error("%v", err)
+			panic(err)
+		}
 		os.Exit(1)
 	}()
 
-
-	db := utils.DbConnect(configIni)
-	BrowserHttpHost, HandleHttpHost, ListenHttpHost := db.GetHttpHost()
-	log.Error("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
+	db := utils.DB
+	BrowserHttpHost := "http://localhost:8089"
+	HandleHttpHost := ""
+	ListenHttpHost := ":8089"
+	if db != nil {
+		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
+	}
+	log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
 	http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
@@ -206,9 +227,17 @@ db_name=`)
 		}
 	}()
 
-
+	fmt.Println("tcp")
 	log.Debug("tcp")
 	go func() {
+		if db == nil {
+			for {
+				db = utils.DB
+				if db!=nil {
+					break
+				}
+			}
+		}
 		tcpHost := db.GetTcpHost()
 		log.Debug("tcpHost: %v", tcpHost)
 		// включаем листинг TCP-сервером и обработку входящих запросов

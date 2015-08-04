@@ -14,14 +14,14 @@ import (
  */
 func TestblockDisseminator() {
 
-	GoroutineName := "TestblockDisseminator"
-
-	db := DbConnect()
-	if db == nil {
+	const GoroutineName = "TestblockDisseminator"
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -33,15 +33,15 @@ func TestblockDisseminator() {
 			break BEGIN
 		}
 
-		nodeConfig, err := db.GetNodeConfig()
+		nodeConfig, err := d.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) != 0 {
-			db.PrintSleep("local_gate_ip", 1)
+			d.PrintSleep("local_gate_ip", 1)
 			continue
 		}
 
-		_, _, _, _, level, levelsRange, err := db.TestBlock()
+		_, _, _, _, level, levelsRange, err := d.TestBlock()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue
 		}
 		log.Debug("level: %v", level)
@@ -49,30 +49,30 @@ func TestblockDisseminator() {
 		// получим id майнеров, которые на нашем уровне
 		nodesIds := utils.GetOurLevelNodes(level, levelsRange)
 		if len(nodesIds) == 0 {
-			db.PrintSleep("len(nodesIds) == 0", 1)
+			d.PrintSleep("len(nodesIds) == 0", 1)
 			continue
 		}
 		log.Debug("nodesIds: %v", nodesIds)
 
 		// получим хосты майнеров, которые на нашем уровне
-		hosts, err := db.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
+		hosts, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue
 		}
 		log.Debug("hosts: %v", hosts)
 
 		// шлем block_id, user_id, mrkl_root, signature
-		data, err := db.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active' AND sent=0").String()
+		data, err := d.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active' AND sent=0").String()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue
 		}
 		if len(data) > 0 {
 
-			err = db.ExecSql("UPDATE testblock SET sent=1")
+			err = d.ExecSql("UPDATE testblock SET sent=1")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue
 			}
 
@@ -127,7 +127,7 @@ func TestblockDisseminator() {
 					// и если данных менее 10мб, то получаем их
 					if dataSize < 10485760 {
 
-						data, err := db.OneRow("SELECT * FROM testblock").String()
+						data, err := d.OneRow("SELECT * FROM testblock").String()
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -165,7 +165,7 @@ func TestblockDisseminator() {
 						}
 						// сами тр-ии
 						var transactions []byte
-						transactions_testblock, err := db.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
+						transactions_testblock, err := d.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return
@@ -177,7 +177,7 @@ func TestblockDisseminator() {
 						responseBinaryData = append(responseBinaryData, utils.EncodeLengthPlusData(transactions)...)
 
 						// порядок тр-ий
-						transactions_testblock, err = db.GetList(`SELECT hash FROM transactions_testblock ORDER BY id ASC`).String()
+						transactions_testblock, err = d.GetList(`SELECT hash FROM transactions_testblock ORDER BY id ASC`).String()
 						if err != nil {
 							log.Info("%v", utils.ErrInfo(err))
 							return

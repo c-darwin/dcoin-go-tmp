@@ -22,13 +22,13 @@ import (
 func Shop() {
 
 	const GoroutineName = "Shop"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -40,21 +40,21 @@ func Shop() {
 			break BEGIN
 		}
 
-		myBlockId, err := db.GetMyBlockId()
-		blockId, err := db.GetBlockId()
+		myBlockId, err := d.GetMyBlockId()
+		blockId, err := d.GetBlockId()
 		if myBlockId > blockId {
-			db.PrintSleep(utils.ErrInfo(err), 5)
+			d.PrintSleep(utils.ErrInfo(err), 5)
 			continue
 		}
-		currencyList, err := db.GetCurrencyList(false)
+		currencyList, err := d.GetCurrencyList(false)
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 5)
+			d.PrintSleep(utils.ErrInfo(err), 5)
 			continue
 		}
 		// нужно знать текущий блок, который есть у большинства нодов
-		blockId, err = db.GetConfirmedBlockId()
+		blockId, err = d.GetConfirmedBlockId()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 5)
+			d.PrintSleep(utils.ErrInfo(err), 5)
 			continue
 		}
 
@@ -62,41 +62,41 @@ func Shop() {
 		confirmations := int64(5)
 
 		// берем всех юзеров по порядку
-		community, err := db.GetCommunityUsers()
+		community, err := d.GetCommunityUsers()
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 5)
+			d.PrintSleep(utils.ErrInfo(err), 5)
 			continue
 		}
 		for _, userId := range community {
 			privateKey := ""
 			myPrefix := utils.Int64ToStr(userId)+"_"
-			allTables, err := db.GetAllTables()
+			allTables, err := d.GetAllTables()
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 5)
+				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
 			}
 			if !utils.InSliceString(myPrefix+"my_keys", allTables) {
 				continue
 			}
 			// проверим, майнер ли
-			minerId, err := db.GetMyMinerId(userId)
+			minerId, err := d.GetMyMinerId(userId)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 5)
+				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
 			}
 			if minerId > 0 {
 				// наш приватный ключ нода, которым будем расшифровывать комменты
-				privateKey, err = db.GetNodePrivateKey(myPrefix)
+				privateKey, err = d.GetNodePrivateKey(myPrefix)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 5)
+					d.PrintSleep(utils.ErrInfo(err), 5)
 					continue BEGIN
 				}
 			}
 			// возможно, что комменты будут зашифрованы юзерским ключем
 			if len(privateKey) == 0 {
-				privateKey, err = db.GetMyPrivateKey(myPrefix)
+				privateKey, err = d.GetMyPrivateKey(myPrefix)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 5)
+					d.PrintSleep(utils.ErrInfo(err), 5)
 					continue BEGIN
 				}
 			}
@@ -104,15 +104,15 @@ func Shop() {
 			if len(privateKey) == 0 {
 				continue
 			}
-			myData, err := db.OneRow("SELECT shop_secret_key, shop_callback_url FROM "+myPrefix+"my_table").String()
+			myData, err := d.OneRow("SELECT shop_secret_key, shop_callback_url FROM "+myPrefix+"my_table").String()
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 5)
+				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
 			}
 
 			// Получаем инфу о входящих переводах и начисляем их на счета юзеров
-			dq := db.GetQuotes();
-			rows, err := db.Query(`
+			dq := d.GetQuotes();
+			rows, err := d.Query(`
 					SELECT id, block_id, type_id, currency_id, amount, to_user_id, comment_status, comment
 					FROM `+dq+myPrefix+`my_dc_transactions`+dq+`
 					WHERE type = 'from_user' AND
@@ -122,7 +122,7 @@ func Shop() {
 					ORDER BY id DESC
 					`, blockId - confirmations)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 5)
+				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -132,23 +132,23 @@ func Shop() {
 				var amount float64
 				err = rows.Scan(&id, &block_id, &type_id, &currency_id, &amount, &to_user_id, &comment_status, &comment)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 5)
+					d.PrintSleep(utils.ErrInfo(err), 5)
 					continue BEGIN
 				}
 				if len(myData["shop_callback_url"]) == 0 {
 					// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
-					err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
+					err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 					if err != nil {
-						db.PrintSleep(utils.ErrInfo(err), 5)
+						d.PrintSleep(utils.ErrInfo(err), 5)
 						continue BEGIN
 					}
 					continue
 				}
 
 				// вначале нужно проверить, точно ли есть такой перевод в блоке
-				binaryData, err := db.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
+				binaryData, err := d.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 5)
+					d.PrintSleep(utils.ErrInfo(err), 5)
 					continue BEGIN
 				}
 				p := new(dcparser.Parser)
@@ -169,24 +169,24 @@ func Shop() {
 
 							block, _ := pem.Decode([]byte(privateKey));
 							if block == nil || block.Type != "RSA PRIVATE KEY" {
-								db.PrintSleep(utils.ErrInfo(err), 5)
+								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
 							private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
 							if err != nil {
-								db.PrintSleep(utils.ErrInfo(err), 5)
+								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
 							decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
 							if err != nil {
-								db.PrintSleep(utils.ErrInfo(err), 5)
+								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
 							decryptedComment = string(decryptedComment_)
 							// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
-							err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
+							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
 							if err != nil {
-								db.PrintSleep(utils.ErrInfo(err), 5)
+								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
 						} else {
@@ -196,9 +196,9 @@ func Shop() {
 						// возможно, что чуть раньше было reduction, а это значит, что все тр-ии,
 						// которые мы ещё не обработали и которые были До блока с reduction нужно принимать с учетом reduction
 						// т.к. средства на нашем счете уже урезались, а  вот те, что после reduction - остались в том виде, в котором пришли
-						lastReduction, err := db.OneRow("SELECT block_id, pct FROM reduction WHERE currency_id  = ? ORDER BY block_id", currency_id).Int64()
+						lastReduction, err := d.OneRow("SELECT block_id, pct FROM reduction WHERE currency_id  = ? ORDER BY block_id", currency_id).Int64()
 						if err != nil {
-							db.PrintSleep(utils.ErrInfo(err), 5)
+							d.PrintSleep(utils.ErrInfo(err), 5)
 							continue BEGIN
 						}
 						if blockId <= lastReduction["block_id"] {
@@ -229,7 +229,7 @@ func Shop() {
 						client := &http.Client{}
 						req, err := http.NewRequest("POST", myData["shop_callback_url"], bytes.NewBufferString(data.Encode()))
 						if err != nil {
-							db.PrintSleep(utils.ErrInfo(err), 5)
+							d.PrintSleep(utils.ErrInfo(err), 5)
 							continue BEGIN
 						}
 						req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -237,15 +237,15 @@ func Shop() {
 
 						resp, err := client.Do(req)
 						if err != nil {
-							db.PrintSleep(utils.ErrInfo(err), 5)
+							d.PrintSleep(utils.ErrInfo(err), 5)
 							continue BEGIN
 						}
 						//contents, _ := ioutil.ReadAll(resp.Body)
 						if resp.StatusCode == 200 {
 							// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
-							err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
+							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 							if err != nil {
-								db.PrintSleep(utils.ErrInfo(err), 5)
+								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
 						}

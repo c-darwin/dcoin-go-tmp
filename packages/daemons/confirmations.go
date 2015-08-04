@@ -17,13 +17,13 @@ import (
 func Confirmations() {
 
 	const GoroutineName = "Confirmations"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -34,18 +34,18 @@ func Confirmations() {
 		if CheckDaemonsRestart() {
 			break BEGIN
 		}
-		blockId, err := db.GetBlockId()
-		hash, err := db.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
+		blockId, err := d.GetBlockId()
+		hash, err := d.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
 		if err != nil {
 			log.Info("%v", err)
 		}
 		log.Info("%v", hash)
 
 		var hosts []map[string]string
-		if db.ConfigIni["test_mode"] == "1" {
+		if d.ConfigIni["test_mode"] == "1" {
 			hosts = []map[string]string {{"tcp_host":"localhost:8088", "user_id":"1"}}
 		} else {
-			maxMinerId, err := db.Single("SELECT max(miner_id) FROM miners_data").Int64()
+			maxMinerId, err := d.Single("SELECT max(miner_id) FROM miners_data").Int64()
 			if err != nil {
 				log.Info("%v", err)
 			}
@@ -53,12 +53,12 @@ func Confirmations() {
 				maxMinerId = 1
 			}
 			q := ""
-			if db.ConfigIni["db_type"] == "postgresql" {
+			if d.ConfigIni["db_type"] == "postgresql" {
 				q = "SELECT DISTINCT ON (tcp_host) tcp_host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
 			} else {
 				q = "SELECT tcp_host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY tcp_host"
 			}
-			hosts, err = db.GetAll(q, consts.COUNT_CONFIRMED_NODES)
+			hosts, err = d.GetAll(q, consts.COUNT_CONFIRMED_NODES)
 			if err != nil {
 				log.Info("%v", err)
 			}
@@ -86,16 +86,16 @@ func Confirmations() {
 			}
 			log.Info("%v", "CHanswer", answer)
 		}
-		exists, err := db.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
+		exists, err := d.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
 		if exists > 0 {
 			log.Debug("UPDATE confirmations SET good = %v, bad = %v, time = %v WHERE block_id = %v", st1, st0, time.Now().Unix(), blockId)
-			err = db.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
+			err = d.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
 			if err != nil {
 				log.Info("%v", err)
 			}
 		} else {
 			log.Debug("INSERT INTO confirmations ( block_id, good, bad, time) VALUES ( %v, %v, %v, %v )", blockId, st1, st0, time.Now().Unix())
-			err = db.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
+			err = d.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
 			if err != nil {
 				log.Info("%v", err)
 			}

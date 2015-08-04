@@ -9,13 +9,13 @@ import (
 func Notifications() {
 
 	const GoroutineName = "Notifications"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -27,48 +27,48 @@ func Notifications() {
 			break BEGIN
 		}
 		// валюты
-		currencyList, err := db.GetCurrencyList(false)
+		currencyList, err := d.GetCurrencyList(false)
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		notificationsArray := make(map[string]map[int64]map[string]string)
 		userEmailSmsData := make(map[int64]map[string]string)
 
-		myUsersIds, err := db.GetCommunityUsers()
+		myUsersIds, err := d.GetCommunityUsers()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		var community bool
 		if len(myUsersIds) == 0 {
 			community = false
-			myUserId, err := db.GetMyUserId("")
+			myUserId, err := d.GetMyUserId("")
 			if err != nil {
-				db.PrintSleep(err, 1)
+				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
 			myUsersIds = append(myUsersIds, myUserId)
 		} else {
 			community = true
 		}
-		/*myPrefix, err:= db.GetMyPrefix()
+		/*myPrefix, err:= d.GetMyPrefix()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}*/
-		myBlockId, err:= db.GetMyBlockId()
+		myBlockId, err:= d.GetMyBlockId()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
-		blockId, err:= db.GetBlockId()
+		blockId, err:= d.GetBlockId()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		if myBlockId > blockId {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		if len(myUsersIds) > 0 {
@@ -77,18 +77,18 @@ func Notifications() {
 				if community {
 					myPrefix = utils.Int64ToStr(myUsersIds[i])+"_";
 				}
-				myData, err := db.OneRow("SELECT * FROM "+myPrefix+"my_table").String()
+				myData, err := d.OneRow("SELECT * FROM "+myPrefix+"my_table").String()
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				// на пуле шлем уведомления только майнерам
 				if community && myData["miner_id"] == "0" {
 					continue
 				}
-				myNotifications, err := db.GetAll("SELECT * FROM "+myPrefix+"my_notifications", -1)
+				myNotifications, err := d.GetAll("SELECT * FROM "+myPrefix+"my_notifications", -1)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				for _, data := range myNotifications {
@@ -99,42 +99,42 @@ func Notifications() {
 			}
 		}
 
-		poolAdminUserId, err := db.GetPoolAdminUserId()
+		poolAdminUserId, err := d.GetPoolAdminUserId()
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 		subj := "DCoin notifications"
 		for name, notificationInfo := range notificationsArray {
 			switch name {
 			case "admin_messages":
-				data, err := db.OneRow("SELECT id, message FROM alert_messages WHERE notification  =  0").String()
+				data, err := d.OneRow("SELECT id, message FROM alert_messages WHERE notification  =  0").String()
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				if len(data) > 0 {
-					err = db.ExecSql("UPDATE alert_messages SET notification = 1 WHERE id = ?", data["id"])
+					err = d.ExecSql("UPDATE alert_messages SET notification = 1 WHERE id = ?", data["id"])
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if myBlockId > blockId {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					for userId, emailSms := range notificationInfo {
 						if emailSms["email"] == "1" {
-							err = db.SendMail("From Admin: "+data["message"], subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail("From Admin: "+data["message"], subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if emailSms["sms"] == "1" {
 							_, err = utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], userEmailSmsData[userId]["text"])
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
@@ -147,26 +147,26 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					data, err := db.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", myPrefix, userId).String()
+					data, err := d.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", myPrefix, userId).String()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(data) > 0 {
 						text := `You"ve got the request for `+data["amount"]+` `+currencyList[utils.StrToInt64(data["currencyId"])]+`. It has to be repaid within the next 48 hours.`
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_cash_requests SET notification = 1 WHERE id = ?", data["id"])
+						err = d.ExecSql("UPDATE "+myPrefix+"my_cash_requests SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -179,26 +179,26 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					status, err := db.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_status = 0").String()
+					status, err := d.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_status = 0").String()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(status) > 0 {
 						text := `New status: `+status
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_table SET notification_status = 1")
+						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_status = 1")
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -212,7 +212,7 @@ func Notifications() {
 					}
 					userId := myUsersIds[i]
 					// откатываем наши блоки до начала вилки
-					myDcTransactions, err := db.GetAll(`
+					myDcTransactions, err := d.GetAll(`
 							SELECT  id,
 							               amount,
 										 currency_id,
@@ -223,7 +223,7 @@ func Notifications() {
 									 	notification = 0 AND
 									 	status = 'approved'` ,- 1, userId)
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					for _, data := range myDcTransactions {
@@ -233,18 +233,18 @@ func Notifications() {
 						}
 						text := `You've got `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]+` `+comment
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
+						err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -258,7 +258,7 @@ func Notifications() {
 					}
 					userId := myUsersIds[i]
 					// откатываем наши блоки до начала вилки
-					myDcTransactions, err := db.GetAll(`
+					myDcTransactions, err := d.GetAll(`
 							SELECT id,
 									    amount,
 									    currency_id
@@ -267,24 +267,24 @@ func Notifications() {
 										 notification = 0 AND
 										 status = 'approved'`, -1, userId)
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					for _, data := range myDcTransactions {
 						text := `Debiting `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
+						err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -297,26 +297,26 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					data, err := db.OneRow("SELECT id FROM "+myPrefix+"my_keys WHERE notification = 0 AND status = 'approved'").String()
+					data, err := d.OneRow("SELECT id FROM "+myPrefix+"my_keys WHERE notification = 0 AND status = 'approved'").String()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(data) > 0 {
 						text := `Update primary key`
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_keys SET notification = 1 WHERE id = ?", data["id"])
+						err = d.ExecSql("UPDATE "+myPrefix+"my_keys SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -329,26 +329,26 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					myNewEmail, err := db.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_email  =  0").String()
+					myNewEmail, err := d.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_email  =  0").String()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(myNewEmail) > 0 {
 						text := `New email: `+myNewEmail
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_table SET notification_email = 1")
+						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_email = 1")
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -361,32 +361,32 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					smsHttpGetRequest, err := db.Single("SELECT sms_http_get_request FROM "+myPrefix+"my_table WHERE notification_sms_http_get_request  =  0").String()
+					smsHttpGetRequest, err := d.Single("SELECT sms_http_get_request FROM "+myPrefix+"my_table WHERE notification_sms_http_get_request  =  0").String()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(smsHttpGetRequest) > 0 {
 						text := `New sms_http_get_request `+smsHttpGetRequest
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_table SET notification_sms_http_get_request = 1")
+						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_sms_http_get_request = 1")
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
 				}
 			case "voting_results":
-				myDcTransactions, err := db.GetAll(`
+				myDcTransactions, err := d.GetAll(`
 						SELECT  id,
 									 currency_id,
 									 miner,
@@ -395,7 +395,7 @@ func Notifications() {
 						FROM pct
 						WHERE notification = 0`, -1)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				text := ""
@@ -405,29 +405,29 @@ func Notifications() {
 					text += fmt.Sprintf("New pct %v! miner: %v %/block, user: %v %/block", currencyList[utils.StrToInt64(data["currency_id"])], ((math.Pow(1+utils.StrToFloat64(data["miner"]), 120)-1)*100), ((math.Pow(1+utils.StrToFloat64(data["user"]), 120)-1)*100))
 				}
 				if pctUpd {
-					err = db.ExecSql("UPDATE pct SET notification = 1 WHERE notification = 0")
+					err = d.ExecSql("UPDATE pct SET notification = 1 WHERE notification = 0")
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 				}
 				if myBlockId > blockId {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 
 				// шлется что-то не то, потом поправлю, пока отключил
 				if community {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 
 				if len(text) > 0 {
 					for userId, emailSms := range notificationInfo {
 						if emailSms["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
@@ -444,26 +444,26 @@ func Notifications() {
 						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
 					}
 					userId := myUsersIds[i]
-					lastVoting, err := db.Single("SELECT last_voting FROM "+myPrefix+"my_complex_votes WHERE notification  =  0").Int64()
+					lastVoting, err := d.Single("SELECT last_voting FROM "+myPrefix+"my_complex_votes WHERE notification  =  0").Int64()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if lastVoting > 0 && utils.Time()-lastVoting > 86400*14 {
 						text := "It's 2 weeks from the moment you voted."
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = db.ExecSql("UPDATE "+myPrefix+"my_complex_votes SET notification = 1")
+						err = d.ExecSql("UPDATE "+myPrefix+"my_complex_votes SET notification = 1")
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
@@ -471,35 +471,35 @@ func Notifications() {
 
 			case "new_version":
 
-				newVersion, err := db.Single("SELECT version FROM new_version WHERE notification  =  0 AND alert  =  1").String()
+				newVersion, err := d.Single("SELECT version FROM new_version WHERE notification  =  0 AND alert  =  1").String()
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 
-				err = db.ExecSql("UPDATE new_version SET notification = 1 WHERE version = ?", newVersion)
+				err = d.ExecSql("UPDATE new_version SET notification = 1 WHERE version = ?", newVersion)
 				if err != nil {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 
 				if myBlockId > blockId {
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 
 				// в пуле это лишняя инфа
 				if community{
-					db.PrintSleep(err, 1)
+					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				if len(newVersion) > 0 {
 					for userId, emailSms := range notificationInfo {
 						text := "New version: "+newVersion
 						if emailSms["email"] == "1" {
-							err = db.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}
@@ -517,13 +517,13 @@ func Notifications() {
 					adminUserId = poolAdminUserId
 				} else {
 					// проверим, нода ли мы
-					my_table, err := db.OneRow("SELECT user_id, miner_id FROM my_table").Int64()
+					my_table, err := d.OneRow("SELECT user_id, miner_id FROM my_table").Int64()
 					if err != nil {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if my_table["miner_id"] == 0 {
-						db.PrintSleep(err, 1)
+						d.PrintSleep(err, 1)
 						continue BEGIN
 					} else {
 						adminUserId = my_table["user_id"]
@@ -533,7 +533,7 @@ func Notifications() {
 					if len(myData) > 0 {
 						networkTime, err := utils.GetNetworkTime()
 						if err != nil {
-							db.PrintSleep(err, 1)
+							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 						diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
@@ -542,9 +542,9 @@ func Notifications() {
 							text = "Divergence time "+utils.Int64ToStr(diff)+" sec"
 						}
 						if emailSms["email"] == "1" {
-							err = db.SendMail(text, subj, myData["email"], myData, community, poolAdminUserId)
+							err = d.SendMail(text, subj, myData["email"], myData, community, poolAdminUserId)
 							if err != nil {
-								db.PrintSleep(err, 1)
+								d.PrintSleep(err, 1)
 								continue BEGIN
 							}
 						}

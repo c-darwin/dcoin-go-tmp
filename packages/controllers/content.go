@@ -43,13 +43,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	if dbInit {
 		var err error
-		c.DCDB, err = utils.NewDbConnect(configIni)
-		if err != nil {
-			log.Error("%v", err)
+		//c.DCDB, err = utils.NewDbConnect(configIni)
+		c.DCDB = utils.DB
+		if c.DCDB == nil {
+			log.Error("utils.DB == nil")
 			dbInit = false
-		} else {
-			defer utils.DbClose(c.DCDB)
-			//defer c.DCDB.Close()
 		}
 		if dbInit {
 			// отсутвие таблы выдаст ошибку, значит процесс инсталяции еще не пройден и надо выдать 0-й шаг

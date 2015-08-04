@@ -2332,7 +2332,7 @@ func MerkleTreeRoot(dataArray [][]byte) []byte {
 	log.Debug("result_: %s", result_)
 	return []byte(result_[0])
 }
-
+/*
 func DbConnect(configIni map[string]string) *DCDB {
 	for {
 		db, err := NewDbConnect(configIni)
@@ -2344,7 +2344,7 @@ func DbConnect(configIni map[string]string) *DCDB {
 	}
 	return nil
 }
-
+*/
 func DbClose(c *DCDB) {
 	err := c.Close()
 	if err != nil {

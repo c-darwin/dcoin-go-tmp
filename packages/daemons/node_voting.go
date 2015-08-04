@@ -17,13 +17,13 @@ import (
 func NodeVoting() {
 
 	const GoroutineName = "NodeVoting"
-
-	db := DbConnect()
-	if db == nil {
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -35,17 +35,17 @@ func NodeVoting() {
 			break BEGIN
 		}
 
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
 		// берем данные, которые находятся на голосовании нодов
-		rows, err := db.Query(`
+		rows, err := d.Query(`
 				SELECT miners_data.user_id,
 							 http_host as host,
 							 face_hash,
@@ -63,7 +63,7 @@ func NodeVoting() {
 							 type = 'node_voting'
 				`, utils.Time() - consts.CRON_CHECKED_TIME_SEC)
 		if err != nil {
-			db.PrintSleep(utils.ErrInfo(err), 1)
+			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		defer rows.Close()
@@ -72,7 +72,7 @@ func NodeVoting() {
 			var user_id, host, row_face_hash, row_profile_hash, photo_block_id, photo_max_miner_id, miners_keepers string;
 			err = rows.Scan(&user_id, &host, &row_face_hash, &row_profile_hash, &photo_block_id, &photo_max_miner_id, &miners_keepers, &vote_id, &miner_id)
 			if err != nil {
-				db.PrintSleep(utils.ErrInfo(err), 1)
+				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
@@ -82,8 +82,8 @@ func NodeVoting() {
 				break
 			}
 			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true);
-			myUsersIds, err := db.GetMyUsersIds(true, true)
-			myMinersIds, err := db.GetMyMinersIds(myUsersIds)
+			myUsersIds, err := d.GetMyUsersIds(true, true)
+			myMinersIds, err := d.GetMyMinersIds(myUsersIds)
 
 			// нет ли нас среди тех, кто должен скачать фото к себе и проголосовать
 			var intersectMyMiners []int64
@@ -98,26 +98,26 @@ func NodeVoting() {
 				profilePath := *utils.Dir+"/public/profile_"+user_id+".jpg";
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 1)
+					d.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				facePath := *utils.Dir+"/public/face_"+user_id+".jpg";
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 1)
+					d.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				// хэши скопированных фото
 				profileFile, err := ioutil.ReadFile(profilePath)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 1)
+					d.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				profileHash := string(utils.DSha256(profileFile))
 				log.Info("%v", "profileHash", profileHash)
 				faceFile, err := ioutil.ReadFile(facePath)
 				if err != nil {
-					db.PrintSleep(utils.ErrInfo(err), 1)
+					d.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 				faceHash := string(utils.DSha256(faceFile))
@@ -135,18 +135,18 @@ func NodeVoting() {
 				// проходимся по всем нашим майнерам, если это пул и по одному, если это сингл-мод
 				for _, myMinerId := range intersectMyMiners{
 
-					myUserId, err := db.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
+					myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 					if err != nil {
-						db.PrintSleep(utils.ErrInfo(err), 1)
+						d.PrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 
 					curTime := utils.Time()
 
 					forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("VotesNodeNewMiner"), curTime, myUserId, vote_id, vote)
-					binSign, err := db.GetBinSign(forSign, myUserId)
+					binSign, err := d.GetBinSign(forSign, myUserId)
 					if err!= nil {
-						db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 					data := utils.DecToBin(utils.TypeInt("VotesNodeNewMiner"), 1)
@@ -157,9 +157,9 @@ func NodeVoting() {
 					data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
 
-					err = db.InsertReplaceTxInQueue(data)
+					err = d.InsertReplaceTxInQueue(data)
 					if err!= nil {
-						db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
 
@@ -167,13 +167,13 @@ func NodeVoting() {
 			}
 
 			// отмечаем, чтобы больше не брать эту строку
-			err = db.ExecSql("UPDATE votes_miners SET cron_checked_time = ? WHERE id = ?", utils.Time(), vote_id)
+			err = d.ExecSql("UPDATE votes_miners SET cron_checked_time = ? WHERE id = ?", utils.Time(), vote_id)
 			if err != nil {
-				db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 		}
-		db.DbUnlock()
+		d.dbUnlock()
 		for i:=0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла

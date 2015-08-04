@@ -12,14 +12,14 @@ import (
 
 func QueueParserTx() {
 
-	GoroutineName := "QueueParserTx"
-
-	db := DbConnect()
-	if db == nil {
+	const GoroutineName = "QueueParserTx"
+	d := new(daemon)
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
 		return
 	}
-	db.GoroutineName = GoroutineName
-	if !db.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	d.goRoutineName = GoroutineName
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
 
@@ -31,41 +31,41 @@ func QueueParserTx() {
 			break BEGIN
 		}
 
-		err, restart := db.DbLock(DaemonCh, AnswerDaemonCh)
+		err, restart := d.dbLock()
 		if restart {
 			break BEGIN
 		}
 		if err != nil {
-			db.PrintSleep(err, 1)
+			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
 
-		blockId, err := db.GetBlockId()
+		blockId, err := d.GetBlockId()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		if blockId == 0 {
-			db.UnlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
 			continue BEGIN
 		}
 
 		// чистим зацикленные
-		err = db.ExecSql("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
+		err = d.ExecSql("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
 		p := new(dcparser.Parser)
-		p.DCDB = db
+		p.DCDB = d.DCDB
 		err = p.AllTxParser()
 		if err != nil {
-			db.UnlockPrintSleep(utils.ErrInfo(err), 1)
+			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
-		db.DbUnlock()
+		d.dbUnlock()
 
 		utils.Sleep(1)
 

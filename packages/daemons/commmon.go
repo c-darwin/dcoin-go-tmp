@@ -5,6 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"flag"
+	"time"
 )
 
 var (
@@ -13,6 +14,35 @@ var (
 	AnswerDaemonCh chan bool
 	configIni map[string]string
 )
+
+type daemon struct {
+	*utils.DCDB
+	goRoutineName string
+}
+
+func (d *daemon) dbLock() (error, bool) {
+	return d.DbLock(DaemonCh, AnswerDaemonCh, d.goRoutineName)
+}
+
+func (d *daemon) dbUnlock() error {
+	return d.DbUnlock(d.goRoutineName)
+}
+
+func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
+	err = d.DbUnlock(d.goRoutineName);
+	if err != nil {
+		log.Error("%v", err)
+	}
+	utils.Sleep(sleep)
+}
+
+func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
+	err = d.DbUnlock(d.goRoutineName);
+	if err != nil {
+		log.Error("%v", err)
+	}
+	utils.Sleep(sleep)
+}
 
 func init() {
 
@@ -62,15 +92,10 @@ func DbConnect() *utils.DCDB {
 		if CheckDaemonsRestart() {
 			return nil
 		}
-		if len(configIni) == 0 {
+		if utils.DB == nil {
 			utils.Sleep(1)
-			continue
-		}
-		db, err := utils.NewDbConnect(configIni)
-		if err == nil {
-			return db
 		} else {
-			utils.Sleep(1)
+			return utils.DB
 		}
 	}
 	return nil
