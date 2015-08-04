@@ -185,6 +185,7 @@ db_name=`)
 		os.Exit(1)
 	}()
 
+	utils.Sleep(1)
 	db := utils.DB
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
@@ -265,8 +266,6 @@ db_name=`)
 			}
 		}()
 	}()
-
-
 
 	utils.Sleep(3)
 
