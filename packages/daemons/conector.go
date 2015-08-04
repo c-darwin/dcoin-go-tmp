@@ -9,7 +9,6 @@ import (
 	"strings"
 	"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
-	"fmt"
 )
 
 
@@ -98,7 +97,7 @@ func Connector() {
 				LEFT JOIN nodes_ban ON nodes_ban.user_id = nodes_connection.user_id
 				LEFT JOIN miners_data ON miners_data.user_id = nodes_connection.user_id
 				`, -1)
-		fmt.Println("nodesConnections", nodesConnections)
+		//fmt.Println("nodesConnections", nodesConnections)
 		log.Debug("nodesConnections: %v", nodesConnections)
 		for _, data := range nodesConnections {
 
