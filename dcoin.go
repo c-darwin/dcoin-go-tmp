@@ -177,9 +177,12 @@ db_name=`)
 			answer := <-daemons.AnswerDaemonCh
 			log.Debug("answer: %v", answer)
 		}
-		utils.Sleep(2)
+		_, err = utils.DB.Exec(`VACUUM`);
+		if err != nil {
+			log.Error("%v", err)
+			panic(err)
+		}
 		err = utils.DB.Close()
-		utils.Sleep(2)
 		if err != nil {
 			log.Error("%v", err)
 			panic(err)
