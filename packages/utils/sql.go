@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 )
 
+var mutex = &sync.Mutex{}
 var log = logging.MustGetLogger("daemons")
 var DB *DCDB
 type DCDB struct {
@@ -59,20 +60,9 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 			log.Debug("%v", err)
 			return &DCDB{}, err
 		}
-		/*ddl := `
-				PRAGMA automatic_index = ON;
-				PRAGMA cache_size = 32768;
-				PRAGMA cache_spill = OFF;
-				PRAGMA foreign_keys = ON;
-				PRAGMA journal_size_limit = 67110000;
-				PRAGMA locking_mode = NORMAL;
-				PRAGMA page_size = 4096;
-				PRAGMA recursive_triggers = ON;
-				PRAGMA secure_delete = ON;
+		ddl := `
 				PRAGMA synchronous = NORMAL;
-				PRAGMA temp_store = MEMORY;
 				PRAGMA journal_mode = WAL;
-				PRAGMA wal_autocheckpoint = 16384;
 				PRAGMA encoding = "UTF-8";
 				`
 		log.Debug("Exec ddl0")
@@ -82,7 +72,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 			db.Close()
 			return &DCDB{}, err
 		}
-		_, err = db.Exec(`VACUUM`);
+		/*_, err = db.Exec(`VACUUM`);
 		if err != nil {
 			db.Close()
 			return &DCDB{}, err
@@ -2045,7 +2035,6 @@ func (db *DCDB) CheckDaemonsRestart() bool {
 }
 
 func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string) (error, bool) {
-	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
 		select {
@@ -2056,6 +2045,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 		default:
 		}
 		mutex.Lock()
+
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
 			mutex.Unlock()
@@ -2081,7 +2071,6 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 
 
 func (db *DCDB) DbLockGate(name string) error {
-	var mutex = &sync.Mutex{}
 	var ok bool
 	for {
 		mutex.Lock()

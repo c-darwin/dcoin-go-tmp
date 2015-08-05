@@ -5,7 +5,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"time"
-	"sync"
 	"reflect"
 	"math"
 	"encoding/json"
@@ -1297,7 +1296,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 }
 
 func (p *Parser) InsertIntoBlockchain() error {
-	var mutex = &sync.Mutex{}
+	//var mutex = &sync.Mutex{}
 	// для локальных тестов
 	if p.BlockData.BlockId == 1 {
 		if p.GetConfigIni("start_block_id") != "" {
@@ -1307,7 +1306,7 @@ func (p *Parser) InsertIntoBlockchain() error {
 
 	TxIdsJson, _ := json.Marshal(p.TxIds)
 
-	mutex.Lock()
+	//mutex.Lock()
 	// пишем в цепочку блоков
 	err := p.ExecSql("DELETE FROM block_chain WHERE id = ?", p.BlockData.BlockId)
 	if err != nil {
@@ -1318,7 +1317,7 @@ func (p *Parser) InsertIntoBlockchain() error {
 	if err != nil {
 		return err
 	}
-	mutex.Unlock()
+	//mutex.Unlock()
 	return nil
 }
 /*public function insert_into_blockchain()

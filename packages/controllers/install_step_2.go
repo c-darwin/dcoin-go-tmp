@@ -30,9 +30,8 @@ func (c *Controller) InstallStep2() (string, error) {
 
 	if installType=="standard" {
 		dbType = "sqlite"
-		if len(configIni["blockchain_url"]) > 0 {
-			url = configIni["blockchain_url"]
-		} else {
+	} else {
+		if len(url) == 0 {
 			url = consts.BLOCKCHAIN_URL
 		}
 	}

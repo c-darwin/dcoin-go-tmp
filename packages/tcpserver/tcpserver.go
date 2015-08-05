@@ -48,6 +48,7 @@ func (t *TcpServer) HandleTcpRequest() {
 	mutex.Lock()
 	if counter > 20 {
 		t.Conn.Close()
+		mutex.Unlock()
 		return
 	} else {
 		counter++

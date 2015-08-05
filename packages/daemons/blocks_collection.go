@@ -79,10 +79,9 @@ func BlocksCollection() {
 			if config["first_load_blockchain"]=="file" && IsNotExistBlockChain {
 
                 log.Info("first_load_blockchain=file")
-                blockchain_url:=""
-                if len(configIni["blockchain_url"]) > 0 {
-                    blockchain_url = configIni["blockchain_url"]
-                } else {
+                nodeConfig, err:= d.GetNodeConfig()
+                blockchain_url:=nodeConfig["first_load_blockchain_url"]
+                if len(blockchain_url) == 0 {
                     blockchain_url = consts.BLOCKCHAIN_URL
                 }
                 log.Debug("blockchain_url: %s", blockchain_url)
