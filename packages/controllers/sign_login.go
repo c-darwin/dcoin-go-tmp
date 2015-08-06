@@ -11,12 +11,12 @@ func (c *Controller) SignLogin() (string, error) {
 
 	var hash []byte
 	loginCode := utils.RandSeq(20)
-	if c.ConfigIni["sign_hash"] == "ip" {
+	if configIni["sign_hash"] == "ip" {
 		hash = utils.Md5(c.r.RemoteAddr);
 	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.Header.Get("REMOTE_ADDR"));
+		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
 	}
-	log.Debug("hash", hash)
+	log.Debug("hash %s", hash)
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hash = [hex]`, hash)
 	if err != nil {
 		return "", err
@@ -25,5 +25,6 @@ func (c *Controller) SignLogin() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Debug("loginCode %v", loginCode)
 	return "\""+loginCode+"\"", nil
 }

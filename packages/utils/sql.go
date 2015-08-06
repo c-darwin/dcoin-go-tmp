@@ -1290,7 +1290,7 @@ func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 
 func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	// получим данные для подписи
-	log.Debug("%v", "hash", hash)
+	log.Debug("hash %s", hash)
 	data, err := db.Single(`SELECT data FROM authorization WHERE hash = [hex]`, hash).String()
 	if err != nil {
 		return "", ErrInfo(err)

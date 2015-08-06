@@ -37,6 +37,7 @@ func (c *Controller) Check_sign() (string, error) {
 	} else {
 		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
 	}
+	log.Debug("hash %s", hash)
 
 	if len(c.CommunityUsers) > 0 {
 
