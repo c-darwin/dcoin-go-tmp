@@ -2,8 +2,8 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"io/ioutil"
 	"regexp"
+	"os"
 )
 
 func CleaningDb() {
@@ -58,15 +58,27 @@ func CleaningDb() {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
+			file, err := os.OpenFile(*utils.Dir+"/public/blockchain", os.O_APPEND|os.O_WRONLY, 0600)
+			if err != nil {
+				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				continue BEGIN
+			}
 			for id, data := range blocks {
 				blockData := append(utils.DecToBin(id, 5), utils.EncodeLengthPlusData(data)...)
 				sizeAndData := append(utils.DecToBin(len(data), 5), blockData...)
-				err := ioutil.WriteFile(*utils.Dir+"/public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
+				//err := ioutil.WriteFile(*utils.Dir+"/public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
+				if _, err = file.Write(append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...)); err != nil {
+					file.Close()
+					d.unlockPrintSleep(utils.ErrInfo(err), 1)
+					continue BEGIN
+				}
 				if err != nil {
+					file.Close()
 					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
 			}
+			file.Close()
 		}
 
 		autoReload, err := d.Single("SELECT auto_reload FROM config").Int64()
