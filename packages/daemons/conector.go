@@ -157,6 +157,7 @@ func Connector() {
 		}
 
 		log.Debug("%v", "hosts", hosts)
+		var newHosts []map[string]string
 		// если нода не отвечает, то удалем её из таблы nodes_connection
 		for i := 0; i < len(hosts); i++ {
 			result := <-ch
@@ -166,17 +167,15 @@ func Connector() {
 				if err != nil {
 					d.PrintSleep(err, 1)
 				}
-				for j, data := range hosts {
-					for _, uid := range data {
-						if utils.StrToInt64(uid) == result.userId {
-							hosts = append(hosts[:j], hosts[j+1:]...)
-							//log.Debug("delete hosts[i] %v", hosts[j])
-						}
+				for _, data := range hosts {
+					if utils.StrToInt64(data["user_id"]) != result.userId {
+						newHosts = append(newHosts, data)
 					}
 				}
 			}
 			log.Info("answer: %v", result)
 		}
+		hosts = newHosts
 		log.Debug("%v", "hosts", hosts)
 
 		// добьем недостающие хосты до $max_hosts
