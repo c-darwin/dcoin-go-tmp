@@ -2051,10 +2051,6 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			mutex.Unlock()
 			return ErrInfo(err), false
 		}
-		t := StrToInt64(exists["lock_time"])
-		if Time() - t > 600 {
-			log.Error("%d %s %d", t, exists["script_name"], Time() - t)
-		}
 		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name) VALUES(?, ?)`, time.Now().Unix(), goRoutineName)
 			if err != nil {
@@ -2062,6 +2058,11 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 				return ErrInfo(err), false
 			}
 			ok = true
+		} else {
+			t := StrToInt64(exists["lock_time"])
+			if Time() - t > 600 {
+				log.Error("%d %s %d", t, exists["script_name"], Time() - t)
+			}
 		}
 		mutex.Unlock()
 		if !ok {
