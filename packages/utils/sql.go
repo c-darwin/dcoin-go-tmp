@@ -871,6 +871,7 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 		match := re.FindStringSubmatch(httpHost)
 		if len(match) != 0 {
 			port := ""
+			// если ":" нету, значит порт не указан, а если ":" есть, значит в match[1] и в ListenHttpHost уже будет порт
 			if ok, _ := regexp.MatchString(`:`, match[1]); !ok{
 				port = ":80";
 			}

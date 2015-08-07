@@ -1,7 +1,6 @@
 package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-
 	"strings"
 )
 
@@ -9,28 +8,27 @@ type upgrade5Page struct {
 	Alert string
 	UserId int64
 	Lang map[string]string
-	HttpHost string
-	TcpHost string
+	GeolocationLat string
+	GeolocationLon string
 	SaveAndGotoStep string
 	UpgradeMenu string
-	Community bool
 }
 
 func (c *Controller) Upgrade5() (string, error) {
 
 	log.Debug("Upgrade5")
 
-	data, err := c.OneRow("SELECT http_host, tcp_host FROM "+c.MyPrefix+"my_table").String()
+	geolocationLat := ""
+	geolocationLon := ""
+	geolocation, err := c.Single("SELECT geolocation FROM "+c.MyPrefix+"my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
-	log.Debug("c.Community: %v", c.Community)
-	log.Debug("c.PoolAdminUserId: %v", c.PoolAdminUserId)
-	if c.Community && len(data["http_host"]) == 0 && len(data["tcp_host"]) == 0 {
-		data, err = c.OneRow("SELECT http_host, tcp_host FROM miners_data WHERE user_id  =  ?", c.PoolAdminUserId).String()
-		if err != nil {
-			return "", utils.ErrInfo(err)
+	if len(geolocation) > 0 {
+		x := strings.Split(geolocation, ", ")
+		if len(x) == 2 {
+			geolocationLat = x[0]
+			geolocationLon = x[1]
 		}
 	}
 
@@ -42,9 +40,8 @@ func (c *Controller) Upgrade5() (string, error) {
 		Lang: c.Lang,
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
-		HttpHost: data["http_host"],
-		TcpHost: data["tcp_host"],
-		Community: c.Community,
+		GeolocationLat: geolocationLat,
+		GeolocationLon: geolocationLon,
 		UserId: c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)

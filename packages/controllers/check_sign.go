@@ -32,6 +32,9 @@ func (c *Controller) Check_sign() (string, error) {
 	}
 
 	var hash []byte
+	log.Debug("configIni[sign_hash] %s", configIni["sign_hash"])
+	log.Debug("c.r.RemoteAddr %s", c.r.RemoteAddr)
+	log.Debug("c.r.Header.Get(User-Agent) %s", c.r.Header.Get("User-Agent"))
 	if configIni["sign_hash"] == "ip" {
 		hash = utils.Md5(c.r.RemoteAddr);
 	} else {

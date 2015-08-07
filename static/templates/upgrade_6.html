@@ -3,100 +3,82 @@
 	$(document).ready(function() {
 		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
 	});
-</script>
-<script src="static/js/index.js"></script>
 
-<script>
-
-	function geoFindMe(){
-
-		if(navigator.geolocation){
-			navigator.geolocation.getCurrentPosition(success, error, geo_options);
-		}else{
-			alert("Geolocation services are not supported by your web browser.");
-		}
-
-		function success(position) {
-			latitude = position.coords.latitude;
-			longitude = position.coords.longitude;
-			var altitude = position.coords.altitude;
-			var accuracy = position.coords.accuracy;
-			console.log('success: '+latitude+','+longitude);
-			$('#latitude').val(latitude);
-			$('#longitude').val(longitude);
-		}
-
-		function error(error) {
-			console.log("Unable to retrieve your location due to "+error.code + " : " + error.message);
-		};
-
-		var geo_options = {
-			enableHighAccuracy: true,
-			maximumAge : 30000,
-			timeout : 27000
-		};
-	}
-
-	{{if not .GeolocationLat}}
-		var latitude = 39.94887
-		var longitude = -75.15005
-		geoFindMe()
-	{{else}}
-		var latitude = {{.GeolocationLat}}
-		var longitude = {{.GeolocationLon}}
-	{{end}}
-	$('#latitude').val(latitude);
-	$('#longitude').val(longitude);
-
-</script>
-
-<script>
+	$('#change_node_http_host').bind('click', function () {
+		$('#node_http_host').html('<input class="form-control" style="width:300px" type="text" id="http_host" value="{{.HttpHost}}"><br>{{.Lang.host_http_example}}');
+	});
+	$('#change_node_tcp_host').bind('click', function () {
+		$('#node_tcp_host').html('<input class="form-control" style="width:300px" type="text" id="tcp_host" value="{{.TcpHost}}"><br>{{.Lang.host_tcp_example}}');
+	});
 
 	$('#save').bind('click', function () {
 		$('#alert').css("display", "none");
-
-		var latitude = $('#latitude').val();
-		var longitude = $('#longitude').val();
-		$.post( 'ajax?controllerName=saveGeolocation', { 'geolocation' : latitude+', '+longitude } ,
+		$.post( 'ajax?controllerName=saveHost', { 'http_host' : $('#http_host').val(), 'tcp_host' : $('#tcp_host').val() } ,
 				function (data) {
 					if (data.error!="0") {
 						$('#alert').css("display", "block");
 					}
 					else {
-						fc_navigate('upgrade7');
+						map_navigate('upgrade6');
 					}
 				}, "JSON");
 	});
 
-	$('#show_map').bind('click', function () {
 
-		map_init (latitude, longitude, 'map_canvas', true, true);
-		google.maps.event.trigger(map, 'resize');
+	$('#findPool').bind('click', function () {
+		//$("#cross").load('http://dcoin.me/pools');
+		$.get( 'http://dcoin.me/pools',
+				function (pools) {
+					for (i=0; i < len(pools); i++) {
+						console.log(pools[i])
+						var err=0
+						$.post( 'ajax?controllerName=signUpInPool', { 'email' : $('#email').val() },
+								function (data) {
+									if (data.error!="0") {
+										err = 1
+									}
+									else {
+
+									}
+								}, "JSON");
+						if (err!=0) {
+							$('#alert').css("display", "block");
+						}
+					}
+				}, "JSON");
 	});
 
-	$("#main_div input").addClass( "form-control" );
-	$("#main_div input").width( 150 );
-
 </script>
-<div id="main_div">
-	<h1 class="page-header">{{.Lang.upgrade_title}}</h1>
-	<ol class="breadcrumb">
-		<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
-		<li class="active">{{.Lang.upgrade_title}}</li>
-	</ol>
-	{{template "alertSuccess".}}
-	<ul class="nav nav-tabs">
-		{{noescape .UpgradeMenu}}
-	</ul>
+<h1 class="page-header">{{.Lang.upgrade_title}}</h1>
+<ol class="breadcrumb">
+	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
+	<li class="active">{{.Lang.upgrade_title}}</li>
+</ol>
 
-	<h3>{{.Lang.your_location}}</h3>
-	<button type="button" class="btn btn-primary" id="show_map">Show map</button><br><br>
-	<div id="map_canvas" style="width: 640px; height: 480px; margin-bottom:20px; display:none"></div>
-	<input id="latitude" class="input" type="text" placeholder="latitude" value="{{.GeolocationLat}}"><input id="longitude" class="input" type="text" placeholder="longitude" value="{{.GeolocationLon}}">
+<ul class="nav nav-tabs">
+	{{noescape .UpgradeMenu}}
+</ul>
+
+<h3>Host</h3>
+
+<br>
+<div class="alert alert-error" id="alert" style="display: none">{{.Lang.invalid_host}}</div>
+
+{{if eq .HostType "pool"}}
+	<div id='node_http_host'><input type='hidden' id='http_host' value='{{.HttpHost}}'><p><strong>{{.HttpHost}}</strong><!--<br>[<a href='#' id='change_node_http_host'>change</a>]</p>--></div><br>
+	<div id='node_tcp_host'><input type='hidden' id='tcp_host' value='{{.TcpHost}}'><p><strong>{{.TcpHost}}</strong><!--<br>[<a href='#' id='change_node_tcp_host'>change</a>]</p>--></div>
 	<br>
 	<button class="btn btn-success" id="save">{{.SaveAndGotoStep}}</button>
+{{else if eq .HostType "normal"}}
+	<div id='node_http_host'><input type='hidden' id='http_host' value='{{.HttpHost}}'><p><strong>{{.HttpHost}}</strong><br>[<a href='#' id='change_node_http_host'>change</a>]</p></div><br>
+	<div id='node_tcp_host'><input type='hidden' id='tcp_host' value='{{.TcpHost}}'><p><strong>{{.TcpHost}}</strong><br>[<a href='#' id='change_node_tcp_host'>change</a>]</p></div>
+	<br>
+	<button class="btn btn-success" id="save">{{.SaveAndGotoStep}}</button>
+{{else if eq .HostType "findPool"}}
+	{{.Lang.enter_your_email}}<br><input class="form-control" style="width:300px" type="text" id="email" value=""><br>
+	<button class="btn btn-success" id="findPool">{{.Lang.next}}</button>
+{{end}}
 
-	<br><br><br><br><br><br><br>
-</div>
+<br>
 
 {{end}}
