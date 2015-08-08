@@ -4,6 +4,8 @@ import (
 	"strings"
 	"net"
 	"time"
+	"os"
+	"io/ioutil"
 )
 
 type upgrade6Page struct {
@@ -20,6 +22,9 @@ type upgrade6Page struct {
 	HostType string
 	NodePrivateKey string
 	CountSignArr []int
+	ProfileHash string
+	FaceHash string
+	VideoHash string
 }
 
 func (c *Controller) Upgrade6() (string, error) {
@@ -91,6 +96,31 @@ func (c *Controller) Upgrade6() (string, error) {
 		nodePrivateKey = priv
 	}
 
+	var profileHash, faceHash, videoHash string
+
+	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		faceHash = string(utils.DSha256(file))
+	}
+	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		profileHash = string(utils.DSha256(file))
+	}
+
+	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		videoHash = string(utils.DSha256(file))
+	}
+
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(6)
 
@@ -106,6 +136,9 @@ func (c *Controller) Upgrade6() (string, error) {
 		TcpHost: hostData["tcp_host"],
 		Community: c.Community,
 		HostType: hostType,
+		ProfileHash: profileHash,
+		FaceHash: faceHash,
+		VideoHash: videoHash,
 		NodePrivateKey: nodePrivateKey,
 		UserId: c.SessUserId})
 	if err != nil {
