@@ -4,6 +4,7 @@ import (
 	"strings"
 	"net"
 	"time"
+	"fmt"
 )
 
 type upgrade6Page struct {
@@ -41,7 +42,10 @@ func (c *Controller) Upgrade6() (string, error) {
 		}
 	} else {
 		// если смогли подключиться из вне
-		ip, err := utils.GetHttpTextAnswer("https://api.ipify.org");
+		ip, err := utils.GetHttpTextAnswer("http://api.ipify.org");
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 		/*httpHost, err := c.Single("SELECT http_host FROM "+c.MyPrefix+"my_table").String()
 		if err!=nil {
 			return "", utils.ErrInfo(err)
@@ -55,6 +59,7 @@ func (c *Controller) Upgrade6() (string, error) {
 			}
 		}*/
 		conn, err := net.DialTimeout("tcp", ip+":8089", 3 * time.Second)
+		fmt.Println("ip:",ip)
 		if err != nil {
 			// если не смогли подключиться, то в JS будем искать рабочий пул и региться на нем. и дадим юзеру указать другие хост:ip
 			hostType = "findPool"

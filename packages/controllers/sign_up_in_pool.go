@@ -24,6 +24,10 @@ func (c *Controller) SignUpInPool() (string, error) {
 	successResult, _ := json.Marshal(map[string]string{"success": c.Lang["pool_sign_up_success"]})
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 
+	if !c.Community {
+		return "", jsonErr("Not pool")
+	}
+
 	c.r.ParseForm()
 
 	var userId int64
@@ -118,7 +122,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 		return "", jsonErr(utils.ErrInfo(err))
 	}
 	publicKey, err := c.GetUserPublicKey(userId)
-	err = c.ExecSql("INSERT INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", publicKey)
+	err = c.ExecSql("INSERT INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", utils.BinToHex(publicKey))
 	if err != nil {
 		return "", jsonErr(utils.ErrInfo(err))
 	}

@@ -24,16 +24,14 @@
 				}, "JSON");
 	});
 
-	$.get( "ajax?controllerName=signLogin")
-
 	function signInPool(i) {
 
-		$.get( "http://"+pools[i]+'/ajax?controllerName=signLogin',
+		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=signLogin',
 			function (code) {
 				console.log(code)
 				$("#for-signature").val(code)
-				doSign()
-				$.post( "http://"+pools[i]+'/ajax?controllerName=signUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'nodePrivateKey' : $('#node_private_key').val() },
+				doSign("sign")
+				$.post( "http://"+pools[i]+'/ajax?controllerName=signUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
 				function (data) {
 					if (typeof(data.error) != "undefined") {
 						if (i < pools.length-1) {
@@ -42,7 +40,7 @@
 					}
 					else {
 						$("#for-signature").val(faceHash+","+profileHash+","+videoHash)
-						doSign()
+						doSign("sign")
 						$.post( 'ajax?controllerName=sendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i] },
 								function (data) {
 									if (data.success == "1") {
@@ -109,9 +107,11 @@
 	{{.Lang.enter_your_email}}<br><input class="form-control" style="width:300px" type="text" id="email" value=""><br>
 	<button class="btn btn-success" id="findPool">{{.Lang.next}}</button>
 {{end}}
-
-<input type="hidden" id="node_private_key" vaue="{{.NodePrivateKey}}">
+{{.HostType}}
+<input type="hidden" id="node_private_key" value="{{.NodePrivateKey}}">
 
 <br>
+
+<div id="for-signature"></div>
 
 {{end}}
