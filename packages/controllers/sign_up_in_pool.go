@@ -21,14 +21,17 @@ func jsonErr(err interface{}) error {
 
 func (c *Controller) SignUpInPool() (string, error) {
 
-	successResult, _ := json.Marshal(map[string]string{"success": c.Lang["pool_sign_up_success"]})
+	log.Debug("1")
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	successResult, _ := json.Marshal(map[string]string{"success": c.Lang["pool_sign_up_success"]})
 
 	if !c.Community {
 		return "", jsonErr("Not pool")
 	}
 
 	c.r.ParseForm()
+	log.Debug("2")
 
 	var userId int64
 	var codeSign string
@@ -82,6 +85,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 		return "", jsonErr("Incorrect private_key")
 	}
 	//publicKey := utils.MakeAsn1([]byte(n), []byte(e))
+	log.Debug("3")
 
 	// если мест в пуле нет, то просто запишем юзера в очередь
 	pool_max_users, err := c.Single("SELECT pool_max_users FROM config").Int()

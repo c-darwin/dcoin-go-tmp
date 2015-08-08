@@ -9,6 +9,8 @@ import (
 
 func (c *Controller) SignLogin() (string, error) {
 
+	c.w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	var hash []byte
 	loginCode := utils.RandSeq(20)
 	log.Debug("configIni[sign_hash] %s", configIni["sign_hash"])
@@ -29,6 +31,5 @@ func (c *Controller) SignLogin() (string, error) {
 		return "", err
 	}
 	log.Debug("loginCode %v", loginCode)
-	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 	return "\""+loginCode+"\"", nil
 }
