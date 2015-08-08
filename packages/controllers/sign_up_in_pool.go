@@ -38,7 +38,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 	if c.SessUserId<=0 {
 		// запрос пришел с десктопного кошелька юзера
 		codeSign = c.r.FormValue("code_sign")
-		if !utils.CheckInputData(codeSign, "sha256") {
+		if !utils.CheckInputData(codeSign, "hex_sign") {
 			return "", jsonErr("Incorrect code_sign")
 		}
 		userId = utils.StrToInt64(c.r.FormValue("user_id"))

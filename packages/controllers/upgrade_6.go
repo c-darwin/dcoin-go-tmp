@@ -4,10 +4,11 @@ import (
 	"strings"
 	"net"
 	"time"
-	"fmt"
 )
 
 type upgrade6Page struct {
+	SignData string
+	ShowSignData bool
 	Alert string
 	UserId int64
 	Lang map[string]string
@@ -18,6 +19,7 @@ type upgrade6Page struct {
 	Community bool
 	HostType string
 	NodePrivateKey string
+	CountSignArr []int
 }
 
 func (c *Controller) Upgrade6() (string, error) {
@@ -59,7 +61,7 @@ func (c *Controller) Upgrade6() (string, error) {
 			}
 		}*/
 		conn, err := net.DialTimeout("tcp", ip+":8089", 3 * time.Second)
-		fmt.Println("ip:",ip)
+		log.Debug("ip: %v",ip)
 		if err != nil {
 			// если не смогли подключиться, то в JS будем искать рабочий пул и региться на нем. и дадим юзеру указать другие хост:ip
 			hostType = "findPool"
@@ -97,6 +99,9 @@ func (c *Controller) Upgrade6() (string, error) {
 		Lang: c.Lang,
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
+		ShowSignData: c.ShowSignData,
+		SignData: "",
+		CountSignArr: c.CountSignArr,
 		HttpHost: hostData["http_host"],
 		TcpHost: hostData["tcp_host"],
 		Community: c.Community,
