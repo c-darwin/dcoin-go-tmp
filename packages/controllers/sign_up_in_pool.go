@@ -54,7 +54,9 @@ func (c *Controller) SignUpInPool() (string, error) {
 		}
 		log.Debug("hash %s", hash)
 		forSign, err := c.GetDataAuthorization(hash)
+		log.Debug("forSign: %v", forSign)
 		publicKey, err := c.GetUserPublicKey(userId)
+		log.Debug("publicKey: %x", publicKey)
 		if err != nil {
 			return "", jsonErr(utils.ErrInfo(err))
 		}
