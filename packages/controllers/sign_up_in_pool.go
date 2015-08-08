@@ -42,7 +42,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 			return "", jsonErr("Incorrect code_sign")
 		}
 		userId = utils.StrToInt64(c.r.FormValue("user_id"))
-		if !utils.CheckInputData(codeSign, "int64") {
+		if !utils.CheckInputData(userId, "int64") {
 			return "", jsonErr("Incorrect userId")
 		}
 		// получим данные для подписи
