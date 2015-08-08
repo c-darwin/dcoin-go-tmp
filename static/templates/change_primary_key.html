@@ -107,8 +107,7 @@
 
 			$("#tx_history").css("display", "none");
 
-			iv = CryptoJS.enc.Hex.parse(Generate_key());
-			var e_n_sign = get_e_n_sign($("#change_pkey_private_key").val(), $("#change_pkey_password").val(), iv.toString(), '', 'change_pkey_alert');
+			var e_n_sign = get_e_n_sign($("#change_pkey_private_key").val(), $("#change_pkey_password").val(), '', 'change_pkey_alert');
 			var public_key = make_public_key(e_n_sign['modulus'], e_n_sign['exp']);
 			$("#public_key_1").val( public_key );
 			$('#password_hash').val(hex_sha256(hex_sha256($('#change_pkey_password').val())));

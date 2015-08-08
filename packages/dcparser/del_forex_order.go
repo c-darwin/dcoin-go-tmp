@@ -3,19 +3,6 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
-//	"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
-	//"time"
-	//"strings"
-	//"bytes"
-	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	//"math"
-	//"database/sql"
-//	"strings"
 )
 
 func (p *Parser) DelForexOrderInit() (error) {

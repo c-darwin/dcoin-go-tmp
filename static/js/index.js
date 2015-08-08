@@ -381,7 +381,7 @@ function hex2a(hex) {
     return str;
 }
 
-function get_e_n_sign(key, pass, mcrypt_iv, forsignature, alert_div) {
+function get_e_n_sign(key, pass, forsignature, alert_div) {
 
     var modulus = '';
     var exp = '';
@@ -448,7 +448,7 @@ function get_e_n_sign(key, pass, mcrypt_iv, forsignature, alert_div) {
     return data;
 }
 
-function doSign_(type, mcrypt_iv) {
+function doSign_(type) {
 
     if(typeof(type)==='undefined') type='sign';
 
@@ -494,7 +494,7 @@ function doSign_(type, mcrypt_iv) {
     console.log('forsignature='+forsignature);
 
     if (forsignature) {
-        var e_n_sign = get_e_n_sign(key, pass, mcrypt_iv, forsignature, 'modal_alert');
+        var e_n_sign = get_e_n_sign(key, pass, forsignature, 'modal_alert');
 	}
 	if (SIGN_LOGIN || PASS_LOGIN) {
 
@@ -539,9 +539,7 @@ function doSign_(type, mcrypt_iv) {
 
 	}
 	else {
-
 			$("#signature1").val(e_n_sign['hSig']);
-
 	}
 }
 

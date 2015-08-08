@@ -1,14 +1,11 @@
 package controllers
 import (
-	"encoding/pem"
 	"errors"
-	"crypto/x509"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"html/template"
 	"bytes"
 	"strings"
-	"fmt"
 )
 
 type availableKeysPage struct {
@@ -18,28 +15,10 @@ type availableKeysPage struct {
 }
 
 func checkAvailableKey(key string, db *utils.DCDB) (error) {
-	block, _ := pem.Decode([]byte(key))
-	if block == nil {
-		return errors.New("bad key data")
-	}
-	log.Debug("%v", block)
-	if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-		return errors.New("unknown key type "+got+", want "+want)
-	}
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	log.Debug("privateKey %v", privateKey)
+	publicKeyAsn, err := utils.GetPublicFromPrivate(key)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-	e := fmt.Sprintf("%x", privateKey.PublicKey.E)
-	if len(e)%2 > 0 {
-		e = "0"+e
-	}
-	n := utils.BinToHex(privateKey.PublicKey.N.Bytes())
-	n = append([]byte("00"), n...)
-	log.Debug("%s / %v", n, e)
-	publicKeyAsn := utils.MakeAsn1(n, []byte(e))
-	log.Debug("publicKeyAsn: %s", publicKeyAsn)
 	userId, err := db.Single("SELECT user_id FROM users WHERE public_key_0  =  [hex]", publicKeyAsn).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)

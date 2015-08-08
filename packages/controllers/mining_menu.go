@@ -22,6 +22,7 @@ type miningMenuPage struct {
 	MinerVotesAttempt int64
 	Host string
 	Result string
+	NodePrivateKey string
 }
 
 func (c *Controller) MiningMenu() (string, error) {
@@ -177,6 +178,7 @@ func (c *Controller) MiningMenu() (string, error) {
 	tplName := ""
 	tplTitle := ""
 	log.Debug("result:", result)
+	var nodePrivateKey string
 	if result == "null" {
 		tplName = "upgrade_0"
 		tplTitle= "upgrade0"
@@ -184,6 +186,8 @@ func (c *Controller) MiningMenu() (string, error) {
 	} else if result == "need_email" {
 		tplName = "sign_up_in_the_pool"
 		tplTitle= "signUpInThePool"
+		//  сгенерим ключ для нода
+		nodePrivateKey, _ = utils.GenKeys()
 	} else if result == "need_promised_amount" {
 		tplName = "promised_amount_add"
 		tplTitle= "upgrade"
@@ -228,6 +232,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		LastTxFormatted: lastTxFormatted,
 		MyComments: myComments,
 		Result: result,
+		NodePrivateKey: nodePrivateKey,
 		MinerVotesAttempt: minerVotesAttempt,
 		Host: hostTpl})
 	if err != nil {

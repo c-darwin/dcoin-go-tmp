@@ -8,14 +8,14 @@
 		var key = $("#key").text();
 		var pass = $("#password").text();
 
-		iv = CryptoJS.enc.Hex.parse(Generate_key());
-		var e_n_sign = get_e_n_sign(key, pass, iv.toString(), '', 'modal_alert');
+		var e_n_sign = get_e_n_sign(key, pass, '', 'modal_alert');
 
 		// шлем подпись на сервер на проверку
 		$.post( 'ajax?controllerName=signUpInPool', {
 			'email': $('#email').val(),
-			'n' : e_n_sign['modulus'],
-			'e': e_n_sign['exp']
+			'node_private_key': $('#node_private_key').val()
+			//'n' : e_n_sign['modulus'],
+			//'e': e_n_sign['exp']
 		}, function (data) {
 			console.log(data);
 			if (data.success) {
@@ -59,6 +59,8 @@
 						<button id="send" name="send" class="btn btn-primary">{{.Lang.send}}</button>
 					</div>
 				</div>
+
+				<input type="node_private_key" vaue="{{.NodePrivateKey}}">
 
 			</fieldset>
 		</div>

@@ -16,6 +16,7 @@ type upgrade6Page struct {
 	UpgradeMenu string
 	Community bool
 	HostType string
+	NodePrivateKey string
 }
 
 func (c *Controller) Upgrade6() (string, error) {
@@ -67,6 +68,21 @@ func (c *Controller) Upgrade6() (string, error) {
 		}
 	}
 
+	// проверим, есть ли необработанные ключи в локальной табле
+	nodePrivateKey, err := c.Single("SELECT private_key FROM "+c.MyPrefix+"my_node_keys WHERE block_id  =  0").String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	if len(nodePrivateKey) == 0 {
+		//  сгенерим ключ для нода
+		priv, pub := utils.GenKeys()
+		err = c.ExecSql("INSERT INTO "+c.MyPrefix+"my_node_keys ( public_key, private_key ) VALUES ( [hex], ? )", pub, priv)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		nodePrivateKey = priv
+	}
 
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(6)
@@ -80,6 +96,7 @@ func (c *Controller) Upgrade6() (string, error) {
 		TcpHost: hostData["tcp_host"],
 		Community: c.Community,
 		HostType: hostType,
+		NodePrivateKey: nodePrivateKey,
 		UserId: c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)

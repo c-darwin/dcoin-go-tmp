@@ -2077,6 +2077,31 @@ func RandSeq(n int) string {
 	return string(b)
 }
 
+func GetPublicFromPrivate(key string) ([]byte, error) {
+	block, _ := pem.Decode([]byte(key))
+	if block == nil {
+		return nil, errors.New("bad key data")
+	}
+	log.Debug("%v", block)
+	if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
+		return nil, errors.New("unknown key type "+got+", want "+want)
+	}
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	log.Debug("privateKey %v", privateKey)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	e := fmt.Sprintf("%x", privateKey.PublicKey.E)
+	if len(e)%2 > 0 {
+		e = "0"+e
+	}
+	n := BinToHex(privateKey.PublicKey.N.Bytes())
+	n = append([]byte("00"), n...)
+	log.Debug("%s / %v", n, e)
+	publicKeyAsn := MakeAsn1(n, []byte(e))
+	return publicKeyAsn, nil
+}
+
 func MakeAsn1(hex_n, hex_e []byte) []byte {
 	//hex_n = append([]byte("00"), hex_n...)
 	n_ := []byte(HexToBin(hex_n))
