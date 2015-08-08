@@ -26,12 +26,12 @@
 
 	function signInPool(i) {
 
-		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=signLogin',
+		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=SignLogin',
 			function (code) {
 				console.log(code)
 				$("#for-signature").val(code)
 				doSign("sign")
-				$.post( "http://"+pools[i]+'/ajax?controllerName=signUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
+				$.post( "http://"+pools[i]+'/ajax?controllerName=SignUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
 				function (data) {
 					if (typeof(data.error) != "undefined") {
 						if (i < pools.length-1) {
@@ -41,7 +41,7 @@
 					else {
 						$("#for-signature").val(faceHash+","+profileHash+","+videoHash)
 						doSign("sign")
-						$.post( 'ajax?controllerName=sendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i] },
+						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i] },
 								function (data) {
 									if (data.success == "1") {
 										fc_navigate('upgrade7');
