@@ -51,21 +51,20 @@ func go_callback_int(){
 }
 
 var (
+	dcVersion  = "1.01a1"
 	SigChan chan os.Signal
 	log = logging.MustGetLogger("dcoin")
-	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}"+string(byte(0)))
+	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+dcVersion+"]"+string(byte(0)))
 	configIni map[string]string
 	globalSessions *session.Manager
 )
 
-var dcVersion string
 func init() {
-	dcVersion = "1.01a1"
 }
 
 func main() {
 	fmt.Println("dcVersion:", dcVersion)
-	log.Debug("dcVersion:", dcVersion)
+	log.Debug("dcVersion: %v", dcVersion)
 	// читаем config.ini
 	if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
