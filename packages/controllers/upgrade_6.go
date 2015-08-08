@@ -54,7 +54,7 @@ func (c *Controller) Upgrade6() (string, error) {
 				port = match[1];
 			}
 		}*/
-		conn, err := net.DialTimeout("tcp", ip+":8089", 5 * time.Second)
+		conn, err := net.DialTimeout("tcp", ip+":8089", 3 * time.Second)
 		if err != nil {
 			// если не смогли подключиться, то в JS будем искать рабочий пул и региться на нем. и дадим юзеру указать другие хост:ip
 			hostType = "findPool"

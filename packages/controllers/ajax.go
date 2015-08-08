@@ -111,7 +111,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.MatchString(`^(?i)AvailableKeys|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
 		html = "Access denied"
 	} else {
-		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, controllerName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, controllerName); !ok && c.SessUserId <= 0 {
 			html = "Access denied"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
