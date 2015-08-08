@@ -58,12 +58,14 @@ var (
 	globalSessions *session.Manager
 )
 
+var dcVersion string
 func init() {
-
+	dcVersion = "1.01a1"
 }
 
 func main() {
-
+	fmt.Println("dcVersion:", dcVersion)
+	log.Debug("dcVersion:", dcVersion)
 	// читаем config.ini
 	if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
