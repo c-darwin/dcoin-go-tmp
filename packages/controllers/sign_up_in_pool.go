@@ -107,7 +107,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 		return "", jsonAnswer(utils.ErrInfo(err), "error")
 	}
 	if community != 0 {
-		return "", jsonAnswer(c.Lang["pool_user_id_is_busy"], "success")
+		return fmt.Sprintf("%s", jsonAnswer(c.Lang["pool_user_id_is_busy"], "success")), nil
 	}
 	err = c.ExecSql("INSERT INTO community ( user_id ) VALUES ( ? )", userId)
 	if err != nil {
