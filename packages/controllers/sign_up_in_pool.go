@@ -22,6 +22,7 @@ func jsonErr(err interface{}) error {
 func (c *Controller) SignUpInPool() (string, error) {
 
 	successResult, _ := json.Marshal(map[string]string{"success": c.Lang["pool_sign_up_success"]})
+	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	c.r.ParseForm()
 
@@ -131,6 +132,5 @@ func (c *Controller) SignUpInPool() (string, error) {
 	}
 
 	c.sess.Delete("restricted")
-	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 	return string(successResult), nil
 }
