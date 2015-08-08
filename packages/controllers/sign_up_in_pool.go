@@ -136,7 +136,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 	if err != nil {
 		return "", jsonErr(utils.ErrInfo(err))
 	}
-	err = c.ExecSql("INSERT INTO "+prefix+"my_node_keys ( private_key, public_key, status ) VALUES ( ?, [hex] 'pending' )", nodePrivateKey, nodePublicKey)
+	err = c.ExecSql("INSERT INTO "+prefix+"my_node_keys ( private_key, public_key ) VALUES ( ?, [hex] )", nodePrivateKey, nodePublicKey)
 	if err != nil {
 		return "", jsonErr(utils.ErrInfo(err))
 	}
