@@ -29,5 +29,6 @@ func (c *Controller) SignLogin() (string, error) {
 		return "", err
 	}
 	log.Debug("loginCode %v", loginCode)
+	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 	return "\""+loginCode+"\"", nil
 }

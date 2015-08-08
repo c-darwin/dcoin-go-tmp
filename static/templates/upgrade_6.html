@@ -24,9 +24,11 @@
 				}, "JSON");
 	});
 
+	$.get( "ajax?controllerName=signLogin")
+
 	function signInPool(i) {
 
-		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=signLogin',
+		$.get( "http://"+pools[i]+'/ajax?controllerName=signLogin',
 			function (code) {
 				console.log(code)
 				$("#for-signature").val(code)

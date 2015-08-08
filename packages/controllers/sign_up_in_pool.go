@@ -131,6 +131,6 @@ func (c *Controller) SignUpInPool() (string, error) {
 	}
 
 	c.sess.Delete("restricted")
-
+	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 	return string(successResult), nil
 }
