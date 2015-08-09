@@ -39,7 +39,7 @@
 						}
 					}
 					else {
-						$("#for-signature").val(faceHash+","+profileHash+","+videoHash)
+						$("#for-signature").val({{.FaceHash}}+","+{{.ProfileHash}}+","+{{.VideoHash}})
 						doSign("sign")
 						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i] },
 								function (data) {
@@ -112,6 +112,6 @@
 
 <br>
 
-<div id="for-signature"></div>
+{{template "signatures".}}
 
 {{end}}

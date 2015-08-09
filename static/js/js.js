@@ -30,7 +30,7 @@ function send_video (file_id, progress, type) {
         $f = $('#'+file_id),
         $p = $('#'+progress),
         up = new uploader($f.get(0), {
-            url:'ajax/upload.php',
+            url:'/ajax?controllerName=uploadVideo',
             prefix:'file',
             type:type,
             progress:function(ev){ $p.html(((ev.loaded/ev.total)*100)+'%'); $p.css('width',$p.html()); },

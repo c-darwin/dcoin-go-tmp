@@ -1276,8 +1276,16 @@ func GetHttpTextAnswer(url string) (string, error) {
 	return string(htmlData), nil
 }
 
+func RemoteAddrFix(addr string) string {
+	if ok, _ := regexp.MatchString(`(\:\:)|(127\.0\.0\.1)`, addr); ok{
+		return ""
+	} else {
+		return addr
+	}
+}
+
 func SendSms(sms_http_get_request, text string) (string, error) {
-	html, err :=GetHttpTextAnswer(sms_http_get_request+text)
+	html, err := GetHttpTextAnswer(sms_http_get_request+text)
 	if err != nil {
 		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
 		return string(result), nil

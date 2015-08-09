@@ -45,10 +45,11 @@ func (c *Controller) SignUpInPool() (string, error) {
 		}
 		// получим данные для подписи
 		var hash []byte
+		RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 		if configIni["sign_hash"] == "ip" {
-			hash = utils.Md5(c.r.RemoteAddr);
+			hash = utils.Md5(RemoteAddr);
 		} else {
-			hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
+			hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
 		}
 		log.Debug("hash %s", hash)
 		forSign, err := c.GetDataAuthorization(hash)

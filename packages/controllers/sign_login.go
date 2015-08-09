@@ -16,10 +16,12 @@ func (c *Controller) SignLogin() (string, error) {
 	log.Debug("configIni[sign_hash] %s", configIni["sign_hash"])
 	log.Debug("c.r.RemoteAddr %s", c.r.RemoteAddr)
 	log.Debug("c.r.Header.Get(User-Agent) %s", c.r.Header.Get("User-Agent"))
+	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
+	log.Debug("RemoteAddr %s", RemoteAddr)
 	if configIni["sign_hash"] == "ip" {
-		hash = utils.Md5(c.r.RemoteAddr);
+		hash = utils.Md5(RemoteAddr);
 	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent")+c.r.RemoteAddr);
+		hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
 	}
 	log.Debug("hash %s", hash)
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hash = [hex]`, hash)
