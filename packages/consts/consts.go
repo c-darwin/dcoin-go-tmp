@@ -20,13 +20,13 @@ const AUTO_REDUCTION_PCT = 10
 const MIN_CONFIRMED_NODES = 1
 
 // текущая версия
-const VERSION = "1.0.1b1"
+const VERSION = "1.0.1a2"
 
 // примерный текущий крайний блок
-const LAST_BLOCK = 250000
+const LAST_BLOCK = 255000
 
 // примерный размер блокчейна
-const BLOCKCHAIN_SIZE = 65000000
+const BLOCKCHAIN_SIZE = 70000000
 
 // где лежит блокчейн. для тех, кто не хочет собирать его с нодов
 const BLOCKCHAIN_URL = "http://dcoin.me/blockchain"

@@ -2040,15 +2040,15 @@ func SleepDiff(sleep *int64, diff int64) {
 
 
 
-func CopyFileContents(src, dst string) (err error) {
+func CopyFileContents(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
-		return
+		return ErrInfo(err)
 	}
 	defer in.Close()
 	out, err := os.Create(dst)
 	if err != nil {
-		return
+		return ErrInfo(err)
 	}
 	defer func() {
 		cerr := out.Close()
@@ -2057,10 +2057,10 @@ func CopyFileContents(src, dst string) (err error) {
 		}
 	}()
 	if _, err = io.Copy(out, in); err != nil {
-		return
+		return ErrInfo(err)
 	}
 	err = out.Sync()
-	return
+	return ErrInfo(err)
 }
 
 func PKCS5Padding(src []byte, blockSize int) []byte {

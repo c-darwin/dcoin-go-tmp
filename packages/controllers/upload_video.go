@@ -3,11 +3,12 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
 	"fmt"
-	"mime/multipart"
-	"net/http"
-	"bytes"
-	"io"
+	"net"
 	"io/ioutil"
+	"time"
+	"io"
+	"bytes"
+	"strings"
 )
 
 func (c *Controller) UploadVideo() (string, error) {
@@ -16,11 +17,20 @@ func (c *Controller) UploadVideo() (string, error) {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
+	var binaryVideo []byte
+
 	c.r.ParseMultipartForm(32 << 20)
 	file, _, err := c.r.FormFile("file")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	videoBuffer := new(bytes.Buffer)
+	_, err = io.Copy(videoBuffer, file)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	defer file.Close()
+	binaryVideo = videoBuffer.Bytes()
 	fmt.Println(c.r.MultipartForm.File["file"][0].Filename)
 	fmt.Println(c.r.MultipartForm.File["file"][0].Header.Get("Content-Type"))
 	fmt.Println(c.r.MultipartForm.Value["type"][0])
@@ -41,113 +51,72 @@ func (c *Controller) UploadVideo() (string, error) {
 	case "video/webm":
 		end = "webm"
 	case "video/3gpp":
+
 		fmt.Println("3gpp")
-		body := &bytes.Buffer{}
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("3gp", "3gp.3gp")
+		conn, err := net.DialTimeout("tcp", "3gp.dcoin.me:8099", 5 * time.Second)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		_, err = io.Copy(part, file)
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		err = writer.Close()
+		defer conn.Close()
+
+		conn.SetReadDeadline(time.Now().Add(240 * time.Second))
+		conn.SetWriteDeadline(time.Now().Add(240* time.Second))
+
+		// в 4-х байтах пишем размер данных, которые пошлем далее
+		size := utils.DecToBin(len(videoBuffer.Bytes()), 4)
+		_, err = conn.Write(size)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 
-		fmt.Println("http://3gp.dcoin.me")
+		// далее шлем сами данные
+		_, err = conn.Write(videoBuffer.Bytes())
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 
-		req, err := http.NewRequest("POST", "http://3gp.dcoin.me", body)
+		// в ответ получаем размер данных, которые нам хочет передать сервер
+		buf := make([]byte, 4)
+		n, err := conn.Read(buf)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		log.Debug("%v", req)
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		htmlData, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		fmt.Println("htmlData",string(htmlData))
+		log.Debug("dataSize buf: %x / get: %v", buf, n)
 
+		// и если данных менее 10мб, то получаем их
+		dataSize := utils.BinToDec(buf)
+		var binaryBlock []byte
+		log.Debug("dataSize: %v", dataSize)
+		if dataSize < 10485760 && dataSize > 0 {
+			binaryBlock = make([]byte, dataSize)
+			binaryBlock, err = ioutil.ReadAll(conn)
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			log.Debug("len(binaryBlock):", len(binaryBlock))
+			binaryVideo = binaryBlock
+		}
 	}
+
 	log.Debug(videoType, end)
-			/*
-				buffer := new(bytes.Buffer)
-				_, err = io.Copy(buffer, file)
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-				defer file.Close()
-				log.Debug(buffer.String())
 
-				var mainMap JsonBackup
-				err = json.Unmarshal(buffer.Bytes(), &mainMap)
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-
-				schema_ := &schema.SchemaStruct{}
-				schema_.DCDB = c.DCDB
-				schema_.DbType = c.ConfigIni["db_type"]
-				for i:=0; i <len(mainMap.Community); i++ {
-					schema_.PrefixUserId = utils.StrToInt(mainMap.Community[i])
-					schema_.GetSchema()
-					c.ExecSql(`INSERT INTO community (user_id) VALUES (?)`, mainMap.Community[i])
-				}
-
-				allTables, err := c.GetAllTables()
-
-				for table, arr := range mainMap.Data {
-					if !utils.InSliceString(table, allTables) {
-						continue
-					}
-					//_ = c.ExecSql(`DROP TABLE `+table)
-					//if err != nil {
-					//	return "", utils.ErrInfo(err)
-					//}
-					log.Debug(table)
-					for i, data := range arr {
-						log.Debug("%v", i)
-						colNames := ""
-						values := []interface {} {}
-						qq := ""
-						for name, value := range data {
-
-							if ok, _ := regexp.MatchString("my_table", table); ok{
-								if name == "host" {
-									name = "http_host"
-								}
-							}
-							if name == "show_progressbar" {
-								name = "show_progress_bar"
-							}
-
-							colNames += name+","
-							values = append(values, value)
-							if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok{
-								qq+="[hex],"
-							} else {
-								qq+="?,"
-							}
-						}
-						colNames = colNames[0:len(colNames)-1]
-						qq = qq[0:len(qq)-1]
-						query := `INSERT INTO `+table+` (`+colNames+`) VALUES (`+qq+`)`
-						log.Debug("%v", query)
-						log.Debug("%v", values)
-						err = c.ExecSql(query, values...)
-						if err != nil {
-							return "", utils.ErrInfo(err)
-						}
-					}
-				}
-			*/
+	var name string
+	if videoType == "user_video" {
+		name = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_video."+end;
+	} else {
+		x := strings.Split(videoType, "-")
+		if len(x) < 2 {
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+		}
+		name = "public/"+utils.Int64ToStr(c.SessUserId)+"_promised_amount_"+x[1]+"."+end;
+	}
+	log.Debug(*utils.Dir+"/"+name)
+	err = ioutil.WriteFile(*utils.Dir+"/"+name, binaryVideo, 0644)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 
 	return "", nil
 }
