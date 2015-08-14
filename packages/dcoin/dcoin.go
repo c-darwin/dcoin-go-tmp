@@ -146,6 +146,7 @@ db_name=`)
 	go func() {
 		log.Debug("daemonsTable")
 		for {
+			log.Debug("wait daemonNameAndTime")
 			daemonNameAndTime := <-daemons.MonitorDaemonCh
 			log.Debug("daemonNameAndTime: %v", daemonNameAndTime)
 			daemonsTable[daemonNameAndTime[0]] = daemonNameAndTime[1]
