@@ -141,6 +141,17 @@ db_name=`)
 		}
 	}
 
+	// мониторинг демонов
+	daemonsTable := make(map[string]string)
+	go func() {
+		for {
+			daemonNameAndTime := <-daemons.MonitorDaemonCh
+			daemonsTable[daemonNameAndTime[0]] = daemonNameAndTime[1]
+			if utils.Time()%100 == 0 {
+				log.Debug("daemonsTable: %v\n", daemonsTable)
+			}
+		}
+	} ()
 
 	// сигналы демонам для выхода
 	signals(countDaemons)

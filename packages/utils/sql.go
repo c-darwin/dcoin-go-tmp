@@ -2044,6 +2044,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			return ErrInfo("Restart from DbLock"), true
 		default:
 		}
+
 		mutex.Lock()
 
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
