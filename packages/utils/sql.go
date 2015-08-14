@@ -2052,7 +2052,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			return ErrInfo(err), false
 		}
 		if len(exists["script_name"])==0 {
-			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?)`, time.Now().Unix(), goRoutineName, Caller(1))
+			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?, ?)`, time.Now().Unix(), goRoutineName, Caller(1))
 			if err != nil {
 				mutex.Unlock()
 				return ErrInfo(err), false
