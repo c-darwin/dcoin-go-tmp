@@ -144,8 +144,10 @@ db_name=`)
 	// мониторинг демонов
 	var daemonsTable map[string]string
 	go func() {
+		log.Debug("daemonsTable")
 		for {
 			daemonNameAndTime := <-daemons.MonitorDaemonCh
+			log.Debug("daemonNameAndTime: %v", daemonNameAndTime)
 			daemonsTable[daemonNameAndTime[0]] = daemonNameAndTime[1]
 			if utils.Time()%100 == 0 {
 				log.Debug("daemonsTable: %v", daemonsTable)
