@@ -12,7 +12,7 @@ var (
 	log = logging.MustGetLogger("daemons")
 	DaemonCh chan bool
 	AnswerDaemonCh chan bool
-	MonitorDaemonCh chan []string
+	MonitorDaemonCh chan []string = make(chan []string, 100)
 	configIni map[string]string
 )
 
