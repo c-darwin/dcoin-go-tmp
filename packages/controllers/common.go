@@ -69,11 +69,8 @@ var (
 	globalLangReadOnly map[int]map[string]string
 )
 
-func init() {
-
+func SessInit() {
 	var err error
-	flag.Parse()
-
 	path := *utils.Dir+`/tmp`
 	if runtime.GOOS =="windows" {
 		path = "tmp"
@@ -83,11 +80,13 @@ func init() {
 		log.Error("%v", utils.ErrInfo(err))
 	}
 	go globalSessions.GC()
+}
+
+func ConfigInit() {
 
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
-
 			if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
 				utils.Sleep(1)
 				continue
@@ -121,7 +120,10 @@ func init() {
 		globalLangReadOnly[v] = make(map[string]string)
 		globalLangReadOnly[v] = iniconf
 	}
+}
 
+func init() {
+	flag.Parse()
 }
 
 func CallController(c *Controller, name string)  (string, error) {

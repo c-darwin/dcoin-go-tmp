@@ -16,6 +16,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"fmt"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"strings"
 	"runtime"
 	"path/filepath"

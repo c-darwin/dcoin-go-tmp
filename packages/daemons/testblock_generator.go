@@ -32,6 +32,8 @@ func TestblockGenerator() {
     BEGIN:
     for {
         log.Info(GoroutineName)
+        MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
+
         // проверим, не нужно ли нам выйти из цикла
         if CheckDaemonsRestart() {
             break BEGIN

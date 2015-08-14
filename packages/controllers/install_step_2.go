@@ -47,7 +47,7 @@ func (c *Controller) InstallStep2() (string, error) {
 	confIni.Set("log_fns", "")
 	confIni.Set("sign_hash", "ip")
 
-	if dbType=="sqlite" {
+	if dbType=="sqlite" || dbType=="ql" {
 		confIni.Set("db_user", "")
 		confIni.Set("db_host", "")
 		confIni.Set("db_port", "")
@@ -61,6 +61,7 @@ func (c *Controller) InstallStep2() (string, error) {
 		confIni.Set("db_password", dbPassword)
 		confIni.Set("db_name", dbName)
 	}
+
 	err = confIni.SaveConfigFile(*utils.Dir+"/config.ini")
 	if err != nil {
 		return "", err
