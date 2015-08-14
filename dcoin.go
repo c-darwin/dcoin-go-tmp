@@ -11,7 +11,6 @@ func init() {
 }
 
 func main() {
-	dcoin.Start("")
 
 	// мониторинг демонов
 	var daemonsTable map[string]string
@@ -29,4 +28,7 @@ func main() {
 		fmt.Println("end daemonsTable")
 
 	} ()
+
+
+	dcoin.Start("")
 }
