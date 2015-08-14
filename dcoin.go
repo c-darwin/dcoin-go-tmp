@@ -13,7 +13,7 @@ func init() {
 func main() {
 
 	// мониторинг демонов
-	var daemonsTable map[string]string
+	daemonsTable := make(map[string]string)
 	go func() {
 		fmt.Println("daemonsTable")
 		for {
