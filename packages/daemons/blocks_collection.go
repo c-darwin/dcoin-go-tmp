@@ -27,7 +27,10 @@ func BlocksCollection() {
     if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
         return
     }
-
+    d.DCDB = DbConnect()
+    if d.DCDB == nil {
+        return
+    }
 	//var cur bool
     BEGIN:
     for {

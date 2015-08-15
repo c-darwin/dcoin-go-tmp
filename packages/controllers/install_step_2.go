@@ -73,6 +73,7 @@ func (c *Controller) InstallStep2() (string, error) {
 
 	if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
 		utils.DB.Close()
+		log.Debug("DB CLOSE")
 		_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
@@ -80,6 +81,7 @@ func (c *Controller) InstallStep2() (string, error) {
 			os.Exit(1)
 		}
 		utils.DB, err = utils.NewDbConnect(configIni)
+		log.Debug("DB OPEN")
 		log.Debug("%v", utils.DB)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))

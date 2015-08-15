@@ -792,6 +792,11 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 		}
 		progress, err := db.Single("SELECT progress FROM install").String()
 		if err != nil || progress != "complete" {
+			if ok, _ := regexp.MatchString(`database is closed`, fmt.Sprintf("%s", err)); ok {
+				if DB != nil{
+					db = DB
+				}
+			}
 			log.Debug("%v", `progress != "complete"`, db.GoroutineName)
 			if err!=nil {
 				log.Error("%v", ErrInfo(err))

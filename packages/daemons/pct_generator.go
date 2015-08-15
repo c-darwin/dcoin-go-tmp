@@ -24,6 +24,10 @@ func PctGenerator() {
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
+	d.DCDB = DbConnect()
+	if d.DCDB == nil {
+		return
+	}
 
 	BEGIN:
 	for {

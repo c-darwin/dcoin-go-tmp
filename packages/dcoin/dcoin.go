@@ -134,11 +134,13 @@ db_name=`)
 	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {
 		daemonsConf := strings.Split(configIni["daemons"], ",")
 		for _, fns := range daemonsConf {
+			log.Debug("start daemon %s", fns)
 			go daemonsStart[fns]()
 			countDaemons++
 		}
 	} else if configIni["daemons"] != "null" {
-		for _, fns := range daemonsStart {
+		for dName, fns := range daemonsStart {
+			log.Debug("start daemon %s", dName)
 			go fns()
 			countDaemons++
 		}
