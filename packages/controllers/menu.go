@@ -101,16 +101,25 @@ func (c *Controller) Menu() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug("menu ok")
+	log.Debug("menu ok %d", len(data))
 	modal, err := static.Asset("static/templates/modal.html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug("modal ok")
+	log.Debug("modal ok %d", len(modal))
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Debug("Recovered", r)
+		}
+	}()
 
 	t := template.Must(template.New("template").Parse(string(data)))
+	log.Debug("0")
 	t = template.Must(t.Parse(string(modal)))
+	log.Debug("1")
 	b := new(bytes.Buffer)
+	log.Debug("2")
 	err = t.ExecuteTemplate(b, "menu", &menuPage{SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
 	log.Debug("ExecuteTemplate")
 	if err != nil {
