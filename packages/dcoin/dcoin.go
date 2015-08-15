@@ -177,7 +177,7 @@ db_name=`)
 	http.HandleFunc(HandleHttpHost+"/tools", controllers.Tools)
 	http.HandleFunc(HandleHttpHost+"/cf/", controllers.IndexCf)
 	http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
-	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir("./"))))
+	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
