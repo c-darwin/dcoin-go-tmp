@@ -11,7 +11,7 @@
 
 	<application android:label="dcoin" android:debuggable="true">
 
-	<activity android:name=".GoNativeActivity"
+	<activity android:name="org.golang.app.GoNativeActivity"
 		android:label="dcoin"
 		android:configChanges="orientation|keyboardHidden">
 		<meta-data android:name="android.app.lib_name" android:value="dcoin" />

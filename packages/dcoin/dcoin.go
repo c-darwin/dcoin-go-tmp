@@ -35,9 +35,6 @@ func Start(dir string) {
 		*utils.Dir = dir
 	}
 
-	controllers.SessInit()
-	controllers.ConfigInit()
-	daemons.ConfigInit()
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -71,6 +68,10 @@ db_name=`)
 		os.Exit(1)
 	}
 	configIni, err = configIni_.GetSection("default")
+
+	controllers.SessInit()
+	controllers.ConfigInit()
+	daemons.ConfigInit()
 
 	go func() {
 		utils.DB, err = utils.NewDbConnect(configIni)
@@ -178,7 +179,6 @@ db_name=`)
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
-
 
 	httpListener(ListenHttpHost, BrowserHttpHost)
 

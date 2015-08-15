@@ -54,12 +54,14 @@ func ConfigInit() {
 			if err != nil {
 				log.Info("%v", utils.ErrInfo(err))
 			}
-			configIni, err = configIni_.GetSection("default")
-			if err != nil {
-				log.Info("%v", utils.ErrInfo(err))
-			}
-			if len(configIni["db_type"]) > 0 {
-				break
+			if len(configIni_) > 0 {
+				configIni, err = configIni_.GetSection("default")
+				if err != nil {
+					log.Info("%v", utils.ErrInfo(err))
+				}
+				if len(configIni["db_type"]) > 0 {
+					break
+				}
 			}
 			utils.Sleep(3)
 		}
