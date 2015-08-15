@@ -1448,7 +1448,7 @@ func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh
 
 	f, err := os.Create(file)
 	if err != nil {
-		return 0, err
+		return 0, ErrInfo(err)
 	}
 	defer f.Close()
 
@@ -1458,21 +1458,23 @@ func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh
 	}
 	resp, err := client.Get(url)
 	if err != nil {
-		return 0, err
+		return 0, ErrInfo(err)
 	}
 	defer resp.Body.Close()
 
 	var offset int64
 	for {
-		select {
-		case <-DaemonCh:
-			AnswerDaemonCh<-true
-			return offset, fmt.Errorf("daemons restart")
-		default:
+		if DaemonCh !=nil {
+			select {
+			case <-DaemonCh:
+				AnswerDaemonCh <- true
+				return offset, fmt.Errorf("daemons restart")
+			default:
+			}
 		}
 		data, err := ioutil.ReadAll(io.LimitReader(resp.Body, 10000))
 		if err != nil {
-			return offset, err
+			return offset, ErrInfo(err)
 		}
 		f.WriteAt(data, offset)
 		offset+=int64(len(data))
@@ -2696,7 +2698,7 @@ func EncryptCFB(text, key, iv []byte) ([]byte,[]byte, error) {
 func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
 	block,err := aes.NewCipher(key)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	decrypter := cipher.NewCFBDecrypter(block, iv)
 	decrypted := make([]byte, len(encrypted))

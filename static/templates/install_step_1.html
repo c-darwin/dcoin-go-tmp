@@ -18,9 +18,11 @@
 
 	$('#extended').bind('click', function () {
 		$('#extended_div').css("display", "block")
+		$("#settings_extended").prop("checked", true)
 	});
 	$('#standard').bind('click', function () {
 		$('#extended_div').css("display", "none")
+		$("#settings_standard").prop("checked", true)
 	});
 	$('#first_load').on('change', function() {
 		if (this.value=="nodes") {
@@ -30,11 +32,13 @@
 		}
 	});
 	$('#db_type').on('change', function() {
-		if (this.value=="Sqlite") {
-			console.log(this.value)
+		console.log(this.value)
+		if (this.value=="sqlite") {
 			$('.db_settings').hide();
+			$('.sqlite_settings').show();
 		} else {
 			$('.db_settings').show();
+			$('.sqlite_settings').hide();
 		}
 	});
 
@@ -44,6 +48,7 @@
 			'tpl_name' : 'installStep2',
 			'type' : $('input[name=settings]:checked').val(),
 			'url' : $('#url').val(),
+			'sqlite_db_url' : $('#sqlite_db_url').val(),
 			'first_load' : $('#first_load').val(),
 			'db_type' : $('#db_type').val(),
 			'host' : $('#host').val(),
@@ -63,8 +68,8 @@
 		<li class="active"><a href="#installStep1">Step 1</a></li>
 	</ul>
 	<h3>Settings</h3>
-	<lebel id="standard"><input type="radio" name="settings" value="standard" checked> Standard</lebel><br>
-	<lebel id="extended"><input type="radio" name="settings" id="extended" value="extended"> Extended</lebel><br>
+	<lebel id="standard"><input id="settings_standard" type="radio" name="settings" value="standard" checked> Standard</lebel><br>
+	<lebel id="extended"><input id="settings_extended" type="radio" name="settings" id="extended" value="extended"> Extended</lebel><br>
 	<div id="extended_div" style="display: none">
 		<table class="table">
 
@@ -81,6 +86,8 @@
 			<tr class="db_settings"><td>db_name</td><td><input class="form-control" type="text" id="db_name"></td></tr>
 			<tr class="db_settings"><td>username</td><td><input class="form-control" type="text" id="username"></td></tr>
 			<tr class="db_settings"><td>password</td><td><input class="form-control" type="password" id="password"></td></tr>
+
+			<tr class="sqlite_settings"><td>db url</td><td><input class="form-control" type="text" id="sqlite_db_url" value="http://dcoin.me/mlitedb.db"></td></tr>
 
 		</table>
 	</div>

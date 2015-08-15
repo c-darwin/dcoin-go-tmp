@@ -5,6 +5,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
+	"os"
 )
 
 type installStep2Struct struct {
@@ -27,6 +28,7 @@ func (c *Controller) InstallStep2() (string, error) {
 	dbName := c.r.FormValue("db_name")
 	dbUsername := c.r.FormValue("username")
 	dbPassword := c.r.FormValue("password")
+	sqliteDbUrl := c.r.FormValue("sqlite_db_url")
 
 	if installType=="standard" {
 		dbType = "sqlite"
@@ -47,7 +49,7 @@ func (c *Controller) InstallStep2() (string, error) {
 	confIni.Set("log_fns", "")
 	confIni.Set("sign_hash", "ip")
 
-	if dbType=="sqlite" || dbType=="ql" {
+	if dbType=="sqlite" {
 		confIni.Set("db_user", "")
 		confIni.Set("db_host", "")
 		confIni.Set("db_port", "")
@@ -68,16 +70,41 @@ func (c *Controller) InstallStep2() (string, error) {
 	}
 
 	configIni, err = confIni.GetSection("default")
+
+	if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
+		utils.DB.Close()
+		_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
+		}
+		utils.DB, err = utils.NewDbConnect(configIni)
+		log.Debug("%v", utils.DB)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
+		}
+	}
+
 	c.DCDB = utils.DB
 	if c.DCDB == nil {
 		return "", fmt.Errorf("utils.DB == nil")
 	}
 
-	schema_ := &schema.SchemaStruct{}
-	schema_.DCDB = c.DCDB
-	schema_.DbType = dbType
-	schema_.PrefixUserId = 0
-	schema_.GetSchema()
+	if dbType != "sqlite" || len(sqliteDbUrl) == 0 {
+		schema_ := &schema.SchemaStruct{}
+		schema_.DCDB = c.DCDB
+		schema_.DbType = dbType
+		schema_.PrefixUserId = 0
+		schema_.GetSchema()
+
+		err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
+		if err != nil {
+			return "", err
+		}
+	}
 
 	if len(userId)>0 {
 		err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
@@ -89,6 +116,7 @@ func (c *Controller) InstallStep2() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	err = c.DCDB.ExecSql("INSERT INTO payment_systems (name)VALUES ('Adyen'),('Alipay'),('Amazon Payments'),('AsiaPay'),('Atos'),('Authorize.Net'),('BIPS'),('BPAY'),('Braintree'),('CentUp'),('Chargify'),('Citibank'),('ClickandBuy'),('Creditcall'),('CyberSource'),('DataCash'),('DigiCash'),('Digital River'),('Dwolla'),('ecoPayz'),('Edy'),('Elavon'),('Euronet Worldwide'),('eWAY'),('Flooz'),('Fortumo'),('Google'),('GoCardless'),('Heartland Payment Systems'),('HSBC'),('iKobo'),('iZettle'),('IP Payments'),('Klarna'),('Live Gamer'),('Mobilpenge'),('ModusLink'),('MPP Global Solutions'),('Neteller'),('Nochex'),('Ogone'),('Paymate'),('PayPal'),('Payoneer'),('PayPoint'),('Paysafecard'),('PayXpert'),('Payza'),('Peppercoin'),('Playspan'),('Popmoney'),('Realex Payments'),('Recurly'),('RBK Money'),('Sage Group'),('Serve'),('Skrill (Moneybookers)'),('Stripe'),('Square, Inc.'),('TFI Markets'),('TIMWE'),('Use My Services (UMS)'),('Ukash'),('V.me by Visa'),('VeriFone'),('Vindicia'),('WebMoney'),('WePay'),('Wirecard'),('Western Union'),('WorldPay'),('Yandex money'),('Qiwi'),('OK Pay'),('Bitcoin'),('Perfect Money')")
 	if err != nil {
 		return "", err
@@ -164,15 +192,10 @@ func (c *Controller) InstallStep2() (string, error) {
 		return "", err
 	}
 
-	err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
-	if err != nil {
-		return "", err
-	}
 	err = c.DCDB.ExecSql(`INSERT INTO install (progress) VALUES ('complete')`)
 	if err != nil {
 		return "", err
 	}
-
 
 	TemplateStr, err := makeTemplate("install_step_2", "installStep2", &installStep0Struct{
 		Lang: c.Lang})

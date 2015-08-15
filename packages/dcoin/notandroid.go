@@ -82,6 +82,7 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 		if *utils.Console == 0 {
 			openBrowser(BrowserHttpHost)
 		}
+		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
@@ -153,7 +154,7 @@ func signals(countDaemons int) {
 		}
 		err := utils.DB.Close()
 		if err != nil {
-			log.Error("%v", err)
+			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 		}
 		os.Exit(1)

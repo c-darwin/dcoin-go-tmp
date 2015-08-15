@@ -66,6 +66,7 @@ db_name=`)
 	}
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
@@ -75,6 +76,7 @@ db_name=`)
 		utils.DB, err = utils.NewDbConnect(configIni)
 		log.Debug("%v", utils.DB)
 		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
 		}
@@ -82,6 +84,7 @@ db_name=`)
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
@@ -110,12 +113,11 @@ db_name=`)
 
 	rand.Seed( time.Now().UTC().UnixNano())
 
-
 	log.Debug("public")
 	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
 		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
-			log.Error("%v", err)
+			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
 		}
