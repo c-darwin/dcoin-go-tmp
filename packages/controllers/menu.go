@@ -101,18 +101,22 @@ func (c *Controller) Menu() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug(string(data))
+	log.Debug("menu ok")
 	modal, err := static.Asset("static/templates/modal.html")
 	if err != nil {
-		return "", err
+		return "", utils.ErrInfo(err)
 	}
+	log.Debug("modal ok")
 
 	t := template.Must(template.New("template").Parse(string(data)))
 	t = template.Must(t.Parse(string(modal)))
 	b := new(bytes.Buffer)
 	err = t.ExecuteTemplate(b, "menu", &menuPage{SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	log.Debug("ExecuteTemplate")
 	if err != nil {
-		return "", err
+		log.Debug("%s", utils.ErrInfo(err))
+		return "", utils.ErrInfo(err)
 	}
+	log.Debug("b.String():\n %s", b.String())
 	return b.String(), nil
 }
