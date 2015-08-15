@@ -101,12 +101,12 @@ func (c *Controller) Menu() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug("menu ok %d", len(data))
+	log.Debug("menu ok : %d", len(data))
 	modal, err := static.Asset("static/templates/modal.html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug("modal ok %d", len(modal))
+	log.Debug("modal ok : %d", len(modal))
 
 	defer func() {
 		if r := recover(); r != nil {
