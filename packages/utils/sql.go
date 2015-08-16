@@ -2143,7 +2143,8 @@ func (db *DCDB) PrintSleepInfo(err_ interface {}, sleep time.Duration) {
 func (db *DCDB) DbUnlock(goRoutineName string) error {
 	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
 	if err != nil {
-		return err
+		log.Error(ErrInfo(err))
+		return ErrInfo(err)
 	}
 	//log.Debug("%v", "DbUnlock")
 	return nil

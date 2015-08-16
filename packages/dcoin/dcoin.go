@@ -152,8 +152,8 @@ db_name=`)
 		for {
 			daemonNameAndTime := <-daemons.MonitorDaemonCh
 			daemonsTable[daemonNameAndTime[0]] = daemonNameAndTime[1]
-			if utils.Time()%100 == 0 {
-				log.Debug("daemonsTable: %v\n", daemonsTable)
+			if utils.Time()%10 == 0 {
+				log.Error("daemonsTable: %v\n", daemonsTable)
 			}
 		}
 	} ()
