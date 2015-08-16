@@ -25,7 +25,7 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 		if stat.Size() > 0 {
 			log.Debug("stat.Size(): %v", int(stat.Size()))
 			log.Debug("consts.BLOCKCHAIN_SIZE: %v", consts.BLOCKCHAIN_SIZE)
-			return `{"download": "`+utils.Int64ToStr(int64(utils.Round(float64((float64(stat.Size())/float64(consts.BLOCKCHAIN_SIZE))*100), 0)))+`"}`, nil
+			return `{"download": "`+utils.Int64ToStr(int64(utils.Round(float64((float64(stat.Size())/float64(consts.BLOCKCHAIN_SIZE+5000000))*100), 0)))+`"}`, nil
 		} else {
 			return `{"download": "0"}`, nil
 		}
