@@ -499,7 +499,7 @@ func BlocksCollection() {
 
                 err = parser.RollbackTransactionsTestblock(true)
                 if err != nil {
-                    utils.Sleep(1)
+                    d.unlockPrintSleep(utils.ErrInfo(err), 1)
                     continue BEGIN
                 }
                 err = d.ExecSql("DELETE FROM testblock")
