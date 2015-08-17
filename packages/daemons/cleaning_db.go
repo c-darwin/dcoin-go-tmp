@@ -116,8 +116,9 @@ func CleaningDb() {
 				continue BEGIN
 			}
 			for _, table := range allTables {
-
+				log.Debug("table: %s", table)
 				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang`, table); !ok{
+					log.Debug("DELETE FROM %s", table)
 					err = d.ExecSql("DELETE FROM "+table)
 					if err != nil {
 						d.PrintSleep(utils.ErrInfo(err), 1)
@@ -136,6 +137,7 @@ func CleaningDb() {
 							continue BEGIN
 						}
 					} else {
+						log.Debug("SET AI %s", table)
 						err = d.SetAI(table, 1)
 						if err != nil {
 							d.PrintSleep(utils.ErrInfo(err), 1)
@@ -143,7 +145,6 @@ func CleaningDb() {
 					}
 				}
 			}
-
 		}
 
 		for i:=0; i < 60; i++ {
