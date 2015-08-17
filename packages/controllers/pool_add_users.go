@@ -8,10 +8,10 @@ import (
 	"io"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 )
-type JsonBackup struct {
+/*type JsonBackup struct {
 	Community []string `json:"community"`
 	Data map[string][]map[string]string `json:"data"`
-}
+}*/
 
 func (c *Controller) PoolAddUsers() (string, error) {
 
@@ -36,7 +36,7 @@ func (c *Controller) PoolAddUsers() (string, error) {
 	defer file.Close()
 	//log.Debug("", buffer.String())
 
-	var mainMap JsonBackup
+	var mainMap map[string][]map[string]string
 	err = json.Unmarshal(buffer.Bytes(), &mainMap)
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -44,21 +44,32 @@ func (c *Controller) PoolAddUsers() (string, error) {
 	log.Debug("mainMap %v", mainMap)
 
 	log.Debug("Unmarshal ok")
-	log.Debug("mainMap.Community %v", mainMap.Community)
 
 	schema_ := &schema.SchemaStruct{}
 	schema_.DCDB = c.DCDB
 	schema_.DbType = c.ConfigIni["db_type"]
-	for i:=0; i <len(mainMap.Community); i++ {
-		schema_.PrefixUserId = utils.StrToInt(mainMap.Community[i])
+
+	community := make(map[int64]int64)
+	re := regexp.MustCompile(`^([0-9]+)_`)
+	for table, _ := range mainMap {
+		log.Debug("table %v", table)
+		match := re.FindStringSubmatch(table)
+		if len(match) != 0 {
+			user_id := utils.StrToInt64(match[1])
+			community[user_id] = 1
+		}
+	}
+
+	for user_id, _ := range community {
+		schema_.PrefixUserId = int(user_id)
 		schema_.GetSchema()
-		c.ExecSql(`INSERT INTO community (user_id) VALUES (?)`, mainMap.Community[i])
-		log.Debug("mainMap.Community[i] %d", mainMap.Community[i])
+		c.ExecSql(`INSERT INTO community (user_id) VALUES (?)`, user_id)
+		log.Debug("mainMap.Community[i] %d", user_id)
 	}
 
 	allTables, err := c.GetAllTables()
 
-	for table, arr := range mainMap.Data {
+	for table, arr := range mainMap {
 		log.Debug("table %v", table)
 		if !utils.InSliceString(table, allTables) {
 			continue
