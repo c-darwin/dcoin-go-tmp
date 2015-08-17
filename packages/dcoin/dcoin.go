@@ -24,7 +24,7 @@ import (
 
 var (
 	log = logging.MustGetLogger("dcoin")
-	format = logging.MustStringFormatter("%{color}%{time:2006-01-02T15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+consts.VERSION+"]"+string(byte(0)))
+	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+consts.VERSION+"]"+string(byte(0)))
 	configIni map[string]string
 	globalSessions *session.Manager
 )
