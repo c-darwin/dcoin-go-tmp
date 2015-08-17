@@ -2130,7 +2130,36 @@ func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)
 }
 
+func (db *DCDB) SetAI(table string, AI int64) error {
 
+	db.ExecSql("ALTER TABLE cf_currency auto_increment = 1000")
+	AiId, err := db.GetAiId(table)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	if db.ConfigIni["db_type"] == "postgresql" {
+		pg_get_serial_sequence, err := db.Single("SELECT pg_get_serial_sequence('"+table+"', '"+AiId+"')").String()
+		if err != nil {
+			return ErrInfo(err)
+		}
+		err = db.ExecSql("ALTER SEQUENCE "+pg_get_serial_sequence+" RESTART WITH "+Int64ToStr(AI))
+		if err != nil {
+			return ErrInfo(err)
+		}
+	} else if db.ConfigIni["db_type"] == "mysql" {
+		err := db.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = "+Int64ToStr(AI))
+		if err != nil {
+			return ErrInfo(err)
+		}
+	} else if db.ConfigIni["db_type"] == "sqlite" {
+		err := db.ExecSql("UPDATE SQLITE_SEQUENCE SET seq = ? WHERE name = ?", AI, table)
+		if err != nil {
+			return ErrInfo(err)
+		}
+	}
+	return nil
+}
 
 func (db *DCDB) PrintSleep(err_ interface {}, sleep time.Duration) {
 	var err error

@@ -124,7 +124,7 @@ func CleaningDb() {
 						continue BEGIN
 					}
 					if table == "cf_currency" {
-						err = d.ExecSql("ALTER TABLE cf_currency auto_increment = 1000")
+						err = d.SetAI("cf_currency", 1000)
 						if err != nil {
 							d.PrintSleep(utils.ErrInfo(err), 1)
 							continue BEGIN
