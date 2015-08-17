@@ -110,7 +110,7 @@ func (c *Controller) Menu() (string, error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Debug("Recovered", r)
+			log.Error("Recovered", r)
 		}
 	}()
 

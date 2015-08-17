@@ -1379,6 +1379,13 @@ func (db *DCDB) GetNodeConfig() (map[string]string, error) {
 
 func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]int64, error) {
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered", r)
+			panic(r)
+		}
+	}()
+
 	var minerId, userId, level, i, currentMinerId, currentUserId int64;
 	prevBlock := new(prevBlockType)
 	var levelsRange [][][]int64
@@ -2040,6 +2047,14 @@ func (db *DCDB) CheckDaemonsRestart() bool {
 }
 
 func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string) (error, bool) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered", r)
+			panic(r)
+		}
+	}()
+
 	var ok bool
 	for {
 		select {
@@ -2068,6 +2083,9 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			t := StrToInt64(exists["lock_time"])
 			if Time() - t > 600 {
 				log.Error("%d %s %d", t, exists["script_name"], Time() - t)
+				if runtime.GOOS == "android" || runtime.GOOS == "ios" {
+					db.ExecSql(`DELETE FROM main_lock`)
+				}
 			}
 		}
 		mutex.Unlock()
@@ -2141,12 +2159,18 @@ func (db *DCDB) PrintSleepInfo(err_ interface {}, sleep time.Duration) {
 
 
 func (db *DCDB) DbUnlock(goRoutineName string) error {
-	err := db.ExecSql("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered", r)
+			panic(r)
+		}
+	}()
+	affect, err := db.ExecSqlGetAffect("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
+	log.Debug("main_lock affect: %d, goRoutineName: %s", affect, goRoutineName)
 	if err != nil {
 		log.Error("%s", ErrInfo(err))
 		return ErrInfo(err)
 	}
-	//log.Debug("%v", "DbUnlock")
 	return nil
 }
 

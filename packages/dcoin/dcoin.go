@@ -24,17 +24,23 @@ import (
 
 var (
 	log = logging.MustGetLogger("dcoin")
-	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+consts.VERSION+"]"+string(byte(0)))
+	format = logging.MustStringFormatter("%{color}%{time:2010-02-04 15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+consts.VERSION+"]"+string(byte(0)))
 	configIni map[string]string
 	globalSessions *session.Manager
 )
 
 func Start(dir string) {
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered", r)
+			panic(r)
+		}
+	}()
+
 	if dir!="" {
 		*utils.Dir = dir
 	}
-
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
