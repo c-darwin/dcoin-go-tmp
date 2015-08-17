@@ -2194,7 +2194,7 @@ func (db *DCDB) DbUnlock(goRoutineName string) error {
 		}
 	}()
 	affect, err := db.ExecSqlGetAffect("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
-	log.Debug("main_lock affect: %d, goRoutineName: %s", affect, goRoutineName)
+	log.Error("main_lock affect: %d, goRoutineName: %s", affect, goRoutineName)
 	if err != nil {
 		log.Error("%s", ErrInfo(err))
 		return ErrInfo(err)

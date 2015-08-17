@@ -34,13 +34,15 @@ func (c *Controller) PoolAddUsers() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	defer file.Close()
-	log.Debug(buffer.String())
+	//log.Debug("", buffer.String())
 
 	var mainMap JsonBackup
 	err = json.Unmarshal(buffer.Bytes(), &mainMap)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+
+	log.Debug("Unmarshal ok")
 
 	schema_ := &schema.SchemaStruct{}
 	schema_.DCDB = c.DCDB
