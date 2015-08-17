@@ -78,12 +78,12 @@ func BlocksCollection() {
         parser.DCDB = d.DCDB
         parser.GoroutineName = GoroutineName
         if currentBlockId==0 || *startBlockId > 0 {
-
+            /*
             IsNotExistBlockChain := false
             if _, err := os.Stat(*utils.Dir+"/public/blockchain"); os.IsNotExist(err) {
                 IsNotExistBlockChain = true
-            }
-			if config["first_load_blockchain"]=="file" && IsNotExistBlockChain {
+            }*/
+			if config["first_load_blockchain"]=="file"/* && IsNotExistBlockChain*/ {
 
                 log.Info("first_load_blockchain=file")
                 nodeConfig, err:= d.GetNodeConfig()
