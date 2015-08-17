@@ -2254,7 +2254,11 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 				}
 				column = "log_id"
 			} else {
-				return "", ErrInfo(err)
+				if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok{
+					column = "id"
+				} else {
+					return "", ErrInfo(err)
+				}
 			}
 		}
 	case "postgresql":
