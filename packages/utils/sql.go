@@ -2249,7 +2249,11 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 			if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
 				err = db.QueryRow("SELECT log_id FROM "+table).Scan(&exists)
 				if err != nil {
-					return "", ErrInfo(err)
+					if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok{
+						column = "log_id"
+					} else {
+						return "", ErrInfo(err)
+					}
 				}
 				column = "log_id"
 			} else {
