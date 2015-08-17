@@ -114,7 +114,7 @@ func (c *Controller) InstallStep2() (string, error) {
 			return "", err
 		}
 	}
-	err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password) VALUES (?,?,?)", firstLoad, url, setupPassword)
+	err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password, auto_reload) VALUES (?, ?, ?, ?)", firstLoad, url, setupPassword, 259200)
 	if err != nil {
 		return "", err
 	}
