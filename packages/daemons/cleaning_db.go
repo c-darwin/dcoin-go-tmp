@@ -92,6 +92,7 @@ func CleaningDb() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
+		log.Debug("autoReload: %v", autoReload)
 		if autoReload < 60 {
 			d.unlockPrintSleep(utils.ErrInfo("autoReload < 60"), 1)
 			continue BEGIN
@@ -103,6 +104,8 @@ func CleaningDb() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
+		log.Debug("mainLock: %v", mainLock)
+		log.Debug("utils.Time(): %v", utils.Time())
 		if mainLock > 0 && utils.Time() - autoReload > mainLock {
 			// на всякий случай пометим, что работаем
 			err = d.ExecSql("UPDATE main_lock SET script_name = 'cleaning_db'")
