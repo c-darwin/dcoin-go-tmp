@@ -41,6 +41,7 @@ func (c *Controller) PoolAddUsers() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	log.Debug("mainMap %v", mainMap)
 
 	log.Debug("Unmarshal ok")
 	log.Debug("mainMap.Community %v", mainMap.Community)
