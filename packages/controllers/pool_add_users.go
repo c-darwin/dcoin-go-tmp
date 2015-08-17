@@ -43,6 +43,7 @@ func (c *Controller) PoolAddUsers() (string, error) {
 	}
 
 	log.Debug("Unmarshal ok")
+	log.Debug("mainMap.Community %v", mainMap.Community)
 
 	schema_ := &schema.SchemaStruct{}
 	schema_.DCDB = c.DCDB
@@ -51,11 +52,13 @@ func (c *Controller) PoolAddUsers() (string, error) {
 		schema_.PrefixUserId = utils.StrToInt(mainMap.Community[i])
 		schema_.GetSchema()
 		c.ExecSql(`INSERT INTO community (user_id) VALUES (?)`, mainMap.Community[i])
+		log.Debug("mainMap.Community[i] %d", mainMap.Community[i])
 	}
 
 	allTables, err := c.GetAllTables()
 
 	for table, arr := range mainMap.Data {
+		log.Debug("table %v", table)
 		if !utils.InSliceString(table, allTables) {
 			continue
 		}
