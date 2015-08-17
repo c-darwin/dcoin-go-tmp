@@ -5,8 +5,10 @@ import (
 	"strings"
 	"regexp"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"log"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("schema")
 
 type recmap map[string]interface{}
 type recmapi map[int]interface{}
@@ -2715,7 +2717,7 @@ func  (schema *SchemaStruct) typeMysql() {
 		schema.replMy(&table_name)
 		err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS "+table_name)
 		if err != nil {
-			log.Println("1", err, table_name)
+			log.Error("%v %v", err, table_name)
 		}
 		result=fmt.Sprintf("CREATE TABLE IF NOT EXISTS %[1]s (\n", table_name)
 		var tableComment string
@@ -2777,7 +2779,7 @@ func  (schema *SchemaStruct) typeMysql() {
 		}
 		err = schema.DCDB.ExecSql(result)
 		if err != nil {
-			log.Println(err)
+			log.Error("%s", err)
 		}
 	}
 }
@@ -2883,7 +2885,7 @@ func  (schema *SchemaStruct)  typePostgresql() {
 		result+=fmt.Sprintln("\n\n")
 		err := schema.DCDB.ExecSql(result)
 		if err != nil {
-			log.Println(err)
+			log.Error("%v", err)
 		}
 	}
 }
@@ -2964,7 +2966,7 @@ func  (schema *SchemaStruct) typeSqlite() {
 		//log.Println(result)
 		err := schema.DCDB.ExecSql(result)
 		if err != nil {
-			log.Println(err)
+			log.Debug("%v", err)
 		}
 		//log.Println("AI_START=", AI_START)
 		if AI_START!="1" {
@@ -2972,7 +2974,7 @@ func  (schema *SchemaStruct) typeSqlite() {
 			err := schema.DCDB.ExecSql(q)
 			//log.Println(q)
 			if err != nil {
-				log.Println(err)
+				log.Debug("%v", err)
 			}
 		}
 	}
