@@ -135,6 +135,11 @@ func CleaningDb() {
 							d.PrintSleep(utils.ErrInfo(err), 1)
 							continue BEGIN
 						}
+					} else {
+						err = d.SetAI(table, 1)
+						if err != nil {
+							d.PrintSleep(utils.ErrInfo(err), 1)
+						}
 					}
 				}
 			}

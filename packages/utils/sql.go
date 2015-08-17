@@ -2132,7 +2132,6 @@ func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
 
 func (db *DCDB) SetAI(table string, AI int64) error {
 
-	db.ExecSql("ALTER TABLE cf_currency auto_increment = 1000")
 	AiId, err := db.GetAiId(table)
 	if err != nil {
 		return ErrInfo(err)
