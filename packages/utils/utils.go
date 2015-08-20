@@ -1659,6 +1659,7 @@ func GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId int64) [][][]int64
 	// на верхнем уровне тот, кто генерит блок первым
 	var i float64 = 1
 	for {
+		log.Debug("GetBlockGeneratorMinerIdRange")
 		needUsers := math.Pow(2, i)
 		//fmt.Println("needUsers", needUsers)
 		if begin == 0 {

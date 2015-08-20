@@ -4,24 +4,18 @@ package main
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcoin"
-
 	"image"
 	"log"
-//"math"
 	"time"
-
 	_ "image/png"
-
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/asset"
 	"golang.org/x/mobile/event/config"
 	"golang.org/x/mobile/event/paint"
-//"golang.org/x/mobile/exp/app/debug"
 	"golang.org/x/mobile/exp/f32"
 	"golang.org/x/mobile/exp/sprite"
 	"golang.org/x/mobile/exp/sprite/clock"
 	"golang.org/x/mobile/exp/sprite/glsprite"
-//"golang.org/x/mobile/gl"
 	"fmt"
 )
 
@@ -45,7 +39,8 @@ var (
 
 func main() {
 
-	dir:= C.GoString(C.JGetTmpDir2());
+	//dir:= C.GoString(C.JGetTmpDir2());
+	dir := C.GoString(C.getenv(C.CString("FILESDIR")))
 	fmt.Println("dir111()>::", dir)
 	fmt.Println("dir122()>::", C.GoString(C.getenv(C.CString("FILESDIR"))))
 	fmt.Println("dir122()>::", C.GoString(C.getenv(C.CString("TMPDIR"))))

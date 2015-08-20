@@ -1,0 +1,1 @@
+ANDROID_HOME=/home/z/android-sdk-linux  go generate golang.org/x/mobile/cmd/gomobile; go install golang.org/x/mobile/cmd/gomobile

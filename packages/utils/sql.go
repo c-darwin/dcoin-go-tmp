@@ -1471,6 +1471,8 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		}
 	}
 
+	log.Debug("minerId: %v", minerId)
+
 	if minerId > 0 {
 		userId, err = db.Single("SELECT user_id FROM miners_data WHERE miner_id = ?", minerId).Int64()
 		if err != nil {
