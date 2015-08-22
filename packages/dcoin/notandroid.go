@@ -12,6 +12,7 @@ import  (
 	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"os/signal"
+	"time"
 )
 
 /*
@@ -86,8 +87,9 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 		panic(err)
 		os.Exit(1)
 	}
+
 	go func() {
-		err = http.Serve(NewBoundListener(50, l), http.DefaultServeMux)
+		err = http.Serve(NewBoundListener(100, l), http.TimeoutHandler(http.DefaultServeMux, time.Duration(600 * time.Second), "Your request has timed out"))
 		if err != nil {
 			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 			panic(err)

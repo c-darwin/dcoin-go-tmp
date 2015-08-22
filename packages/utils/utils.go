@@ -12,7 +12,7 @@ import (
 	"github.com/jordan-wright/email"
 	"os"
 	"encoding/base64"
-	"code.google.com/p/freetype-go/freetype"
+	"github.com/golang/freetype"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"fmt"
 	_ "github.com/lib/pq"
