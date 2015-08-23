@@ -30,6 +30,9 @@ func (d *daemon) dbUnlock() error {
 }
 
 func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
+	if err != nil {
+		log.Error("%v", err)
+	}
 	err = d.DbUnlock(d.goRoutineName);
 	if err != nil {
 		log.Error("%v", err)
@@ -38,6 +41,9 @@ func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
 }
 
 func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
+	if err != nil {
+		log.Error("%v", err)
+	}
 	err = d.DbUnlock(d.goRoutineName);
 	if err != nil {
 		log.Error("%v", err)

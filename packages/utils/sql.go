@@ -1461,8 +1461,8 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		minerId = currentMinerId;
 	} else {
 		levelsRange = GetBlockGeneratorMinerIdRange (currentMinerId, maxMinerId);
-		log.Debug("levelsRange %v", levelsRange)
-		log.Debug("myMinersIds %v", myMinersIds)
+		log.Debug("levelsRange %v (%v)", levelsRange, GetParent())
+		log.Debug("myMinersIds %v (%v)", myMinersIds, GetParent())
 		if len(myMinersIds)>0 {
 			minerId, level = FindMinerIdLevel(myMinersIds,levelsRange);
 		} else {
@@ -1471,7 +1471,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		}
 	}
 
-	log.Debug("minerId: %v", minerId)
+	log.Debug("minerId: %v (%v)", minerId, GetParent())
 
 	if minerId > 0 {
 		userId, err = db.Single("SELECT user_id FROM miners_data WHERE miner_id = ?", minerId).Int64()
@@ -1481,6 +1481,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	} else {
 		userId = 0
 	}
+	log.Debug("return (%v)", GetParent())
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
 }
 
