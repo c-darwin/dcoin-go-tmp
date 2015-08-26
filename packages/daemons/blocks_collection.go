@@ -16,6 +16,12 @@ var startBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollectio
 var endBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 
 func BlocksCollection() {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Error("daemon Recovered", r)
+            panic(r)
+        }
+    }()
 
     const GoroutineName = "BlocksCollection"
     d := new(daemon)    

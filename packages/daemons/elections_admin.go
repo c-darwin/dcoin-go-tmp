@@ -7,6 +7,12 @@ import (
 )
 
 func ElectionsAdmin() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "ElectionsAdmin"
 	d := new(daemon)

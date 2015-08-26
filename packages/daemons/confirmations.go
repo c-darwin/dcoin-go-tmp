@@ -15,6 +15,12 @@ import (
 */
 
 func Confirmations() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "Confirmations"
 	d := new(daemon)

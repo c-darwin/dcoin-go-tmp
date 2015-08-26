@@ -13,6 +13,12 @@ import (
  * */
 
 func MaxPromisedAmountGenerator() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "MaxPromisedAmountGenerator"
 	d := new(daemon)

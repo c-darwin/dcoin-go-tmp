@@ -26,6 +26,7 @@ func (d *daemon) dbLock() (error, bool) {
 }
 
 func (d *daemon) dbUnlock() error {
+	log.Debug("dbUnlock %v", utils.Caller(1))
 	return d.DbUnlock(d.goRoutineName)
 }
 

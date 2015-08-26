@@ -2196,6 +2196,7 @@ func (db *DCDB) DbUnlock(goRoutineName string) error {
 			panic(r)
 		}
 	}()
+	log.Debug("DbUnlock %v %v", Caller(2), goRoutineName)
 	affect, err := db.ExecSqlGetAffect("DELETE FROM main_lock WHERE script_name=?", goRoutineName)
 	log.Error("main_lock affect: %d, goRoutineName: %s", affect, goRoutineName)
 	if err != nil {
@@ -2206,6 +2207,7 @@ func (db *DCDB) DbUnlock(goRoutineName string) error {
 }
 
 func (db *DCDB) DbUnlockGate(name string) error {
+	log.Debug("DbUnlockGate %v %v", Caller(2), name)
 	return  db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
 }
 

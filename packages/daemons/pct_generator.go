@@ -13,6 +13,12 @@ import (
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
 func PctGenerator() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "PctGenerator"
 	d := new(daemon)

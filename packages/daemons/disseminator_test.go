@@ -12,6 +12,12 @@ import (
 )
 
 func TestDisseminator(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		t.Error(err)

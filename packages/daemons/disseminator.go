@@ -13,6 +13,12 @@ import (
  * если майнер - то шлем только хэши, т.к. у нас есть хост, откуда всё можно скачать
  * */
 func Disseminator() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	GoroutineName := "Disseminator"
 	d := new(daemon)

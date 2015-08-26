@@ -7,6 +7,12 @@ import (
 )
 
 func CleaningDb() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "CleaningDb"
 	d := new(daemon)

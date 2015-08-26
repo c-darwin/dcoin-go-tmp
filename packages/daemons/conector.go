@@ -13,6 +13,12 @@ import (
 
 
 func Connector() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	if _, err := os.Stat(*utils.Dir+"/nodes.inc"); os.IsNotExist(err) {
 		data, err := static.Asset("static/nodes.inc")

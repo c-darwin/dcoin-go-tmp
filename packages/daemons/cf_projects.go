@@ -6,6 +6,12 @@ import (
 )
 
 func CfProjects() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "CfProjects"
 	d := new(daemon)

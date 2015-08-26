@@ -15,6 +15,12 @@ import (
 
 
 func NodeVoting() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("daemon Recovered", r)
+			panic(r)
+		}
+	}()
 
 	const GoroutineName = "NodeVoting"
 	d := new(daemon)
