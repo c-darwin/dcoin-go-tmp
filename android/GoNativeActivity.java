@@ -31,24 +31,25 @@ public class GoNativeActivity extends NativeActivity {
    // private static Context context;
     
     
-    public String notif() {
+    public void notif(String title, String text) {
     
 
-   	  Log.e("Go", "notif()OK");
+   	  Log.e("Go", "notif()OK0");
+   	  //Log.e("Go", "title0"+title0);
+   	  //Log.e("Go", "text0"+text0);
+   	  //String title = "1111";
+   	  //String text = "1111";
    	  
-	  String text="65656565656";
 	  
   	  Intent intent = new Intent("org.golang.app.MainActivity");	    
 
-  	  
-   	  Log.e("Go", "thisthis"+this);
    	  
-	  //Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+	  //Toast.makeText(this, title, Toast.LENGTH_LONG).show();
 
 	  NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
 	  mBuilder.setSmallIcon(R.drawable.icon);
-	  mBuilder.setContentTitle("!!!!!!!!!!!++++!!!!!!");
-	  mBuilder.setContentText("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+	  mBuilder.setContentTitle(title);
+	  mBuilder.setContentText(text);
 	          
 	  Intent resultIntent = new Intent(this, MainActivity.class);
 	  TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -85,7 +86,7 @@ public class GoNativeActivity extends NativeActivity {
 	  // отправляем
 	  GoNativeActivity.nm.notify(1, notif);*/
    	  Log.e("Go", "sendNotif ok");
-	 return "65888888888888888888888";
+	 //return "65888888888888888888888";
     }
     
 

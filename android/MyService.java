@@ -53,7 +53,7 @@ public class MyService extends Service {
         
 	Log.e("onCreate", "MyService 01");
         GoNativeActivity.load();
-        Toast.makeText(this, "************Service Started #############+", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "************Service Started #############+", Toast.LENGTH_LONG).show();
         // do something when the service is created
         //GoNativeActivity.St();
 	Log.e("startActivity", "333333333333 01");
@@ -85,10 +85,10 @@ public class MyService extends Service {
 	  PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
 	  // 2-я часть
-	  notif.setLatestEventInfo(this, "22222222222222", "1111111111", pIntent);
+	  notif.setLatestEventInfo(this, "Notification's title", "Notification's text", pIntent);
 
 	  // ставим флаг, чтобы уведомление пропало после нажатия
-	  notif.flags |= Notification.FLAG_AUTO_CANCEL;
+	  //notif.flags |= Notification.FLAG_AUTO_CANCEL;
 
    	  Log.e("Go", "sendNotif 2");
 	  // отправляем
