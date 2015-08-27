@@ -897,10 +897,21 @@ func (db *DCDB) GetQuotes() string {
 
 func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
-	res, err := db.Exec(newQuery, newArgs...)
-	if err != nil {
-		parent := GetParent()
-		return fmt.Errorf("%s in query %s %s / %s", err, newQuery, newArgs, parent)
+	var res sql.Result
+	var err error
+	for {
+		res, err = db.Exec(newQuery, newArgs...)
+		if err != nil {
+			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok{
+				log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
+				time.Sleep(250 * time.Millisecond)
+				continue
+			} else {
+				return fmt.Errorf("%s in query %s %s %s", err, newQuery, newArgs, GetParent())
+			}
+		} else {
+			break
+		}
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
@@ -915,9 +926,21 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 
 func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
-	res, err := db.Exec(newQuery, newArgs...)
-	if err != nil {
-		return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+	var res sql.Result
+	var err error
+	for {
+		res, err = db.Exec(newQuery, newArgs...)
+		if err != nil {
+			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok{
+				log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
+				time.Sleep(250 * time.Millisecond)
+				continue
+			} else {
+				return 0, fmt.Errorf("%s in query %s %s %s", err, newQuery, newArgs, GetParent())
+			}
+		} else {
+			break
+		}
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
