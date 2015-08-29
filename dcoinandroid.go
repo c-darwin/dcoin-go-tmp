@@ -1,4 +1,4 @@
-// +build android
+// +build android ios
 
 package main
 
@@ -18,6 +18,8 @@ import (
 	"github.com/c-darwin/mobile/exp/sprite/glsprite"
 	"github.com/c-darwin/mobile/get_files_dir"
 	"fmt"
+	"runtime"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 /*
@@ -35,8 +37,13 @@ var (
 
 func main() {
 
+	var dir string
 	//dir := C.GoString(C.getenv(C.CString("FILESDIR")))
-	dir := get_files_dir.GetFilesDir();
+	if runtime.GOOS=="android" {
+		dir = get_files_dir.GetFilesDir();
+	} else {
+		dir = *utils.Dir
+	}
 	fmt.Println("dir::", dir)
 
 	go dcoin.Start(dir)
