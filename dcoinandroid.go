@@ -8,46 +8,37 @@ import (
 	"log"
 	"time"
 	_ "image/png"
-	"golang.org/x/mobile/app"
-	"golang.org/x/mobile/asset"
-	"golang.org/x/mobile/event/config"
-	"golang.org/x/mobile/event/paint"
-	"golang.org/x/mobile/exp/f32"
-	"golang.org/x/mobile/exp/sprite"
-	"golang.org/x/mobile/exp/sprite/clock"
-	"golang.org/x/mobile/exp/sprite/glsprite"
+	"github.com/c-darwin/mobile/app"
+	"github.com/c-darwin/mobile/asset"
+	"github.com/c-darwin/mobile/event/size"
+	"github.com/c-darwin/mobile/event/paint"
+	"github.com/c-darwin/mobile/exp/f32"
+	"github.com/c-darwin/mobile/exp/sprite"
+	"github.com/c-darwin/mobile/exp/sprite/clock"
+	"github.com/c-darwin/mobile/exp/sprite/glsprite"
+	"github.com/c-darwin/mobile/get_files_dir"
 	"fmt"
 )
 
 /*
 #include <stdio.h>
 #include <stdlib.h>
-
-char* JGetTmpDir2() {
-	return getenv("TMPDIR");
-}
 */
 import "C"
-
 
 var (
 	startTime = time.Now()
 	eng       = glsprite.Engine()
 	scene     *sprite.Node
-	cfg config.Event
+	cfg size.Event
 )
 
 func main() {
 
-	//dir:= C.GoString(C.JGetTmpDir2());
-	dir := C.GoString(C.getenv(C.CString("FILESDIR")))
-	fmt.Println("dir111()>::", dir)
-	fmt.Println("dir122()>::", C.GoString(C.getenv(C.CString("FILESDIR"))))
-	fmt.Println("dir122()>::", C.GoString(C.getenv(C.CString("TMPDIR"))))
+	//dir := C.GoString(C.getenv(C.CString("FILESDIR")))
+	dir := get_files_dir.GetFilesDir();
+	fmt.Println("dir::", dir)
 
-	//go func(dir string) {
-	//  dcoin.Start(dir)
-	//}(dir)
 	go dcoin.Start(dir)
 
 	app.Main(func(a app.App) {
@@ -55,7 +46,7 @@ func main() {
 		for e := range a.Events() {
 			fmt.Println("e:", e)
 			switch e := app.Filter(e).(type) {
-				case config.Event:
+				case size.Event:
 				cfg = e
 				case paint.Event:
 				onPaint(cfg)
@@ -65,7 +56,7 @@ func main() {
 	})
 }
 
-func onPaint(c config.Event) {
+func onPaint(c size.Event) {
 	loadScene()
 	now := clock.Time(time.Since(startTime) * 60 / time.Second)
 	eng.Render(scene, now, c)
