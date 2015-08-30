@@ -1617,14 +1617,15 @@ func SliceInt64ToString(int64 []int64) []string  {
 	return result
 }
 
-func RemoveInt64Slice(slice []int64, pos int) {
-	slice = append(slice[:pos], slice[pos+1:]...)
+func RemoveInt64Slice(slice *[]int64, pos int) {
+	sl := *slice
+	slice = append(sl[:pos], sl[pos+1:]...)
 }
 
 func DelUserIdFromArray(array *[]int64, userId int64) {
 	for i, v := range *array {
 		if v == userId {
-			RemoveInt64Slice(*array, i);
+			RemoveInt64Slice(&*array, i);
 		}
 	}
 }
