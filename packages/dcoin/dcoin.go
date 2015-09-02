@@ -21,6 +21,18 @@ import (
 	"github.com/astaxie/beego/session"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
+/*
+#cgo CFLAGS: -x objective-c
+#cgo LDFLAGS: -framework Foundation
+#import <Foundation/Foundation.h>
+
+void
+logNS(char* text) {
+    NSLog(@"golog: %s", text);
+}
+
+*/
+import "C"
 
 var (
 	log = logging.MustGetLogger("dcoin")
@@ -29,7 +41,34 @@ var (
 	globalSessions *session.Manager
 )
 
+func iosLog(text string) {
+	if runtime.GOOS == "darwin" && runtime.GOARCH=="arm" {
+		C.logNS(C.CString(text))
+	}
+}
+
+
+func Stop() {
+	var err error
+	utils.DB, err = utils.NewDbConnect(configIni)
+	log.Debug("%v", utils.DB)
+	iosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
+	if err != nil {
+		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		log.Error("%v", utils.ErrInfo(err))
+		panic(err)
+		os.Exit(1)
+	}
+	err = utils.DB.ExecSql(`INSERT INTO stop_daemons(stop_time) VALUES (`+utils.Time()+`)`)
+	if err != nil {
+		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		log.Error("%v", utils.ErrInfo(err))
+	}
+}
+
 func Start(dir string) {
+
+	iosLog("start")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -41,6 +80,8 @@ func Start(dir string) {
 	if dir!="" {
 		*utils.Dir = dir
 	}
+
+	iosLog("dir:"+dir)
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -66,9 +107,11 @@ log_level=DEBUG
 log_output=file
 db_name=`)
 		ioutil.WriteFile(*utils.Dir+"/config.ini", d1, 0644)
+		iosLog("config ok")
 	}
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
+		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
@@ -82,7 +125,9 @@ db_name=`)
 	go func() {
 		utils.DB, err = utils.NewDbConnect(configIni)
 		log.Debug("%v", utils.DB)
+		iosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
 		if err != nil {
+			iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
@@ -91,11 +136,13 @@ db_name=`)
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
+		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
 	defer f.Close()
+	iosLog("configIni:"+fmt.Sprintf("%v", configIni))
 	var backend *logging.LogBackend
 	switch configIni["log_output"] {
 	case "file":
@@ -121,6 +168,7 @@ db_name=`)
 	rand.Seed( time.Now().UTC().UnixNano())
 
 	log.Debug("public")
+	iosLog("public")
 	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
 		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
@@ -133,6 +181,7 @@ db_name=`)
 	daemons.DaemonCh = make(chan bool, 1)
 	daemons.AnswerDaemonCh = make(chan bool, 1)
 	log.Debug("daemonsStart")
+	iosLog("daemonsStart")
 	//TestblockIsReady,TestblockGenerator,TestblockDisseminator,Shop,ReductionGenerator,QueueParserTx,QueueParserTestblock,QueueParserBlocks,PctGenerator,Notifications,NodeVoting,MaxPromisedAmountGenerator,MaxOtherCurrenciesGenerator,ElectionsAdmin,Disseminator,Confirmations,Connector,Clear,CleaningDb,CfProjects,BlocksCollection
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
@@ -168,17 +217,50 @@ db_name=`)
 		}
 	} ()
 
+
+
 	// сигналы демонам для выхода
 	signals(countDaemons)
 
 	utils.Sleep(1)
 	db := utils.DB
+
+
+	// мониторим сигнал из БД о том, что демонам надо завершаться
+	go func() {
+		for {
+			dExtit, err := db.Single(`SELECT stop_time FROM stop_daemons`).Int64()
+			if err != nil {
+				iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			if dExtit > 0 {
+				for i := 0; i < countDaemons; i++ {
+					daemons.DaemonCh <- true
+					log.Debug("daemons.DaemonCh <- true")
+					answer := <-daemons.AnswerDaemonCh
+					log.Debug("answer: %v", answer)
+				}
+				err := utils.DB.Close()
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+					panic(err)
+				}
+				os.Exit(1)
+			}
+			utils.Sleep(1)
+		}
+	} ()
+
+
+
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
 	if db != nil {
 		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
 	}
+	iosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
 	log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
@@ -192,17 +274,22 @@ db_name=`)
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
 
+	iosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
+
 	httpListener(ListenHttpHost, BrowserHttpHost)
 
 	tcpListener(db)
 
 	utils.Sleep(3)
 
-	if *utils.Console == 0 && runtime.GOOS!="android" {
+	iosLog("Sleep")
+
+	if *utils.Console == 0 && runtime.GOARCH!="arm" {
 		openBrowser(BrowserHttpHost)
 	}
 
 	log.Debug("ALL RIGHT")
+	iosLog("ALL RIGHT")
 	utils.Sleep(3600*24*90)
 	log.Debug("EXIT")
 }
