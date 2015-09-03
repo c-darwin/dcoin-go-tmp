@@ -21,18 +21,7 @@ import (
 	"github.com/astaxie/beego/session"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
-/*
-#cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Foundation
-#import <Foundation/Foundation.h>
 
-void
-logNS(char* text) {
-    NSLog(@"golog: %s", text);
-}
-
-*/
-import "C"
 
 var (
 	log = logging.MustGetLogger("dcoin")
@@ -41,11 +30,6 @@ var (
 	globalSessions *session.Manager
 )
 
-func iosLog(text string) {
-	if utils.IOS() {
-		C.logNS(C.CString(text))
-	}
-}
 
 
 func Stop() {

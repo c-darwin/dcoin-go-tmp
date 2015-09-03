@@ -71,7 +71,7 @@ func init() {
 	flag.Parse()
 }
 func IOS() bool {
-	if runtime.GOARCH == "arm" && runtime.GOOS == "darwin" {
+	if (runtime.GOARCH == "arm" || runtime.GOARCH == "arm64") && runtime.GOOS == "darwin" {
 		return true
 	}
 	return false

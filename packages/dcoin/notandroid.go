@@ -33,6 +33,9 @@ static inline void waitSig() {
 */
 import "C"
 
+func iosLog(text string) {
+}
+
 //export go_callback_int
 func go_callback_int(){
 	SigChan <- syscall.Signal(1)
