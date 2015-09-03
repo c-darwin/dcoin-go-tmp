@@ -42,7 +42,7 @@ var (
 )
 
 func iosLog(text string) {
-	if runtime.GOOS == "darwin" && runtime.GOARCH=="arm" {
+	if utils.IOS() {
 		C.logNS(C.CString(text))
 	}
 }
@@ -184,8 +184,8 @@ db_name=`)
 	iosLog("daemonsStart")
 	//TestblockIsReady,TestblockGenerator,TestblockDisseminator,Shop,ReductionGenerator,QueueParserTx,QueueParserTestblock,QueueParserBlocks,PctGenerator,Notifications,NodeVoting,MaxPromisedAmountGenerator,MaxOtherCurrenciesGenerator,ElectionsAdmin,Disseminator,Confirmations,Connector,Clear,CleaningDb,CfProjects,BlocksCollection
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
-	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
-		daemonsStart = map[string]func(){"QueueParserTx":daemons.QueueParserTx,"Notifications":daemons.Notifications,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
+	if utils.Mobile() {
+		daemonsStart = map[string]func(){"QueueParserTx":daemons.QueueParserTx,"Notifications":daemons.Notifications,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"BlocksCollection":daemons.BlocksCollection}
 
 	}
 
@@ -205,6 +205,8 @@ db_name=`)
 		}
 	}
 
+
+	iosLog("MonitorDaemons")
 	// мониторинг демонов
 	daemonsTable := make(map[string]string)
 	go func() {
@@ -219,6 +221,7 @@ db_name=`)
 
 
 
+	iosLog("signals")
 	// сигналы демонам для выхода
 	signals(countDaemons)
 
@@ -226,6 +229,7 @@ db_name=`)
 	db := utils.DB
 
 
+	iosLog("stop_daemons")
 	// мониторим сигнал из БД о том, что демонам надо завершаться
 	go func() {
 		for {
@@ -254,6 +258,7 @@ db_name=`)
 
 
 
+	iosLog("BrowserHttpHost")
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
@@ -284,7 +289,7 @@ db_name=`)
 
 	iosLog("Sleep")
 
-	if *utils.Console == 0 && runtime.GOARCH!="arm" {
+	if *utils.Console == 0 && !utils.Mobile() {
 		openBrowser(BrowserHttpHost)
 	}
 

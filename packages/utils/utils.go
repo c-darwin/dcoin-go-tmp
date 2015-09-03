@@ -70,7 +70,18 @@ var Console = flag.Int64("console", 0, "Start from console")
 func init() {
 	flag.Parse()
 }
-
+func IOS() bool {
+	if runtime.GOARCH == "arm" && runtime.GOOS == "darwin" {
+		return true
+	}
+	return false
+}
+func Mobile() bool {
+	if IOS() || runtime.GOOS=="android" {
+		return true
+	}
+	return false
+}
 func Sleep(sec time.Duration) {
 	//log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
 	time.Sleep(sec * time.Second)
