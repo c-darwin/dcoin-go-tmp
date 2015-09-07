@@ -214,13 +214,23 @@ db_name=`)
 	db := utils.DB
 
 
+
 	iosLog("stop_daemons")
 	// мониторим сигнал из БД о том, что демонам надо завершаться
 	go func() {
+		var first bool
 		for {
 			if utils.DB == nil {
 				utils.Sleep(3)
 				continue
+			}
+			if !first {
+				err = utils.DB.ExecSql(`DELETE FROM stop_daemons`)
+				if err != nil {
+					iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				first = true
 			}
 			dExtit, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
 			if err != nil {
