@@ -12,6 +12,7 @@ type loginStruct struct {
 	UserID int64
 	PoolTechWorks int
 	SetupPassword bool
+	Community bool
 }
 
 func (c *Controller) Login() (string, error) {
@@ -64,6 +65,6 @@ func (c *Controller) Login() (string, error) {
 	} else {
 		pool_tech_works = 0
 	}
-	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword})
+	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword, Community: c.Community})
 	return b.String(), nil
 }

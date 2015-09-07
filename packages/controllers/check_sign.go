@@ -16,6 +16,7 @@ func (c *Controller) Check_sign() (string, error) {
 	e := []byte(c.r.FormValue("e"))
 	sign := []byte(c.r.FormValue("sign"))
 	setupPassword := c.r.FormValue("setup_password")
+	private_key := c.r.FormValue("private_key")
 	if !utils.CheckInputData(n, "hex") {
 		return `{"result":"incorrect n"}`, nil
 	}
@@ -214,6 +215,11 @@ func (c *Controller) Check_sign() (string, error) {
 					} else {
 						c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
 					}
+					// возможно юзер хочет сохранить свой ключ
+					if len(private_key) > 0 {
+						c.ExecSql("UPDATE my_keys SET private_key = ? WHERE block_id = (SELECT max(block_id) FROM my_keys)", private_key)
+					}
+
 				} else {
 					checkError = true
 				}
@@ -242,13 +248,14 @@ func (c *Controller) Check_sign() (string, error) {
 			if !resultCheckSign {
 				return "{\"result\":0}", nil
 			}
+
 		}
 
 		if checkError {
 			return "{\"result\":0}", nil
 		} else {
 			myUserId, err := c.DCDB.GetMyUserId("")
-			if myUserId==0 {
+			if myUserId == 0 {
 				myUserId = -1
 			}
 			if err != nil {
@@ -266,6 +273,11 @@ func (c *Controller) Check_sign() (string, error) {
 				}
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
 				c.sess.Set("public_key", public_key)
+
+				// возможно юзер хочет сохранить свой ключ
+				if len(private_key) > 0 {
+					c.ExecSql("UPDATE my_keys SET private_key = ? WHERE block_id = (SELECT max(block_id) FROM my_keys)", private_key)
+				}
 
 				AdminUserId, err := c.DCDB.GetAdminUserId()
 				if err != nil {

@@ -134,7 +134,7 @@ func CallController(c *Controller, name string)  (string, error) {
 	log.Debug("Controller %v", name)
 	html, err := CallMethod(c, name)
 	if err != nil {
-		log.Debug("%v", err)
+		log.Debug("err: %v / Controller: %v", err, name)
 		html = fmt.Sprintf(`{"error":%q}`, err)
 		log.Debug("%v", html)
 	}

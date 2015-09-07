@@ -130,13 +130,17 @@ function save_key () {
     $('#wrapper').spin();
     console.log("$('#wrapper').spin();");
 
-    var key = $("#modal_key").val();
-    var password = $("#modal_password").val();
-    var setup_password = $("#modal_setup_password").val();
-
-    $('#key').text( key );
-    $('#password').text( password );
-    $('#setup_password').text( setup_password );
+    $('#key').text( $("#modal_key").val() );
+    $('#password').text( $("#modal_password").val() );
+    $('#setup_password').text( $("#modal_setup_password").val() );
+    if ($("#modal_save_key").is(':checked')) {
+        console.log("save_key 1")
+        $('#save_key').text("1");
+    } else {
+        console.log("save_key 0")
+        console.log($("#modal_save_key").val())
+        $('#save_key').text("0");
+    }
 }
 
 
@@ -386,10 +390,10 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
     var modulus = '';
     var exp = '';
     var hSig = '';
-
+    var decrypt_PEM = '';
     // ключ может быть незашифрованным, но без BEGIN RSA PRIVATE KEY
     if (key.substr(0,4) == 'MIIE')
-        var decrypt_PEM = '-----BEGIN RSA PRIVATE KEY-----'+key+'-----END RSA PRIVATE KEY-----';
+        decrypt_PEM = '-----BEGIN RSA PRIVATE KEY-----'+key+'-----END RSA PRIVATE KEY-----';
     else if (pass && key.indexOf('RSA PRIVATE KEY')==-1) {
         try{
 
@@ -401,7 +405,7 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
             });
             pass = CryptoJS.enc.Latin1.parse(hex_md5(pass))
             var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
-            var decrypt_PEM = hex2a(decrypted.toString());
+            decrypt_PEM = hex2a(decrypted.toString());
 /*
             cipherParams = CryptoJS.lib.CipherParams.create({
                 ciphertext: CryptoJS.enc.Base64.parse((key.replace(/\n|\r/g, "")))
@@ -413,11 +417,11 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
 
 
         } catch(e) {
-           var decrypt_PEM = 'invalid base64 code';
+           decrypt_PEM = 'invalid base64 code';
        }
     }
     else
-        var decrypt_PEM = key;
+        decrypt_PEM = key;
     console.log('decrypt_PEM='+decrypt_PEM);
     console.log('typeof decrypt_PEM ='+typeof decrypt_PEM );
    if (typeof decrypt_PEM != "string" || decrypt_PEM.indexOf('RSA PRIVATE KEY')==-1) {
@@ -445,17 +449,17 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
     data['modulus'] = modulus;
     data['exp'] = exp;
     data['hSig'] = hSig;
+    data['decrypt_key'] = decrypt_PEM;
     return data;
 }
 
 function doSign_(type) {
 
-    if(typeof(type)==='undefined') type='sign';
+    if (typeof(type)==='undefined') type='sign';
 
     console.log('type='+type);
 
     var SIGN_LOGIN = false;
-    var PASS_LOGIN = false;
 
     jQuery.extend({
         getValues: function(url) {
@@ -476,6 +480,8 @@ function doSign_(type) {
     var key = $("#key").text();
     var pass = $("#password").text();
     var setup_password = $("#setup_password").text();
+    var save_key = $("#save_key").text();
+    console.log("save_key="+save_key)
 
     if (type=='sign') {
         var forsignature = $("#for-signature").val();
@@ -486,9 +492,6 @@ function doSign_(type) {
             var forsignature = $.getValues("ajax?controllerName=signLogin");
             SIGN_LOGIN = true;
         }
-        else {
-            PASS_LOGIN = true;
-        }
     }
 
     console.log('forsignature='+forsignature);
@@ -496,17 +499,22 @@ function doSign_(type) {
     if (forsignature) {
         var e_n_sign = get_e_n_sign(key, pass, forsignature, 'modal_alert');
 	}
-	if (SIGN_LOGIN || PASS_LOGIN) {
+	if (SIGN_LOGIN) {
 
-			console.log('SIGN_LOGIN || PASS_LOGIN');
+			console.log('SIGN_LOGIN');
 
 			//$("#wrapper").spin();
 			if (key) {
+                var privKey = "";
+                if (save_key == "1") {
+                    privKey = e_n_sign['decrypt_key']
+                }
 				// шлем подпись на сервер на проверку
 				$.post( 'ajax?controllerName=check_sign', {
 							'sign': e_n_sign['hSig'],
 							'n' : e_n_sign['modulus'],
 							'e': e_n_sign['exp'],
+                            'private_key': privKey,
                             'setup_password': setup_password
 						}, function (data) {
 							// залогинились

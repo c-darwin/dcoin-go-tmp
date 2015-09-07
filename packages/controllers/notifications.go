@@ -42,7 +42,7 @@ func (c *Controller) Notifications() (string, error) {
 	myNotifications := make(map[string]map[string]string)
 	myNotifications_, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_notifications ORDER BY sort ASC", -1)
 	for _, data := range myNotifications_ {
-		myNotifications[data["name"]] = map[string]string {"email": data["email"], "sms": data["sms"], "important": data["important"]}
+		myNotifications[data["name"]] = map[string]string {"mobile": data["mobile"],"email": data["email"], "sms": data["sms"], "important": data["important"]}
 	}
 	log.Debug("myNotifications", myNotifications)
 

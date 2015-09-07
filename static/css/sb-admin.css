@@ -3,15 +3,15 @@
 /* ------------------------------- */
 
 body {
-    padding-top: 100px;
+    padding-top: 50px;
     background-color: #f8f8f8;
 }
-
+/*
 @media(min-width:768px) {
     body {
         padding-top: 50px;
     }
-}
+}*/
 
 /* Wrappers */
 
@@ -23,7 +23,7 @@ body {
 
 #page-wrapper {
     padding: 0 15px;
-    min-height: 568px;
+    /*min-height: 568px;*/
     background-color: #fff;
 }
 
@@ -32,7 +32,7 @@ body {
         position: inherit;
         margin: 0 0 0 200px;
         padding: 0 30px;
-        min-height: 800px;
+        /*min-height: 800px;*/
         border-left: 1px solid #e7e7e7;
     }
 }

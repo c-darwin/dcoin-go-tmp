@@ -110,8 +110,12 @@ $('#key_div').on(
 						<label>{{.Lang.key_password}}</label>
 						<input type="password" id="modal_password" class="form-control">
 						{{if .SetupPassword}}
-						<label>SetupPassword</label>
+						<label>Setup password</label>
 						<input type="password" id="modal_setup_password" class="form-control">
+						{{end}}
+						{{if not .Community}}
+						<label>Save key</label>
+						<input type="checkbox" id="modal_save_key" class="form-control">
 						{{end}}
 					</fieldset>
 			</div>

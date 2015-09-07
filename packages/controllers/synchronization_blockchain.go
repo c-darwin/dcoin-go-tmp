@@ -5,6 +5,7 @@ import (
     "encoding/json"
 	"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"net/http"
 )
 
 func (c *Controller) SynchronizationBlockchain() (string, error) {
@@ -12,8 +13,32 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 	blockData, err:=c.DCDB.GetInfoBlock()
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
+
+		var downloadFile string
+		var fileSize int64
+		if len(utils.SqliteDbUrl) > 0 {
+			downloadFile = *utils.Dir+"/litedb.db"
+			resp, err := http.Get(utils.SqliteDbUrl)
+			if err != nil {
+				return "", err
+			}
+			fileSize = resp.ContentLength
+			resp.Body.Close()
+		} else {
+			downloadFile = *utils.Dir+"/public/blockchain"
+			nodeConfig, err := c.GetNodeConfig()
+			blockchain_url := nodeConfig["first_load_blockchain_url"]
+			if len(blockchain_url) == 0 {
+				blockchain_url = consts.BLOCKCHAIN_URL
+			}
+			resp, err := http.Get(blockchain_url)
+			if err != nil {
+				return "", err
+			}
+			fileSize = resp.ContentLength
+		}
 		// качается блок
-		file, err := os.Open(*utils.Dir+"/public/blockchain")
+		file, err := os.Open(downloadFile)
 		if err != nil {
 			return "", err
 		}
@@ -24,8 +49,7 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 		}
 		if stat.Size() > 0 {
 			log.Debug("stat.Size(): %v", int(stat.Size()))
-			log.Debug("consts.BLOCKCHAIN_SIZE: %v", consts.BLOCKCHAIN_SIZE)
-			return `{"download": "`+utils.Int64ToStr(int64(utils.Round(float64((float64(stat.Size())/float64(consts.BLOCKCHAIN_SIZE+5000000))*100), 0)))+`"}`, nil
+			return `{"download": "`+utils.Int64ToStr(int64(utils.Round(float64((float64(stat.Size())/float64(fileSize))*100), 0)))+`"}`, nil
 		} else {
 			return `{"download": "0"}`, nil
 		}
@@ -40,7 +64,7 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 	}
 
 	wTime := int64(12)
-	wTimeReady := int64(1)
+	wTimeReady := int64(2)
 	if c.ConfigIni["test_mode"] == "1" {
 		wTime = 2*365*86400
 		wTimeReady = 2*365*86400

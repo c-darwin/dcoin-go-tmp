@@ -120,6 +120,19 @@
 	@media screen and (max-width: 768px) {
 		body{background-color: #fff}
 	}
+	html, #wrapper {
+		height: 100%;
+	}
+	body,  #dc_content{
+		min-height: 100%;
+	 }
+	#page-wrapper {
+		min-height: 100%;
+		/*height:1px;*/
+	}
+	body{
+		height: 1px;
+	}
 </style>
 </head>
 
@@ -150,6 +163,7 @@
 		<div id="key">key</div>
 		<div id="password">password</div>
 		<div id="setup_password">setup_password</div>
+		<div id="save_key">save_key</div>
 		<img  id="image_key">
 		<canvas  id="canvas_key"></canvas>
 	</div>
@@ -372,23 +386,22 @@
 
 <script>
 	$( document ).ready(function() {
-		// Если нет dc_config и это винда, то выдается install_step_0, который может выдаваться пару минут, т.к. ждет пока запустится mysql
 		{{if not .DbOk}}
-			$( "#dc_content" ).load( "content", function(response, status) {
+			$("#dc_content").load("content", function(response, status) {
 					if ( status == "error" ) { window.location.href = "index"; console.log("load dc_content error/"+response+"/"+status) ;}
 					$("#loading_db").css("display", "none");
 					console.log("loading_db none /"+response+"/"+status) ;
 					})
 		{{else if .Key}}
-			$('#wrapper').spin();
-			$( "#dc_content" ).load( "content", { {{if .SetLang}}"parameters": {"lang":{{.SetLang}} }{{end}} }, function() {
+			$("#wrapper").spin();
+			$("#dc_content").load( "content", { {{if .SetLang}}"parameters": {"lang":{{.SetLang}} }{{end}} }, function() {
 			$("#modal_key").val("{{.Key}}");
 			save_key(); doSign('login');$('#wrapper').spin(false);
 			})
 			load_menu();
 		{{else}}
-			$('#wrapper').spin();
-			$( "#dc_content" ).load( "content", function() {$("#wrapper").spin(false);});
+			$("#wrapper").spin();
+			$("#dc_content").load( "content", function() {$("#wrapper").spin(false);});
 			load_menu();
 		{{end}}
 	});

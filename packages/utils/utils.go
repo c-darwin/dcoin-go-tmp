@@ -66,6 +66,7 @@ type prevBlockType struct {
 
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
 var Console = flag.Int64("console", 0, "Start from console")
+var SqliteDbUrl string
 
 func init() {
 	flag.Parse()

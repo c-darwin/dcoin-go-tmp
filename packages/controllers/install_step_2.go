@@ -48,6 +48,9 @@ func (c *Controller) InstallStep2() (string, error) {
 	confIni.Set("log_tables", "")
 	confIni.Set("log_fns", "")
 	confIni.Set("sign_hash", "ip")
+	if len(sqliteDbUrl) > 0 && dbType=="sqlite" {
+		utils.SqliteDbUrl = sqliteDbUrl
+	}
 
 	if dbType=="sqlite" {
 		confIni.Set("db_user", "")
@@ -69,135 +72,153 @@ func (c *Controller) InstallStep2() (string, error) {
 		return "", err
 	}
 
-	configIni, err = confIni.GetSection("default")
+	go func() {
 
-	if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
-		utils.DB.Close()
-		log.Debug("DB CLOSE")
-		_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+		configIni, err = confIni.GetSection("default")
+
+		if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
+			utils.DB.Close()
+			log.Debug("DB CLOSE")
+			_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+				panic(err)
+				os.Exit(1)
+			}
+			utils.DB, err = utils.NewDbConnect(configIni)
+			log.Debug("DB OPEN")
+			log.Debug("%v", utils.DB)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+				panic(err)
+				os.Exit(1)
+			}
+		}
+
+		c.DCDB = utils.DB
+		if c.DCDB == nil {
+			err = fmt.Errorf("utils.DB == nil")
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
+		}
+
+		if dbType != "sqlite" || len(sqliteDbUrl) == 0 {
+			schema_ := &schema.SchemaStruct{}
+			schema_.DCDB = c.DCDB
+			schema_.DbType = dbType
+			schema_.PrefixUserId = 0
+			schema_.GetSchema()
+
+			err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+				panic(err)
+				os.Exit(1)
+			}
+		}
+
+		if len(userId)>0 {
+			err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+				panic(err)
+				os.Exit(1)
+			}
+		}
+		err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password, auto_reload) VALUES (?, ?, ?, ?)", firstLoad, url, setupPassword, 259200)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
 		}
-		utils.DB, err = utils.NewDbConnect(configIni)
-		log.Debug("DB OPEN")
-		log.Debug("%v", utils.DB)
+
+		err = c.DCDB.ExecSql("INSERT INTO payment_systems (name)VALUES ('Adyen'),('Alipay'),('Amazon Payments'),('AsiaPay'),('Atos'),('Authorize.Net'),('BIPS'),('BPAY'),('Braintree'),('CentUp'),('Chargify'),('Citibank'),('ClickandBuy'),('Creditcall'),('CyberSource'),('DataCash'),('DigiCash'),('Digital River'),('Dwolla'),('ecoPayz'),('Edy'),('Elavon'),('Euronet Worldwide'),('eWAY'),('Flooz'),('Fortumo'),('Google'),('GoCardless'),('Heartland Payment Systems'),('HSBC'),('iKobo'),('iZettle'),('IP Payments'),('Klarna'),('Live Gamer'),('Mobilpenge'),('ModusLink'),('MPP Global Solutions'),('Neteller'),('Nochex'),('Ogone'),('Paymate'),('PayPal'),('Payoneer'),('PayPoint'),('Paysafecard'),('PayXpert'),('Payza'),('Peppercoin'),('Playspan'),('Popmoney'),('Realex Payments'),('Recurly'),('RBK Money'),('Sage Group'),('Serve'),('Skrill (Moneybookers)'),('Stripe'),('Square, Inc.'),('TFI Markets'),('TIMWE'),('Use My Services (UMS)'),('Ukash'),('V.me by Visa'),('VeriFone'),('Vindicia'),('WebMoney'),('WePay'),('Wirecard'),('Western Union'),('WorldPay'),('Yandex money'),('Qiwi'),('OK Pay'),('Bitcoin'),('Perfect Money')")
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
 		}
-	}
-
-	c.DCDB = utils.DB
-	if c.DCDB == nil {
-		return "", fmt.Errorf("utils.DB == nil")
-	}
-
-	if dbType != "sqlite" || len(sqliteDbUrl) == 0 {
-		schema_ := &schema.SchemaStruct{}
-		schema_.DCDB = c.DCDB
-		schema_.DbType = dbType
-		schema_.PrefixUserId = 0
-		schema_.GetSchema()
-
-		err = c.DCDB.ExecSql(`INSERT INTO admin (user_id) VALUES (1)`)
+		err = c.DCDB.ExecSql(`INSERT INTO cf_lang (id, name) VALUES
+		(1, 'English (US)'),
+		(2, 'Afrikaans'),
+		(3, 'Kiswahili'),
+		(4, 'Türkçe'),
+		(5, '‏עברית‏'),
+		(6, '‏العربية‏'),
+		(7, 'Español'),
+		(8, 'Français (Canada)'),
+		(9, 'Guarani'),
+		(10, 'Português (Brasil)'),
+		(11, 'Azərbaycan dili'),
+		(12, 'Bahasa Indonesia'),
+		(13, 'Bahasa Melayu'),
+		(14, 'Basa Jawa'),
+		(15, 'Bisaya'),
+		(16, 'Filipino'),
+		(17, 'Tiếng Việt'),
+		(18, 'Հայերեն'),
+		(19, '‏اردو‏'),
+		(20, 'हिन्दी'),
+		(21, 'বাংলা'),
+		(22, 'ਪੰਜਾਬੀ'),
+		(23, 'தமிழ்'),
+		(24, 'తెలుగు'),
+		(25, 'ಕನ್ನಡ'),
+		(26, 'മലയാളം'),
+		(27, 'සිංහල'),
+		(28, 'ภาษาไทย'),
+		(29, '한국어'),
+		(30, '中文(台灣)'),
+		(31, '中文(简体)'),
+		(32, '中文(香港)'),
+		(33, '日本語'),
+		(35, 'Čeština'),
+		(36, 'Magyar'),
+		(37, 'Polski'),
+		(38, 'Română'),
+		(39, 'Slovenčina'),
+		(40, 'Slovenščina'),
+		(41, 'Български'),
+		(42, 'Русский'),
+		(43, 'Українська'),
+		(45, 'Bosanski'),
+		(46, 'Català'),
+		(47, 'Cymraeg'),
+		(48, 'Dansk'),
+		(49, 'Deutsch'),
+		(50, 'Eesti'),
+		(51, 'English (UK)'),
+		(52, 'Español (España)'),
+		(53, 'Euskara'),
+		(54, 'Français (France)'),
+		(55, 'Galego'),
+		(56, 'Hrvatski'),
+		(57, 'Italiano'),
+		(58, 'Latviešu'),
+		(59, 'Lietuvių'),
+		(60, 'Nederlands'),
+		(61, 'Norsk (bokmål)'),
+		(62, 'Português (Portugal)'),
+		(63, 'Shqip'),
+		(64, 'Suomi'),
+		(65, 'Svenska'),
+		(66, 'Ελληνικά'),
+		(67, 'Македонски'),
+		(68, 'Српски');`)
 		if err != nil {
-			return "", err
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
 		}
-	}
 
-	if len(userId)>0 {
-		err = c.DCDB.ExecSql("INSERT INTO my_table (user_id) VALUES (?)", userId)
+		err = c.DCDB.ExecSql(`INSERT INTO install (progress) VALUES ('complete')`)
 		if err != nil {
-			return "", err
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
 		}
-	}
-	err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password, auto_reload) VALUES (?, ?, ?, ?)", firstLoad, url, setupPassword, 259200)
-	if err != nil {
-		return "", err
-	}
-
-	err = c.DCDB.ExecSql("INSERT INTO payment_systems (name)VALUES ('Adyen'),('Alipay'),('Amazon Payments'),('AsiaPay'),('Atos'),('Authorize.Net'),('BIPS'),('BPAY'),('Braintree'),('CentUp'),('Chargify'),('Citibank'),('ClickandBuy'),('Creditcall'),('CyberSource'),('DataCash'),('DigiCash'),('Digital River'),('Dwolla'),('ecoPayz'),('Edy'),('Elavon'),('Euronet Worldwide'),('eWAY'),('Flooz'),('Fortumo'),('Google'),('GoCardless'),('Heartland Payment Systems'),('HSBC'),('iKobo'),('iZettle'),('IP Payments'),('Klarna'),('Live Gamer'),('Mobilpenge'),('ModusLink'),('MPP Global Solutions'),('Neteller'),('Nochex'),('Ogone'),('Paymate'),('PayPal'),('Payoneer'),('PayPoint'),('Paysafecard'),('PayXpert'),('Payza'),('Peppercoin'),('Playspan'),('Popmoney'),('Realex Payments'),('Recurly'),('RBK Money'),('Sage Group'),('Serve'),('Skrill (Moneybookers)'),('Stripe'),('Square, Inc.'),('TFI Markets'),('TIMWE'),('Use My Services (UMS)'),('Ukash'),('V.me by Visa'),('VeriFone'),('Vindicia'),('WebMoney'),('WePay'),('Wirecard'),('Western Union'),('WorldPay'),('Yandex money'),('Qiwi'),('OK Pay'),('Bitcoin'),('Perfect Money')")
-	if err != nil {
-		return "", err
-	}
-	err = c.DCDB.ExecSql(`INSERT INTO cf_lang (id, name) VALUES
-	(1, 'English (US)'),
-	(2, 'Afrikaans'),
-	(3, 'Kiswahili'),
-	(4, 'Türkçe'),
-	(5, '‏עברית‏'),
-	(6, '‏العربية‏'),
-	(7, 'Español'),
-	(8, 'Français (Canada)'),
-	(9, 'Guarani'),
-	(10, 'Português (Brasil)'),
-	(11, 'Azərbaycan dili'),
-	(12, 'Bahasa Indonesia'),
-	(13, 'Bahasa Melayu'),
-	(14, 'Basa Jawa'),
-	(15, 'Bisaya'),
-	(16, 'Filipino'),
-	(17, 'Tiếng Việt'),
-	(18, 'Հայերեն'),
-	(19, '‏اردو‏'),
-	(20, 'हिन्दी'),
-	(21, 'বাংলা'),
-	(22, 'ਪੰਜਾਬੀ'),
-	(23, 'தமிழ்'),
-	(24, 'తెలుగు'),
-	(25, 'ಕನ್ನಡ'),
-	(26, 'മലയാളം'),
-	(27, 'සිංහල'),
-	(28, 'ภาษาไทย'),
-	(29, '한국어'),
-	(30, '中文(台灣)'),
-	(31, '中文(简体)'),
-	(32, '中文(香港)'),
-	(33, '日本語'),
-	(35, 'Čeština'),
-	(36, 'Magyar'),
-	(37, 'Polski'),
-	(38, 'Română'),
-	(39, 'Slovenčina'),
-	(40, 'Slovenščina'),
-	(41, 'Български'),
-	(42, 'Русский'),
-	(43, 'Українська'),
-	(45, 'Bosanski'),
-	(46, 'Català'),
-	(47, 'Cymraeg'),
-	(48, 'Dansk'),
-	(49, 'Deutsch'),
-	(50, 'Eesti'),
-	(51, 'English (UK)'),
-	(52, 'Español (España)'),
-	(53, 'Euskara'),
-	(54, 'Français (France)'),
-	(55, 'Galego'),
-	(56, 'Hrvatski'),
-	(57, 'Italiano'),
-	(58, 'Latviešu'),
-	(59, 'Lietuvių'),
-	(60, 'Nederlands'),
-	(61, 'Norsk (bokmål)'),
-	(62, 'Português (Portugal)'),
-	(63, 'Shqip'),
-	(64, 'Suomi'),
-	(65, 'Svenska'),
-	(66, 'Ελληνικά'),
-	(67, 'Македонски'),
-	(68, 'Српски');`)
-	if err != nil {
-		return "", err
-	}
-
-	err = c.DCDB.ExecSql(`INSERT INTO install (progress) VALUES ('complete')`)
-	if err != nil {
-		return "", err
-	}
+	}()
 
 	TemplateStr, err := makeTemplate("install_step_2", "installStep2", &installStep0Struct{
 		Lang: c.Lang})

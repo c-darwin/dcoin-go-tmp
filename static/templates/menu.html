@@ -140,7 +140,7 @@
 	<!-- /.navbar-top-links -->
 
 	<div class="navbar-default navbar-static-side" role="navigation">
-		<div class="sidebar-collapse">
+		<div id="menu-collapse"class="sidebar-collapse collapse" style="height: 0px">
 			<ul class="nav" id="side-menu">
 				<li class="sidebar-search">
 					<div class="text-center" style="width: 100px; height: 100px; margin:auto; border-radius: 50%" id="img_avatar"></div>
@@ -280,6 +280,14 @@
 			$("#main-login").html('');
 		}
 		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
+
+		console.log("window="+$(window).width());
+		if($(window).width() > 730) {
+			$('#menu-collapse').removeClass('collapse');
+		}else{
+			$('#menu-collapse').addClass('collapse');
+		}
+
 	});
 </script>
 {{ template "modal". }}

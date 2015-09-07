@@ -7,7 +7,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-
 )
 
 type index struct {
@@ -37,14 +36,31 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sess.SessionRelease(w)
 
-	r.ParseForm()
+	sessUserId := GetSessUserId(sess)
+
 	var key string
+	if utils.DB != nil {
+		communityUsers, err := utils.DB.GetCommunityUsers()
+		if err != nil {
+			log.Error("%v", err)
+		}
+		myPrefix := ""
+		if len(communityUsers) > 0 {
+			myPrefix = utils.Int64ToStr(sessUserId)+"_";
+		}
+		key, err = utils.DB.Single("SELECT private_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").String()
+		if err != nil {
+			log.Error("%v", err)
+		}
+	}
+
+	r.ParseForm()
 	formKey := r.FormValue("key")
 	if len(formKey) > 0 {
 		key = formKey
 		// пишем в сессию, что бы ctrl+F5 не сбрасывал ключ (для авто-входа с dcoin.me)
 		sess.Set("private_key", key)
-	} else {
+	} else if len(key) < 0 {
 		key = GetSessPrivateKey(w, r)
 	}
 	key = strings.Replace(key,"\r","\n",-1)

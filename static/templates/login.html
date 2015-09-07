@@ -3,12 +3,15 @@
 	#page-wrapper{
 		margin: 0px 10% 0px 10%;
 		border: 1px solid #E7E7E7;
-		min-height: 550px;
 	}
-	#wrapper{height: 100%;}
 	#dc_content{
-		height: 550px;
 		vertical-align: middle;
+	}
+	.row, .col-lg-12, #dc_content {
+		height: 100%;
+	}
+	.row{
+		margin-top:15%
 	}
 </style>
 
@@ -37,17 +40,15 @@
 
 </nav>
 {{end}}
-<div style="margin-left: -42px; width:84px;position: absolute;top: 50%;left: 50%;  ">
+
 {{if .PoolTechWorks}}
-		<div class="alert alert-info" style="width: 540px;position:absolute; top: 50%; left: 50%; margin-left: -270px; text-align:center">{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
+	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
 {{else}}
-		<button type="button" class="btn btn-primary btn-lg" id="show_login" style="display: none">{{.Lang.login}}</button>
+	<div style="margin:auto; width:84px;position: relative;top: 40%;"><button type="button" class="btn btn-primary btn-lg" id="show_login" style="display: none">{{.Lang.login}}</button></div>
 {{end}}
 
-</div>
-
 {{if not .UserID}}
-<div class="alert alert-info" style="width: 540px;position:absolute; bottom:0; left: 50%; margin-left: -270px; text-align:center">{{noescape .Lang.login_help_text}}</div>
+<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: 30px auto auto;">{{noescape .Lang.login_help_text}}</div>
 {{end}}
 
 {{ template "modal". }}

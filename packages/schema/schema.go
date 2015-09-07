@@ -220,8 +220,9 @@ s2=make(recmapi)
 s2[0] = map[string]string{"name":"name", "mysql":"varchar(200) NOT NULL DEFAULT ''", "sqlite":"varchar(200) NOT NULL DEFAULT ''","postgresql":"varchar(200) NOT NULL DEFAULT ''", "comment": ""}
 s2[1] = map[string]string{"name":"email", "mysql":"tinyint(1) NOT NULL DEFAULT '0'", "sqlite":"tinyint(1) NOT NULL DEFAULT '0'","postgresql":"smallint NOT NULL DEFAULT '0'", "comment": ""}
 s2[2] = map[string]string{"name":"sms", "mysql":"tinyint(1) NOT NULL DEFAULT '0'", "sqlite":"tinyint(1) NOT NULL DEFAULT '0'","postgresql":"smallint NOT NULL DEFAULT '0'", "comment": ""}
-s2[3] = map[string]string{"name":"sort", "mysql":"tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite":"tinyint(3)  NOT NULL DEFAULT '0'","postgresql":"smallint  NOT NULL DEFAULT '0'", "comment": ""}
-s2[4] = map[string]string{"name":"important", "mysql":"tinyint(1) NOT NULL DEFAULT '0'", "sqlite":"tinyint(1) NOT NULL DEFAULT '0'","postgresql":"smallint NOT NULL DEFAULT '0'", "comment": ""}
+s2[3] = map[string]string{"name":"mobile", "mysql":"tinyint(1) NOT NULL DEFAULT '0'", "sqlite":"tinyint(1) NOT NULL DEFAULT '0'","postgresql":"smallint NOT NULL DEFAULT '0'", "comment": ""}
+s2[4] = map[string]string{"name":"sort", "mysql":"tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite":"tinyint(3)  NOT NULL DEFAULT '0'","postgresql":"smallint  NOT NULL DEFAULT '0'", "comment": ""}
+s2[5] = map[string]string{"name":"important", "mysql":"tinyint(1) NOT NULL DEFAULT '0'", "sqlite":"tinyint(1) NOT NULL DEFAULT '0'","postgresql":"smallint NOT NULL DEFAULT '0'", "comment": ""}
 s1["fields"] = s2
 s1["PRIMARY"] = []string{"name"}
 s1["comment"] = ""
@@ -2709,9 +2710,12 @@ schema.printSchema()
 	schema.s = s
 	schema.printSchema()
 
+	prefix := ""
 	if schema.PrefixUserId > 0 {
-		schema.DB.Exec(`INSERT INTO `+utils.IntToStr(schema.PrefixUserId)+`_my_notifications (name, email, sms) VALUES ('admin_messages',1,1),('change_in_status',1,0),('fc_came_from',1,0),('fc_sent',1,0),('incoming_cash_requests',1,1),('new_version',1,1),('node_time',1,1),('system_error',1,1),('update_email',1,0),('update_primary_key',1,0),('update_sms_request',1,0),('voting_results',1,0),('voting_time',1,0)`)
+		prefix = utils.IntToStr(schema.PrefixUserId)+`_`;
 	}
+	schema.DB.Exec(`INSERT INTO `+prefix+`my_notifications (name, email, sms, mobile) VALUES ('admin_messages',1,1,1),('change_in_status',1,0,0),('fc_came_from',1,0,1),('fc_sent',1,0,0),('incoming_cash_requests',1,1,1),('new_version',1,1,1),('node_time',1,1,0),('system_error',1,1,0),('update_email',1,0,0),('update_primary_key',1,0,0),('update_sms_request',1,0,0),('voting_results',1,0,0),('voting_time',1,0,0)`)
+
 
 }
 

@@ -2,6 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/sendnotif"
 	"fmt"
 	"math"
 )
@@ -136,6 +137,9 @@ func Notifications() {
 						continue BEGIN
 					}
 					for userId, emailSms := range notificationInfo {
+						if emailSms["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, userEmailSmsData[userId]["text"])
+						}
 						if emailSms["email"] == "1" {
 							err = d.SendMail("From Admin: "+data["message"], subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -166,6 +170,10 @@ func Notifications() {
 					}
 					if len(data) > 0 {
 						text := `You"ve got the request for `+data["amount"]+` `+currencyList[utils.StrToInt64(data["currencyId"])]+`. It has to be repaid within the next 48 hours.`
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -198,6 +206,10 @@ func Notifications() {
 					}
 					if len(status) > 0 {
 						text := `New status: `+status
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -241,11 +253,15 @@ func Notifications() {
 					for _, data := range myDcTransactions {
 						comment := ""
 						if data["comment_status"] == "decrypted" {
-							comment = `<br><span style="font-size:16px">`+data["comment"]+`</span>`
+							comment = data["comment"]
 						}
 						text := `You've got `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]+` `+comment
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(`<br><span style="font-size:16px">`+text+`</span>`, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
 								d.PrintSleep(err, 1)
 								continue BEGIN
@@ -283,7 +299,12 @@ func Notifications() {
 						continue BEGIN
 					}
 					for _, data := range myDcTransactions {
+
 						text := `Debiting `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -316,6 +337,10 @@ func Notifications() {
 					}
 					if len(data) > 0 {
 						text := `Update primary key`
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -348,6 +373,10 @@ func Notifications() {
 					}
 					if len(myNewEmail) > 0 {
 						text := `New email: `+myNewEmail
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -380,6 +409,10 @@ func Notifications() {
 					}
 					if len(smsHttpGetRequest) > 0 {
 						text := `New sms_http_get_request `+smsHttpGetRequest
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -436,6 +469,10 @@ func Notifications() {
 
 				if len(text) > 0 {
 					for userId, emailSms := range notificationInfo {
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -463,6 +500,10 @@ func Notifications() {
 					}
 					if lastVoting > 0 && utils.Time()-lastVoting > 86400*14 {
 						text := "It's 2 weeks from the moment you voted."
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -508,6 +549,10 @@ func Notifications() {
 				if len(newVersion) > 0 {
 					for userId, emailSms := range notificationInfo {
 						text := "New version: "+newVersion
+
+						if notificationsArray[name][userId]["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
+						}
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
@@ -552,6 +597,10 @@ func Notifications() {
 						text := ""
 						if diff > 5 {
 							text = "Divergence time "+utils.Int64ToStr(diff)+" sec"
+						}
+
+						if emailSms["mobile"] == "1" {
+							sendnotif.SendMobileNotification(subj, text)
 						}
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, myData["email"], myData, community, poolAdminUserId)

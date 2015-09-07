@@ -233,6 +233,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if tplName == "installStep0" && len(utils.SqliteDbUrl) > 0 {
+		tplName = "updatingBlockchain"
+	}
+
 	log.Debug("tplName2=",tplName)
 
 	// кол-во ключей=подписей у юзера

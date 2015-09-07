@@ -2,6 +2,35 @@
 
 <script>
 
+
+
+	$('#send_test_mobile').bind('click', function () {
+
+		$.ajax({
+			type: "POST",
+			url: "ajax?controllerName=sendMobile",
+			data: { text: $('#sms_text').val() },
+			dataType: "json",
+			timeout: 10000, // in milliseconds
+			success: function(data) {
+				console.log("data.error"+data.error)
+				if (data.error!='null') {
+					$("#html_errors").html(data.error);
+					$("#html_errors").css("display", "block");
+				}
+				else {
+					fc_navigate ('notifications', {'alert': '{{.Lang.mobile_sent}}'} );
+				}
+			},
+			error: function(request, status, err) {
+				console.log("data.error status"+status)
+				$("#html_errors").html('Error ('+status+')');
+				$("#html_errors").css("display", "block");
+			}
+		});
+	});
+
+
 	$('#send_test_sms').bind('click', function () {
 
 		$.ajax({
@@ -120,12 +149,18 @@
 			name = $(this).val();
 			sms = name+'_sms';
 			email = name+'_email';
+			mobile = name+'_mobile';
 			my_notifications[i] = {};
 			my_notifications[i].name = name;
 			if	($("#"+sms).is(':checked'))
 				my_notifications[i].sms = 1;
 			else
 				my_notifications[i].sms = 0;
+
+			if	($("#"+mobile).is(':checked'))
+				my_notifications[i].mobile = 1;
+			else
+				my_notifications[i].mobile = 0;
 
 			if	($("#"+email).is(':checked'))
 				my_notifications[i].email = 1;
@@ -259,15 +294,20 @@
 <form class="form-inline">
 	<button type="submit" class="btn" id="send_test_sms">{{.Lang.send_a_test_sms}}</button>
 </form>
+	<br><br>
+<form class="form-inline">
+	<button type="submit" class="btn" id="send_test_mobile">{{.Lang.send_a_test_mobile_notification}}</button>
+</form>
 {{end}}
 
 <h3>{{.Lang.configuring_notifications}}</h3>
 <div id="notifications">
 	<table class="table table-striped" style="width:500px">
-		<tr><th></th>{{if .NodeAdmin}}<th>SMS</th>{{end}}<th>Email</th></tr>
+		<tr><th></th>{{if .NodeAdmin}}<th>Mobile</th><th>SMS</th>{{end}}<th>Email</th></tr>
 		{{range $name, $data := .MyNotifications}}
 			<tr><td><input type='hidden' id='names' value='{{$name}}'><span {{if $data.important}} class='text-error'{{end}}>{{notificationsLang $.Lang $name}}</span></td>
 			{{if $.NodeAdmin}}
+				<td><input id='{{$name}}_mobile' type='checkbox' {{if eq $data.mobile "1"}}checked{{end}}></td>
 				<td><input id='{{$name}}_sms' type='checkbox' {{if eq $data.sms "1"}}checked{{end}}></td>
 			{{else}}
 				<!--<td><input id='{$name}_sms' type='checkbox' ".($data['sms']?"checked":"")."></td>-->
