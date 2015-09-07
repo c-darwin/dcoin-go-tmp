@@ -19,8 +19,11 @@ import "C"
 import  (
 	"net/http"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"net"
+	"github.com/hydrogen18/stoppableListener"
 )
 
+var stop = make(chan bool)
 
 func iosLog(text string) {
 	if utils.IOS() {
@@ -28,10 +31,29 @@ func iosLog(text string) {
 	}
 }
 
-func httpListener(ListenHttpHost, BrowserHttpHost string) {
+func StartHTTPServer(ListenHttpHost string){
+	originalListener, err := net.Listen("tcp", ListenHttpHost)
+	if err != nil {
+		panic(err)
+	}
+	sl, err := stoppableListener.New(originalListener)
+	if err != nil {
+		panic(err)
+	}
+	server := http.Server{}
 	go func() {
-		http.ListenAndServe(ListenHttpHost, nil)
+		server.Serve(sl)
 	}()
+	<-stop
+	sl.Stop()
+}
+
+func StopHTTPServer() {
+	stop<-true
+}
+
+func httpListener(ListenHttpHost, BrowserHttpHost string) {
+	go StartHTTPServer(ListenHttpHost)
 }
 
 func tcpListener(db *utils.DCDB) {

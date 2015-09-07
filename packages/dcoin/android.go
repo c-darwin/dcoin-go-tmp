@@ -13,6 +13,7 @@ func iosLog(text string) {
 func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	go func() {
 		http.ListenAndServe(ListenHttpHost, nil)
+		http.C
 	}()
 }
 

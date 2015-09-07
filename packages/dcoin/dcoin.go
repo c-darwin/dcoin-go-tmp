@@ -222,7 +222,7 @@ db_name=`)
 				utils.Sleep(3)
 				continue
 			}
-			dExtit, err := db.Single(`SELECT stop_time FROM stop_daemons`).Int64()
+			dExtit, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
 			if err != nil {
 				iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 				log.Error("%v", utils.ErrInfo(err))
