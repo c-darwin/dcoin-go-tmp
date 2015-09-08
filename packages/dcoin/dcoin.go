@@ -33,6 +33,8 @@ var (
 
 
 func Stop() {
+	log.Debug("Stop()")
+	IosLog("Stop()")
 	var err error
 	utils.DB, err = utils.NewDbConnect(configIni)
 	log.Debug("DCOIN Stop : %v", utils.DB)
