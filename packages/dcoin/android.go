@@ -7,13 +7,12 @@ import  (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func iosLog(text string) {
+func IosLog(text string) {
 }
 
 func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	go func() {
 		http.ListenAndServe(ListenHttpHost, nil)
-		http.C
 	}()
 }
 

@@ -25,7 +25,7 @@ import  (
 
 var stop = make(chan bool)
 
-func iosLog(text string) {
+func IosLog(text string) {
 	if utils.IOS() {
 		C.logNS(C.CString(text))
 	}

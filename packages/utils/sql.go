@@ -2109,7 +2109,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			t := StrToInt64(exists["lock_time"])
 			if Time() - t > 600 {
 				log.Error("%d %s %d", t, exists["script_name"], Time() - t)
-				if runtime.GOOS == "android" || runtime.GOARCH == "arm" {
+				if Mobile() {
 					db.ExecSql(`DELETE FROM main_lock`)
 				}
 			}

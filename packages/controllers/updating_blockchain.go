@@ -19,6 +19,7 @@ type updatingBlockchainStruct struct {
 	CheckTime string
 	LastBlock int64
 	BlockChainSize int64
+	Mobile bool
 }
 
 
@@ -96,6 +97,10 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		waitText = c.Lang["loading_blockchain_please_wait"]
 	}
 
+	var mobile bool
+	if utils.Mobile() {
+		mobile = true
+	}
 
 	funcMap := template.FuncMap{
 		"noescape": func(s string) template.HTML {
@@ -109,6 +114,6 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	b := new(bytes.Buffer)
-	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter:blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE})
+	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter:blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE, Mobile: mobile})
 	return b.String(), nil
 }

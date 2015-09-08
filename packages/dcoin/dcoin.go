@@ -36,24 +36,24 @@ func Stop() {
 	var err error
 	utils.DB, err = utils.NewDbConnect(configIni)
 	log.Debug("%v", utils.DB)
-	iosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
+	IosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
 	if err != nil {
-		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		//panic(err)
 		//os.Exit(1)
 	}
 	err = utils.DB.ExecSql(`INSERT INTO stop_daemons(stop_time) VALUES (?)`, utils.Time())
 	if err != nil {
-		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 	}
-	iosLog("DCOIN Stop")
+	IosLog("DCOIN Stop")
 }
 
 func Start(dir string) {
 
-	iosLog("start")
+	IosLog("start")
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -66,7 +66,7 @@ func Start(dir string) {
 		*utils.Dir = dir
 	}
 
-	iosLog("dir:"+dir)
+	IosLog("dir:"+dir)
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -92,11 +92,11 @@ log_level=DEBUG
 log_output=file
 db_name=`)
 		ioutil.WriteFile(*utils.Dir+"/config.ini", d1, 0644)
-		iosLog("config ok")
+		IosLog("config ok")
 	}
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
-		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
@@ -110,9 +110,9 @@ db_name=`)
 	go func() {
 		utils.DB, err = utils.NewDbConnect(configIni)
 		log.Debug("%v", utils.DB)
-		iosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
+		IosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
 		if err != nil {
-			iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+			IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
@@ -121,13 +121,13 @@ db_name=`)
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
 	if err != nil {
-		iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
 	defer f.Close()
-	iosLog("configIni:"+fmt.Sprintf("%v", configIni))
+	IosLog("configIni:"+fmt.Sprintf("%v", configIni))
 	var backend *logging.LogBackend
 	switch configIni["log_output"] {
 	case "file":
@@ -153,7 +153,7 @@ db_name=`)
 	rand.Seed( time.Now().UTC().UnixNano())
 
 	log.Debug("public")
-	iosLog("public")
+	IosLog("public")
 	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
 		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
@@ -166,7 +166,7 @@ db_name=`)
 	daemons.DaemonCh = make(chan bool, 1)
 	daemons.AnswerDaemonCh = make(chan bool, 1)
 	log.Debug("daemonsStart")
-	iosLog("daemonsStart")
+	IosLog("daemonsStart")
 	//TestblockIsReady,TestblockGenerator,TestblockDisseminator,Shop,ReductionGenerator,QueueParserTx,QueueParserTestblock,QueueParserBlocks,PctGenerator,Notifications,NodeVoting,MaxPromisedAmountGenerator,MaxOtherCurrenciesGenerator,ElectionsAdmin,Disseminator,Confirmations,Connector,Clear,CleaningDb,CfProjects,BlocksCollection
 	daemonsStart := map[string]func(){"TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
 	if utils.Mobile() {
@@ -191,7 +191,7 @@ db_name=`)
 	}
 
 
-	iosLog("MonitorDaemons")
+	IosLog("MonitorDaemons")
 	// мониторинг демонов
 	daemonsTable := make(map[string]string)
 	go func() {
@@ -206,7 +206,7 @@ db_name=`)
 
 
 
-	iosLog("signals")
+	IosLog("signals")
 	// сигналы демонам для выхода
 	signals(countDaemons)
 
@@ -215,7 +215,7 @@ db_name=`)
 
 
 
-	iosLog("stop_daemons")
+	IosLog("stop_daemons")
 	// мониторим сигнал из БД о том, что демонам надо завершаться
 	go func() {
 		var first bool
@@ -227,14 +227,14 @@ db_name=`)
 			if !first {
 				err = utils.DB.ExecSql(`DELETE FROM stop_daemons`)
 				if err != nil {
-					iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+					IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 					log.Error("%v", utils.ErrInfo(err))
 				}
 				first = true
 			}
 			dExtit, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
 			if err != nil {
-				iosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+				IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 				log.Error("%v", utils.ErrInfo(err))
 			}
 			if dExtit > 0 {
@@ -257,14 +257,14 @@ db_name=`)
 
 
 
-	iosLog("BrowserHttpHost")
+	IosLog("BrowserHttpHost")
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
 	if db != nil {
 		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
 	}
-	iosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
+	IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
 	log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
 	// включаем листинг веб-сервером для клиентской части
 	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
@@ -278,7 +278,7 @@ db_name=`)
 
 	log.Debug("ListenHttpHost", ListenHttpHost)
 
-	iosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
+	IosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
 
 	httpListener(ListenHttpHost, BrowserHttpHost)
 
@@ -286,14 +286,14 @@ db_name=`)
 
 	utils.Sleep(3)
 
-	iosLog("Sleep")
+	IosLog("Sleep")
 
 	if *utils.Console == 0 && !utils.Mobile() {
 		openBrowser(BrowserHttpHost)
 	}
 
 	log.Debug("ALL RIGHT")
-	iosLog("ALL RIGHT")
+	IosLog("ALL RIGHT")
 	utils.Sleep(3600*24*90)
 	log.Debug("EXIT")
 }

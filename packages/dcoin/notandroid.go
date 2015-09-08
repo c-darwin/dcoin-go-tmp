@@ -33,7 +33,7 @@ static inline void waitSig() {
 */
 import "C"
 
-func iosLog(text string) {
+func IosLog(text string) {
 }
 
 //export go_callback_int
