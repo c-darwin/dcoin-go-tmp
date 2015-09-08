@@ -266,7 +266,7 @@ db_name=`)
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
-	if db != nil {
+	if db != nil && !utils.Mobile() {
 		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
 	}
 	IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
