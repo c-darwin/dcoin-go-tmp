@@ -49,7 +49,10 @@ func StartHTTPServer(ListenHttpHost string){
 }
 
 func StopHTTPServer() {
+	log.Debug("StopHTTPServer()")
+	IosLog("StopHTTPServer 0")
 	stop<-true
+	IosLog("StopHTTPServer 1")
 }
 
 func httpListener(ListenHttpHost, BrowserHttpHost string) {
