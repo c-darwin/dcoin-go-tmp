@@ -51,7 +51,8 @@ func StartHTTPServer(ListenHttpHost string){
 func StopHTTPServer() {
 	log.Debug("StopHTTPServer()")
 	IosLog("StopHTTPServer 0")
-	stop<-true
+	go func() {stop<-true}();
+	utils.Sleep(1)
 	IosLog("StopHTTPServer 1")
 }
 

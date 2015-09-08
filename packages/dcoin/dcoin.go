@@ -235,13 +235,13 @@ db_name=`)
 				}
 				first = true
 			}
-			dExtit, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
+			dExists, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
 			if err != nil {
 				IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 				log.Error("%v", utils.ErrInfo(err))
 			}
-			log.Debug("dExtit: %d", dExtit)
-			if dExtit > 0 {
+			log.Debug("dExtit: %d", dExists)
+			if dExists > 0 {
 				log.Debug("countDaemons: %d", countDaemons)
 				for i := 0; i < countDaemons; i++ {
 					daemons.DaemonCh <- true

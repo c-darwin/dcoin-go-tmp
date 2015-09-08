@@ -852,6 +852,7 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 	ListenHttpHost := ":8089"
 	// Если первый запуск, то будет висеть на 8089
 	community, err := db.GetCommunityUsers()
+	log.Debug("community:%v", community)
 	if err!=nil {
 		log.Error("%v", ErrInfo(err))
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
