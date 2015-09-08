@@ -35,7 +35,7 @@ var (
 func Stop() {
 	var err error
 	utils.DB, err = utils.NewDbConnect(configIni)
-	log.Debug("%v", utils.DB)
+	log.Debug("DCOIN Stop : %v", utils.DB)
 	IosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
 	if err != nil {
 		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
@@ -48,6 +48,7 @@ func Stop() {
 		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 	}
+	log.Debug("DCOIN Stop")
 	IosLog("DCOIN Stop")
 }
 
@@ -199,7 +200,7 @@ db_name=`)
 			daemonNameAndTime := <-daemons.MonitorDaemonCh
 			daemonsTable[daemonNameAndTime[0]] = daemonNameAndTime[1]
 			if utils.Time()%10 == 0 {
-				log.Error("daemonsTable: %v\n", daemonsTable)
+				log.Debug("daemonsTable: %v\n", daemonsTable)
 			}
 		}
 	} ()
@@ -237,7 +238,9 @@ db_name=`)
 				IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
 				log.Error("%v", utils.ErrInfo(err))
 			}
+			log.Debug("dExtit: %d", dExtit)
 			if dExtit > 0 {
+				log.Debug("countDaemons: %d", countDaemons)
 				for i := 0; i < countDaemons; i++ {
 					daemons.DaemonCh <- true
 					log.Debug("daemons.DaemonCh <- true")
