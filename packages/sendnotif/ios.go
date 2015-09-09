@@ -10,7 +10,7 @@ package sendnotif
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKit.h>
 
-//void ShowMess(char* title, text) {
+void ShowMess() {
 //	UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@title message:@text delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
 void ShowMess() {
 	UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Простой alert" message:@"Это простой UIAlertView, он просто показывает сообщение" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];

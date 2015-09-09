@@ -2,7 +2,7 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
+	"runtime"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
@@ -31,6 +31,10 @@ func QueueParserTx() {
 	d.DCDB = DbConnect()
 	if d.DCDB == nil {
 		return
+	}
+
+	if runtime.GOOS == "android" {
+
 	}
 
 	BEGIN:
