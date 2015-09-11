@@ -16,8 +16,8 @@ ShowMessM(char* title, char* text) {
     UILocalNotification* localNotification = [[UILocalNotification alloc] init];
     //localNotification.fireDate = [NSDate dateWithTimeIntervalSinceNow:5];
     localNotification.soundName = UILocalNotificationDefaultSoundName;
-    localNotification.alertTitle = [NSString stringWithFormat:@"%c" , title];
-    localNotification.alertBody = [NSString stringWithFormat:@"%c" , text];
+    localNotification.alertTitle = [NSString stringWithUTF8String:title];
+    localNotification.alertBody = [NSString stringWithUTF8String:text];
     localNotification.timeZone = [NSTimeZone systemTimeZone];
     localNotification.applicationIconBadgeNumber = 1;
     localNotification.repeatInterval = NSCalendarUnitMinute;
@@ -31,5 +31,5 @@ ShowMessM(char* title, char* text) {
 import "C"
 
 func SendMobileNotification(title, text string) {
-	C.ShowMessM(C.CString(title), C.CString(text))
+    C.ShowMessM(C.CString(title), C.CString(text))
 }
