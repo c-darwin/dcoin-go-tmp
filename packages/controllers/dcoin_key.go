@@ -4,6 +4,7 @@ import (
 	"strings"
 	"errors"
 	"encoding/base64"
+	"regexp"
 )
 
 func (c *Controller) DcoinKey() (string, error) {
@@ -30,8 +31,8 @@ func (c *Controller) DcoinKey() (string, error) {
 		param = paramNoPass
 	}
 
-	//if ok, _ := regexp.MatchString("(iPod|iPhone|iPad)", c.r.UserAgent()); ok{
-	if len(c.r.FormValue("iPhone")) > 0 {
+	if ok, _ := regexp.MatchString("(iPod|iPhone|iPad)", c.r.UserAgent()); ok{
+	//if len(c.r.FormValue("iPhone")) > 0 {
 		buffer, err := utils.KeyToImg(privateKey, "", c.SessUserId, c.TimeFormat, param)
 		if err != nil {
 			return "", utils.ErrInfo(err)

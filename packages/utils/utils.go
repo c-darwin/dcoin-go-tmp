@@ -108,11 +108,13 @@ func MakeCfCategories(lang map[string]string) []map[string]string {
 }
 
 func getImageDimension(imagePath string) (int, int) {
-	file, err := os.Open(imagePath)
+	/*file, err := os.Open(imagePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 	}
-	defer file.Close()
+	defer file.Close()*/
+	data, _ := static.Asset(imagePath)
+	file := bytes.NewReader(data)
 	image, _, err := image.DecodeConfig(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", imagePath, err)
@@ -132,11 +134,14 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	keyBin = HexToBin(keyHex)
 
 	w, h := getImageDimension(param.Bg_path)
-	fSrc, err := os.Open(param.Bg_path)
+	/*fSrc, err := os.Open(param.Bg_path)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
-	defer fSrc.Close()
+	defer fSrc.Close()*/
+	data, _ := static.Asset(param.Bg_path)
+	fSrc := bytes.NewReader(data)
+
 	src, err := png.Decode(fSrc)
 	if err != nil {
 		return nil, ErrInfo(err)
