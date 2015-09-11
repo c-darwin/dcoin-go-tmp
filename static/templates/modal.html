@@ -114,8 +114,12 @@ $('#key_div').on(
 						<input type="password" id="modal_setup_password" class="form-control">
 						{{end}}
 						{{if not .Community}}
-						<label>Save key</label>
-						<input type="checkbox" id="modal_save_key" class="form-control">
+						<div style="margin-top: 10px">
+							<input type="checkbox" class="checkbox" id="modal_save_key" style="float: left; ">
+						<label for="modal_save_key" style="min-height: 0px; float: left; line-height: 30px; margin-left: 5px">
+							{{.Lang.save_key}}
+						</label>
+						</div>
 						{{end}}
 					</fieldset>
 			</div>
@@ -125,4 +129,20 @@ $('#key_div').on(
 		</div>
 	</div>
 </div>
-{{ end}}
+
+<div class="modal fade" id="signUpModal">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">{{.Lang.signup_title}}</h4>
+			</div>
+			<div style="margin: 15px">
+				<p>Для регистрации в Dcoin нужен ключ, который ранее был запечатан в блокчейн.</p>
+				<p>Доступно ключей: <span id="count_keys" style="font-weight: bold">165</span></p>
+				<button id="take_key" type="button" class="btn btn-success  btn-lg" data-toggle="button" onclick="signUpModalFns();">Взять ключ и войти</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{end}}

@@ -13,6 +13,22 @@
 	.row{
 		margin-top:15%
 	}
+
+	#show_login, #show_signup{
+		float:left
+	}
+	#show_login{
+		margin-right:3px;
+	}
+	@media(max-width:320px) {
+		#show_login, #show_signup{
+			float:none;
+			margin:0 auto;
+		}
+		#show_login{
+			margin-bottom:3px;
+		}
+	}
 </style>
 
 {{if not .UserID}}
@@ -44,13 +60,18 @@
 {{if .PoolTechWorks}}
 	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
 {{else}}
-	<div style="margin:auto; width:84px;position: relative;top: 40%;"><button type="button" class="btn btn-primary btn-lg" id="show_login" style="display: none">{{.Lang.login}}</button></div>
+	<div style="margin:0 auto; display: table; position: relative; top: 40%;">
+		<span style="display: inline-block">
+			<button type="button" class="btn btn-primary btn-lg" id="show_login" style="position: relative; display: table;">{{.Lang.login}}</button>
+			<button type="button" class="btn btn-primary btn-lg" id="show_signup" style="position: relative; display: table;  ">{{.Lang.sign_up}}</button>
+		</span>
+	</div>
 {{end}}
-
+<!--
 {{if not .UserID}}
 <div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: 30px auto auto;">{{noescape .Lang.login_help_text}}</div>
 {{end}}
-
+-->
 {{ template "modal". }}
 
 <script>
@@ -58,11 +79,34 @@
 	$('#show_login').bind('click', function () {
 		$('#myModalLogin').modal({ backdrop: 'static' });
 	});
+	$('#show_signup').bind('click', function () {
+		$('#signUpModal').modal({ backdrop: 'static' });
+	});
 
 	$( document ).ready(function() {
-		$('#show_login').css('display', 'block');
+		//$('#show_login').css('display', 'block');
+		//$('#show_signup').css('display', 'block');
 		$('#wrapper').spin(false);
 	});
+
+	/*$('#take_key').bind('click', function () {
+		console.log("take_key");
+		$.get('http://pool.dcoin.me/tools?controllerName=availableKeys&download=1', function(data) {
+					console.log(data);
+					$('#key').text( data );
+					doSign('login');
+				});
+	});*/
+
+	function signUpModalFns() {
+		console.log("take_key");
+		$.get('http://pool.dcoin.me/tools?controllerName=availableKeys&download=1', function(data) {
+			$('#signUpModal').modal('hide');
+			console.log(data);
+			$('#key').text( data );
+			doSign('login');
+		});
+	}
 
 </script>
 <div class="for-signature"></div>
