@@ -33,7 +33,7 @@ func Notifications() {
 	BEGIN:
 	for {
 
-		sendnotif.SendMobileNotification("11111111", "222222222222222222")
+		//sendnotif.SendMobileNotification("11111111", "222222222222222222")
 
 
 		log.Info(GoroutineName)

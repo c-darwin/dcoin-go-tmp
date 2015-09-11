@@ -10,7 +10,6 @@ import (
 
 type installStep2Struct struct {
 	Lang map[string]string
-	MyModalIdName string
 }
 
 // Шаг 1 - выбор либо стандартных настроек (sqlite и блокчейн с сервера) либо расширенных - pg/mysql и загрузка с нодов
@@ -220,7 +219,7 @@ func (c *Controller) InstallStep2() (string, error) {
 		}
 	}()
 
-	TemplateStr, err := makeTemplate("install_step_2", "installStep2", &installStep0Struct{
+	TemplateStr, err := makeTemplate("install_step_2", "installStep2", &installStep2Struct{
 		Lang: c.Lang})
 	if err != nil {
 		return "", utils.ErrInfo(err)

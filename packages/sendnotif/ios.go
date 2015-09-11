@@ -10,17 +10,26 @@ package sendnotif
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKit.h>
 
-//void ShowMess(char* title, text) {
-//	UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@title message:@text delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
-void ShowMess() {
-	UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Простой alert" message:@"Это простой UIAlertView, он просто показывает сообщение" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
-	[alert show];
-	[alert release];
+void
+ShowMessM(char* title, char* text) {
+    NSLog(@"ShowMessX<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+    UILocalNotification* localNotification = [[UILocalNotification alloc] init];
+    //localNotification.fireDate = [NSDate dateWithTimeIntervalSinceNow:5];
+    localNotification.soundName = UILocalNotificationDefaultSoundName;
+    localNotification.alertTitle = [NSString stringWithFormat:@"%c" , title];
+    localNotification.alertBody = [NSString stringWithFormat:@"%c" , text];
+    localNotification.timeZone = [NSTimeZone systemTimeZone];
+    localNotification.applicationIconBadgeNumber = 1;
+    localNotification.repeatInterval = NSCalendarUnitMinute;
+    [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+//    [[NSNotificationCenter defaultCenter] postNotificationName:@"timerInvoked" object:self];
+    [localNotification release];
 }
+
 
 */
 import "C"
 
 func SendMobileNotification(title, text string) {
-	C.ShowMess();
+	C.ShowMessM(C.CString(title), C.CString(text))
 }

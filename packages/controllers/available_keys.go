@@ -65,6 +65,7 @@ func (c *Controller) AvailableKeys() (string, error) {
 		c.w.Header().Set("Content-Type", "application/octet-stream")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(key)))
 		c.w.Header().Set("Content-Disposition", `attachment; filename="key.txt"`)
+		c.w.Header().Set("Access-Control-Allow-Origin", "*")
 		c.w.Write([]byte(key))
 	} else {
 		data, err := static.Asset("static/templates/available_keys.html")
