@@ -2224,12 +2224,13 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
 		if err != nil {
-			log.Debug("pub", pub)
-			log.Debug("crypto.SHA1", crypto.SHA1)
-			log.Debug("HashSha1(forSign)", HashSha1(forSign))
-			log.Debug("HashSha1(forSign)", string(HashSha1(forSign)))
-			log.Debug("forSign", forSign)
-			log.Debug("sign: %x\n", signsSlice[i])
+			log.Error("pub %v", pub)
+			log.Error("publicKeys[i] %x", publicKeys[i])
+			log.Error("crypto.SHA1", crypto.SHA1)
+			log.Error("HashSha1(forSign)", HashSha1(forSign))
+			log.Error("HashSha1(forSign)", string(HashSha1(forSign)))
+			log.Error("forSign", forSign)
+			log.Error("sign: %x\n", signsSlice[i])
 			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v",  HashSha1(forSign), forSign)
 		}
 	}

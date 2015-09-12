@@ -1212,8 +1212,10 @@ func (c *Controller) SaveQueue() (string, error) {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
 				}
-				forSign := fmt.Sprintf("%d,%d,%d,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
+				forSign := fmt.Sprintf("%s,%s,%s,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
+				pubKey_,_ := utils.GetPublicFromPrivate(string(nodePrivateKey));
+				log.Error(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>binSignature:%x / txType_:%s / timeNow:%s / uId:%s / http_host:%s / tcp_host:%s / GetPublicFromPrivate:%x", binSignature, utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, pubKey_)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
@@ -1224,7 +1226,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(uId))...)
 				data = append(data, utils.EncodeLengthPlusData(http_host)...)
 				data = append(data, utils.EncodeLengthPlusData(tcp_host)...)
-				data = append(data, utils.EncodeLengthPlusData(binSignature)...)
+				data = append(data, utils.EncodeLengthPlusData([]byte(binSignature))...)
 
 				err = c.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
 				if err != nil {
