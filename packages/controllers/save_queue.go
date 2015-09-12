@@ -1219,13 +1219,12 @@ func (c *Controller) SaveQueue() (string, error) {
 					continue
 				}
 
-				// создаем новую транзакцию - подверждение, что фото скопировано и проверено.
 				data = utils.DecToBin(txType, 1)
 				data = append(data, utils.DecToBin(timeNow, 4)...)
 				data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(uId))...)
 				data = append(data, utils.EncodeLengthPlusData(http_host)...)
 				data = append(data, utils.EncodeLengthPlusData(tcp_host)...)
-				data = append(data, binSignature...)
+				data = append(data, utils.EncodeLengthPlusData(binSignature)...)
 
 				err = c.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
 				if err != nil {
