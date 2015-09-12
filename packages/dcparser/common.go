@@ -604,7 +604,7 @@ func (p *Parser) checkMiner(userId int64) error {
 	if (minerId > 0) || (minerId == 0 && blockId > 0) {
 		return nil
 	} else {
-		return utils.ErrInfoFmt("incorrect miner id")
+		return utils.ErrInfoFmt("incorrect miner id. user_id = %d", userId)
 	}
 }
 
