@@ -1212,10 +1212,10 @@ func (c *Controller) SaveQueue() (string, error) {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
 				}
-				forSign := fmt.Sprintf("%s,%s,%s,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
+				forSign := fmt.Sprintf("%d,%d,%d,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
 				pubKey_,_ := utils.GetPublicFromPrivate(string(nodePrivateKey));
-				log.Error(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>binSignature:%x / txType_:%s / timeNow:%s / uId:%s / http_host:%s / tcp_host:%s / GetPublicFromPrivate:%x", binSignature, utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, pubKey_)
+				log.Error(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>forSign:%s / binSignature:%x / txType_:%s / timeNow:%s / uId:%s / http_host:%s / tcp_host:%s / GetPublicFromPrivate:%s", forSign, binSignature, utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, pubKey_)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
