@@ -37,7 +37,9 @@ func (c *Controller) DcoinKey() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		c.w.Header().Set("Content-Type", "image/png")
+		c.w.Header().Set("Content-Type", "application/octet-stream")
+		c.w.Header().Set("Pragma", "no-cache")
+		c.w.Header().Set("Expires", "0")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(buffer.Bytes())))
 		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.png"`)
 		if _, err := c.w.Write(buffer.Bytes()); err != nil {
