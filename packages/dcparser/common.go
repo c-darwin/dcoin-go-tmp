@@ -210,7 +210,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		log.Debug("okSignErr", okSignErr)
 
 		// сам блок сохраняем в файл, чтобы не нагружать память
-		file, err := ioutil.TempFile(os.TempDir(), "DC")
+		file, err := ioutil.TempFile(*utils.Dir, "DC")
 		defer os.Remove(file.Name())
 		_, err = file.Write(binaryBlockFull)
 		if err != nil {
@@ -1766,8 +1766,8 @@ func (p *Parser) ParseDataFull() error {
 			//log.Debug("transactionSize", transactionSize)
 			transactionBinaryData := utils.BytesShift(&p.BinaryData, transactionSize)
 			transactionBinaryDataFull := transactionBinaryData
-			ioutil.WriteFile("/tmp/dctx", transactionBinaryDataFull, 0644)
-			ioutil.WriteFile("/tmp/dctxhash", utils.Md5(transactionBinaryDataFull), 0644)
+			//ioutil.WriteFile("/tmp/dctx", transactionBinaryDataFull, 0644)
+			//ioutil.WriteFile("/tmp/dctxhash", utils.Md5(transactionBinaryDataFull), 0644)
 			// добавляем взятую тр-ию в набор тр-ий для RollbackTo, в котором пойдем в обратном порядке
 			txForRollbackTo = append(txForRollbackTo, utils.EncodeLengthPlusData(transactionBinaryData)...)
 			//log.Debug("transactionBinaryData: %x\n", transactionBinaryData)
