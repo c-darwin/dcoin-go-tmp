@@ -1183,14 +1183,16 @@ func (c *Controller) SaveQueue() (string, error) {
 							UPDATE `+myPrefix+`my_table
 							SET  http_host = ?, tcp_host = ?, host_status = 'my_pending'`, http_host, tcp_host)
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 				nodePrivateKey, err := c.Single(`
 							SELECT private_key
 							FROM `+myPrefix+`my_node_keys
 							WHERE block_id = (SELECT max(block_id) FROM `+myPrefix+`my_node_keys )`).Bytes()
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 				timeNow := time.Now().Unix()
 
@@ -1198,19 +1200,23 @@ func (c *Controller) SaveQueue() (string, error) {
 				// Extract the PEM-encoded data block
 				block, _ := pem.Decode(nodePrivateKey)
 				if block == nil {
-					return "", (errors.New("bad key data"))
+					log.Error("%v", utils.ErrInfo(errors.New("bad key data")))
+					continue
 				}
 				if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-					return "", (errors.New("unknown key type "+got+", want "+want));
+					log.Error("%v", utils.ErrInfo(errors.New("unknown key type "+got+", want "+want)))
+					continue
 				}
 				privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 				forSign := fmt.Sprintf("%d,%d,%d,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 
 				// создаем новую транзакцию - подверждение, что фото скопировано и проверено.
@@ -1223,7 +1229,8 @@ func (c *Controller) SaveQueue() (string, error) {
 
 				err = c.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 			}
 			return "ok", nil

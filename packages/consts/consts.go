@@ -29,7 +29,7 @@ const LAST_BLOCK = 260000
 const BLOCKCHAIN_SIZE = 70000000
 
 // где лежит блокчейн. для тех, кто не хочет собирать его с нодов
-const BLOCKCHAIN_URL = "http://dcoin.me/blockchain"
+const BLOCKCHAIN_URL = "http://dcoin.club/blockchain"
 
 // на сколько может бежать время в тр-ии
 const MAX_TX_FORW = 0

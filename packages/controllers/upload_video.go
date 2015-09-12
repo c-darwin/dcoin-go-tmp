@@ -53,7 +53,7 @@ func (c *Controller) UploadVideo() (string, error) {
 	case "video/3gpp":
 
 		fmt.Println("3gpp")
-		conn, err := net.DialTimeout("tcp", "3gp.dcoin.me:8099", 5 * time.Second)
+		conn, err := net.DialTimeout("tcp", "3gp.dcoin.club:8099", 5 * time.Second)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

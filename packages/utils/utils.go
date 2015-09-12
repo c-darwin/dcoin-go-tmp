@@ -1329,7 +1329,7 @@ func sendMail(message, subject string, To string, mailData map[string]string) er
                                             <td>
                                                      <table width="560" align="center" cellspacing="0" cellpadding="8" border="0">
                                                      <tr>
-														<td><img src="http://dcoin.me/email/logo.png" alt="Dcoin" style="width: 280px; height: 62px; margin: 10px 0 15px;" />
+														<td><img src="http://dcoin.club/email/logo.png" alt="Dcoin" style="width: 280px; height: 62px; margin: 10px 0 15px;" />
 															<table width="100%" bgcolor="ffffff" style="border: 1px solid #eeeeee; margin-bottom: 10px; padding: 30px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.07); line-height: 1.4;" cellspacing="0" cellpadding="0" border="0">
 															<tr>
 																<td>

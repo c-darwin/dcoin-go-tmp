@@ -23,7 +23,7 @@
         {{if not .AutoLogin}}
 		    <a type="button" class="btn btn-primary" href='/tools?controllerName=availableKeys&download=1'>Download</a>
         {{else}}
-            <form id="target" action="http://pool.dcoin.me/" method="post">
+            <form id="target" action="http://pool.dcoin.club/" method="post">
                 <input type="hidden" name="key" value="{{.Key}}">
                 <input type="hidden" name="lang" value="{{.LangId}}">
                 <input type="submit" style="display: none">
