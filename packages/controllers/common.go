@@ -296,6 +296,7 @@ func GetLang(w http.ResponseWriter, r *http.Request, parameters map[string]strin
 	}
 	if !CheckLang(lang) {
 		al := r.Header.Get("Accept-Language")  // en-US,en;q=0.5
+		log.Debug("Accept-Language: %s", r.Header.Get("Accept-Language"))
 		if len(al) >= 2 {
 			if _, ok := consts.LangMap[al[:2]]; ok {
 				lang = consts.LangMap[al[:2]]
