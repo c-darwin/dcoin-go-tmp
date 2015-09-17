@@ -148,7 +148,8 @@ func Disseminator() {
 				continue BEGIN
 			}
 			if len(transactions) == 0 {
-				d.PrintSleep("len(transactions) == 0", 1)
+				log.Debug("len(transactions) == 0")
+				utils.Sleep(1)
 				continue BEGIN
 			}
 			for _, data := range transactions {

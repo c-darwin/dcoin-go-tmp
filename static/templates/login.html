@@ -80,7 +80,10 @@
 		$('#myModalLogin').modal({ backdrop: 'static' });
 	});
 	$('#show_signup').bind('click', function () {
-		$('#signUpModal').modal({ backdrop: 'static' });
+		$('#wrapper').spin();
+		signUpModalFns();
+		//$('#signUpModal').modal({ backdrop: 'static' });
+		$('#wrapper').spin(false);
 	});
 
 	$( document ).ready(function() {
@@ -100,11 +103,16 @@
 
 	function signUpModalFns() {
 		console.log("take_key");
-		$.get('http://pool.dcoin.club/tools?controllerName=availableKeys&download=1', function(data) {
-			$('#signUpModal').modal('hide');
+		$.get('ajax?controllerName=availableKeys', function(data) {
+			if (data=="ok") {
+				fc_navigate ('setPassword', '');
+			} else {
+				$('#signUpModal').modal({ backdrop: 'static' });
+			}
+			/*$('#signUpModal').modal('hide');
 			console.log(data);
-			$('#key').text( data );
-			doSign('login');
+			$('#key').text( data );*/
+			//doSign('login');
 		});
 	}
 

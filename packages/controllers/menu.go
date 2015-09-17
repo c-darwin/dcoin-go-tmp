@@ -33,6 +33,14 @@ func (c *Controller) Menu() (string, error) {
 		return "", nil
 	}
 
+	status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
+	if err != nil {
+		log.Error("%v", err)
+	}
+	if status == "waiting_set_new_key" || status == "waiting_accept_new_key" {
+		return "", nil
+	}
+
 	var name, avatar string
 	if c.SessUserId > 0 {
 		data, err := c.OneRow("SELECT name, avatar FROM users WHERE user_id =  ?", c.SessUserId).String()

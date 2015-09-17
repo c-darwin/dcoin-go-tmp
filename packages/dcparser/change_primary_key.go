@@ -3,13 +3,6 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
-	//"time"
-	//"strings"
 	"bytes"
 	"database/sql"
 )
@@ -107,7 +100,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 		return err
 	}
 	var myPublicKey []byte
-	if myUserId > 0 || len(community) > 0 {
+	if myUserId > 0 || len(community) == 0 {
 		var err error
 		// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
 		myPublicKey, err = p.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE id  =  (SELECT max(id) FROM "+myPrefix+"my_keys )").Bytes()
@@ -117,9 +110,10 @@ func (p *Parser) ChangePrimaryKey() (error) {
 		}
 	}
 
+	log.Debug("p.TxUserID: %d myUserId: %d myPublicKey: %s p.newPublicKeysHex[0]: %s myBlockId: %d p.BlockData.BlockId: %d", p.TxUserID, myUserId, myPublicKey, p.newPublicKeysHex[0], myBlockId, p.BlockData.BlockId)
 	// возможна ситуация, когда юзер зарегался по уже занятому ключу. В этом случае тут будет новый ключ, а в my_keys не будет
 	// my_user_id он уже успел заполучить в предыдущих блоках
-	if p.TxUserID == myUserId &&  bytes.Equal(myPublicKey, p.newPublicKeysHex[0]) && myBlockId <= p.BlockData.BlockId {
+	if p.TxUserID == myUserId && !bytes.Equal(myPublicKey, p.newPublicKeysHex[0]) && myBlockId <= p.BlockData.BlockId {
 		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET status = 'bad_key'")
 		if err != nil {
 			return p.ErrInfo(err)

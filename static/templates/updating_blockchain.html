@@ -344,7 +344,6 @@
 						var pct = Math.round(data.block_id/{{.LastBlock}}*100);
 						$('#meter').width(pct+'%');
 						$('#meter').text(pct+'%');
-
 					} else if (data.block_id==-1) {
 						window.clearInterval(refreshId);
 						window.location.href = "/";

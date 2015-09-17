@@ -1,0 +1,30 @@
+package controllers
+import (
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+)
+
+type waitingAcceptNewKeyPage struct {
+	Lang map[string]string
+}
+
+func (c *Controller) WaitingAcceptNewKey() (string, error) {
+
+	err := c.SendTxChangePkey(c.SessUserId);
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	err = c.ExecSql(`UPDATE `+c.MyPrefix+`my_table SET status='waiting_accept_new_key'`)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	TemplateStr, err := makeTemplate("waiting_accept_new_key", "waitingAcceptNewKey", &waitingAcceptNewKeyPage {
+		Lang: c.Lang})
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	return TemplateStr, nil
+}
+
+

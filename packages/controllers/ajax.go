@@ -11,7 +11,10 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Ajax")
 	w.Header().Set("Content-type", "text/html")
 
-	sess, _ := globalSessions.SessionStart(w, r)
+	sess, err := globalSessions.SessionStart(w, r)
+	if err != nil {
+		log.Error("%v", err)
+	}
 	defer sess.SessionRelease(w)
 	sessUserId := GetSessUserId(sess)
 	sessRestricted := GetSessRestricted(sess)
@@ -19,7 +22,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	log.Debug("sessUserId", sessUserId)
 	log.Debug("sessRestricted", sessRestricted)
 	log.Debug("sessPublicKey", sessPublicKey)
-	log.Debug("user_id", sess.Get("user_id"))
+	log.Debug("user_id: %v", sess.Get("user_id"))
 
 	c := new(Controller)
 	c.r = r
@@ -72,7 +75,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	}
 	c.dbInit = dbInit
 	parameters_ := make(map[string]interface {})
-	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
+	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
 		log.Error("%v", err)
 	}
@@ -110,20 +113,20 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 	//w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	if ok, _ := regexp.MatchString(`^(?i)ClearDbLite|UploadVideo|AvailableKeys|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
-		html = "Access denied"
+	if ok, _ := regexp.MatchString(`^(?i)availableKeys|ClearDbLite|UploadVideo|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
+		html = "Access denied 0"
 	} else {
-		pages:="CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu|SignUpInPool|SignLogin"
+		pages:="availableKeys|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu|SignUpInPool|SignLogin"
 		if utils.IOS() {
 			pages+="|DcoinKey"
 		}
 		if ok, _ := regexp.MatchString(`^(?i)`+pages+`$`, controllerName); !ok && c.SessUserId <= 0 {
-			html = "Access denied"
+			html = "Access denied 1"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
 			html, err = CallController(c, controllerName)
 			if err != nil {
-				log.Error("%v", err)
+				log.Error("ajax error: %v", err)
 			}
 		}
 	}

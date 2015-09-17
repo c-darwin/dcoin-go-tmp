@@ -9,12 +9,20 @@ import (
 
 func (c *Controller) DcoinKey() (string, error) {
 
+	var err error
 	c.r.ParseForm()
+	privKey := ""
+	if len(c.r.FormValue("first")) > 0 {
+		privKey, err = c.Single(`SELECT private_key FROM `+c.MyPrefix+`my_keys WHERE status='my_pending'`).String()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+	} else {
+		privKey, _ = utils.GenKeys()
+	}
 
 	paramNoPass := utils.ParamType{X: 176, Y: 100, Width: 100, Bg_path: "static/img/k_bg.png"}
 	paramPass := utils.ParamType{X: 167, Y: 93, Width: 118, Bg_path: "static/img/k_bg_pass.png"}
-
-	privKey, _ := utils.GenKeys()
 
 	var param utils.ParamType
 	var privateKey string

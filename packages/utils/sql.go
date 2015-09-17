@@ -68,6 +68,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 		_, err = db.Exec(ddl);
 		log.Debug("Exec ddl")
 		if err != nil {
+			log.Debug("%v", ErrInfo(err))
 			db.Close()
 			return &DCDB{}, err
 		}
@@ -1197,6 +1198,62 @@ func (db *DCDB) GetCurrencyList(cf bool) (map[int64]string, error) {
 	return result, nil
 }
 
+func (db *DCDB) SendTxChangePkey(userId int64) error {
+	txTime := Time()
+	myPrefix:=""
+	community, err := db.GetCommunityUsers()
+	if len(community) > 0 {
+		myPrefix = Int64ToStr(userId)+"_"
+	}
+	PendingPublicKey, err := db.Single(`SELECT public_key FROM `+myPrefix+`my_keys WHERE status='my_pending'`).String()
+	bin_public_key_1 := PendingPublicKey;
+	binPublicKeyPack :=  EncodeLengthPlusData(bin_public_key_1)
+	// генерируем тр-ию и шлем в DC-сеть
+	forSign := fmt.Sprintf("%d,%d,%d,%s,%s,%s", TypeInt("ChangePrimaryKey"), txTime, userId, BinToHex(PendingPublicKey), "", "")
+	currentPrivateKey, err := db.GetMyPrivateKey(myPrefix)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	privateKey, err := MakePrivateKey(currentPrivateKey)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	signature1, err := rsa.SignPKCS1v15(crand.Reader, privateKey, crypto.SHA1, HashSha1(forSign))
+	if err != nil {
+		return ErrInfo(err)
+	}
+	log.Debug("bin signature1: %s", signature1)
+	sign := EncodeLengthPlusData(([]byte(signature1)))
+	binSignatures := EncodeLengthPlusData([]byte(sign))
+
+	data := DecToBin(TypeInt("ChangePrimaryKey"), 1)
+	data = append(data, DecToBin(Time(), 4)...)
+	data = append(data, EncodeLengthPlusData(Int64ToByte(userId))...)
+	data = append(data, EncodeLengthPlusData(binPublicKeyPack)...)
+	data = append(data, binSignatures...)
+	err = db.InsertReplaceTxInQueue(data)
+	if err!= nil {
+		return ErrInfo(err)
+	}
+	md5 := Md5(data)
+	err = db.ExecSql(`INSERT INTO transactions_status (
+				hash,
+				time,
+				type,
+				user_id
+			)
+			VALUES (
+				[hex],
+				?,
+				?,
+				?
+			)`, md5, time.Now().Unix(), TypeInt("ChangePrimaryKey"), userId)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
+}
+
 // последние тр-ии от данного юзера
 func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat string) ([]map[string]string, error) {
 	var result []map[string]string
@@ -1206,7 +1263,7 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 						 transactions_status.type,
 						 transactions_status.user_id,
 						 transactions_status.block_id,
-						 transactions_status.error,
+						 transactions_status.error as txerror,
 						 queue_tx.hash as queue_tx,
 						 transactions.hash as tx
 			FROM transactions_status
@@ -1218,22 +1275,22 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 			LIMIT ?
 			`), userId, limit)
 	if err != nil {
-		return result, err
+		return result, ErrInfo(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var hash, txTime, txType, user_id, block_id, error, queue_tx, tx string
-		err = rows.Scan(&hash, &txTime, &txType, &user_id, &block_id, &error, &queue_tx, &tx)
+		var hash, txTime, txType, user_id, block_id, txerror, queue_tx, tx []byte
+		err = rows.Scan(&hash, &txTime, &txType, &user_id, &block_id, &txerror, &queue_tx, &tx)
 		if err != nil {
-			return result, err
+			return result, ErrInfo(err)
 		}
 		if len(tx)>0 || len(queue_tx)>0 {
-			error = ""
+			txerror = []byte("")
 		}
-		timeInt := StrToInt64(txTime)
+		timeInt := StrToInt64(string(txTime))
 		t := time.Unix(timeInt, 0)
-		txTime = t.Format(timeFormat)
-		result = append(result, map[string]string{"hash": hash, "time": txTime, "type": txType, "user_id": user_id, "block_id": block_id, "error": error, "queue_tx": queue_tx, "tx": tx})
+		txTime = []byte(t.Format(timeFormat))
+		result = append(result, map[string]string{"hash": string(hash), "time": string(txTime), "type": string(txType), "user_id": string(user_id), "block_id": string(block_id), "error": string(txerror), "queue_tx": string(queue_tx), "tx": string(tx)})
 	}
 	return result, nil
 }
@@ -1562,7 +1619,7 @@ func (db *DCDB) FormatQuery(q string) string {
 		}
 	}
 
-//	log.Debug("%v", newQ)
+	log.Debug("%v", newQ)
 	return newQ
 }
 

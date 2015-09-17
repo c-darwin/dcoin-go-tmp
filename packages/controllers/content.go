@@ -12,8 +12,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "text/html")
 
-	sess, _ := globalSessions.SessionStart(w, r)
-
+	sess, err := globalSessions.SessionStart(w, r)
+	if err != nil {
+		log.Error("%v", err)
+	}
 	defer sess.SessionRelease(w)
 	sessUserId := GetSessUserId(sess)
 	sessRestricted := GetSessRestricted(sess)
@@ -22,9 +24,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	log.Debug("sessUserId", sessUserId)
 	log.Debug("sessRestricted", sessRestricted)
 	log.Debug("sessPublicKey", sessPublicKey)
+	log.Debug("user_id: %v", sess.Get("user_id"))
 
 	c := new(Controller)
 	c.r = r
+	c.w = w
 	c.sess = sess
 	c.SessRestricted = sessRestricted
 	c.SessUserId = sessUserId
@@ -154,21 +158,6 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	c.Races = map[int64]string{1: c.Lang["race_1"], 2: c.Lang["race_2"], 3: c.Lang["race_3"]}
 
-	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
-	// CheckInputData - гарантирует, что tplName чист
-	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
-		tplName = tplName
-	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
-		// первый запуск, еще не загружен блокчейн
-		tplName = "after_install"
-	} else if dbInit && installProgress=="complete" {
-		tplName = "login"
-	} else {
-		tplName = "installStep0" // самый первый запуск
-	}
-	log.Debug("dbInit", dbInit, "installProgress", installProgress,  "configExists", configExists)
-	log.Debug("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
-
 	var communityUsers []int64
 	if dbInit {
 		communityUsers, err = c.DCDB.GetCommunityUsers()
@@ -206,11 +195,34 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Error("%v", err)
 		}
 	}
-
-
-
-
 	log.Debug("dbInit", dbInit)
+
+	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
+	// CheckInputData - гарантирует, что tplName чист
+	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
+		tplName = tplName
+	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
+		// первый запуск, еще не загружен блокчейн
+		tplName = "after_install"
+	} else if dbInit && installProgress=="complete" && sessUserId > 0 {
+		status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
+		if err != nil {
+			log.Error("%v", err)
+		}
+		if status == "waiting_set_new_key" {
+			tplName = "setPassword"
+		} else if status == "waiting_accept_new_key" {
+			tplName = "waitingAcceptNewKey"
+		}
+	} else if dbInit && installProgress=="complete" {
+		tplName = "login"
+	} else {
+		tplName = "installStep0" // самый первый запуск
+	}
+	log.Debug("dbInit", dbInit, "installProgress", installProgress,  "configExists", configExists)
+	log.Debug("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
+
+
 	// идет загрузка блокчейна
 	wTime := int64(2)
 	if c.ConfigIni["test_mode"] == "1" {
@@ -271,19 +283,19 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
-	if ok, _ := regexp.MatchString(`^(?i)CfPagePreview|CfCatalog|AddCfProjectData|CfProjectChangeCategory|NewCfProject|MyCfProjects|DelCfProject|DelCfFunding|CfStart|PoolAdminControl|Credits|Home|WalletsList|Information|Notifications|Interface|MiningMenu|Upgrade5|NodeConfigControl|Upgrade7|Upgrade6|Upgrade5|Upgrade4|Upgrade3|Upgrade2|Upgrade1|Upgrade0|StatisticVoting|ProgressBar|MiningPromisedAmount|CurrencyExchangeDelete|CurrencyExchange|ChangeCreditor|ChangeCommission|CashRequestOut|ArbitrationSeller|ArbitrationBuyer|ArbitrationArbitrator|Arbitration|InstallStep2|InstallStep1|InstallStep0|DbInfo|ChangeHost|Assignments|NewUser|NewPhoto|Voting|VoteForMe|RepaymentCredit|PromisedAmountList|PromisedAmountActualization|NewPromisedAmount|Login|ForRepaidFix|DelPromisedAmount|DelCredit|ChangePromisedAmount|ChangePrimaryKey|ChangeNodeKey|ChangeAvatar|BugReporting|Abuse|UpgradeResend|UpdatingBlockchain|Statistic|RewritePrimaryKey|RestoringAccess|PoolTechWorks|Points|NewHolidays|NewCredit|MoneyBackRequest|MoneyBack|ChangeMoneyBack|ChangeKeyRequest|ChangeKeyClose|ChangeGeolocation|ChangeCountryRace|ChangeArbitratorConditions|CashRequestIn|BlockExplorer$`, tplName); !ok {
-		w.Write([]byte("Access denied"))
+	if ok, _ := regexp.MatchString(`^(?i)waitingAcceptNewKey|SetPassword|CfPagePreview|CfCatalog|AddCfProjectData|CfProjectChangeCategory|NewCfProject|MyCfProjects|DelCfProject|DelCfFunding|CfStart|PoolAdminControl|Credits|Home|WalletsList|Information|Notifications|Interface|MiningMenu|Upgrade5|NodeConfigControl|Upgrade7|Upgrade6|Upgrade5|Upgrade4|Upgrade3|Upgrade2|Upgrade1|Upgrade0|StatisticVoting|ProgressBar|MiningPromisedAmount|CurrencyExchangeDelete|CurrencyExchange|ChangeCreditor|ChangeCommission|CashRequestOut|ArbitrationSeller|ArbitrationBuyer|ArbitrationArbitrator|Arbitration|InstallStep2|InstallStep1|InstallStep0|DbInfo|ChangeHost|Assignments|NewUser|NewPhoto|Voting|VoteForMe|RepaymentCredit|PromisedAmountList|PromisedAmountActualization|NewPromisedAmount|Login|ForRepaidFix|DelPromisedAmount|DelCredit|ChangePromisedAmount|ChangePrimaryKey|ChangeNodeKey|ChangeAvatar|BugReporting|Abuse|UpgradeResend|UpdatingBlockchain|Statistic|RewritePrimaryKey|RestoringAccess|PoolTechWorks|Points|NewHolidays|NewCredit|MoneyBackRequest|MoneyBack|ChangeMoneyBack|ChangeKeyRequest|ChangeKeyClose|ChangeGeolocation|ChangeCountryRace|ChangeArbitratorConditions|CashRequestIn|BlockExplorer$`, tplName); !ok {
+		w.Write([]byte("Access denied 0"))
 	} else if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
 		userPublicKey, err := c.DCDB.GetUserPublicKey(userId);
 		if err != nil {
 			log.Error("%v", err)
 		}
-		if userPublicKey != sessPublicKey {
+		if string(utils.BinToHex(userPublicKey)) != sessPublicKey {
+			log.Debug("userPublicKey!=sessPublicKey %s!=%s / userId: %d", utils.BinToHex(userPublicKey), utils.BinToHex(sessPublicKey), userId)
 			sess.Delete("user_id")
 			sess.Delete("private_key")
 			sess.Delete("public_key")
-			log.Debug("sess.Delete user_id private_key public_key")
 			w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
 			return;
 		}
@@ -337,7 +349,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if dbInit && tplName !="updatingBlockchain" {
+		if dbInit && tplName != "updatingBlockchain" && tplName != "setPassword" && tplName != "waitingAcceptNewKey" {
 			html, err :=  CallController(c, "AlertMessage")
 			if err != nil {
 				log.Error("%v", err)
@@ -386,7 +398,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		log.Debug("tplName",tplName)
 		html := ""
 		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
-			html = "Access denied"
+			html = "Access denied 1"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
 			html, err = CallController(c, tplName)

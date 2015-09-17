@@ -1267,7 +1267,7 @@ func (p *Parser) ParseTransaction (transactionBinaryData *[]byte) ([][]byte, err
 		i:=0
 		for {
 			length := utils.DecodeLength(transactionBinaryData)
-			log.Debug("length%d\n", length)
+			log.Debug("length: %d\n", length)
 			if length > 0 && length < p.Variables.Int64["max_tx_size"] {
 				data := utils.BytesShift(transactionBinaryData, length)
 				returnSlice = append(returnSlice, data)
