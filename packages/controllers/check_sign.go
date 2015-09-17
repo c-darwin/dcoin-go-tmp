@@ -86,7 +86,7 @@ func (c *Controller) Check_sign() (string, error) {
 					return "{\"result\":0}", err
 				}
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
-				c.sess.Set("public_key", string(utils.HexToBin(public_key)))
+				c.sess.Set("public_key", string(utils.HexToBin([]byte(public_key))))
 
 				adminUSerID, err := c.DCDB.GetAdminUserId();
 				if err != nil {
