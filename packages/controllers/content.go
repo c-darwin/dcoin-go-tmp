@@ -292,7 +292,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Error("%v", err)
 		}
 		if string(utils.BinToHex(userPublicKey)) != sessPublicKey {
-			log.Debug("userPublicKey!=sessPublicKey %s!=%s / userId: %d", utils.BinToHex(userPublicKey), utils.BinToHex(sessPublicKey), userId)
+			log.Debug("userPublicKey!=sessPublicKey %s!=%s / userId: %d", utils.BinToHex(userPublicKey), sessPublicKey, userId)
 			sess.Delete("user_id")
 			sess.Delete("private_key")
 			sess.Delete("public_key")
