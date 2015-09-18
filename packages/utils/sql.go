@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 )
 
-var mutex = &sync.Mutex{}
+var Mutex = &sync.Mutex{}
 var log = logging.MustGetLogger("daemons")
 var DB *DCDB
 type DCDB struct {
@@ -2149,17 +2149,17 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 		default:
 		}
 
-		mutex.Lock()
+		Mutex.Lock()
 
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
-			mutex.Unlock()
+			Mutex.Unlock()
 			return ErrInfo(err), false
 		}
 		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?, ?)`, time.Now().Unix(), goRoutineName, Caller(2))
 			if err != nil {
-				mutex.Unlock()
+				Mutex.Unlock()
 				return ErrInfo(err), false
 			}
 			ok = true
@@ -2172,7 +2172,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 				}
 			}
 		}
-		mutex.Unlock()
+		Mutex.Unlock()
 		if !ok {
 			time.Sleep(time.Duration(RandInt(300, 400)) * time.Millisecond)
 		} else {
@@ -2186,21 +2186,21 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 func (db *DCDB) DbLockGate(name string) error {
 	var ok bool
 	for {
-		mutex.Lock()
+		Mutex.Lock()
 		exists, err := db.OneRow("SELECT lock_time, script_name FROM main_lock").String()
 		if err != nil {
-			mutex.Unlock()
+			Mutex.Unlock()
 			return ErrInfo(err)
 		}
 		if len(exists["script_name"])==0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?, ?)`, time.Now().Unix(), name, Caller(1))
 			if err != nil {
-				mutex.Unlock()
+				Mutex.Unlock()
 				return ErrInfo(err)
 			}
 			ok = true
 		}
-		mutex.Unlock()
+		Mutex.Unlock()
 		if !ok {
 			time.Sleep(time.Duration(RandInt(300, 400)) * time.Millisecond)
 		} else {
