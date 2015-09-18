@@ -121,15 +121,16 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	} else if (p.TxUserID == myUserId || bytes.Equal(myPublicKey, p.newPublicKeysHex[0])) && myBlockId <= p.BlockData.BlockId {
 		// если есть user_id, значит уже точно нету bad_key и в прошлых блоках уже было соотвествие my_key с ключем в new_public_keys_hex
 
+		log.Debug("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'")
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE public_key = [hex] AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.newPublicKeysHex[0])
+		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.newPublicKeysHex[0])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// и если у нас в таблицах my_ ничего нет, т.к. мы только нашли соотвествие нашего ключа, то заносим все данные
 		if len(myPublicKey) >0 && myUserId == 0 {
-			myUserId, err = p.Single("SELECT user_id FROM users WHERE public_key_0  =  [hex]", myPublicKey).Int64()
+			myUserId, err = p.Single("SELECT user_id FROM users WHERE hex(public_key_0) = ?", myPublicKey).Int64()
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -221,7 +222,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 		public_key_2 = utils.BinToHex(public_key_2)
 	}
 
-	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxUserID)
+	err = p.ExecSql("UPDATE users SET hex(public_key_0) = ?, hex(public_key_1) = ?, hex(public_key_2) = ?, log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -239,7 +240,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	}
 	if p.TxUserID == myUserId {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'my_pending', block_id = 0, time = 0 WHERE public_key = [hex] AND status = 'approved' AND block_id = ?", p.newPublicKeysHex[0], p.BlockData.BlockId)
+		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'my_pending', block_id = 0, time = 0 WHERE hex(public_key) = ? AND status = 'approved' AND block_id = ?", p.newPublicKeysHex[0], p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

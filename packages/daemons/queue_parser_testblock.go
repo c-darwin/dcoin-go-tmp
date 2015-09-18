@@ -68,7 +68,7 @@ func QueueParserTestblock() {
 		tx := utils.DeleteHeader(newBlock)
 
 		// сразу можно удалять данные из таблы-очереди
-		err = d.ExecSql("DELETE FROM queue_testblock WHERE head_hash = [hex]", newHeaderHash)
+		err = d.ExecSql("DELETE FROM queue_testblock WHERE hex(head_hash) = ?", newHeaderHash)
 		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), 1)
 			continue
@@ -190,7 +190,7 @@ func QueueParserTestblock() {
 			}
 
 			// удаляем всё, где хэш больше нашего
-			err = d.ExecSql("DELETE FROM queue_testblock WHERE head_hash > [hex]", newHeaderHash)
+			err = d.ExecSql("DELETE FROM queue_testblock WHERE hex(head_hash) > ?", newHeaderHash)
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN

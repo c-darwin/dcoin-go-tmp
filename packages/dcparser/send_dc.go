@@ -227,7 +227,7 @@ func (p *Parser) SendDcFront() (error) {
 
 func (p *Parser) SendDc() (error) {
 	// нужно отметить в log_time_money_orders, что тр-ия прошла в блок
-	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE tx_hash = [hex]", p.BlockData.BlockId, p.TxHash)
+	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -319,7 +319,7 @@ func (p *Parser) SendDc() (error) {
 		}
 	}
 	// отмечаем данную транзакцию в буфере как отработанную и ставим в очередь на удаление
-	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, p.TxHash)
+	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = ? WHERE hex(hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -330,7 +330,7 @@ func (p *Parser) SendDc() (error) {
 
 func (p *Parser) SendDcRollback() (error) {
 	// нужно отметить в log_time_money_orders, что тр-ия НЕ прошла в блок
-	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE tx_hash = [hex]", p.TxHash)
+	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE hex(tx_hash) = ?", p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -350,7 +350,7 @@ func (p *Parser) SendDcRollback() (error) {
 	}
 
 	// отменяем чистку буфера
-	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = 0 WHERE hash = [hex]", p.TxHash)
+	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = 0 WHERE hex(hash) = ?", p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -428,7 +428,7 @@ func (p *Parser) SendDcRollback() (error) {
 }
 
 func (p *Parser) SendDcRollbackFront() error {
-	err := p.ExecSql("DELETE FROM wallets_buffer WHERE hash = [hex]", p.TxHash)
+	err := p.ExecSql("DELETE FROM wallets_buffer WHERE hex(hash) = ?", p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

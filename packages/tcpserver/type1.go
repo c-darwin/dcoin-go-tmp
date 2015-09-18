@@ -90,7 +90,7 @@ func (t *TcpServer) Type1() {
 				newDataHash := utils.BinToHex(utils.BytesShift(&decryptedBinData, 32))
 				// Для доп. соревнования, если head_hash равны (шалит кто-то из майнеров и позже будет за такое забанен)
 				newDataHeadHash := utils.BinToHex(utils.BytesShift(&decryptedBinData, 32))
-				err = t.ExecSql(`DELETE FROM queue_blocks WHERE hash = [hex]`, newDataHash)
+				err = t.ExecSql(`DELETE FROM queue_blocks WHERE hex(hash) = ?`, newDataHash)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					return
@@ -135,7 +135,7 @@ func (t *TcpServer) Type1() {
 			}
 			log.Debug("newDataTxHash %s", newDataTxHash)
 			// проверим, нет ли у нас такой тр-ии
-			exists, err := t.Single("SELECT count(hash) FROM log_transactions WHERE hash  =  [hex]", newDataTxHash).Int64()
+			exists, err := t.Single("SELECT count(hash) FROM log_transactions WHERE hex(hash) = ?", newDataTxHash).Int64()
 			if err != nil {
 				log.Error("%v", utils.ErrInfo(err))
 				return

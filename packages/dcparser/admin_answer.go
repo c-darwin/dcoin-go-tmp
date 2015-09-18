@@ -65,7 +65,7 @@ func (p *Parser) AdminAnswer() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == admin {
-		err = p.ExecSql("UPDATE x_my_admin_messages SET status = 'approved' WHERE encrypted = [hex] AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
+		err = p.ExecSql("UPDATE x_my_admin_messages SET status = 'approved' WHERE hex(encrypted) = ? AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -81,7 +81,7 @@ func (p *Parser) AdminAnswerRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if p.TxMaps.Int64["to_user_id"] == myUserId {
-		err = p.ExecSql("DELETE FROM "+myPrefix+"my_admin_messages WHERE encrypted = [hex] AND type = 'from_admin'", p.TxMaps.Bytes["encrypted_message"])
+		err = p.ExecSql("DELETE FROM "+myPrefix+"my_admin_messages WHERE hex(encrypted) = ? AND type = 'from_admin'", p.TxMaps.Bytes["encrypted_message"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -97,7 +97,7 @@ func (p *Parser) AdminAnswerRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == admin {
-		err = p.ExecSql("UPDATE x_my_admin_messages SET status = 'approved' WHERE encrypted = [hex] AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
+		err = p.ExecSql("UPDATE x_my_admin_messages SET status = 'approved' WHERE hex(encrypted) = ? AND status = 'my_pending'", p.TxMaps.Bytes["encrypted_message"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

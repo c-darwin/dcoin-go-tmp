@@ -96,7 +96,7 @@ func (p *Parser) ChangeNodeKey() (error) {
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_node_keys SET status = 'approved', block_id = ?, time = ? WHERE public_key = [hex] AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.TxMaps.Bytes["new_node_public_key"])
+		err = p.ExecSql("UPDATE "+myPrefix+"my_node_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.TxMaps.Bytes["new_node_public_key"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -141,7 +141,7 @@ func (p *Parser) ChangeNodeKeyRollback() (error) {
 	}
 	if p.TxUserID == myUserId  {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_node_keys SET status = 'my_pending', block_id = 0, time = 0 WHERE public_key = [hex] AND status = 'approved' AND block_id = ?", p.TxMaps.Bytes["new_node_public_key"], p.BlockData.BlockId)
+		err = p.ExecSql("UPDATE "+myPrefix+"my_node_keys SET status = 'my_pending', block_id = 0, time = 0 WHERE hex(public_key) = ? AND status = 'approved' AND block_id = ?", p.TxMaps.Bytes["new_node_public_key"], p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

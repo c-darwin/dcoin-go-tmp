@@ -555,7 +555,7 @@ func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 
 func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	txMD5 := Md5(binaryTx)
-	err := db.ExecSql("DELETE FROM log_transactions WHERE hash=[hex]", txMD5)
+	err := db.ExecSql("DELETE FROM log_transactions WHERE hex(hash) = ?", txMD5)
 	if err != nil {
 		return ErrInfo(err)
 	}
@@ -1377,7 +1377,7 @@ func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
 func (db *DCDB) GetDataAuthorization(hash []byte) (string, error) {
 	// получим данные для подписи
 	log.Debug("hash %s", hash)
-	data, err := db.Single(`SELECT data FROM authorization WHERE hash = [hex]`, hash).String()
+	data, err := db.Single(`SELECT data FROM authorization WHERE hex(hash) = ?`, hash).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -2031,7 +2031,7 @@ func (db *DCDB) CheckCurrencyCF(currency_id int64) (bool, error) {
 
 
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
-	userId, err := db.Single(`SELECT user_id FROM users WHERE public_key_0 = [hex]`, publicKey).String()
+	userId, err := db.Single(`SELECT user_id FROM users WHERE hex(public_key_0) = ?`, publicKey).String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -2211,7 +2211,7 @@ func (db *DCDB) DbLockGate(name string) error {
 }
 
 func (db *DCDB) DeleteQueueBlock(head_hash_hex, hash_hex string) error {
-	return db.ExecSql("DELETE FROM queue_blocks WHERE head_hash = [hex] AND hash = [hex]", head_hash_hex, hash_hex)
+	return db.ExecSql("DELETE FROM queue_blocks WHERE hex(head_hash) = ? AND hex(hash) = ?", head_hash_hex, hash_hex)
 }
 
 func (db *DCDB) SetAI(table string, AI int64) error {
@@ -2634,7 +2634,7 @@ func (db *DCDB) GetBinSign(forSign string, myUserId int64) ([]byte, error) {
 
 func (db *DCDB) InsertReplaceTxInQueue(data []byte) error {
 
-	err := db.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", Md5(data))
+	err := db.ExecSql("DELETE FROM queue_tx  WHERE hex(hash) = ?", Md5(data))
 	if err != nil {
 		return ErrInfo(err)
 	}

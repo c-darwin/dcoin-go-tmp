@@ -84,7 +84,7 @@ func (p *Parser) NewCredit() (error) {
 }
 
 func (p *Parser) NewCreditRollback() (error) {
-	err := p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND tx_hash = [hex]", p.BlockData.BlockId, p.TxHash)
+	err := p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

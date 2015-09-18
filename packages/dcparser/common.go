@@ -489,7 +489,7 @@ func (p *Parser) RollbackTransactionsTestblock(truncate bool) error {
 			// чтобы тр-ия не потерлась, её нужно заново записать
 			dataHex := utils.BinToHex(data)
 			hashHex := utils.BinToHex(hash)
-			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", hashHex)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hex(hash) = ?", hashHex)
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
@@ -790,7 +790,7 @@ func (p *Parser) CheckBlockHeader() error {
 // Это защита от dos, когда одну транзакцию можно было бы послать миллион раз,
 // и она каждый раз успешно проходила бы фронтальную проверку
 func (p *Parser) CheckLogTx(tx_binary []byte) error {
-	hash, err := p.Single(`SELECT hash FROM log_transactions WHERE hash = [hex]`, utils.Md5(tx_binary)).String()
+	hash, err := p.Single(`SELECT hash FROM log_transactions WHERE hex(hash) = ?`, utils.Md5(tx_binary)).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -862,12 +862,12 @@ func (p *Parser) ParseDataRollbackFront (txTestblock bool) error {
 			return p.ErrInfo(err)
 		}
 		if txTestblock {
-			err := p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+			err := p.ExecSql("UPDATE transactions SET verified = 0 WHERE hex(hash) = ?", p.TxHash)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
 		}
-		err = p.ExecSql("DELETE FROM log_transactions WHERE hash = [hex]", p.TxHash)
+		err = p.ExecSql("DELETE FROM log_transactions WHERE hex(hash) = ?", p.TxHash)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -938,22 +938,22 @@ func (p *Parser) ParseDataRollback() error {
 			utils.BytesShiftReverse(&p.BinaryData, size_)
 			p.TxHash = utils.Md5(transactionBinaryData)
 
-			err = p.ExecSql("UPDATE transactions SET used=0, verified = 0 WHERE hash = [hex]", p.TxHash)
+			err = p.ExecSql("UPDATE transactions SET used=0, verified = 0 WHERE hex(hash) = ?", p.TxHash)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			err = p.ExecSql("DELETE FROM log_transactions WHERE hash = [hex]", p.TxHash)
+			err = p.ExecSql("DELETE FROM log_transactions WHERE hex(hash) = ?", p.TxHash)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
 			// даем юзеру понять, что его тр-ия не в блоке
-			err = p.ExecSql("UPDATE transactions_status SET block_id = 0 WHERE hash = [hex]", p.TxHash)
+			err = p.ExecSql("UPDATE transactions_status SET block_id = 0 WHERE hex(hash) = ?", p.TxHash)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
 			// пишем тр-ию в очередь на проверку, авось пригодится
 			dataHex := utils.BinToHex(transactionBinaryData)
-			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", p.TxHash)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hex(hash) = ?", p.TxHash)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -1071,7 +1071,7 @@ func (p *Parser) RollbackTransactions() error {
 			return p.ErrInfo(err)
 		}
 		blockBody = append(blockBody, utils.EncodeLengthPlusData(data)...)
-		err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", utils.BinToHex(hash))
+		err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hex(hash) = ?", utils.BinToHex(hash))
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -1111,7 +1111,7 @@ func (p *Parser) rollbackTransactionsTestblock(truncate bool) error {
 			// чтобы тр-ия не потерлась, её нужно заново записать
 			dataHex := utils.BinToHex(data)
 			hashHex := utils.BinToHex(hash)
-			err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", hashHex)
+			err = p.ExecSql("DELETE FROM queue_tx  WHERE hex(hash) = ?", hashHex)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -1222,12 +1222,12 @@ func (p *Parser) RollbackTo (binaryData []byte, skipCurrent bool, onlyFront bool
 
 			// =================== ради эксперимента =========
 			if onlyFront {
-				err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.ExecSql("UPDATE transactions SET verified = 0 WHERE hex(hash) = ?", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
 			} else { // ====================================
-				err = p.ExecSql("UPDATE transactions SET used = 0 WHERE hash = [hex]", p.TxHash)
+				err = p.ExecSql("UPDATE transactions SET used = 0 WHERE hex(hash) = ?", p.TxHash)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -1489,13 +1489,13 @@ func (p *Parser) ParseDataFront() error {
 					return utils.ErrInfo(err_.(error))
 				}
 
-				err = p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+				err = p.ExecSql("UPDATE transactions SET used=1 WHERE hex(hash) = ?", utils.Md5(transactionBinaryDataFull))
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
 
 				// даем юзеру понять, что его тр-ия попала в блок
-				err = p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
+				err = p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hex(hash) = ?", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -1779,7 +1779,7 @@ func (p *Parser) ParseDataFull() error {
 				return utils.ErrInfo(err)
 			}
 
-			err = p.ExecSql("UPDATE transactions SET used=1 WHERE hash = [hex]", utils.Md5(transactionBinaryDataFull))
+			err = p.ExecSql("UPDATE transactions SET used=1 WHERE hex(hash) = ?", utils.Md5(transactionBinaryDataFull))
 			if err != nil {
 				p.RollbackTo(txForRollbackTo, true, false);
 				return utils.ErrInfo(err)
@@ -1860,7 +1860,7 @@ func (p *Parser) ParseDataFull() error {
 
 
 			// даем юзеру понять, что его тр-ия попала в блок
-			p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hash = [hex]", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
+			p.ExecSql("UPDATE transactions_status SET block_id = ? WHERE hex(hash) = ?", p.BlockData.BlockId, utils.Md5(transactionBinaryDataFull))
 
 			// Тут было time(). А значит если бы в цепочке блоков были блоки в которых были бы одинаковые хэши тр-ий, то ParseDataFull вернул бы error
 			err = p.InsertInLogTx(transactionBinaryDataFull, utils.BytesToInt64(p.TxMap["time"]))
@@ -3071,7 +3071,7 @@ func (p*Parser) mydctxRollback () error {
 }
 
 func (p*Parser) limitRequestsMoneyOrdersRollback() error {
-	err := p.ExecSql("DELETE FROM log_time_money_orders WHERE tx_hash = [hex]", p.TxHash)
+	err := p.ExecSql("DELETE FROM log_time_money_orders WHERE hex(tx_hash) = ?", p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -3099,7 +3099,7 @@ func (p*Parser) FormatQuery(q string) string {
 
 func (p*Parser) loanPaymentsRollback (userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
-	newQuery, newArgs := utils.FormatQueryArgs("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND tx_hash = [hex] AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface {}{userId, currencyId, p.BlockData.BlockId, p.TxHash}...)
+	newQuery, newArgs := utils.FormatQueryArgs("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND hex(tx_hash) = ? AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface {}{userId, currencyId, p.BlockData.BlockId, p.TxHash}...)
 	rows, err := p.Query(newQuery, newArgs)
 	if err != nil {
 		return  p.ErrInfo(err)
@@ -3690,9 +3690,9 @@ func (p *Parser) checkSenderMoney(currencyId, fromUserId int64, amount, commissi
 
 func (p *Parser) updateWalletsBuffer(amount float64, currencyId int64) (error) {
 	// добавим нашу сумму в буфер кошельков, чтобы юзер не смог послать запрос на вывод всех DC с кошелька.
-	hash, err := p.Single("SELECT hash FROM wallets_buffer WHERE hash = [hex]", p.TxHash).String()
+	hash, err := p.Single("SELECT hash FROM wallets_buffer WHERE hex(hash) = ?", p.TxHash).String()
 	if len(hash) > 0 {
-		err = p.ExecSql("UPDATE wallets_buffer SET user_id = ?, currency_id = ?, amount = ? WHERE hash = [hex]", p.TxUserID, currencyId, utils.Round(amount, 2), p.TxHash)
+		err = p.ExecSql("UPDATE wallets_buffer SET user_id = ?, currency_id = ?, amount = ? WHERE hex(hash) = ?", p.TxUserID, currencyId, utils.Round(amount, 2), p.TxHash)
 	} else {
 		err = p.ExecSql("INSERT INTO wallets_buffer ( hash, user_id, currency_id, amount ) VALUES ( [hex], ?, ?, ? )", p.TxHash, p.TxUserID, currencyId, utils.Round(amount, 2))
 	}
@@ -3750,13 +3750,13 @@ func (p *Parser) RollbackIncompatibleTx(typesArr []string) error {
 			return utils.ErrInfo(err)
 		}
 		// Удаляем уже записанные тр-ии.
-		err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", md5)
+		err = p.ExecSql("DELETE FROM transactions WHERE hex(hash) = ?", md5)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 		/*
 		 * создает проблемы для tesblock_is_ready
-		err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]", md5)
+		err = p.ExecSql("DELETE FROM transactions_testblock WHERE hex(hash) = ?", md5)
 		if err != nil {
 			p.PrintSleep(err, 60)
 			continue BEGIN
@@ -3764,7 +3764,7 @@ func (p *Parser) RollbackIncompatibleTx(typesArr []string) error {
 		*/
 
 		// создаем тр-ию, которую потом заново проверим
-		err = p.ExecSql("DELETE FROM queue_tx  WHERE hash = [hex]", md5)
+		err = p.ExecSql("DELETE FROM queue_tx  WHERE hex(hash) = ?", md5)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -3882,13 +3882,13 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 				p.BinaryData = utils.EncodeLengthPlusData([]byte(txData))
 				p.ParseDataRollback()
 				// Удаляем именно уже записанную тр-ию. При этом новая (CashRequestOut) тр-ия успешно обработается
-				err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", utils.Md5(txData))
+				err = p.ExecSql("DELETE FROM transactions WHERE hex(hash) = ?", utils.Md5(txData))
 				if err != nil {
 					fatalError = fmt.Sprintf("%s", err)
 				}
 				/*
 				 * создает проблемы для tesblock_is_ready
-				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]md5(?tx_data)?")
+				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hex(hash) = ?md5(?tx_data)?")
 				if err != nil {
 					p.PrintSleep(err, 60)
 					continue BEGIN
@@ -4172,13 +4172,13 @@ func (p *Parser) ClearIncompatibleTx(binaryTx []byte, myTx bool) (string, string
 					fatalError = fmt.Sprintf("%s", err)
 				}
 				// Удаляем именно уже записанную тр-ию. При этом новая (CashRequestIn) тр-ия успешно обработается
-				err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex]", utils.Md5(txData))
+				err = p.ExecSql("DELETE FROM transactions WHERE hex(hash) = ?", utils.Md5(txData))
 				if err != nil {
 					fatalError = fmt.Sprintf("%s", err)
 				}
 				/*
 				 * создает проблемы для tesblock_is_ready
-				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hash = [hex]", Md5(txData))
+				err = p.ExecSql("DELETE FROM transactions_testblock WHERE hex(hash) = ?", Md5(txData))
 				if err != nil {
 					p.PrintSleep(err, 60)
 					continue BEGIN
@@ -4328,17 +4328,17 @@ func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
 	}
 	if err != nil {
 		log.Error("err: %v", err)
-		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hash = [hex]", fmt.Sprintf("%s", err), hashHex)
+		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hex(hash) = ?", fmt.Sprintf("%s", err), hashHex)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 	} else {
-		counter, err := p.Single("SELECT counter FROM transactions WHERE hash  =  [hex]", hashHex).Int64()
+		counter, err := p.Single("SELECT counter FROM transactions WHERE hex(hash) = ?", hashHex).Int64()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 		counter++
-		err = p.ExecSql(`DELETE FROM transactions WHERE hash = [hex]`, hashHex)
+		err = p.ExecSql(`DELETE FROM transactions WHERE hex(hash) = ?`, hashHex)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -4358,13 +4358,13 @@ func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
 
 func (p *Parser) DeleteQueueTx(hashHex []byte) error {
 
-	err := p.ExecSql("DELETE FROM queue_tx WHERE hash = [hex]", hashHex)
+	err := p.ExecSql("DELETE FROM queue_tx WHERE hex(hash) = ?", hashHex)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	// т.к. мы обрабатываем в queue_parser_tx тр-ии с verified=0, то после их обработки их нужно удалять.
 
-	err = p.ExecSql("DELETE FROM transactions WHERE hash = [hex] AND verified=0 AND used = 0", hashHex)
+	err = p.ExecSql("DELETE FROM transactions WHERE hex(hash) = ? AND verified=0 AND used = 0", hashHex)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}

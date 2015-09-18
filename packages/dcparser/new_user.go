@@ -58,7 +58,7 @@ func (p *Parser) NewUserFront() (error) {
 	}
 
 	// один ключ не может быть у двух юзеров
-	num, err := p.DCDB.Single("SELECT count(user_id) FROM users WHERE public_key_0 = [hex] OR public_key_1 = [hex] OR public_key_2 = [hex]",
+	num, err := p.DCDB.Single("SELECT count(user_id) FROM users WHERE hex(public_key_0) = ? OR hex(public_key_1) = ? OR hex(public_key_2) = ?",
 		p.TxMap["public_key_hex"], p.TxMap["public_key_hex"], p.TxMap["public_key_hex"]).Int()
 	if num > 0 {
 		return p.ErrInfo("exists public_key")
@@ -100,7 +100,7 @@ func (p *Parser) NewUser() (error) {
 			}
 			if myUserId == 0 {
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
+				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE hex(public_key) = ?", p.TxMap["public_key_hex"]).String()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -110,7 +110,7 @@ func (p *Parser) NewUser() (error) {
 					if err != nil {
 						return p.ErrInfo(err)
 					}
-					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["public_key_hex"])
+					err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_keys SET block_id = ? WHERE hex(public_key) = ?", p.BlockData.BlockId, p.TxMap["public_key_hex"])
 					if err != nil {
 						return p.ErrInfo(err)
 					}
@@ -125,7 +125,7 @@ func (p *Parser) NewUser() (error) {
 		if myUserId == 0 {
 
 			// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
+			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE hex(public_key) = ?", p.TxMap["public_key_hex"]).String()
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -135,7 +135,7 @@ func (p *Parser) NewUser() (error) {
 				if err != nil {
 					return p.ErrInfo(err)
 				}
-				err = p.DCDB.ExecSql("UPDATE my_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["public_key_hex"])
+				err = p.DCDB.ExecSql("UPDATE my_keys SET block_id = ? WHERE hex(public_key) = ?", p.BlockData.BlockId, p.TxMap["public_key_hex"])
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -148,7 +148,7 @@ func (p *Parser) NewUser() (error) {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
-		p.DCDB.ExecSql("UPDATE "+myPrefix+"my_new_users SET status ='approved', user_id = ? WHERE public_key = [hex]", newUserId, p.TxMap["public_key_hex"])
+		p.DCDB.ExecSql("UPDATE "+myPrefix+"my_new_users SET status ='approved', user_id = ? WHERE hex(public_key) = ?", newUserId, p.TxMap["public_key_hex"])
 	}
 	return nil
 }
@@ -163,7 +163,7 @@ func (p *Parser) NewUserRollback() (error) {
 		for _, userId := range community {
 				myPrefix := utils.Int64ToStr(userId)+"_"
 				// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
+				myPublicKey, err := p.DCDB.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE hex(public_key) = ?", p.TxMap["public_key_hex"]).String()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -181,7 +181,7 @@ func (p *Parser) NewUserRollback() (error) {
 		}
 	} else {
 			// проверим, не наш ли это public_key
-			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE public_key = [hex]", p.TxMap["public_key_hex"]).String()
+			myPublicKey, err := p.DCDB.Single("SELECT public_key FROM my_keys WHERE hex(public_key) = ?", p.TxMap["public_key_hex"]).String()
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -196,7 +196,7 @@ func (p *Parser) NewUserRollback() (error) {
 				}
 			}
 	}
-	err = p.DCDB.ExecSql("DELETE FROM users WHERE public_key_0 = [hex]", p.TxMap["public_key_hex"])
+	err = p.DCDB.ExecSql("DELETE FROM users WHERE hex(public_key_0) = ?", p.TxMap["public_key_hex"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

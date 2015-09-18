@@ -314,7 +314,7 @@ func (p *Parser) CashRequestOutRollback() (error) {
 	}
 
 	// отменяем чистку буфера
-	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = 0 WHERE hash = [hex]", p.TxMap["hash"])
+	err = p.ExecSql("UPDATE wallets_buffer SET del_block_id = 0 WHERE hex(hash) = ?", p.TxMap["hash"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -354,7 +354,7 @@ func (p *Parser) CashRequestOutRollbackFront() error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.ExecSql("DELETE FROM wallets_buffer WHERE hash = [hex]", p.TxMap["hash"])
+	err = p.ExecSql("DELETE FROM wallets_buffer WHERE hex(hash) = ?", p.TxMap["hash"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}

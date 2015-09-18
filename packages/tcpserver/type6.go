@@ -271,7 +271,7 @@ func (t *TcpServer) Type6() {
 				newBlockHex := utils.BinToHex(append(newBlockHeader, transactions...))
 				// и передаем блок для обратотки через демон queue_parser_testblock
 				// т.к. есть запросы к log_time_, а их можно выполнять только по очереди
-				err = t.ExecSql(`DELETE FROM queue_testblock WHERE head_hash = [hex]`, newHeaderHash)
+				err = t.ExecSql(`DELETE FROM queue_testblock WHERE hex(head_hash) = ?`, newHeaderHash)
 				if err != nil {
 					t.PrintSleep(utils.ErrInfo(err), 0)
 					return

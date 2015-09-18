@@ -29,7 +29,7 @@ func (c *Controller) RewritePrimaryKey() (string, error) {
 		publicKey := utils.MakeAsn1(n, e)
 
 		// проверим, есть ли вообще такой публичный ключ
-		userId, err := c.Single("SELECT user_id FROM users WHERE public_key_0 = [hex]", publicKey).Int64()
+		userId, err := c.Single("SELECT user_id FROM users WHERE hex(public_key_0) = ?", publicKey).Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

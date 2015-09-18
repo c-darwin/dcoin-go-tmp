@@ -204,7 +204,7 @@ func (p *Parser) MoneyBackRollback() (error) {
 
 	var rollbackWallet bool
 	// если был создан кредит, значит у продавца не хватило денег на счету
-	creditAmount, err := p.Single("SELECT amount FROM credits WHERE tx_block_id  =  ? AND tx_hash  =  [hex]", p.BlockData.BlockId, p.TxHash).Float64()
+	creditAmount, err := p.Single("SELECT amount FROM credits WHERE tx_block_id  =  ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash).Float64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -213,7 +213,7 @@ func (p *Parser) MoneyBackRollback() (error) {
 		if p.TxMaps.Money["amount"] < creditAmount {
 			rollbackWallet = true
 		}
-		err = p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND tx_hash = [hex]", p.BlockData.BlockId, p.TxHash)
+		err = p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

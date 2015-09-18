@@ -65,13 +65,13 @@ func (p *Parser) MessageToAdmin() (error) {
 		return err
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
-		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_admin_messages WHERE encrypted  =  [hex] AND status  =  'my_pending'", p.TxMap["encrypted_message"]).Int64()
+		myId, err := p.Single("SELECT id FROM "+myPrefix+"my_admin_messages WHERE hex(encrypted) = ? AND status  =  'my_pending'", p.TxMap["encrypted_message"]).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		if myId > 0 {
 			// обновим статус в нашей локальной табле.
-			err = p.ExecSql("UPDATE "+myPrefix+"my_admin_messages SET status = 'approved' WHERE encrypted = [hex] AND status = 'my_pending'", p.TxMap["encrypted_message"])
+			err = p.ExecSql("UPDATE "+myPrefix+"my_admin_messages SET status = 'approved' WHERE hex(encrypted) = ? AND status = 'my_pending'", p.TxMap["encrypted_message"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -106,7 +106,7 @@ func (p *Parser) MessageToAdminRollback() (error) {
 	}
 	if p.TxUserID == myUserId {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_admin_messages SET status = 'my_pending' WHERE message = [hex] AND status = 'approved'", p.TxMap["encrypted_message"])
+		err = p.ExecSql("UPDATE "+myPrefix+"my_admin_messages SET status = 'my_pending' WHERE hex(message) = ? AND status = 'approved'", p.TxMap["encrypted_message"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -118,7 +118,7 @@ func (p *Parser) MessageToAdminRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if myUserId == admin {
-		err = p.ExecSql("DELETE FROM x_my_admin_messages WHERE encrypted = [hex] AND type = 'from_user' AND user_id = ?", p.TxMap["encrypted_message"], p.TxUserID)
+		err = p.ExecSql("DELETE FROM x_my_admin_messages WHERE hex(encrypted) = ? AND type = 'from_user' AND user_id = ?", p.TxMap["encrypted_message"], p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

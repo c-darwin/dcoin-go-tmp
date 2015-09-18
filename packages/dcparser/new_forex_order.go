@@ -106,7 +106,7 @@ func (p *Parser) NewForexOrderFront() (error) {
 func (p *Parser) NewForexOrder() (error) {
 
 	// нужно отметить в log_time_money_orders, что тр-ия прошла в блок
-	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE tx_hash = [hex]", p.BlockData.BlockId, p.TxHash )
+	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash )
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -273,7 +273,7 @@ func (p *Parser) NewForexOrder() (error) {
 func (p *Parser) NewForexOrderRollback() (error) {
 
 	// нужно отметить в log_time_money_orders, что тр-ия НЕ прошла в блок
-	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE tx_hash = [hex]", p.TxHash)
+	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE hex(tx_hash) = ?", p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

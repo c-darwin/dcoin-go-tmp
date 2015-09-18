@@ -59,7 +59,7 @@ func (t *TcpServer) Type2() {
 			highRate = 1
 		}
 		// заливаем тр-ию в БД
-		err = t.ExecSql(`DELETE FROM queue_tx WHERE hash = [hex]`, utils.Md5(decryptedBinDataFull))
+		err = t.ExecSql(`DELETE FROM queue_tx WHERE hex(hash) = ?`, utils.Md5(decryptedBinDataFull))
 		if err!=nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return

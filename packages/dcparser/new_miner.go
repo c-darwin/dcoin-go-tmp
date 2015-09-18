@@ -395,7 +395,7 @@ func (p *Parser) NewMiner() error {
 		return err
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
-		err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_node_keys SET block_id = ? WHERE public_key = [hex]", p.BlockData.BlockId, p.TxMap["node_public_key"])
+		err = p.DCDB.ExecSql("UPDATE "+myPrefix+"my_node_keys SET block_id = ? WHERE hex(public_key) = ?", p.BlockData.BlockId, p.TxMap["node_public_key"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

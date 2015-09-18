@@ -24,7 +24,7 @@ func (c *Controller) SignLogin() (string, error) {
 		hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
 	}
 	log.Debug("hash %s", hash)
-	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hash = [hex]`, hash)
+	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hex(hash) = ?`, hash)
 	if err != nil {
 		return "", err
 	}

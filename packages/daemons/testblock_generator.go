@@ -296,7 +296,7 @@ func TestblockGenerator() {
             dataHex := fmt.Sprintf("%x", data)
             log.Debug("dataHex %v", dataHex)
 
-            exists, err := d.Single("SELECT hash FROM transactions_testblock WHERE hash = [hex]", hashMd5).String()
+            exists, err := d.Single("SELECT hash FROM transactions_testblock WHERE hex(hash) = ?", hashMd5).String()
             if err != nil {
                 d.PrintSleep(utils.ErrInfo(err), 1)
                 continue

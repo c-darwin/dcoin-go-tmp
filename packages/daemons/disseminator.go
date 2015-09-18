@@ -156,7 +156,7 @@ func Disseminator() {
 				hexHash := utils.BinToHex([]byte(data["hash"]))
 				toBeSent = append(toBeSent, utils.DecToBin(utils.StrToInt64(data["high_rate"]), 1)...)
 				toBeSent = append(toBeSent, []byte(data["hash"])...)
-				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hexHash)
+				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hexHash)
 				if err != nil {
 					d.PrintSleep(err, 1)
 					continue BEGIN
@@ -199,7 +199,7 @@ func Disseminator() {
 				}
 				log.Debug("hash %x", hash)
 				hashHex := utils.BinToHex(hash)
-				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hash = [hex]", hashHex)
+				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hashHex)
 				if err != nil {
 					d.PrintSleep(err, 1)
 					continue BEGIN
@@ -379,7 +379,7 @@ func (d *daemon) DisseminatorType1(host string, userId int64, node_public_key st
 				}
 				txHash = utils.BinToHex(txHash)
 				log.Debug("txHash %s", txHash)
-				tx, err := d.Single("SELECT data FROM transactions WHERE hash  =  [hex]", txHash).Bytes()
+				tx, err := d.Single("SELECT data FROM transactions WHERE hex(hash) = ?", txHash).Bytes()
 				log.Debug("tx %x", tx)
 				if err != nil {
 					log.Info("%v", utils.ErrInfo(err))

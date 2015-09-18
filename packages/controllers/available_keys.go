@@ -20,7 +20,7 @@ func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 		return 0, "", utils.ErrInfo(err)
 	}
 	log.Debug("publicKeyAsn: %s", publicKeyAsn)
-	userId, err := db.Single("SELECT user_id FROM users WHERE public_key_0  =  [hex]", publicKeyAsn).Int64()
+	userId, err := db.Single("SELECT user_id FROM users WHERE hex(public_key_0) = ?", publicKeyAsn).Int64()
 	if err != nil {
 		return 0, "", utils.ErrInfo(err)
 	}
