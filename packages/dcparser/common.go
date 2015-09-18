@@ -1846,7 +1846,7 @@ func (p *Parser) ParseDataFull() error {
 			log.Debug("MethodName", MethodName+"Front")
 			err_ = utils.CallMethod(p,MethodName+"Front")
 			if _, ok := err_.(error); ok {
-				log.Error("error: %v", err)
+				log.Error("error: %v", err_)
 				p.RollbackTo(txForRollbackTo, true, false);
 				return utils.ErrInfo(err_.(error))
 			}

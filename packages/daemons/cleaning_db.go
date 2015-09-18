@@ -131,7 +131,7 @@ func CleaningDb() {
 						continue BEGIN
 					}
 					if table == "cf_currency" {
-						err = d.SetAI("cf_currency", 1000)
+						err = d.SetAI("cf_currency", 999)
 						if err != nil {
 							d.PrintSleep(utils.ErrInfo(err), 1)
 							continue BEGIN
@@ -144,7 +144,7 @@ func CleaningDb() {
 						}
 					} else {
 						log.Debug("SET AI %s", table)
-						err = d.SetAI(table, 1)
+						err = d.SetAI(table, 0)
 						if err != nil {
 							d.PrintSleep(utils.ErrInfo(err), 1)
 						}
