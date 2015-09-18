@@ -817,23 +817,30 @@ func (db *DCDB) GetTcpHost() string {
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
 		}
-		//myPrefix := ""
+		myPrefix := ""
 		var myUserId int64
 		if len(community) > 0 {
 			myUserId, err = db.GetPoolAdminUserId()
 			if err!=nil {
 				log.Error("%v", ErrInfo(err))
 			}
-			//myPrefix = Int64ToStr(myUserId)+"_"
+			myPrefix = Int64ToStr(myUserId)+"_"
 		} else {
 			myUserId, err = db.GetMyUserId("")
 			if err!=nil {
 				log.Error("%v", ErrInfo(err))
 			}
 		}
-		tcpHost, err := db.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", myUserId).String()
+
+		tcpHost, err := db.Single("SELECT tcp_host FROM "+myPrefix+"my_table").String()
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
+		}
+		if len(tcpHost) == 0 {
+			tcpHost, err = db.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", myUserId).String()
+			if err!=nil {
+				log.Error("%v", ErrInfo(err))
+			}
 		}
 		if len(tcpHost) > 0 {
 			log.Debug("tcpHost: (%x)", tcpHost)
