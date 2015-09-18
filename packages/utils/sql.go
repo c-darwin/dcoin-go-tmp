@@ -1289,7 +1289,7 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 		}
 		timeInt := StrToInt64(string(txTime))
 		t := time.Unix(timeInt, 0)
-		txTimeFormat = []byte(t.Format(timeFormat))
+		txTimeFormat := []byte(t.Format(timeFormat))
 		result = append(result, map[string]string{"hash": string(hash), "time": string(txTimeFormat),"time_int": string(txTime), "type": string(txType), "user_id": string(user_id), "block_id": string(block_id), "error": string(txerror), "queue_tx": string(queue_tx), "tx": string(tx)})
 	}
 	return result, nil
