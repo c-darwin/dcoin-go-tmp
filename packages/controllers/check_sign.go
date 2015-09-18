@@ -209,12 +209,12 @@ func (c *Controller) Check_sign() (string, error) {
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					myUserId, err := c.GetMyUserId("")
-					if myUserId > 0 {
+					//myUserId, err := c.GetMyUserId("")
+					//if myUserId > 0 {
 						c.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
-					} else {
-						c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
-					}
+					//} else {
+					//	c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
+					//}
 					// возможно юзер хочет сохранить свой ключ
 					if len(private_key) > 0 {
 						c.ExecSql("UPDATE my_keys SET private_key = ? WHERE block_id = (SELECT max(block_id) FROM my_keys)", private_key)
