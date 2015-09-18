@@ -62,7 +62,7 @@ func CleaningDb() {
 				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			file, err := os.OpenFile(*utils.Dir+"/public/blockchain", os.O_APPEND|os.O_WRONLY, 0600)
+			file, err := os.OpenFile(*utils.Dir+"/public/blockchain", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN

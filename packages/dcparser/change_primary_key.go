@@ -122,7 +122,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 		// если есть user_id, значит уже точно нету bad_key и в прошлых блоках уже было соотвествие my_key с ключем в new_public_keys_hex
 
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE public_key =[hex] AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.newPublicKeysHex[0])
+		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE public_key = [hex] AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.newPublicKeysHex[0])
 		if err != nil {
 			return p.ErrInfo(err)
 		}

@@ -1421,7 +1421,7 @@ func StrToMoney(str string) float64 {
 func GetEndBlockId() (int64, error) {
 
 	if _, err := os.Stat(*Dir+"/public/blockchain"); os.IsNotExist(err) {
-		return 0, ErrInfo(err)
+		return 0, nil
 	} else {
 		// размер блока, записанный в 5-и последних байтах файла blockchain
 		fname := *Dir+"/public/blockchain"

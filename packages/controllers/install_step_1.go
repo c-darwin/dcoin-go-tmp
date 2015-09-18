@@ -19,7 +19,7 @@ func (c *Controller) InstallStep1() (string, error) {
 	installType := c.r.FormValue("type")
 	url := c.r.FormValue("url")
 	setupPassword := c.r.FormValue("setup_password")
-	userId := c.r.FormValue("user_id")
+	userId := utils.StrToInt64(c.r.FormValue("user_id"))
 	firstLoad := c.r.FormValue("first_load")
 	dbType := c.r.FormValue("db_type")
 	dbHost := c.r.FormValue("host")

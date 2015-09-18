@@ -41,9 +41,7 @@ func BlocksCollection() {
     BEGIN:
     for {
         log.Info(GoroutineName)
-        log.Info("00000000")
         MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
-        log.Info("11111111")
 
         // проверим, не нужно ли нам выйти из цикла
         if CheckDaemonsRestart() {
