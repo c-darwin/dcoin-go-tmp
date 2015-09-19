@@ -39,8 +39,15 @@ func (c *Controller) DcoinKey() (string, error) {
 		param = paramNoPass
 	}
 
-	if ok, _ := regexp.MatchString("(iPod|iPhone|iPad)", c.r.UserAgent()); ok{
-	//if len(c.r.FormValue("iPhone")) > 0 {
+	ios := false
+	if ok, _ := regexp.MatchString("(iPod|iPhone|iPad)", c.r.UserAgent()); ok {
+		ios = true
+	}
+	if len(c.r.FormValue("ios")) > 0 {
+		ios = true
+	}
+
+	if ios {
 		buffer, err := utils.KeyToImg(privateKey, "", c.SessUserId, c.TimeFormat, param)
 		if err != nil {
 			return "", utils.ErrInfo(err)
