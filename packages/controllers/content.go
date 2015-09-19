@@ -203,7 +203,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		tplName = tplName
 	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
 		// первый запуск, еще не загружен блокчейн
-		tplName = "after_install"
+		tplName = "updatingBlockchain"
 	} else if dbInit && installProgress=="complete" && sessUserId > 0 {
 		status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
 		if err != nil {
@@ -280,6 +280,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	c.CountSign = countSign
 	c.CountSignArr = CountSignArr
+
+	if tplName == "" {
+		tplName = "home"
+	}
 
 	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
