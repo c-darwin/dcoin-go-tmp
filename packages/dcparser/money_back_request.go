@@ -103,6 +103,9 @@ func (p *Parser) MoneyBackRequest() (error) {
 	}
 	for i:=0; i<5; i++ {
 		iStr := utils.IntToStr(i);
+		if orderData["arbitrator"+iStr] == 0 {
+			continue
+		}
 		myUserId, _, myPrefix, _ , err := p.GetMyUserId(orderData["arbitrator"+iStr])
 		if err != nil {
 			return p.ErrInfo(err)
@@ -137,6 +140,9 @@ func (p *Parser) MoneyBackRequestRollback() (error) {
 	}
 	for i:=0; i<5; i++ {
 		iStr := utils.IntToStr(i);
+		if orderData["arbitrator"+iStr] == 0 {
+			continue
+		}
 		myUserId, _, myPrefix, _ , err := p.GetMyUserId(orderData["arbitrator" + iStr])
 		if err != nil {
 			return p.ErrInfo(err)

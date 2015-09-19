@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 //	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"tests_utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/tests_utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
@@ -15,7 +15,7 @@ func main() {
 	db := tests_utils.DbConn()
 	parser := new(dcparser.Parser)
 	parser.DCDB = db
-	err := parser.RollbackToBlockId(136711)
+	err := parser.RollbackToBlockId(257600)
 	if err!=nil {
 		fmt.Println(err)
 	}
