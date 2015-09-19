@@ -2003,6 +2003,10 @@ func (p *Parser) GetMyUserId(userId int64) (int64, int64, string, []int64, error
 	var myPrefix string
 	var myUserIds []int64
 	var myBlockId int64
+	myBlockId, err = p.Single("SELECT my_block_id FROM config").Int64()
+	if err != nil {
+		return myUserId, myBlockId, myPrefix, myUserIds, err
+	}
 	collective, err := p.GetCommunityUsers()
 	if len(collective) > 0 {// если работаем в пуле
 		myUserIds = collective
@@ -2023,10 +2027,6 @@ func (p *Parser) GetMyUserId(userId int64) (int64, int64, string, []int64, error
 			return myUserId, myBlockId, myPrefix, myUserIds, err
 		}
 		myUserIds = append(myUserIds, myUserId)
-	}
-	myBlockId, err = p.Single("SELECT my_block_id FROM config").Int64()
-	if err != nil {
-		return myUserId, myBlockId, myPrefix, myUserIds, err
 	}
 	return myUserId, myBlockId, myPrefix, myUserIds, nil
 }
