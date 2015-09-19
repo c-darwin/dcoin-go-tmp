@@ -60,13 +60,19 @@
 {{if .PoolTechWorks}}
 	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
 {{else}}
-	<div style="margin:0 auto; display: table; position: relative; top: 40%;">
+	<div style="margin:0 auto; display: table; position: relative; top: 40%;" id="login_div">
 		<span style="display: inline-block">
 			<button type="button" class="btn btn-primary btn-lg" id="show_login" style="position: relative; display: table;">{{.Lang.login}}</button>
 			<button type="button" class="btn btn-primary btn-lg" id="show_signup" style="position: relative; display: table;  ">{{.Lang.sign_up}}</button>
 		</span>
 	</div>
 {{end}}
+
+<div style="margin:0 auto; display: none; position: relative; top: 40%;" id="loading_div">
+		<span style="display: inline-block; text-align: center">
+			Пожалуйста, ждите, идет поиск свободного ключа
+		</span>
+</div>
 <!--
 {{if not .UserID}}
 <div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: 30px auto auto;">{{noescape .Lang.login_help_text}}</div>
@@ -80,10 +86,8 @@
 		$('#myModalLogin').modal({ backdrop: 'static' });
 	});
 	$('#show_signup').bind('click', function () {
-		$('#wrapper').spin();
 		signUpModalFns();
 		//$('#signUpModal').modal({ backdrop: 'static' });
-		$('#wrapper').spin(false);
 	});
 
 	$( document ).ready(function() {
@@ -103,7 +107,11 @@
 
 	function signUpModalFns() {
 		console.log("take_key");
+		$('#wrapper').spin();
+		$('#login_div').css('display', 'none');
+		$('#loading_div').css('display', 'table');
 		$.get('ajax?controllerName=availableKeys', function(data) {
+			$('#wrapper').spin(false);
 			if (data=="ok") {
 				fc_navigate ('setPassword', '');
 			} else {

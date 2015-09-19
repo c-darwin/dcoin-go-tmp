@@ -4,7 +4,7 @@
 
 		{{if .ShowSignData}}$("#main_data").css("display", "none"); $("#sign").css("display", "block");{{end}}
 
-		$("#for-signature").val( '<?php echo "{{.TxTypeId}},{{.TimeNow}},{{.UserId}}"; ?>,'+$("#credit_id").val()+','+$("#amount").val());
+		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#credit_id").val()+','+$("#amount").val());
 		doSign();
 		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 		});

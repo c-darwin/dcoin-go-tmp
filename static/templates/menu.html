@@ -254,9 +254,8 @@
 				{{if or .PoolAdmin (not .Community)}}
 					<li><a href="#nodeConfigControl">{{.Lang.config_node}}</a></li>
 				{{end}}
-				<?php echo (defined('POOL_ADMIN') || !defined('COMMUNITY'))?'<li><a href="#nodeConfigControl">'.lng['config_node'].'</a></li>':''?>
 				<li class="divider"></li>
-				<li><a href="#" onclick="logout()"><i class="fa fa-sign-out fa-lg"></i> {{.Lang.logout}} (user_id: <?php echo $_SESSION['user_id']?>)</a>
+				<li><a href="#" onclick="logout()"><i class="fa fa-sign-out fa-lg"></i> {{.Lang.logout}} (user_id: {{.UserId}})</a>
 				</li>
 			</ul>
 			</li>

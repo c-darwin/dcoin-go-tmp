@@ -65,7 +65,7 @@
 
 			{{if .ShowSignData}}$("#add").css("display", "none"); $("#sign").css("display", "block");{{end}}
 
-			$("#for-signature").val('<?php echo "{{.TxTypeId}},{{.TimeNow}},{{.UserId}}"; ?>,' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
+			$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
 			doSign();
 			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 			}
