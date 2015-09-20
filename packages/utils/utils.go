@@ -3023,3 +3023,25 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 	return binaryBlock, nil
 
 }
+
+
+type jsonAnswer struct {
+	err error
+}
+func (r *jsonAnswer) String() string {
+	return fmt.Sprintf("%s", r.err)
+}
+func (r *jsonAnswer) Error() error {
+	return r.err
+}
+func JsonAnswer(err interface{}, answType string) *jsonAnswer {
+	var error_ string
+	switch err.(type) {
+		case string:
+		error_ = err.(string)
+		case error:
+		error_ =  fmt.Sprintf("%v", err)
+	}
+	result, _ := json.Marshal(map[string]string{answType: fmt.Sprintf("%v", error_)})
+	return &jsonAnswer{errors.New(string(result))}
+}

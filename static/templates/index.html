@@ -395,8 +395,9 @@
 		{{else if .Key}}
 			$("#wrapper").spin();
 			$("#dc_content").load( "content", { {{if .SetLang}}"parameters": {"lang":{{.SetLang}} }{{end}} }, function() {
-			$("#modal_key").val("{{.Key}}");
-			save_key(); doSign('login');$('#wrapper').spin(false);
+				$("#modal_key").val("{{.Key}}");
+				console.log("modal_key: "+$("#modal_key").val());
+				save_key(); doSign('login');$('#wrapper').spin(false);
 			})
 			load_menu();
 		{{else}}

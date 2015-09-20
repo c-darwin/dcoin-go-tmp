@@ -17,12 +17,11 @@
 	$(document).ready(function() {
 		var refreshId = setInterval( function() {
 			$.post( 'ajax?controllerName=AcceptNewKeyStatus', {}, function (data) {
-				if (data.result=="ok") {
+				if (data=="ok") {
 					window.clearInterval(refreshId);
 					window.location.href = "/";
 				}
-			}, 'JSON'
-			);
+			});
 		}, 3000);
 	});
 </script>

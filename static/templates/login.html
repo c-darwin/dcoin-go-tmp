@@ -70,6 +70,7 @@
 
 <div style="margin:0 auto; display: none; position: relative; top: 40%;" id="loading_div">
 		<span style="display: inline-block; text-align: center">
+			<div id="available_key_alert"></div>
 			Пожалуйста, ждите, идет поиск свободного ключа
 		</span>
 </div>
@@ -91,8 +92,6 @@
 	});
 
 	$( document ).ready(function() {
-		//$('#show_login').css('display', 'block');
-		//$('#show_signup').css('display', 'block');
 		$('#wrapper').spin(false);
 	});
 
@@ -105,25 +104,36 @@
 				});
 	});*/
 
-	function signUpModalFns() {
-		console.log("take_key");
+	function availableKeys() {
 		$('#wrapper').spin();
 		$('#login_div').css('display', 'none');
 		$('#loading_div').css('display', 'table');
 		$.get('ajax?controllerName=availableKeys', function(data) {
 			$('#wrapper').spin(false);
-			if (data=="ok") {
+			if (data.success) {
 				fc_navigate ('setPassword', '');
-			} else {
+			} else if (data.error && data.error == "no_available_keys") {
+				$('#login_div').css('display', 'table');
+				$('#loading_div').css('display', 'none');
+				$('#no_available_keys').css('display', 'block');
+				$('#sign_up_in_pool').css('display', 'none');
 				$('#signUpModal').modal({ backdrop: 'static' });
+			} else if (data.error) {
+				$('#available_key_alert').html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+data.error+'</p></div>');
 			}
-			/*$('#signUpModal').modal('hide');
-			console.log(data);
-			$('#key').text( data );*/
-			//doSign('login');
-		});
+		}, "JSON");
+	}
+
+	function signUpModalFns() {
+		{{if .Community}}
+			$('#no_available_keys').css('display', 'none');
+			$('#sign_up_in_pool').css('display', 'block');
+			$('#signUpModal').modal({ backdrop: 'static' });
+		{{else}}
+			availableKeys()
+		{{end}}
 	}
 
 </script>
 <div class="for-signature"></div>
-{{ end }}
+{{end}}

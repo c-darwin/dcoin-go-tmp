@@ -2,9 +2,6 @@ package controllers
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"regexp"
-	"math/rand"
-	//"strings"
 )
 
 type availableKeysPage struct {
@@ -41,62 +38,35 @@ func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 
 func (c *Controller) AvailableKeys() (string, error) {
 
-	keysStr, err := utils.GetHttpTextAnswer("http://dcoin.club/keys")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	//keysStr = strings.Replace(keysStr, "\n", "", -1)
-	r, _ := regexp.Compile("(?s)-----BEGIN RSA PRIVATE KEY-----(.*?)-----END RSA PRIVATE KEY-----")
-	keys := r.FindAllString(keysStr, -1)
-	for i := range keys {
-		j := rand.Intn(i + 1)
-		keys[i], keys[j] = keys[j], keys[i]
-	}
-	for _, key := range keys {
-		userId, pubKey, err := checkAvailableKey(key, c.DCDB)
+	if c.Community {
+		// если это пул, то будет прислан email
+		email := c.r.FormValue("email")
+		if !utils.ValidateEmail(email) {
+			return utils.JsonAnswer("Incorrect email", "error").String(), nil
+		}
+		// если мест в пуле нет, то просто запишем юзера в очередь
+		pool_max_users, err := c.Single("SELECT pool_max_users FROM config").Int()
 		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
+			return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 		}
-		log.Debug("checkAvailableKey userId: %v", userId)
-		if userId > 0 {
-			// запишем приватный ключ в БД, чтобы можно было подписать тр-ию на смену ключа
-			myPref := ""
-			if c.Community {
-				myPref = utils.Int64ToStr(userId)+"_"
-				err = c.ExecSql("INSERT INTO "+myPref+"my_table (user_id, status) VALUES (?, ?)", userId, "waiting_set_new_key")
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-			} else {
-				err = c.ExecSql("UPDATE my_table SET user_id = ?, status = ?", userId, "waiting_set_new_key")
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-			}
-
-			// пишем приватный в my_keys т.к. им будем подписывать тр-ию на смену ключа
-			err = c.ExecSql("INSERT INTO "+myPref+"my_keys (private_key, status) VALUES (?, ?)", key, "approved")
+		if len(c.CommunityUsers) >= pool_max_users {
+			err = c.ExecSql("INSERT INTO pool_waiting_list ( email, time, user_id ) VALUES ( ?, ?, ? )", email, utils.Time(), 0)
 			if err != nil {
-				return "", utils.ErrInfo(err)
+				return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 			}
-			newPrivKey, newPubKey := utils.GenKeys()
-			// сразу генерируем новый ключ и пишем приватный временно в my_keys, чтобы можно было выдавать юзеру для скачивания
-			err = c.ExecSql("INSERT INTO "+myPref+"my_keys (private_key, public_key, status) VALUES (?, ?, ?)", newPrivKey, utils.HexToBin([]byte(newPubKey)), "my_pending")
-			if err != nil {
-				return "", utils.ErrInfo(err)
-			}
-			c.sess.Set("user_id", userId)
-			c.sess.Set("public_key", pubKey)
-			log.Debug("user_id: %d", userId)
-			log.Debug("public_key: %s", pubKey)
-
-			/*c.w.Header().Set("Content-Type", "application/octet-stream")
-			c.w.Header().Set("Content-Length", utils.IntToStr(len(key)))
-			c.w.Header().Set("Content-Disposition", `attachment; filename="key.txt"`)
-			c.w.Header().Set("Access-Control-Allow-Origin", "*")
-			c.w.Write([]byte(key))*/
-			return "ok", nil
+			return utils.JsonAnswer(c.Lang["pool_is_full"], "error").String(), nil
 		}
+	}
+	userId, publicKey, err := c.GetAvailableKey()
+	if err != nil {
+		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
+	}
+	if userId > 0 {
+		c.sess.Set("user_id", userId)
+		c.sess.Set("public_key", publicKey)
+		log.Debug("user_id: %d", userId)
+		log.Debug("public_key: %s", publicKey)
+		return utils.JsonAnswer("success", "success").String(), nil
 	}
 	/*
 	c.r.ParseForm()
@@ -146,6 +116,5 @@ func (c *Controller) AvailableKeys() (string, error) {
 		return b.String(), nil
 	}
 	*/
-
-	return "", nil
+	return utils.JsonAnswer("no_available_keys", "error").String(), nil
 }

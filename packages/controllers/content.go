@@ -281,9 +281,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.CountSign = countSign
 	c.CountSignArr = CountSignArr
 
-	if tplName == "" {
-		tplName = "home"
-	}
+	//if tplName == "" {
+	//	tplName = "home"
+	//}
 
 	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
