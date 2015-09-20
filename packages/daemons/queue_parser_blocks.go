@@ -148,7 +148,8 @@ func QueueParserBlocks() {
 		blockId := utils.StrToInt64(newBlockData["block_id"])
 
 		p := new(dcparser.Parser)
-		//func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBlocks, goroutineName, getBlockScriptName, addNodeHost string) error {
+		p.DCDB = d.DCDB
+		p.GoroutineName = GoroutineName
 		err = p.GetBlocks(blockId, host, utils.StrToInt64(newBlockData["user_id"]), "rollback_blocks_1", GoroutineName, 7, "")
 		if err != nil {
 			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
