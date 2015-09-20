@@ -222,7 +222,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 		public_key_2 = utils.BinToHex(public_key_2)
 	}
 
-	err = p.ExecSql("UPDATE users SET hex(public_key_0) = ?, hex(public_key_1) = ?, hex(public_key_2) = ?, log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxUserID)
+	err = p.ExecSql("UPDATE users SET public_key_0 = [hex], public_key_1 = [hex], public_key_2 = [hex], log_id = ? WHERE user_id = ?", public_key_0, public_key_1, public_key_2, prev_log_id, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
