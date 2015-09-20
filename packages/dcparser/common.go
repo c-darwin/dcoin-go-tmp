@@ -221,7 +221,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		blockId--
 		count++
 
-		// качаем предыдущие блоки до тех пор, пока отличается хэш предудущего.
+		// качаем предыдущие блоки до тех пор, пока отличается хэш предыдущего.
 		// другими словами, пока подпись с $prev_block_hash будет неверной, т.е. пока что-то есть в $error
 		if okSignErr == nil {
 			log.Debug("plug found blockId=%v\n", blockData.BlockId)
@@ -281,7 +281,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 		log.Debug("We roll away blocks before plug", blockId)
 		parser.GoroutineName = goroutineName
 		parser.BinaryData = data
-		err = parser.ParseDataRollbackFront(false)
+		err = parser.ParseDataRollback()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
