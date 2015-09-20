@@ -556,7 +556,8 @@ func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 
 func (db *DCDB) DelLogTx(binaryTx []byte) error {
 	txMD5 := Md5(binaryTx)
-	err := db.ExecSql("DELETE FROM log_transactions WHERE hex(hash) = ?", txMD5)
+	affected, err := db.ExecSqlGetAffect("DELETE FROM log_transactions WHERE hex(hash) = ?", txMD5)
+	log.Debug("DELETE FROM log_transactions WHERE hex(hash) = %s / affected = %d", txMD5, affected)
 	if err != nil {
 		return ErrInfo(err)
 	}
