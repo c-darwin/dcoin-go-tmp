@@ -15,6 +15,7 @@ func (c *Controller) AcceptNewKeyStatus() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	log.Debug(">status: ", status)
 	if status == "user" {
 		result = "ok"
 	}
