@@ -5,6 +5,7 @@ import (
 	"errors"
 	"encoding/base64"
 	"regexp"
+	"io/ioutil"
 )
 
 func (c *Controller) DcoinKey() (string, error) {
@@ -52,12 +53,20 @@ func (c *Controller) DcoinKey() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
+		// write whole the body
+		err := ioutil.WriteFile("output.txt", buffer.Bytes(), 0644)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		c.w.Write([]byte("ok"));
+		/*
 		c.w.Header().Set("Content-Type", "image/png")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(buffer.Bytes())))
 		c.w.Header().Set("Content-Disposition", `attachment; filename="Dcoin-private-key-`+utils.Int64ToStr(c.SessUserId)+`.png"`)
 		if _, err := c.w.Write(buffer.Bytes()); err != nil {
 			return "", utils.ErrInfo(errors.New("unable to write image"))
-		}
+		}*/
+
 	} else {
 		c.w.Header().Set("Content-Type", "text/plain")
 		c.w.Header().Set("Content-Length", utils.IntToStr(len(privateKey)))

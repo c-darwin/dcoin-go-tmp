@@ -25,6 +25,7 @@ type menuPage struct {
 	NoAvatar string
 	FaceUrls string
 	Restricted int64
+	Mobile bool
 }
 
 func (c *Controller) Menu() (string, error) {
@@ -128,7 +129,7 @@ func (c *Controller) Menu() (string, error) {
 	log.Debug("1")
 	b := new(bytes.Buffer)
 	log.Debug("2")
-	err = t.ExecuteTemplate(b, "menu", &menuPage{SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	err = t.ExecuteTemplate(b, "menu", &menuPage{Mobile: utils.Mobile(), SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
 	log.Debug("ExecuteTemplate")
 	if err != nil {
 		log.Debug("%s", utils.ErrInfo(err))
