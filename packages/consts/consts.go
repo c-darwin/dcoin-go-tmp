@@ -20,7 +20,7 @@ const AUTO_REDUCTION_PCT = 10
 const MIN_CONFIRMED_NODES = 1
 
 // текущая версия
-const VERSION = "1.0.1a2"
+const VERSION = "1.0.1a3"
 
 // примерный текущий крайний блок
 const LAST_BLOCK = 260000
