@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
+	"bytes"
 )
 
 func Content(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +296,17 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Error("%v", err)
 		}
-		if string(utils.BinToHex(userPublicKey)) != sessPublicKey {
+		// но возможно у юзера включено сохранение приватного ключа
+		// тогда, чтобы не получилось зацикливания, нужно проверить и my_keys
+		myPrivateKey, err := c.GetMyPrivateKey(c.MyPrefix)
+		if err != nil {
+			log.Error("%v", err)
+		}
+		myPublicKey, err := c.GetMyPublicKey(c.MyPrefix)
+		if err != nil {
+			log.Error("%v", err)
+		}
+		if (string(utils.BinToHex(userPublicKey)) != sessPublicKey && len(myPrivateKey) == 0) || (len(myPrivateKey) > 0 && !bytes.Equal(myPublicKey, []byte(userPublicKey))) {
 			log.Debug("userPublicKey!=sessPublicKey %s!=%s / userId: %d", utils.BinToHex(userPublicKey), sessPublicKey, userId)
 			sess.Delete("user_id")
 			sess.Delete("private_key")
