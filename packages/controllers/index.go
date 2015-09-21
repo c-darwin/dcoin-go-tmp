@@ -15,6 +15,7 @@ type index struct {
 	Lang map[string]string
 	Key string
 	SetLang string
+	IOS bool
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +86,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		log.Error("%v", err)
 	}
 	b := new(bytes.Buffer)
-	err = t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang})
+	err = t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang, IOS: utils.IOS()})
 	if err != nil {
 		log.Error("%v", err)
 	}
