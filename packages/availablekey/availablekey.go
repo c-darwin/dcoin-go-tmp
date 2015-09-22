@@ -100,6 +100,7 @@ func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
 				if err != nil {
 					return 0, "", utils.ErrInfo(err)
 				}
+				log.Debug("return userId %d", userId)
 				return userId, pubKey, nil
 			}
 		}
