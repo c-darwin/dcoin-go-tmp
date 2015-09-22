@@ -205,7 +205,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
 		// первый запуск, еще не загружен блокчейн
 		tplName = "updatingBlockchain"
-	} else if dbInit && installProgress=="complete" && sessUserId > 0 {
+	} else if dbInit && installProgress=="complete" && (sessUserId > 0 || !c.Community) {
 		status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
 		if err != nil {
 			log.Error("%v", err)
@@ -412,7 +412,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if len(tplName) > 0 {
 		log.Debug("tplName",tplName)
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)waitingAcceptNewKey|SetPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
