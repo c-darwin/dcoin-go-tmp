@@ -13,6 +13,7 @@ var log = logging.MustGetLogger("availablekey")
 
 type AvailablekeyStruct struct {
 	*utils.DCDB
+	Email string
 }
 
 func (a *AvailablekeyStruct) checkAvailableKey(key string) (int64, string, error) {
@@ -73,7 +74,11 @@ func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
 					schema_.PrefixUserId = int(userId)
 					schema_.GetSchema()
 					myPref = utils.Int64ToStr(userId)+"_"
-					err = a.ExecSql("INSERT INTO "+myPref+"my_table (user_id, status) VALUES (?, ?)", userId, "waiting_set_new_key")
+					err = a.ExecSql("INSERT INTO "+myPref+"my_table (user_id, status, email) VALUES (?, ?, ?)", userId, "waiting_set_new_key", a.Email)
+					if err != nil {
+						return 0, "", utils.ErrInfo(err)
+					}
+					err = a.ExecSql("INSERT INTO community ( user_id ) VALUES ( ? )", userId)
 					if err != nil {
 						return 0, "", utils.ErrInfo(err)
 					}

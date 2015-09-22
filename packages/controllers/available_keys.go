@@ -38,9 +38,10 @@ func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 
 func (c *Controller) AvailableKeys() (string, error) {
 
+	var email string
 	if c.Community {
 		// если это пул, то будет прислан email
-		email := c.r.FormValue("email")
+		email = c.r.FormValue("email")
 		if !utils.ValidateEmail(email) {
 			return utils.JsonAnswer("Incorrect email", "error").String(), nil
 		}
@@ -60,6 +61,7 @@ func (c *Controller) AvailableKeys() (string, error) {
 
 	availablekey := &availablekey.AvailablekeyStruct{}
 	availablekey.DCDB = c.DCDB
+	availablekey.Email = email
 	userId, publicKey, err := availablekey.GetAvailableKey()
 	if err != nil {
 		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
