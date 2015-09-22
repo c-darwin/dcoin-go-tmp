@@ -3,6 +3,7 @@ package daemons
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"bytes"
+	"github.com/c-darwin/dcoin-go-tmp/packages/availablekey"
 )
 
 func FirstChangePkey() {
@@ -105,7 +106,9 @@ func FirstChangePkey() {
 						}
 					}
 					// и пробуем взять новый
-					userId, _, err := d.GetAvailableKey()
+					availablekey := &availablekey.AvailablekeyStruct{}
+					availablekey.DCDB = d.DCDB
+					userId, _, err := availablekey.GetAvailableKey()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN

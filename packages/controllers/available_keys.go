@@ -1,7 +1,7 @@
 package controllers
 import (
-	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/availablekey"
 )
 
 type availableKeysPage struct {
@@ -9,7 +9,7 @@ type availableKeysPage struct {
 	Key string
 	LangId int
 }
-
+/*
 func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 	publicKeyAsn, err := utils.GetPublicFromPrivate(key)
 	if err != nil {
@@ -34,7 +34,7 @@ func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 		return 0, "", errors.New("exists _my_table")
 	}
 	return userId, string(publicKeyAsn), nil
-}
+}*/
 
 func (c *Controller) AvailableKeys() (string, error) {
 
@@ -57,7 +57,10 @@ func (c *Controller) AvailableKeys() (string, error) {
 			return utils.JsonAnswer(c.Lang["pool_is_full"], "error").String(), nil
 		}
 	}
-	userId, publicKey, err := c.GetAvailableKey()
+
+	availablekey := &availablekey.AvailablekeyStruct{}
+	availablekey.DCDB = c.DCDB
+	userId, publicKey, err := availablekey.GetAvailableKey()
 	if err != nil {
 		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 	}
