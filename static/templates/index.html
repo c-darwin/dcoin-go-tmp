@@ -133,6 +133,15 @@
 	body{
 		height: 1px;
 	}
+
+	{{if .IOS}}
+	.navbar-fixed-top{
+		padding-top: 15px;
+	}
+	.navbar {
+		min-height: 65px;
+	}
+	{{end}}
 </style>
 </head>
 

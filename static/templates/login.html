@@ -108,7 +108,7 @@
 		$('#wrapper').spin();
 		$('#login_div').css('display', 'none');
 		$('#loading_div').css('display', 'table');
-		$.get('ajax?controllerName=availableKeys', function(data) {
+		$.post('ajax?controllerName=availableKeys', { {{if .Community}}'email': $('#sign_up_in_pool_email').val(){{end}} }, function(data) {
 			$('#wrapper').spin(false);
 			if (data.success) {
 				fc_navigate ('setPassword', '');
