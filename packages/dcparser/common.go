@@ -395,11 +395,7 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
-				err = p.ExecSql(`
-					UPDATE config
-					SET my_block_id = ?
-					WHERE my_block_id < ?
-					`, lastMyBlockData.BlockId, lastMyBlockData.BlockId)
+				err = p.ExecSql(`UPDATE config SET my_block_id = ?`, lastMyBlockData.BlockId)
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -434,6 +430,10 @@ func (p *Parser) GetBlocks (blockId int64, host string, userId int64, rollbackBl
 
 		// пишем в цепочку блоков
 		err = p.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id= ?, time= ?, level= ?, sent = 0", prevBlock[blockId].Hash, prevBlock[blockId].HeadHash, prevBlock[blockId].BlockId, prevBlock[blockId].Time, prevBlock[blockId].Level)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		err = p.ExecSql(`UPDATE config SET my_block_id = ?`, prevBlock[blockId].BlockId)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -1017,7 +1017,6 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	}
 	parser := new(Parser)
 	parser.DCDB = p.DCDB
-	log.Debug("1111111")
 	for rows.Next() {
 		var data, id []byte
 		err = rows.Scan(&id, &data)
@@ -1052,6 +1051,10 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 	//user_id := utils.BinToDecBytesShift(&data, 5)
 	level := utils.BinToDecBytesShift(&data, 1)
 	err = p.ExecSql("UPDATE info_block SET hash = [hex], head_hash = [hex], block_id = ?, time = ?, level = ?", utils.BinToHex(hash), utils.BinToHex(head_hash), block_id, time, level)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.ExecSql("UPDATE config SET my_block_id = ?", block_id)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
