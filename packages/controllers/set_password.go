@@ -14,7 +14,6 @@ func (c *Controller) SetPassword() (string, error) {
 	if utils.IOS() {
 		ios = true
 	}
-	ios = true
 	TemplateStr, err := makeTemplate("set_password", "setPassword", &setPasswordPage {
 		Lang: c.Lang, IOS: ios})
 	if err != nil {
