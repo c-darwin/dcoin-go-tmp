@@ -48,6 +48,11 @@ type CurrencyPct struct {
 
 func (c *Controller) Home() (string, error) {
 
+	log.Debug("first_select: %v", c.Parameters["first_select"])
+	if c.Parameters["first_select"] == "1" {
+		c.ExecSql(`UPDATE `+c.MyPrefix+`my_table SET first_select=1`)
+	}
+
 	var publicKey []byte
 	var poolAdmin bool
 	var cashRequests int64

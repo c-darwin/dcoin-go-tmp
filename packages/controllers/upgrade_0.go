@@ -21,6 +21,11 @@ type upgrade0Page struct {
 
 func (c *Controller) Upgrade0() (string, error) {
 
+	log.Debug("first_select: %v", c.Parameters["first_select"])
+	if c.Parameters["first_select"] == "1" {
+		c.ExecSql(`UPDATE `+c.MyPrefix+`my_table SET first_select=1`)
+	}
+
 	data, err := c.OneRow("SELECT race, country FROM "+c.MyPrefix+"my_table").Int()
 	if err != nil {
 		return "", utils.ErrInfo(err)
