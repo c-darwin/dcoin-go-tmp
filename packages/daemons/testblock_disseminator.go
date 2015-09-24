@@ -99,7 +99,7 @@ func TestblockDisseminator() {
 					log.Debug("host: %v", host)
 					conn, err := utils.TcpConn(host)
 					if err != nil {
-						log.Info("%v", utils.ErrInfo(err))
+						log.Error("%v", utils.ErrInfo(err))
 						return
 					}
 					defer conn.Close()
@@ -107,21 +107,21 @@ func TestblockDisseminator() {
 					// вначале шлем тип данных
 					_, err = conn.Write(utils.DecToBin(6, 1))
 					if err != nil {
-						log.Info("%v", utils.ErrInfo(err))
+						log.Error("%v", utils.ErrInfo(err))
 						return
 					}
 
 					// в 4-х байтах пишем размер данных, которые пошлем далее
 					_, err = conn.Write(utils.DecToBin(len(dataToBeSent), 4))
 					if err != nil {
-						log.Info("%v", utils.ErrInfo(err))
+						log.Error("%v", utils.ErrInfo(err))
 						return
 					}
 					// далее шлем сами данные
 					log.Debug("dataToBeSent: %x", dataToBeSent)
 					_, err = conn.Write(dataToBeSent)
 					if err != nil {
-						log.Info("%v", utils.ErrInfo(err))
+						log.Error("%v", utils.ErrInfo(err))
 						return
 					}
 
@@ -132,7 +132,7 @@ func TestblockDisseminator() {
 					buf := make([]byte, 4)
 					_, err =conn.Read(buf)
 					if err != nil {
-						log.Info("%v", utils.ErrInfo(err))
+						log.Error("%v", utils.ErrInfo(err))
 						return
 					}
 					dataSize := utils.BinToDec(buf)
@@ -141,7 +141,7 @@ func TestblockDisseminator() {
 
 						data, err := d.OneRow("SELECT * FROM testblock").String()
 						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
+							log.Error("%v", utils.ErrInfo(err))
 							return
 						}
 
@@ -155,7 +155,7 @@ func TestblockDisseminator() {
 							binaryData := make([]byte, dataSize)
 							_, err := conn.Read(binaryData)
 							if err != nil {
-								log.Info("%v", utils.ErrInfo(err))
+								log.Error("%v", utils.ErrInfo(err))
 								return
 							}
 
@@ -179,7 +179,7 @@ func TestblockDisseminator() {
 						var transactions []byte
 						transactions_testblock, err := d.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
 						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
+							log.Error("%v", utils.ErrInfo(err))
 							return
 						}
 						for _, txData := range transactions_testblock {
@@ -191,7 +191,7 @@ func TestblockDisseminator() {
 						// порядок тр-ий
 						transactions_testblock, err = d.GetList(`SELECT hash FROM transactions_testblock ORDER BY id ASC`).String()
 						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
+							log.Error("%v", utils.ErrInfo(err))
 							return
 						}
 						for _, txHash := range transactions_testblock {
@@ -201,14 +201,14 @@ func TestblockDisseminator() {
 						// в 4-х байтах пишем размер данных, которые пошлем далее
 						_, err = conn.Write(utils.DecToBin(len(responseBinaryData), 4))
 						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
+							log.Error("%v", utils.ErrInfo(err))
 							return
 						}
 
 						// далее шлем сами данные
 						_, err = conn.Write(responseBinaryData)
 						if err != nil {
-							log.Info("%v", utils.ErrInfo(err))
+							log.Error("%v", utils.ErrInfo(err))
 							return
 						}
 					}

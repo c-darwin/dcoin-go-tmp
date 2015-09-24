@@ -338,14 +338,14 @@ func check(host string, userId int64) *answerType {
 
 	/*tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
 	conn, err := net.DialTimeout("tcp", host, 5 * time.Second)
 
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	defer conn.Close()
@@ -356,14 +356,14 @@ func check(host string, userId int64) *answerType {
 	// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
 	_, err = conn.Write(utils.DecToBin(5, 1))
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 
 	// в 5-и байтах пишем userID, чтобы проверить, верный ли у него нодовский ключ, т.к. иначе ему нельзя слать зашифрованные данные
 	_, err = conn.Write(utils.DecToBin(userId, 5))
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 
@@ -372,7 +372,7 @@ func check(host string, userId int64) *answerType {
 
 	_, err = conn.Read(answer)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
 	}
 	log.Debug("host: %v / answer: %v", host, answer)

@@ -449,7 +449,7 @@ func BlocksCollection() {
             // качаем предыдущие блоки до тех пор, пока отличается хэш предыдущего.
             // другими словами, пока подпись с prevBlockHash будет неверной, т.е. пока что-то есть в $error
 			if err != nil {
-                log.Info("%v", utils.ErrInfo(err))
+                log.Error("%v", utils.ErrInfo(err))
 				if blockId < 1 {
                     d.unlockPrintSleep(utils.ErrInfo(err), 1)
                     continue BEGIN
@@ -457,7 +457,7 @@ func BlocksCollection() {
                 // нужно привести данные в нашей БД в соответствие с данными у того, у кого качаем более свежий блок
 				//func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
                 err := parser.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
-				log.Info("%v", err)
+				log.Error("%v", err)
 				if err != nil {
                     d.NodesBan(maxBlockIdUserId, fmt.Sprintf(`blockId: %v / %v`, blockId, err))
                     d.unlockPrintSleep(utils.ErrInfo(err), 1)

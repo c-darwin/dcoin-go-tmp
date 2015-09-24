@@ -37,6 +37,22 @@ func Confirmations() {
 		return
 	}
 
+	var startBlockId int64
+	// если последний проверенный был давно (пропасть более 10 блоков),
+	// то начинаем проверку последних 10 блоков
+	ConfirmedBlockId, err := d.GetConfirmedBlockId();
+	if err != nil {
+		log.Error("%v", err)
+	}
+	LastBlockId, err := d.GetLastBlockId()
+	if err != nil {
+		log.Error("%v", err)
+	}
+	if LastBlockId - ConfirmedBlockId > 10 {
+		startBlockId = ConfirmedBlockId + 1
+	}
+
+
 	BEGIN:
 	for {
 		log.Info(GoroutineName)
@@ -46,70 +62,79 @@ func Confirmations() {
 		if CheckDaemonsRestart() {
 			break BEGIN
 		}
-		blockId, err := d.GetBlockId()
-		hash, err := d.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
+
+		LastBlockId, err := d.GetLastBlockId()
 		if err != nil {
-			log.Info("%v", err)
+			log.Error("%v", err)
 		}
-		log.Info("%v", hash)
+		if startBlockId == 0 {
+			startBlockId = LastBlockId
+		}
+		for blockId:=startBlockId; blockId < LastBlockId; blockId++ {
+			hash, err := d.Single("SELECT hash FROM block_chain WHERE id =  ?", blockId).String()
+			if err != nil {
+				log.Error("%v", err)
+			}
+			log.Info("%v", hash)
 
-		var hosts []map[string]string
-		if d.ConfigIni["test_mode"] == "1" {
-			hosts = []map[string]string {{"tcp_host":"localhost:8088", "user_id":"1"}}
-		} else {
-			maxMinerId, err := d.Single("SELECT max(miner_id) FROM miners_data").Int64()
-			if err != nil {
-				log.Info("%v", err)
-			}
-			if maxMinerId == 0 {
-				maxMinerId = 1
-			}
-			q := ""
-			if d.ConfigIni["db_type"] == "postgresql" {
-				q = "SELECT DISTINCT ON (tcp_host) tcp_host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
+			var hosts []map[string]string
+			if d.ConfigIni["test_mode"] == "1" {
+				hosts = []map[string]string{{"tcp_host":"localhost:8088", "user_id":"1"}}
 			} else {
-				q = "SELECT tcp_host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY tcp_host"
+				maxMinerId, err := d.Single("SELECT max(miner_id) FROM miners_data").Int64()
+				if err != nil {
+					log.Error("%v", err)
+				}
+				if maxMinerId == 0 {
+					maxMinerId = 1
+				}
+				q := ""
+				if d.ConfigIni["db_type"] == "postgresql" {
+					q = "SELECT DISTINCT ON (tcp_host) tcp_host, user_id FROM miners_data WHERE miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+")"
+				} else {
+					q = "SELECT tcp_host, user_id FROM miners_data WHERE miner_id IN  ("+strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CONFIRMED_NODES), ",")+") GROUP BY tcp_host"
+				}
+				hosts, err = d.GetAll(q, consts.COUNT_CONFIRMED_NODES)
+				if err != nil {
+					log.Error("%v", err)
+				}
 			}
-			hosts, err = d.GetAll(q, consts.COUNT_CONFIRMED_NODES)
-			if err != nil {
-				log.Info("%v", err)
-			}
-		}
 
-		ch := make(chan string)
-		for i := 0; i < len(hosts); i++ {
-			log.Info("hosts[i] %v", hosts[i])
-			host:=hosts[i]["tcp_host"];
-			log.Info("host %v", host)
-			go func() {
-				IsReachable(host, blockId, ch)
-			}()
-		}
-		var answer string
-		var st0, st1 int64
-		for i := 0; i < len(hosts); i++ {
-			answer = <-ch
-			log.Info("answer == hash (%x = %x)", answer, hash)
-			log.Info("answer == hash (%s = %s)", answer, hash)
-			if answer == hash {
-				st1 ++
+			ch := make(chan string)
+			for i := 0; i < len(hosts); i++ {
+				log.Info("hosts[i] %v", hosts[i])
+				host := hosts[i]["tcp_host"];
+				log.Info("host %v", host)
+				go func() {
+					IsReachable(host, blockId, ch)
+				}()
+			}
+			var answer string
+			var st0, st1 int64
+			for i := 0; i < len(hosts); i++ {
+				answer = <-ch
+				log.Info("answer == hash (%x = %x)", answer, hash)
+				log.Info("answer == hash (%s = %s)", answer, hash)
+				if answer == hash {
+					st1 ++
+				} else {
+					st0 ++
+				}
+				log.Info("%v", "CHanswer", answer)
+			}
+			exists, err := d.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
+			if exists > 0 {
+				log.Debug("UPDATE confirmations SET good = %v, bad = %v, time = %v WHERE block_id = %v", st1, st0, time.Now().Unix(), blockId)
+				err = d.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
+				if err != nil {
+					log.Error("%v", err)
+				}
 			} else {
-				st0 ++
-			}
-			log.Info("%v", "CHanswer", answer)
-		}
-		exists, err := d.Single("SELECT block_id FROM confirmations WHERE block_id= ?", blockId).Int64()
-		if exists > 0 {
-			log.Debug("UPDATE confirmations SET good = %v, bad = %v, time = %v WHERE block_id = %v", st1, st0, time.Now().Unix(), blockId)
-			err = d.ExecSql("UPDATE confirmations SET good = ?, bad = ?, time = ? WHERE block_id = ?", st1, st0, time.Now().Unix(), blockId)
-			if err != nil {
-				log.Info("%v", err)
-			}
-		} else {
-			log.Debug("INSERT INTO confirmations ( block_id, good, bad, time) VALUES ( %v, %v, %v, %v )", blockId, st1, st0, time.Now().Unix())
-			err = d.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
-			if err != nil {
-				log.Info("%v", err)
+				log.Debug("INSERT INTO confirmations ( block_id, good, bad, time) VALUES ( %v, %v, %v, %v )", blockId, st1, st0, time.Now().Unix())
+				err = d.ExecSql("INSERT INTO confirmations ( block_id, good, bad, time ) VALUES ( ?, ?, ?, ? )", blockId, st1, st0, time.Now().Unix())
+				if err != nil {
+					log.Error("%v", err)
+				}
 			}
 		}
 		for i:=0; i < 60; i++ {
@@ -127,13 +152,13 @@ func checkConf(host string, blockId int64) string {
 	log.Debug("host: %v", host)
 	/*tcpAddr, err := net.ResolveTCPAddr("tcp", host)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return "0"
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
 	conn, err := net.DialTimeout("tcp", host, 5 * time.Second)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return "0"
 	}
 	defer conn.Close()
@@ -144,7 +169,7 @@ func checkConf(host string, blockId int64) string {
 	// вначале шлем тип данных, чтобы принимающая сторона могла понять, как именно надо обрабатывать присланные данные
 	_, err = conn.Write(utils.DecToBin(4, 1))
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return "0"
 	}
 
@@ -152,7 +177,7 @@ func checkConf(host string, blockId int64) string {
 	size := utils.DecToBin(blockId, 4)
 	_, err = conn.Write(size)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return "0"
 	}
 
@@ -160,7 +185,7 @@ func checkConf(host string, blockId int64) string {
 	hash := make([]byte, 32)
 	_, err = conn.Read(hash)
 	if err != nil {
-		log.Info("%v", utils.ErrInfo(err))
+		log.Error("%v", utils.ErrInfo(err))
 		return "0"
 	}
 	return string(hash)

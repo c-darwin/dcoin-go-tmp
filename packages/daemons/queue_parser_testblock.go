@@ -109,7 +109,7 @@ func QueueParserTestblock() {
 		err = p.ParseDataGate(false)
 		if err != nil {
 
-			log.Info("%v", err)
+			log.Error("%v", err)
 
 			// т.к. мы откатили наши тр-ии из transactions_testblock, то теперь нужно обработать их по новой
 			// получим наши транзакции в 1 бинарнике, просто для удобства
