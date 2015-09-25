@@ -28,7 +28,7 @@ func (c *Controller) Upgrade2() (string, error) {
 	userProfile := ""
 	path := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	if _, err := os.Stat(path); err == nil {
-		userProfile = path
+		userProfile = "/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	}
 
 	step := "2"

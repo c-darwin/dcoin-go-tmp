@@ -79,9 +79,16 @@ func (c *Controller) InstallStep1() (string, error) {
 		if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
 			utils.DB.Close()
 			log.Debug("DB CLOSE")
-			_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+			for i:=0; i<5; i++ {
+				_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				if err == nil {
+					break
+				}
+			}
 			if err != nil {
-				log.Error("%v", utils.ErrInfo(err))
 				panic(err)
 				os.Exit(1)
 			}
@@ -126,7 +133,11 @@ func (c *Controller) InstallStep1() (string, error) {
 				os.Exit(1)
 			}
 		//}
-		err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password, auto_reload) VALUES (?, ?, ?, ?)", firstLoad, url, utils.DSha256(setupPassword), 259200)
+		log.Debug("setupPassword: (%s) / (%s)", setupPassword, utils.DSha256(setupPassword))
+		if len(setupPassword) > 0 {
+			setupPassword = string(utils.DSha256(setupPassword))
+		}
+		err = c.DCDB.ExecSql("INSERT INTO config (first_load_blockchain, first_load_blockchain_url, setup_password, auto_reload) VALUES (?, ?, ?, ?)", firstLoad, url, setupPassword, 259200)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)

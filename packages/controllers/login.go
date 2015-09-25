@@ -50,7 +50,7 @@ func (c *Controller) Login() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if len(myKey) == 0 && len(setupPassword_) > 0 {
+		if len(myKey) == 0 && (len(setupPassword_) > 0 || setupPassword_ == string(utils.DSha256("")) ) {
 			setupPassword = true
 		}
 	}

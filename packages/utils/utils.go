@@ -2844,12 +2844,17 @@ func MakeUpgradeMenu(cur int) string {
 	result := ""
 	for i:=0; i <=7; i++ {
 		active := ""
-		if i == cur {
-			active = ` class="active"`
+		if i <= cur {
+			active = `complete`
 		} else {
-			active = ``
+			active = `disabled`
 		}
-		result += `<li`+active+`><a href="#upgrade`+IntToStr(i)+`">Step `+IntToStr(i)+`</a></li> `;
+		result += `
+			<div class="col-md-1 bs-wizard-step `+active+`">
+				<div class="text-center bs-wizard-stepnum">`+IntToStr(i+1)+`</div>
+				<div class="progress"><div class="progress-bar"></div></div>
+				<a href="#upgrade`+IntToStr(i)+`" class="bs-wizard-dot"></a>
+			</div>`;
 	}
 	return result
 }
