@@ -1,4 +1,23 @@
 {{define "upgrade5"}}
+<style>
+	#map_canvas {
+		width: 640px;
+		height: 480px;
+	}
+	@media  (max-width: 1024px) {
+		#map_canvas {
+			width: 100%;
+			height: 300px;
+		}
+	}
+	@media  (max-width: 320px) {
+		#map_canvas {
+			width: 100%;
+			height: 200px;
+		}
+	}
+
+</style>
 <script>
 	$(document).ready(function() {
 		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
@@ -69,7 +88,7 @@
 	});
 
 	$('#show_map').bind('click', function () {
-
+	//$(document).ready(function() {
 		map_init (latitude, longitude, 'map_canvas', true, true);
 		google.maps.event.trigger(map, 'resize');
 	});
@@ -85,18 +104,19 @@
 		<li class="active">{{.Lang.upgrade_title}}</li>
 	</ol>
 	{{template "alertSuccess".}}
-	<ul class="nav nav-tabs">
-		{{noescape .UpgradeMenu}}
-	</ul>
+	<div class="row seven-cols">
+		<div class="row bs-wizard" style="border-bottom:0;">
+			{{noescape .UpgradeMenu}}
+		</div>
+	</div>
 
 	<h3>{{.Lang.your_location}}</h3>
 	<button type="button" class="btn btn-primary" id="show_map">Show map</button><br><br>
-	<div id="map_canvas" style="width: 640px; height: 480px; margin-bottom:20px; display:none"></div>
-	<input id="latitude" class="input" type="text" placeholder="latitude" value="{{.GeolocationLat}}"><input id="longitude" class="input" type="text" placeholder="longitude" value="{{.GeolocationLon}}">
+	<div id="map_canvas" style="margin-bottom:20px; display:none"></div>
+	<!--<input id="latitude" class="input" type="text" placeholder="latitude" value="{{.GeolocationLat}}"><input id="longitude" class="input" type="text" placeholder="longitude" value="{{.GeolocationLon}}">-->
 	<br>
 	<button class="btn btn-success" id="save">{{.SaveAndGotoStep}}</button>
 
-	<br><br><br><br><br><br><br>
 </div>
 
 {{end}}

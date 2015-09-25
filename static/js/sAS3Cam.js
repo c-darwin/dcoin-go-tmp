@@ -2,7 +2,7 @@
 			var jcrop_api = '';
 function webcam1() {
     $("#webcam").webcam({
-        swffile: "ajax/sAS3Cam.swf?v="+Math.random(),
+        swffile: "static/swf/sAS3Cam.swf?v="+Math.random(),
 
         previewWidth: 640,
         previewHeight: 480,

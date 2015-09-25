@@ -1299,6 +1299,7 @@
 		$('#calc_total').text('+'+new_amount+' d'+currency_list[$('#calc_currency_id').val()]['name']);
 	});
 </script>
+<!--
 <div style="clear: both;"></div>
 <h3 class="page-header" style="margin-top: 0px" title="{{.Lang.home_total_coins}}">{{.Lang.forecast_number_coins}}</h3>
 <div class="form-inline">
@@ -1330,7 +1331,7 @@
 		<option value='157680000'>{{.Lang.years_5}}</option>
 	</select> {{.Lang.i_will}} <span title="{{.Lang.unless_reduction}}" style="border-bottom: 1px dotted black;">{{.Lang.probably}}</span> {{.Lang.be}} <span id="calc_total">+{{.CalcTotal}}dUSD</span>
 </div>
-
+-->
 <div style="clear: both; margin-bottom: 55px"></div>
 
 {{if .Admin}}
@@ -1340,6 +1341,13 @@
 	              }, 'html');" style="margin-left:30px">admin</button>
 {{end}}
 	</div>
+
+<p>Click the button to get your coordinates.</p>
+
+<button onclick="getLocation()">Try It</button>
+
+<p id="demo"></p>
+
 
 {{ template "signatures". }}
 

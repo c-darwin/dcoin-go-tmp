@@ -64,9 +64,11 @@
 		<li class="active">{{.Lang.upgrade_title}}</li>
 	</ol>
 
-	<ul class="nav nav-tabs">
-		{{noescape .UpgradeMenu}}
-	</ul>
+	<div class="row seven-cols">
+		<div class="row bs-wizard" style="border-bottom:0;">
+			{{noescape .UpgradeMenu}}
+		</div>
+	</div>
 
 	<h3>{{.Lang.sending_data_to_net}}</h3>
 

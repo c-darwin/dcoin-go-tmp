@@ -26,6 +26,7 @@
 
 	function signInPool(i) {
 
+		$( "#signUpInPool" ).append( "<tr><td>http://"+pools[i]+"</td><td id='pool"+i+"'><p>Sign up In the pool: <span id='signup"+i+"'><img src='static/img/progress.gif' width='20'></span></p></td></tr>" );
 		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=SignLogin',
 			function (code) {
 				console.log(code)
@@ -34,18 +35,23 @@
 				$.post( "http://"+pools[i]+'/ajax?controllerName=SignUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
 				function (data) {
 					if (typeof(data.error) != "undefined") {
+						$( "#signup"+i ).html( ""+data.error+"" );
 						if (i < pools.length-1) {
 							signInPool(i + 1)
 						}
 					}
 					else {
 						$("#for-signature").val({{.FaceHash}}+","+{{.ProfileHash}}+","+{{.VideoHash}})
-						doSign("sign")
-						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i] },
+						doSign("sign");
+						$( "#signup"+i ).html( "<strong>OK</strong>" );
+						$( "#pool"+i ).append( "<p>Sending data to the pool: <span id='send"+i+"'><img src='static/img/progress.gif' width='20'></span></p>" );
+						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i]+":8088" },
 								function (data) {
 									if (data.success == "1") {
+										$( "#send"+i ).html( "<strong>OK</strong>" );
 										fc_navigate('upgrade7');
 									} else {
+										$( "#send"+i ).html( "<strong>"+data.error+"</strong>" )
 										if (i < pools.length-1) {
 											signInPool(i + 1)
 										}
@@ -71,19 +77,32 @@
 	});
 
 </script>
+<style>
+	td{padding: 5px}
+	table, td {border-color: #ccc;}
+</style>
 <h1 class="page-header">{{.Lang.upgrade_title}}</h1>
 <ol class="breadcrumb">
 	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
 	<li class="active">{{.Lang.upgrade_title}}</li>
 </ol>
 
-<ul class="nav nav-tabs">
-	{{noescape .UpgradeMenu}}
-</ul>
+<div class="row seven-cols">
+	<div class="row bs-wizard" style="border-bottom:0;">
+		{{noescape .UpgradeMenu}}
+	</div>
+</div>
 
-<h3>Host</h3>
+{{if eq .HostType "findPool"}}
+	<h3>Sign up in the pool</h3>
+{{else}}
+	<h3>Host</h3>
+{{end}}
+<div class="clearfix"></div>
 
-<br>
+<table id="signUpInPool" border="1"></table>
+
+<div class="clearfix"></div>
 <div class="alert alert-error" id="alert" style="display: none">{{.Lang.invalid_host}}</div>
 
 {{if eq .HostType "pool"}}
@@ -100,7 +119,7 @@
 	{{.Lang.enter_your_email}}<br><input class="form-control" style="width:300px" type="text" id="email" value=""><br>
 	<button class="btn btn-success" id="findPool">{{.Lang.next}}</button>
 {{end}}
-{{.HostType}}
+
 <input type="hidden" id="node_private_key" value="{{.NodePrivateKey}}">
 
 <br>

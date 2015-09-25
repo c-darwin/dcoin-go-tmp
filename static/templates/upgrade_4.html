@@ -3,8 +3,6 @@
 	$(document).ready(function() {
 		$( "#progress_bar" ).load( "ajax?controllerName=progressBar");
 	});
-</script>
-<script type="text/javascript">
 
 	$('#save_youtube').bind('click', function () {
 
@@ -47,10 +45,18 @@
 	$( "#from_webcam_show" ).click(function() {
 		$("#from_webcam").css("display", "block");
 		$("#from_file").css("display", "none");
+		$("#from_youtube").css("display", "none");
 		return false;
 	});
 	$( "#from_file_show" ).click(function() {
 		$("#from_file").css("display", "block");
+		$("#from_webcam").css("display", "none");
+		$("#from_youtube").css("display", "none");
+		return false;
+	});
+	$( "#from_youtube_show" ).click(function() {
+		$("#from_youtube").css("display", "block");
+		$("#from_file").css("display", "none");
 		$("#from_webcam").css("display", "none");
 		return false;
 	});
@@ -63,6 +69,40 @@
 	});
 
 </script>
+<style>
+	.videosize {
+		width: 640px;
+		height: 480px;
+	}
+
+	@media (max-width: 800px) {
+		.videosize{
+			width: 500px;
+			height: 375px;
+		}
+	}
+	@media (max-width: 640px) {
+		.videosize{
+			width: 291px;
+			height: 218px;
+		}
+	}
+
+	{{if .Mobile}}
+		#selectType {
+			display: none;
+		}
+		#from_file {
+			display: block;
+		}
+		#from_webcam {
+			display: none;
+		}
+		#from_youtube {
+			display: none;
+		}
+	{{end}}
+</style>
 
 <script src="static/js/uploader.js"></script>
 <script src="static/js/js.js"></script>
@@ -74,9 +114,11 @@
 	<li class="active">{{.Lang.upgrade_title}}</li>
 </ol>
 
-<ul class="nav nav-tabs">
-	{{noescape .UpgradeMenu}}
-</ul>
+<div class="row seven-cols">
+	<div class="row bs-wizard" style="border-bottom:0;">
+		{{noescape .UpgradeMenu}}
+	</div>
+</div>
 
 
 <h3>{{.Lang.upload_face_video}}</h3>
@@ -84,7 +126,7 @@
 {{noescape .Lang.upload_face_video_rules}}
 {{noescape .Lang.upload_face_video_rules2}}
 
-<p><a href="#" id="from_webcam_show">{{.Lang.from_webcam}}{{.Lang.from_file}}</a> {{.Lang.or}} <a href="#" id="from_file_show">{{.Lang.from_file}}</a></p>
+<p id="selectType"><a href="#" id="from_webcam_show">Webcam</a> {{.Lang.or}} <a href="#" id="from_file_show">File</a> {{.Lang.or}} <a href="#" id="from_youtube_show">Youtube</a></p>
 <div id="from_webcam">
 
 	<div id="widget"></div>
@@ -94,38 +136,37 @@
 	<script src="static/js/youtube_webcam.js"></script>
 </div>
 
-<div id="from_file" style="display: none">
+<div id="from_youtube" style="display: none">
 
 	<table class="table table-bordered">
 		<tr><td>
-
-			<span class="btn btn-file"><input id="video_url" type="text" value="{{.VideoUrl}}" style="width:500px"><button id="save_youtube">{{.Lang.save}}</button><button id="clear_youtube">{{.Lang.clear}}</button></span>
+			<span class="btn btn-file"><input id="video_url" type="text" value="{{.VideoUrl}}" ><button id="save_youtube">{{.Lang.save}}</button><button id="clear_youtube">{{.Lang.clear}}</button></span>
 			<br>Example: http://www.youtube.com/watch?v=ZSt9tm3RoUU<br>
-			<div id="video_url_iframe">{{if .VideoUrl}}<iframe width=640 height=480  src='{{.VideoUrl}}' frameborder=0 allowfullscreen></iframe>{{end}}</div>
+			<div id="video_url_iframe">{{if .VideoUrl}}<iframe class="videosize"  src='{{.VideoUrl}}' frameborder=0 allowfullscreen></iframe>{{end}}</div>
 		</td></tr>
-
-		<tr><td>
-			or upload mp4/mov video:<br>
-			<table>
-				<tr>
-					<td>
-
-						mp4:<input type="file" id="video_mp4" name="file" accept="video/mov,video/mp4" onchange="send_video('video_mp4', 'video_mp4_progress', 'user_video')" />
-						<div id="video_mp4_progress" class="my_progress">0%</div><br>
-						<div id="video_mp4_ok" class="alert alert-success" style="display: none"></div>
-						<button id="del_mp4" style="display: none">Delete</button>
-
-					</td>
-				</tr>
-			</table>
-			<br>
-
-			<div id="video" style="display: none"><video id="example_video_1" class="video-js vjs-default-skin" controls preload="none" width="640" height="468" data-setup="{}"><source src="public/{{.UserId}}_user_video.mp4" type='video/mp4' /><source src="public/{{.UserId}}_user_video.webm" type='video/webm' /><source src="public/{{.UserId}}_user_video.ogv" type='video/ogg' /></video></div>
-
-		</td></tr>
-
-
 	</table>
+
+</div>
+
+<div id="from_file" style="display: none">
+	<fieldset id="from_file_form">
+		<input accept="video/mov,video/mp4"  capture="camera" type="file" name="upload" id="video_mp4" style="position: absolute; display: block; overflow: hidden; width: 0; height: 0; border: 0; padding: 0;" onchange="send_video('video_mp4', 'video_mp4_progress', 'user_video')" />
+		<div style="width:100%;  border:2px dashed black; height: 100px; padding: 15px 0px 15px 0px" id="change_pkey_key_div">
+			<div style="margin:auto; text-align:center; line-height:22px">
+				<p style="margin-bottom:0px"  id="change_pkey_key_file_name" onclick="document.getElementById('video_mp4').click();"></p>
+				<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select photo</button>
+				<p>or drag and drop photo</p>
+			</div>
+		</div>
+	</fieldset>
+	<div class="clearfix" style="margin-top: 20px"></div>
+	<div id="video_mp4_progress" class="my_progress">0%</div><br>
+	<div id="video_mp4_ok" class="alert alert-success" style="display: none"></div>
+	<button id="del_mp4" style="display: none">Delete</button>
+
+	<div id="video" style="display: none">
+		<video id="example_video_1" class="video-js vjs-default-skin videosize" controls preload="none" data-setup="{}"><source src="public/{{.UserId}}_user_video.mp4" type='video/mp4' /><source src="public/{{.UserId}}_user_video.webm" type='video/webm' /><source src="public/{{.UserId}}_user_video.ogv" type='video/ogg' /></video>
+	</div>
 
 </div>
 
@@ -149,7 +190,6 @@
 
 <button class="btn btn-success" onclick="$('#save_youtube').trigger('click');fc_navigate('upgrade5');">{{.SaveAndGotoStep}}</button>
 
-<br><br><br><br><br><br><br>
 
 <div class="for-signature"></div>
        

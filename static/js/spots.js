@@ -65,44 +65,44 @@ coords.fc.prototype = {
 				context.font = "30pt Arial";
 				context.fillText(this.number, p1[0], p1[1]);
 			}
-			
+
 			context.beginPath();
 			context.lineWidth=1;
 			context.moveTo(p1[0], p1[1]);
 			context.lineTo(p2[0], p2[1]);
 			context.strokeStyle = line_color;
 			context.stroke();
-			
+
 		}
 	},
-	
+
 	y_line: function (point) {
-	
+
 		this.cnv_2_coord(point, Array(point[0]+this.otstup_y[this.main_area], point[1]-2048), false,  this.line_color);
 		this.cnv_2_coord(point, Array(point[0]-this.otstup_y[this.main_area], point[1]+2048), false,  this.line_color);
 	},
-	
+
 	x_line: function (point) {
-	
+
 		this.cnv_2_coord(point, Array(point[0]-2048, point[1]-this.otstup_x[this.main_area]), false,  this.line_color);
 		this.cnv_2_coord(point, Array(point[0]+2048, point[1]+this.otstup_x[this.main_area]), false,  this.line_color);
 	},
-	
+
 	cross: function (point) {
 
 		// x
 		this.cnv_2_coord(point, Array(point[0], point[1]-10), true, '#ff0000');
 		this.cnv_2_coord(point, Array(point[0], point[1]+10), true, '#ff0000');
-		
+
 		// y
 		this.cnv_2_coord(point, Array(point[0]-10, point[1]), true, '#ff0000');
 		this.cnv_2_coord(point, Array(point[0]+10, point[1]), true, '#ff0000');
 
 	},
-	
+
 	draw_angle: function (point1, point2, type, ugol) {
-		
-		kat1 = point2[0]-point1[0];	
+
+		kat1 = point2[0]-point1[0];
 		cos1 = Math.cos(ugol*Math.PI/180);
 		gep1 = kat1/cos1;
 		kat_protiv = Math.sqrt( Math.pow(gep1, 2) - Math.pow(kat1, 2));

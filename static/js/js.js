@@ -26,16 +26,17 @@ function file_upload (file_id, progress, type, script) {
 }
 
 function send_video (file_id, progress, type) {
+
     var
         $f = $('#'+file_id),
         $p = $('#'+progress),
         up = new uploader($f.get(0), {
-            url:'/ajax?controllerName=uploadVideo',
+            url:'ajax?controllerName=uploadVideo',
             prefix:'file',
             type:type,
             progress:function(ev){ $p.html(((ev.loaded/ev.total)*100)+'%'); $p.css('width',$p.html()); },
             error:function(ev){
-                alert('error ' + ev.target.status+' - '+ev.target.statusText);
+                alert('error ' + ev);
             },
             success:function(data){
                 if (data.error) {

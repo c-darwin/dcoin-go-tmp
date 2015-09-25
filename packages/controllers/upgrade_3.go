@@ -29,19 +29,20 @@ func (c *Controller) Upgrade3() (string, error) {
 	userProfile := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	userFace := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
 
-	log.Debug("userProfile: %s", userProfile)
-	log.Debug("userFace: %s", userFace)
 
 	if _, err := os.Stat(userProfile); os.IsNotExist(err) {
 		userProfile = ""
 	} else {
-		userProfile = "/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg?r="+utils.IntToStr(utils.RandInt(0, 99999))
+		userProfile = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg?r="+utils.IntToStr(utils.RandInt(0, 99999))
 	}
 	if _, err := os.Stat(userFace); os.IsNotExist(err) {
 		userFace = ""
 	} else {
 		userFace = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg?r="+utils.IntToStr(utils.RandInt(0, 99999))
 	}
+
+	log.Debug("userProfile: %s", userProfile)
+	log.Debug("userFace: %s", userFace)
 
 	// текущий набор точек для шаблонов
 	examplePoints, err := c.GetPoints(c.Lang)

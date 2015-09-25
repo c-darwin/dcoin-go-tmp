@@ -106,10 +106,14 @@
 
 	function availableKeys() {
 		$('#wrapper').spin();
+		$('#sign_up_in_pool_send').prop('disabled', true);
 		$('#login_div').css('display', 'none');
 		$('#loading_div').css('display', 'table');
 		$.post('ajax?controllerName=availableKeys', { {{if .Community}}'email': $('#sign_up_in_pool_email').val(){{end}} }, function(data) {
+			$('#signUpModal').modal('hide');
 			$('#wrapper').spin(false);
+			$('.modal-backdrop').remove();
+			$('.modal-backdrop').css('display', 'none');
 			if (data.success) {
 				fc_navigate ('setPassword', '');
 			} else if (data.error && data.error == "no_available_keys") {
