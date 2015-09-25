@@ -29,6 +29,9 @@ func (c *Controller) Upgrade3() (string, error) {
 	userProfile := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
 	userFace := *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
 
+	log.Debug("userProfile: %s", userProfile)
+	log.Debug("userFace: %s", userFace)
+
 	if _, err := os.Stat(userProfile); os.IsNotExist(err) {
 		userProfile = ""
 	} else {
