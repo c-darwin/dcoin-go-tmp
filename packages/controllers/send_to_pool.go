@@ -66,6 +66,12 @@ func (c *Controller) SendToPool() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(4, 1), file...))...)
 	}
 
+	// тип данных
+	_, err = conn.Write([]byte(data))
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
 	// в 4-х байтах пишем размер данных, которые пошлем далее
 	size := utils.DecToBin(len(data), 4)
 	_, err = conn.Write(size)
