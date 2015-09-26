@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"regexp"
+	"fmt"
 )
 
 type index struct {
@@ -16,6 +17,7 @@ type index struct {
 	Key string
 	SetLang string
 	IOS bool
+	Upgrade3 string
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +67,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseForm()
+	var upgrade3 string
+	if len(r.FormValue("upgrade3")) > 0 {
+		upgrade3 = "1"
+	}
 	formKey := r.FormValue("key")
 	if len(formKey) > 0 {
 		key = formKey
@@ -86,7 +92,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		log.Error("%v", err)
 	}
 	b := new(bytes.Buffer)
-	err = t.Execute(b, &index{DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang, IOS: utils.IOS()})
+	err = t.Execute(b, &index{Upgrade3: upgrade3, DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang, IOS: utils.IOS()})
 	if err != nil {
 		log.Error("%v", err)
 	}
