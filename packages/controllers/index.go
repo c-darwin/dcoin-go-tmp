@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"regexp"
-	"fmt"
 )
 
 type index struct {
