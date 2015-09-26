@@ -11,6 +11,15 @@ func (c *Controller) DcoinKey() (string, error) {
 
 	var err error
 	c.r.ParseForm()
+	// на IOS запрос ключа идет без сессии из objective C (UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:@"http://127.0.0.1:8089/ajax?controllerName=dcoinKey&ios=1"]]];)
+	local := false
+	// чтобы по локалке никто не украл приватный ключ
+	if ok, _ := regexp.MatchString(`^127\.0\.0\.1$`, c.r.RemoteAddr); ok {
+		local = true
+	}
+	if utils.IOS() && c.SessUserId == 0 && !local {
+		return "", utils.ErrInfo(errors.New("Not local request from "+c.r.RemoteAddr))
+	}
 	privKey := ""
 	if len(c.r.FormValue("first")) > 0 {
 		privKey, err = c.Single(`SELECT private_key FROM `+c.MyPrefix+`my_keys WHERE status='my_pending'`).String()

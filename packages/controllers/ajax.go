@@ -117,7 +117,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		html = "Access denied 0"
 	} else {
 		pages:="CheckSetupPassword|AcceptNewKeyStatus|availableKeys|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu|SignUpInPool|SignLogin"
-		if utils.IOS() {
+		if utils.IOS() { // На IOS можно сгенерить ключ без сессии
 			pages+="|DcoinKey"
 		}
 		if ok, _ := regexp.MatchString(`^(?i)`+pages+`$`, controllerName); !ok && c.SessUserId <= 0 {

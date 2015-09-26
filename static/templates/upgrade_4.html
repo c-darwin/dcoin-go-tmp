@@ -101,6 +101,10 @@
 		#from_youtube {
 			display: none;
 		}
+	{{else}}
+		#from_file {
+			display: none;
+		}
 	{{end}}
 </style>
 
@@ -148,7 +152,7 @@
 
 </div>
 
-<div id="from_file" style="display: none">
+<div id="from_file">
 	<fieldset id="from_file_form">
 		<input accept="video/mov,video/mp4"  capture="camera" type="file" name="upload" id="video_mp4" style="position: absolute; display: block; overflow: hidden; width: 0; height: 0; border: 0; padding: 0;" onchange="send_video('video_mp4', 'video_mp4_progress', 'user_video')" />
 		<div style="width:100%;  border:2px dashed black; height: 100px; padding: 15px 0px 15px 0px" id="change_pkey_key_div">
