@@ -17,6 +17,7 @@ type index struct {
 	SetLang string
 	IOS bool
 	Upgrade3 string
+	Upgrade4 string
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +71,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if len(r.FormValue("upgrade3")) > 0 {
 		upgrade3 = "1"
 	}
+	var upgrade4 string
+	if len(r.FormValue("upgrade4")) > 0 {
+		upgrade4 = "1"
+	}
 	formKey := r.FormValue("key")
 	if len(formKey) > 0 {
 		key = formKey
@@ -91,7 +96,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		log.Error("%v", err)
 	}
 	b := new(bytes.Buffer)
-	err = t.Execute(b, &index{Upgrade3: upgrade3, DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang, IOS: utils.IOS()})
+	err = t.Execute(b, &index{Upgrade3: upgrade3, Upgrade4: upgrade4, DbOk: true, Lang: globalLangReadOnly[lang], Key: key, SetLang: setLang, IOS: utils.IOS()})
 	if err != nil {
 		log.Error("%v", err)
 	}
