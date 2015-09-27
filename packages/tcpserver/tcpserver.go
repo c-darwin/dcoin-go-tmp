@@ -92,6 +92,8 @@ func (t *TcpServer) HandleTcpRequest() {
 		t.Type9()
 	case 10:
 		t.Type10()
+	case 11:
+		t.Type11()
 	}
 	log.Debug("END")
 }

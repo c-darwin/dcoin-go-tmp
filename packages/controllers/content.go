@@ -323,11 +323,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if tplName == "home" && c.Parameters["first_select"] != "1" {
-			firstSelect, err := c.Single(`SELECT first_select from `+c.MyPrefix+`my_table`).Int64()
+			data, err := c.OneRow(`SELECT first_select, miner_id from `+c.MyPrefix+`my_table`).Int64()
 			if err != nil {
 				log.Error("%v", err)
 			}
-			if firstSelect == 0 {
+			if data["first_select"] == 0 && data["miner_id"] == 0 {
 				tplName = "firstSelect"
 			}
 		}
