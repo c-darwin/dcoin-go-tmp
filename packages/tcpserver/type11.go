@@ -4,12 +4,13 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io/ioutil"
 	"os"
+	"io"
 )
 
 func (t *TcpServer) Type11() {
 
 	/* Получаем данные от send_to_pool */
-
+	log.Debug("Type11")
 	// размер данных
 	buf := make([]byte, 4)
 	_, err := t.Conn.Read(buf)
@@ -18,15 +19,20 @@ func (t *TcpServer) Type11() {
 		return
 	}
 	size := utils.BinToDec(buf)
+	log.Debug("size: %d", size)
 	if size < 32<<20 {
 		// сами данные
+		log.Debug("read data")
 		binaryData := make([]byte, size)
-		binaryData, err = ioutil.ReadAll(t.Conn)
+		//binaryData, err = ioutil.ReadAll(t.Conn)
+		_, err = io.ReadFull(t.Conn, binaryData)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}
+		log.Debug("binaryData %x", binaryData)
 		userId := utils.BinToDec(utils.BytesShift(&binaryData, 5))
+		log.Debug("userId %d", userId)
 		// проверим, есть ли такой юзер на пуле
 		inPool, err := t.Single(`SELECT user_id FROM community WHERE user_id=?`, userId).Int64()
 		if inPool<=0 {
@@ -34,16 +40,18 @@ func (t *TcpServer) Type11() {
 			_, err = t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
+		log.Debug("inPool %d", inPool)
 		filesSign := utils.BytesShift(&binaryData, utils.DecodeLength(&binaryData))
+		log.Debug("filesSign %x", filesSign)
 		forSign := ""
 		var files []string
-		for i:=0; i < 5; i++ {
+		for i:=0; i < 3; i++ {
 			size := utils.DecodeLength(&binaryData)
+			log.Debug("size %d", size)
 			data := utils.BytesShift(&binaryData, size)
-			if len(binaryData)==0 {
-				break
-			}
+			log.Debug("data %x", data)
 			fileType := utils.BinToDec(utils.BytesShift(&data, 1))
+			log.Debug("fileType %d", fileType)
 			var name string
 			switch fileType {
 			case 0:
@@ -52,20 +60,31 @@ func (t *TcpServer) Type11() {
 				name = utils.Int64ToStr(userId)+"_user_profile.jpg"
 			case 2:
 				name = utils.Int64ToStr(userId)+"_user_video.mp4"
-			case 3:
+			/*case 3:
 				name = utils.Int64ToStr(userId)+"_user_video.webm"
 			case 4:
-				name = utils.Int64ToStr(userId)+"_user_video.ogv"
+				name = utils.Int64ToStr(userId)+"_user_video.ogv"*/
 			}
-			forSign = forSign+","+string(data)
+			forSign = forSign+string(utils.DSha256((data)))+","
+			log.Debug("forSign %s", forSign)
 			err = ioutil.WriteFile(os.TempDir()+"/"+name, data, 0644)
 			if err != nil {
 				log.Error("%v", utils.ErrInfo(err))
 				return
 			}
 			files = append(files, name)
+			log.Debug("files %d", files)
+			if len(binaryData)==0 {
+				break
+			}
 		}
 
+
+		if len(forSign) == 0 {
+			log.Error("%v", utils.ErrInfo("len(forSign) == 0"))
+			_, err = t.Conn.Write(utils.DecToBin(0, 1))
+			return
+		}
 		forSign = forSign[:len(forSign)-1]
 
 		// проверим подпись

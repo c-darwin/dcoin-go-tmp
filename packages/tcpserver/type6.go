@@ -2,7 +2,7 @@ package tcpserver
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"io/ioutil"
+	"io"
 	"fmt"
 	"math/big"
 )
@@ -35,7 +35,8 @@ func (t *TcpServer) Type6() {
 	log.Debug("size: %v", size)
 	if size < 10485760 {
 		binaryData := make([]byte, size)
-		binaryData, err = ioutil.ReadAll(t.Conn)
+		//binaryData, err = ioutil.ReadAll(t.Conn)
+		_, err = io.ReadFull(t.Conn, binaryData)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return
@@ -206,7 +207,8 @@ func (t *TcpServer) Type6() {
 			// и если данных менее 10мб, то получаем их
 			if dataSize < 10485760 {
 				binaryData := make([]byte, dataSize)
-				binaryData, err = ioutil.ReadAll(t.Conn)
+				//binaryData, err = ioutil.ReadAll(t.Conn)
+				_, err = io.ReadFull(t.Conn, binaryData)
 				if err != nil {
 					t.PrintSleep(utils.ErrInfo(err), 0)
 					return

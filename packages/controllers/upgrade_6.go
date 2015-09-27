@@ -6,6 +6,8 @@ import (
 	"time"
 	"os"
 	"io/ioutil"
+	"encoding/json"
+	"html/template"
 )
 
 type upgrade6Page struct {
@@ -24,6 +26,7 @@ type upgrade6Page struct {
 	CountSignArr []int
 	ProfileHash string
 	FaceHash string
+	Pools template.JS
 	VideoHash string
 }
 
@@ -121,6 +124,38 @@ func (c *Controller) Upgrade6() (string, error) {
 		videoHash = string(utils.DSha256(file))
 	}
 
+	text, err := utils.GetHttpTextAnswer("http://dcoin.club/pools")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	var pools_ []string
+	err = json.Unmarshal([]byte(text), &pools_)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	log.Debug("pools: %v", pools_)
+	rows, err := c.Query(c.FormatQuery(`
+			SELECT user_id, http_host
+			FROM miners_data
+			WHERE user_id IN (`+strings.Join(pools_, ",")+`)`))
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	pools := make(map[string]string)
+	for rows.Next() {
+		var user_id, http_host string
+		err = rows.Scan(&user_id, &http_host)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		pools[user_id] = http_host
+	}
+	poolsJs := ""
+	for userId, httpHost := range pools {
+		poolsJs = poolsJs + "["+userId+",'"+httpHost+"'],"
+	}
+	poolsJs = poolsJs[:len(poolsJs)-1]
+
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(6)
 
@@ -140,6 +175,7 @@ func (c *Controller) Upgrade6() (string, error) {
 		FaceHash: faceHash,
 		VideoHash: videoHash,
 		NodePrivateKey: nodePrivateKey,
+		Pools: template.JS(poolsJs),
 		UserId: c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)

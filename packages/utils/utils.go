@@ -3018,7 +3018,8 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 		if len(binaryBlock) > 500000 {
 			ioutil.WriteFile(IntToStr(n)+"-block-"+string(DSha256(binaryBlock)), binaryBlock, 0644)
 		}*/
-		binaryBlock, err = ioutil.ReadAll(conn)
+		//binaryBlock, err = ioutil.ReadAll(conn)
+		_, err = io.ReadFull(conn, binaryBlock)
 		if err != nil {
 			return nil, ErrInfo(err)
 		}

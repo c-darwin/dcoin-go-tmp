@@ -2,7 +2,7 @@ package tcpserver
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"io/ioutil"
+	"io"
 )
 
 func (t *TcpServer) Type9() {
@@ -25,7 +25,8 @@ func (t *TcpServer) Type9() {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}*/
-		binaryData, err = ioutil.ReadAll(t.Conn)
+		//binaryData, err = ioutil.ReadAll(t.Conn)
+		_, err = io.ReadFull(t.Conn, binaryData)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return

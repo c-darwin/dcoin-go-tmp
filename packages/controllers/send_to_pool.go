@@ -2,7 +2,6 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
-	"fmt"
 	"net"
 	"io/ioutil"
 	"time"
@@ -17,7 +16,14 @@ func (c *Controller) SendToPool() (string, error) {
 
 	filesSign := c.r.FormValue("filesSign")
 
-	conn, err := net.DialTimeout("tcp", c.r.FormValue("pool"), 5 * time.Second)
+	poolUid := utils.StrToInt64(c.r.FormValue("poolUid"))
+	data_, err := c.OneRow(`SELECT tcp_host, http_host FROM miners_data WHERE user_id = ?`, poolUid).String()
+	tcpHost := data_["tcp_host"]
+	httpHost := data_["http_host"]
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	conn, err := net.DialTimeout("tcp", tcpHost, 5 * time.Second)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -51,7 +57,7 @@ func (c *Controller) SendToPool() (string, error) {
 		}
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(2, 1), file...))...)
 	}
-	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm"); err == nil {
+	/*if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm"); err == nil {
 		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm")
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -64,7 +70,7 @@ func (c *Controller) SendToPool() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(4, 1), file...))...)
-	}
+	}*/
 
 	// тип данных
 	_, err = conn.Write(utils.DecToBin(11, 1))
@@ -92,7 +98,13 @@ func (c *Controller) SendToPool() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	status := utils.BinToDec(buf)
-	fmt.Println(status)
+	result := ""
+	if status == 1 {
+		result = utils.JsonAnswer("1", "success").String()
+		c.ExecSql(`UPDATE `+c.MyPrefix+`my_table SET tcp_host = ?, http_host = ?`, tcpHost, httpHost)
+	} else {
+		result = utils.JsonAnswer("error", "error").String()
+	}
 
-	return "", nil
+	return result, nil
 }

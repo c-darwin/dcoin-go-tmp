@@ -89,7 +89,8 @@ func (c *Controller) UploadVideo() (string, error) {
 		log.Debug("dataSize: %v", dataSize)
 		if dataSize < 10485760 && dataSize > 0 {
 			binaryBlock = make([]byte, dataSize)
-			binaryBlock, err = ioutil.ReadAll(conn)
+			//binaryBlock, err = ioutil.ReadAll(conn)
+			_, err = io.ReadFull(conn, binaryBlock)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
