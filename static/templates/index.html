@@ -423,12 +423,16 @@
 			});
 		{{else if .Upgrade4}}
 			$("#wrapper").spin();
-			$("#dc_content").load( "content", { "tpl_name": "upgrade4" }, function() {
-				$("#modal_key").val("{{.Key}}");
-				console.log("modal_key: "+$("#modal_key").val());
-				save_key(); doSign('login');$('#wrapper').spin(false);
-			})
-			load_menu();
+			$( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
+				$.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function(){
+					$.getScript("static/js/sb-admin.js");
+				});
+				$("#dc_content").load( "content", { "tpl_name": "upgrade4" }, function() {
+					$("#modal_key").val("{{.Key}}");
+					console.log("modal_key: "+$("#modal_key").val());
+					save_key(); doSign('login');$('#wrapper').spin(false);
+				})
+			});
 		{{else if .Key}}
 			$("#wrapper").spin();
 			$("#dc_content").load( "content", { {{if .SetLang}}"parameters": {"lang":{{.SetLang}} }{{end}} }, function() {

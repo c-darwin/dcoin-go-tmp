@@ -17,6 +17,7 @@ type upgrade0Page struct {
 	Countries []string
 	Country int
 	Race int
+	Mobile bool
 }
 
 func (c *Controller) Upgrade0() (string, error) {
@@ -49,7 +50,8 @@ func (c *Controller) Upgrade0() (string, error) {
 		UserId: c.SessUserId,
 		Countries: consts.Countries,
 		Country: country,
-		Race: race})
+		Race: race,
+		Mobile: utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

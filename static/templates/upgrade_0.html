@@ -26,7 +26,7 @@
 
 <h1 class="page-header">{{.Lang.upgrade_title}}</h1>
 <ol class="breadcrumb">
-	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
+	{{if not .Mobile}}<li><a href="#miningMenu">{{.Lang.mining}}</a></li>{{end}}
 	<li class="active">{{.Lang.upgrade_title}}</li>
 </ol>
 

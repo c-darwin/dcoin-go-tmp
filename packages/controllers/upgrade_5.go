@@ -12,6 +12,7 @@ type upgrade5Page struct {
 	GeolocationLon string
 	SaveAndGotoStep string
 	UpgradeMenu string
+	Mobile bool
 }
 
 func (c *Controller) Upgrade5() (string, error) {
@@ -42,7 +43,8 @@ func (c *Controller) Upgrade5() (string, error) {
 		UpgradeMenu: upgradeMenu,
 		GeolocationLat: geolocationLat,
 		GeolocationLon: geolocationLon,
-		UserId: c.SessUserId})
+		UserId: c.SessUserId,
+		Mobile: utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -19,6 +19,7 @@ type upgrade1Page struct {
 	NextStep string
 	PhotoType string
 	Photo string
+	Mobile bool
 }
 
 func (c *Controller) Upgrade1() (string, error) {
@@ -57,7 +58,8 @@ func (c *Controller) Upgrade1() (string, error) {
 		PhotoType: photoType,
 		Photo: photo,
 		Step: step,
-		NextStep: nextStep})
+		NextStep: nextStep,
+		Mobile: utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

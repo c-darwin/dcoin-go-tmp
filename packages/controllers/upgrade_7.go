@@ -28,6 +28,7 @@ type upgrade7Page struct {
 	MyTable map[string]string
 	NoExistsMp4 bool
 	Data map[string]string
+	Mobile bool
 }
 
 func (c *Controller) Upgrade7() (string, error) {
@@ -118,10 +119,10 @@ func (c *Controller) Upgrade7() (string, error) {
 		ProfileHash: profileHash,
 		FaceHash: faceHash,
 		Data: myTable,
-		MyTable: myTable})
+		MyTable: myTable,
+		Mobile: utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

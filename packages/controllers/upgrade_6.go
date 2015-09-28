@@ -28,6 +28,7 @@ type upgrade6Page struct {
 	FaceHash string
 	Pools template.JS
 	VideoHash string
+	Mobile bool
 }
 
 func (c *Controller) Upgrade6() (string, error) {
@@ -176,7 +177,8 @@ func (c *Controller) Upgrade6() (string, error) {
 		VideoHash: videoHash,
 		NodePrivateKey: nodePrivateKey,
 		Pools: template.JS(poolsJs),
-		UserId: c.SessUserId})
+		UserId: c.SessUserId,
+		Mobile: utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
