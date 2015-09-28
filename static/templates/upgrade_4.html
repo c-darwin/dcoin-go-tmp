@@ -159,7 +159,7 @@
 			<div style="margin:auto; text-align:center; line-height:22px">
 				<p style="margin-bottom:0px"  id="change_pkey_key_file_name" onclick="document.getElementById('video_mp4').click();"></p>
 				<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select photo</button>
-				<p>or drag and drop photo</p>
+				{{if not .Mobile}}<p>or drag and drop file</p>{{end}}
 			</div>
 		</div>
 	</fieldset>

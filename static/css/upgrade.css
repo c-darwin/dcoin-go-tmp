@@ -31,7 +31,7 @@
 
 
 @media  (max-width: 320px) {
-    h1 {
+    .page-header {
         display: none;
     }
     .breadcrumb {

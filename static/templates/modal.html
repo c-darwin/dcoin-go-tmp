@@ -103,7 +103,7 @@ $('#key_div').on(
 								<div style="margin:auto; text-align:center; line-height:22px">
 								 <p style="margin-bottom:0px"  id="key_file_name" onclick="document.getElementById('upload_hidden').click();"></p>
 								  <button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('upload_hidden').click();">{{.Lang.select_key}}</button>
-								  <p>{{.Lang.or_drag_and_drop_key}}</p>
+								  {{if not .Mobile}}<p>{{.Lang.or_drag_and_drop_key}}</p>{{end}}
 								</div>
 							</div>
 						<textarea rows="3" id="modal_key" class="form-control" style="display:none"></textarea><br>
