@@ -109,7 +109,7 @@ func (c *Controller) Upgrade7() (string, error) {
 		TxType: txType,
 		TxTypeId: txTypeId,
 		NoExistsMp4: noExistsMp4,
-		SignData: fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],latitude,longitude,myTable["http_host"],myTable["tcp_host"],faceHash,profileHash,myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],nodePublicKey),
+		SignData: fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, myTable["race"],myTable["country"],latitude,longitude,myTable["http_host"],myTable["tcp_host"],faceHash,profileHash,myTable["face_coords"],myTable["profile_coords"],myTable["video_type"],myTable["video_url_id"],nodePublicKey),
 		SaveAndGotoStep: saveAndGotoStep,
 		UpgradeMenu: upgradeMenu,
 		Latitude: latitude,

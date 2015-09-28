@@ -1906,9 +1906,18 @@ func BinToHex(bin_ interface {}) []byte {
 	return []byte(fmt.Sprintf("%x", bin))
 }
 
-func HexToBin(hex_ []byte) []byte {
+func HexToBin(hexdata_ interface {}) []byte {
+	var hexdata string
+	switch hexdata_.(type) {
+		case []byte:
+		hexdata = string(hexdata_.([]byte))
+		case int64:
+		hexdata = Int64ToStr(hexdata_.(int64))
+		case string:
+		hexdata = hexdata_.(string)
+	}
 	var str []byte
-	str, err := hex.DecodeString(string(hex_))
+	str, err := hex.DecodeString(hexdata)
 	if err!=nil {
 		log.Error("%v / %v", err, GetParent())
 	}

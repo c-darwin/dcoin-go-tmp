@@ -26,13 +26,13 @@
 
 	function signInPool(i) {
 
-		$( "#signUpInPool" ).append( "<tr><td>http://"+pools[i]+"</td><td id='pool"+i+"'><p>Sign up In the pool: <span id='signup"+i+"'><img src='static/img/progress.gif' width='20'></span></p></td></tr>" );
-		$.getJSON( "http://"+pools[i]+'/ajax?controllerName=SignLogin',
+		$( "#signUpInPool" ).append( "<tr><td>"+pools[i][1]+"</td><td id='pool"+i+"'><p>Sign up In the pool: <span id='signup"+i+"'><img src='static/img/progress.gif' width='20'></span></p></td></tr>" );
+		$.getJSON( pools[i][1]+'ajax?controllerName=SignLogin',
 			function (code) {
 				console.log(code)
 				$("#for-signature").val(code)
 				doSign("sign")
-				$.post( "http://"+pools[i]+'/ajax?controllerName=SignUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
+				$.post( pools[i][1]+'ajax?controllerName=SignUpInPool', { 'code_sign' : $('#signature1').val(), 'user_id' : {{.UserId}}, 'email' : $('#email').val(), 'node_private_key' : $('#node_private_key').val() },
 				function (data) {
 					if (typeof(data.error) != "undefined") {
 						$( "#signup"+i ).html( ""+data.error+"" );
@@ -45,7 +45,7 @@
 						doSign("sign");
 						$( "#signup"+i ).html( "<strong>OK</strong>" );
 						$( "#pool"+i ).append( "<p>Sending data to the pool: <span id='send"+i+"'><img src='static/img/progress.gif' width='20'></span></p>" );
-						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'pool' : pools[i]+":8088" },
+						$.post( 'ajax?controllerName=SendToPool', { 'filesSign' : $('#signature1').val(), 'poolUid' : pools[i][0] },
 								function (data) {
 									if (data.success == "1") {
 										$( "#send"+i ).html( "<strong>OK</strong>" );
@@ -64,16 +64,17 @@
 					signInPool(i + 1)
 				}
 			});
-
 	}
 
-	var pools = []
+	var pools = [{{.Pools}}]
+
 	$('#findPool').bind('click', function () {
-		$.get( 'http://dcoin.club/pools',
-			function (data) {
-				pools = data
+		$( "#signUpInPool").html("");
+		//$.get( 'http://dcoin.club/pools',
+		//	function (data) {
+		//		pools = data
 				signInPool(0)
-			}, "JSON");
+		//	}, "JSON");
 	});
 
 </script>

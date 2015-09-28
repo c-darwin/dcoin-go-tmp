@@ -833,10 +833,16 @@ func (db *DCDB) GetTcpHost() string {
 			}
 		}
 
-		tcpHost, err := db.Single("SELECT tcp_host FROM "+myPrefix+"my_table").String()
+		data, err := db.OneRow("SELECT tcp_host, tcp_listening FROM "+myPrefix+"my_table").String()
 		if err!=nil {
 			log.Error("%v", ErrInfo(err))
 		}
+		// чтобы листинг не включался у тех, кто зарегался на пуле удаленно и стал майнером
+		if data["tcp_listening"] != "1" {
+			Sleep(5)
+			continue;
+		}
+		tcpHost := data["tcp_host"]
 		if len(tcpHost) == 0 {
 			tcpHost, err = db.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", myUserId).String()
 			if err!=nil {
@@ -866,16 +872,16 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 		log.Error("%v", ErrInfo(err))
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
-	myPrefix := ""
-	if len(community) > 0 {
-		myUserId, err := db.GetPoolAdminUserId()
-		if err!=nil {
-			log.Error("%v", ErrInfo(err))
-			return BrowserHttpHost, HandleHttpHost, ListenHttpHost
-		}
-		myPrefix = Int64ToStr(myUserId)+"_"
-	}
-	httpHost, err := db.Single("SELECT http_host FROM "+myPrefix+"my_table").String()
+	//myPrefix := ""
+	//if len(community) > 0 {
+		//myUserId, err := db.GetPoolAdminUserId()
+	//	if err!=nil {
+	//		log.Error("%v", ErrInfo(err))
+	//		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
+	//	}
+		//myPrefix = Int64ToStr(myUserId)+"_"
+	//}
+	httpHost, err := db.Single("SELECT http_host FROM config").String()
 	if err!=nil {
 		log.Error("%v", ErrInfo(err))
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost

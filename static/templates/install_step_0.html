@@ -65,10 +65,10 @@
 
 <div style="max-width: 600px; margin: auto; margin-top: 50px">
 
-	<ul class="nav nav-tabs" style="margin-bottom: 20px">
+	<!--<ul class="nav nav-tabs" style="margin-bottom: 20px">
 		<li class="active"><a href="#installStep0">Step 0</a></li>
 		<li><a href="#installStep1">Step 1</a></li>
-	</ul>
+	</ul>-->
 	<h3>Settings</h3>
 	<lebel id="standard"><input id="settings_standard" type="radio" name="settings" value="standard" checked> Standard</lebel><br>
 	<lebel id="extended"><input id="settings_extended" type="radio" name="settings" id="extended" value="extended"> Extended</lebel><br>
@@ -96,5 +96,13 @@
 	<br>
 	<button class="btn btn-outline btn-primary" id="next">{{.Lang.next}}</button>
 </div>
-
+<a id="new1">new1</a> / <a id="new2">new2</a>
+<script>
+	$('#new1').bind('click', function () {
+		window.open('upgrade3', '', '')
+	});
+	$('#new2').bind('click', function () {
+		window.open('upgrade4', '', '')
+	});
+</script>
 {{end}}

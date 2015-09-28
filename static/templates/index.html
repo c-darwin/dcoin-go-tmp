@@ -405,10 +405,30 @@
 	$( document ).ready(function() {
 		{{if not .DbOk}}
 			$("#dc_content").load("content", function(response, status) {
-					if ( status == "error" ) { window.location.href = "index"; console.log("load dc_content error/"+response+"/"+status) ;}
-					$("#loading_db").css("display", "none");
-					console.log("loading_db none /"+response+"/"+status) ;
-					})
+				if ( status == "error" ) { window.location.href = "index"; console.log("load dc_content error/"+response+"/"+status) ;}
+				$("#loading_db").css("display", "none");
+				console.log("loading_db none /"+response+"/"+status) ;
+			})
+		{{else if .Upgrade3}}
+			$("#wrapper").spin();
+			$( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
+				$.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function(){
+					$.getScript("static/js/sb-admin.js");
+				});
+				$("#dc_content").load( "content", { "tpl_name": "upgrade3" }, function() {
+					$("#modal_key").val("{{.Key}}");
+					console.log("modal_key: "+$("#modal_key").val());
+					save_key(); doSign('login');$('#wrapper').spin(false);
+				})
+			});
+		{{else if .Upgrade4}}
+			$("#wrapper").spin();
+			$("#dc_content").load( "content", { "tpl_name": "upgrade4" }, function() {
+				$("#modal_key").val("{{.Key}}");
+				console.log("modal_key: "+$("#modal_key").val());
+				save_key(); doSign('login');$('#wrapper').spin(false);
+			})
+			load_menu();
 		{{else if .Key}}
 			$("#wrapper").spin();
 			$("#dc_content").load( "content", { {{if .SetLang}}"parameters": {"lang":{{.SetLang}} }{{end}} }, function() {
@@ -466,6 +486,12 @@
 				//console.log(param_obj);
 			}
 			//console.log(page);
+			/*if (page=='upgrade3') {
+				window.open('/#upgrade3', '', '')
+			}
+			else if (page=='upgrade4') {
+				window.open('/#upgrade4', '', '')
+			}*/
 
 			if (page=='upgrade1'|| page=='upgrade2')
 				user_photo_navigate(page);

@@ -12,6 +12,8 @@
 				'pool_url' : $('#pool_url').val(),
 				'pool_admin_user_id' : $('#pool_admin_user_id').val(),
 				'exchange_api_url' : $('#exchange_api_url').val(),
+				'tcp_listening' : $('#tcp_listening').val(),
+				'http_host' : $('#http_host').val(),
 				'config_ini' : $('#config_ini').val()
 			});
 
@@ -101,6 +103,10 @@
 		<input id="pool_url" class="input" type="text" value="{{.Config.pool_url}}">
 		<label>exchange_api_url</label>
 		<input id="exchange_api_url" class="input" type="text" value="{{.Config.exchange_api_url}}">
+		<label>tcp_listening</label>
+		<input id="tcp_listening" class="input" type="text" value="{{.Config.tcp_listening}}">
+		<label>http_host</label>
+		<input id="http_host" class="input" type="text" value="{{.Config.http_host}}">
 		<label>{{.Lang.auto_reload}}</label>
 		<input id="auto_reload" class="input" type="text" value="{{.Config.auto_reload}}">
 		<br>

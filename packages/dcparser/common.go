@@ -2145,19 +2145,19 @@ func (p *Parser) generalCheckAdmin() error {
 		return utils.ErrInfoFmt("user_id (%d!=%d)", p.AdminUserId, p.TxMap["user_id"])
 	}
 	// проверим, есть ли такой юзер и заодно получим public_key
-	data, err := p.OneRow("SELECT public_key_0, public_key_1, public_key_2 FROM  users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
+	data, err := p.OneRow("SELECT hex(public_key_0) as public_key_0, hex(public_key_1) as public_key_1, hex(public_key_2) as public_key_2 FROM  users WHERE user_id = ?", utils.BytesToInt64(p.TxMap["user_id"])).String()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
 	if len(data["public_key_0"])==0 {
 		return utils.ErrInfoFmt("incorrect user_id")
 	}
-	p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_0"]))
+	p.PublicKeys = append(p.PublicKeys, []byte(utils.HexToBin(data["public_key_0"])))
 	if len(data["public_key_1"]) > 0 {
-		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_1"]))
+		p.PublicKeys = append(p.PublicKeys, []byte(utils.HexToBin(data["public_key_1"])))
 	}
 	if len(data["public_key_2"]) > 0 {
-		p.PublicKeys = append(p.PublicKeys, []byte(data["public_key_2"]))
+		p.PublicKeys = append(p.PublicKeys, []byte(utils.HexToBin(data["public_key_2"])))
 	}
 	// чтобы не записали слишком длинную подпись
 	// 128 - это нод-ключ

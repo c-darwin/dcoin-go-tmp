@@ -69,16 +69,9 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	// Всегда есть, что логировать, т.к. это обновление ключа
 	var public_key_0, public_key_1, public_key_2 []byte
 	var log_id int64
-	err := p.QueryRow(p.FormatQuery("SELECT public_key_0, public_key_1, public_key_2, log_id FROM users WHERE user_id  =  ?"), p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
+	err := p.QueryRow(p.FormatQuery("SELECT hex(public_key_0), hex(public_key_1), hex(public_key_2), log_id FROM users WHERE user_id  =  ?"), p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
 	if err != nil  && err!=sql.ErrNoRows {
 		return p.ErrInfo(err)
-	}
-	public_key_0 = utils.BinToHex(public_key_0)
-	if len(public_key_1) > 0 {
-		public_key_1 = utils.BinToHex(public_key_1)
-	}
-	if len(public_key_2) > 0 {
-		public_key_2 = utils.BinToHex(public_key_2)
 	}
 
 	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_users ( public_key_0, public_key_1, public_key_2, block_id, prev_log_id ) VALUES ( [hex], [hex], [hex], ?, ? )", "log_id", public_key_0, public_key_1, public_key_2, p.BlockData.BlockId, log_id)

@@ -262,22 +262,28 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	//	var myUserId int64
 	if sessUserId > 0 && dbInit && installProgress == "complete" {
 		userId = sessUserId
-		//	myUserId = sessUserId
+		//myUserId = sessUserId
 		countSign = 1
-		pk, err := c.DCDB.OneRow("SELECT public_key_1, public_key_2 FROM users WHERE user_id=?", userId).String()
+		log.Debug("userId: %d", userId)
+		pk, err := c.OneRow("SELECT hex(public_key_1) as public_key_1, hex(public_key_2) as public_key_2 FROM users WHERE user_id = ?", userId).String()
 		if err != nil {
 			log.Error("%v", err)
 		}
+		log.Debug("pk: %v", pk)
 		if len(pk["public_key_1"]) > 0 {
+			log.Debug("public_key_1: %x", pk["public_key_1"])
 			countSign = 2
 		}
 		if len(pk["public_key_2"]) > 0 {
+			log.Debug("public_key_2: %x", pk["public_key_2"])
 			countSign = 3
 		}
 	} else {
 		userId = 0
 		//myUserId = 0
 	}
+
+	log.Debug("countSign: %v",countSign)
 	c.UserId = userId
 	var CountSignArr []int
 	for i:=0; i < countSign; i++ {

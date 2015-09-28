@@ -30,7 +30,7 @@ func (t *TcpServer) Type11() {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}
-		log.Debug("binaryData %x", binaryData)
+		//log.Debug("binaryData %x", binaryData)
 		userId := utils.BinToDec(utils.BytesShift(&binaryData, 5))
 		log.Debug("userId %d", userId)
 		// проверим, есть ли такой юзер на пуле
@@ -49,7 +49,7 @@ func (t *TcpServer) Type11() {
 			size := utils.DecodeLength(&binaryData)
 			log.Debug("size %d", size)
 			data := utils.BytesShift(&binaryData, size)
-			log.Debug("data %x", data)
+			//log.Debug("data %x", data)
 			fileType := utils.BinToDec(utils.BytesShift(&data, 1))
 			log.Debug("fileType %d", fileType)
 			var name string

@@ -3,11 +3,6 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-//	"os"
 )
 
 /* 5
@@ -137,11 +132,21 @@ func (p *Parser) VotesMiner() (error) {
 				if err != nil {
 					return p.ErrInfo(err)
 				}
+				// если это первый http_host, значит майнер не на пуле, а свой хост поднял
+				// ставим отметку, чтобы у него автоматом запустился tcp листинг
+				count, err := p.Single("SELECT count(user_id) FROM miners_data WHERE http_host  =  ?", minerData["http_host"]).Int()
+				if err != nil {
+					return p.ErrInfo(err)
+				}
+				tcpListening := "0"
+				if count == 1 {
+					tcpListening = "1"
+				}
 				// обновим статус в нашей локальной табле.
 				err = p.ExecSql(`UPDATE `+myPrefix+`my_table
-					SET status = 'miner', host_status = 'approved', http_host = ?, tcp_host = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, miner_id = ?, notification_status = 0
+					SET status = 'miner', host_status = 'approved', http_host = ?, tcp_host = ?, face_coords = ?, profile_coords = ?, video_type = ?, video_url_id = ?, miner_id = ?, notification_status = ?, tcp_listening = ?
 					WHERE status != 'bad_key'`,
-					minerData["http_host"], minerData["tcp_host"], minerData["face_coords"], minerData["profile_coords"], minerData["video_type"], minerData["video_url_id"], minerId)
+					minerData["http_host"], minerData["tcp_host"], minerData["face_coords"], minerData["profile_coords"], minerData["video_type"], minerData["video_url_id"], minerId, 0, tcpListening)
 				if err != nil {
 					return p.ErrInfo(err)
 				}

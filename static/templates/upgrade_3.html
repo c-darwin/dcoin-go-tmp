@@ -138,12 +138,26 @@
 		$('#comment-face').text( '' );
 		$('#comment-profile').text( '' );
 
+
+		$('#next_step').bind('click', function () {
+			/*$('#wrapper').spin();
+			$( "#dc_content" ).load( "content", { tpl_name: page }, function() {
+
+			} );
+			$('#wrapper').spin(false);
+			window.scrollTo(0,0);
+			if ($(".sidebar-collapse").is(":visible") && $(".navbar-toggle").is(":visible")) {
+				$('.sidebar-collapse').collapse('toggle');
+			}*/
+			document.getElementById("gotoupgrade4").click();
+		});
 	</script>
 </div>
 <br>
 
-<button class="btn btn-success" onclick="user_webcam_navigate('upgrade4')">{{.SaveAndGotoStep}}</button>
+<button class="btn btn-success" id="next_step">{{.SaveAndGotoStep}}</button>
 
+<a id="gotoupgrade4" href="/?upgrade4=1"></a>
 
 <div class="for-signature"></div>
        

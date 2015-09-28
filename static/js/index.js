@@ -20,15 +20,17 @@ function fc_navigate (page, parameters) {
 function map_navigate (page) {
 
     $('#wrapper').spin();
-    $( "#dc_content" ).load( "content", { tpl_name: page }, function() {
-        $.getScript("https://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize", function(){
+    $.getScript("https://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize", function(){
+
+        $( "#dc_content" ).load( "content", { tpl_name: page }, function() {
             $('#wrapper').spin(false);
+            window.scrollTo(0,0);
+            if ($(".sidebar-collapse").is(":visible") && $(".navbar-toggle").is(":visible")) {
+                $('.sidebar-collapse').collapse('toggle');
+            }
         });
-        window.scrollTo(0,0);
-        if ($(".sidebar-collapse").is(":visible") && $(".navbar-toggle").is(":visible")) {
-            $('.sidebar-collapse').collapse('toggle');
-        }
     });
+
 }
 
 function user_photo_navigate (page) {
@@ -258,6 +260,7 @@ function map_init (lat, lng, map_canvas, drag, clickmarker) {
         lat = lat.toFixed(5);
         var lng = marker.getPosition().lng();
         lng = lng.toFixed(5);
+        console.log(lat, lng)
         document.getElementById('latitude').value = lat;
         document.getElementById('longitude').value = lng;
 

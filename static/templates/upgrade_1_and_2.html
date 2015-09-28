@@ -244,6 +244,10 @@
 
 	$('#next_step').bind('click', function () {
 
+		//if ({{.NextStep}} == 3) {
+			//window.open('/#upgrade3', '', '')
+		//}
+
 		if (first_load==false) {
 			var coords = $('#{{.PhotoType}}_photo').cropper("getData");
 			console.log(coords);
@@ -265,13 +269,21 @@
 						'type': '{{.PhotoType}}'
 					}, function (data) {
 						console.log('ok');
-						user_photo_navigate('upgrade{{.NextStep}}');
+						{{if eq .NextStep "3"}}
+							document.getElementById("gotoupgrade3").click();
+						{{else}}
+							user_photo_navigate('upgrade{{.NextStep}}');
+						{{end}}
 					}
 				);
 			}
 		}
 		else {
-			user_photo_navigate('upgrade{{.NextStep}}');
+			{{if eq .NextStep "3"}}
+				document.getElementById("gotoupgrade3").click();
+			{{else}}
+				user_photo_navigate('upgrade{{.NextStep}}');
+			{{end}}
 		}
 
 	});
@@ -292,5 +304,6 @@
 
 <input type="hidden" id="photo_type" value="{{.PhotoType}}">
 <canvas id="cropped_photo" style="display: none" class="photo_cropper" width="350" height="500"></canvas>
+<a id="gotoupgrade3" href="/?upgrade3=1"></a>
 
 {{end}}
