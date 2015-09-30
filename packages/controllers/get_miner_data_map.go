@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
@@ -10,17 +11,17 @@ func (c *Controller) GetMinerDataMap() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	defer rows.Close()
-	result:=""
+	result := ""
 	for rows.Next() {
 		var user_id, latitude, longitude string
 		err = rows.Scan(&user_id, &latitude, &longitude)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		result+="{\"user_id\": "+user_id+",\"longitude\": "+longitude+", \"latitude\": "+latitude+"},";
+		result += "{\"user_id\": " + user_id + ",\"longitude\": " + longitude + ", \"latitude\": " + latitude + "},"
 	}
 	if len(result) > 0 {
-		result = `{ "info": [`+result[:len(result)-1]+`}`
+		result = `{ "info": [` + result[:len(result)-1] + `}`
 	}
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 	return string(result), nil

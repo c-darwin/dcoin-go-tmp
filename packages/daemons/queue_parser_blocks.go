@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math/big"
 )
 
@@ -43,7 +43,7 @@ func QueueParserBlocks() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -92,7 +92,7 @@ func QueueParserBlocks() {
 		 */
 
 		// проверим, укладывается ли блок в лимит rollback_blocks_1
-		if utils.StrToInt64(newBlockData["block_id"]) > utils.StrToInt64(prevBlockData["block_id"]) + variables.Int64["rollback_blocks_1"] {
+		if utils.StrToInt64(newBlockData["block_id"]) > utils.StrToInt64(prevBlockData["block_id"])+variables.Int64["rollback_blocks_1"] {
 			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
 			d.unlockPrintSleep(utils.ErrInfo("rollback_blocks_1"), 1)
 			continue BEGIN
@@ -159,7 +159,7 @@ func QueueParserBlocks() {
 		}
 
 		d.dbUnlock()
-		for i:=0; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

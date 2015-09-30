@@ -1,30 +1,29 @@
 package controllers
+
 import (
-	"html/template"
 	"bytes"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"runtime"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"html/template"
 	"net/http"
+	"runtime"
 )
 
 type updatingBlockchainStruct struct {
-	Lang map[string]string
-	WaitText string
-	BlockTime int64
-	BlockId int64
-	StartDaemons string
-	BlockMeter int64
-	CheckTime string
-	LastBlock int64
+	Lang           map[string]string
+	WaitText       string
+	BlockTime      int64
+	BlockId        int64
+	StartDaemons   string
+	BlockMeter     int64
+	CheckTime      string
+	LastBlock      int64
 	BlockChainSize int64
-	Mobile bool
+	Mobile         bool
 }
 
-
 func (c *Controller) UpdatingBlockchain() (string, error) {
-
 
 	var blockTime, blockId, blockMeter int64
 	var waitText, startDaemons, checkTime string
@@ -60,7 +59,7 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			if lockName == "main_lock" {
-				startDaemons =`<a href="#" id="start_daemons" style="color:#C90600">Start daemons</a>`
+				startDaemons = `<a href="#" id="start_daemons" style="color:#C90600">Start daemons</a>`
 			}
 			// инфа о синхронизации часов
 			switch runtime.GOOS {
@@ -85,7 +84,7 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		blockChainSize := resp.ContentLength;
+		blockChainSize := resp.ContentLength
 		if blockChainSize == 0 {
 			blockChainSize = consts.BLOCKCHAIN_SIZE
 		}
@@ -114,6 +113,6 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	b := new(bytes.Buffer)
-	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter:blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE, Mobile: mobile})
+	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter: blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE, Mobile: mobile})
 	return b.String(), nil
 }

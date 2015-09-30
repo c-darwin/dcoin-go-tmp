@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
@@ -12,7 +13,7 @@ func (c *Controller) CheckCfCurrency() (string, error) {
 
 	c.r.ParseForm()
 	projectCurrencyName := c.r.FormValue("project_currency_name")
-	if !utils.CheckInputData(projectCurrencyName, "cf_currency_name")  {
+	if !utils.CheckInputData(projectCurrencyName, "cf_currency_name") {
 		return "", errors.New("incorrect project_currency_name")
 	}
 
@@ -22,7 +23,7 @@ func (c *Controller) CheckCfCurrency() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	if currency > 0 {
-		return `{"error":"`+c.Lang["currency_name_busy"]+`"}`, nil
+		return `{"error":"` + c.Lang["currency_name_busy"] + `"}`, nil
 	}
 
 	// проверим, не занято ли имя валюты
@@ -31,8 +32,8 @@ func (c *Controller) CheckCfCurrency() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	if currency > 0 {
-		return `{"error":"`+c.Lang["currency_name_busy"]+`"}`, nil
+		return `{"error":"` + c.Lang["currency_name_busy"] + `"}`, nil
 	}
 
-	return `{"success":"`+c.Lang["name_is_not_occupied"]+`"}`, nil
+	return `{"success":"` + c.Lang["name_is_not_occupied"] + `"}`, nil
 }

@@ -20,7 +20,7 @@
 	#show_login{
 		margin-right:3px;
 	}
-	@media(max-width:320px) {
+	@media(max-width:360px) {
 		#show_login, #show_signup{
 			float:none;
 			margin:0 auto;
@@ -67,9 +67,9 @@
 {{end}}
 
 {{if .PoolTechWorks}}
-	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 40%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
+	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 35%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
 {{else}}
-	<div style="margin:0 auto; display: table; position: relative; top: 40%;" id="login_div">
+	<div style="margin:0 auto; display: table; position: relative; top: 35%;" id="login_div">
 		<span style="display: inline-block">
 			<button type="button" class="btn btn-primary btn-lg" id="show_login" style="position: relative; display: table;">{{.Lang.login}}</button>
 			<button type="button" class="btn btn-primary btn-lg" id="show_signup" style="position: relative; display: table;  ">{{.Lang.sign_up}}</button>
@@ -77,7 +77,7 @@
 	</div>
 {{end}}
 
-<div style="margin:0 auto; display: none; position: relative; top: 40%;" id="loading_div">
+<div style="margin:0 auto; display: none; position: relative; top: 35%;" id="loading_div">
 		<span style="display: inline-block; text-align: center">
 			<div id="available_key_alert"></div>
 			Пожалуйста, ждите, идет поиск свободного ключа

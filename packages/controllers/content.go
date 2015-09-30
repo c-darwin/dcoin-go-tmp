@@ -1,10 +1,11 @@
 package controllers
+
 import (
+	"bytes"
+	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"regexp"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
-	"bytes"
 )
 
 func Content(w http.ResponseWriter, r *http.Request) {
@@ -41,8 +42,8 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	var installProgress, configExists string
 	var lastBlockTime int64
 
-	dbInit := false;
-	if len(configIni["db_user"]) > 0 || (configIni["db_type"]=="sqlite") {
+	dbInit := false
+	if len(configIni["db_user"]) > 0 || (configIni["db_type"] == "sqlite") {
 		dbInit = true
 	}
 
@@ -64,7 +65,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	c.dbInit = dbInit;
+	c.dbInit = dbInit
 
 	if dbInit {
 		var err error
@@ -86,7 +87,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		//время последнего блока
 		lastBlockTime = blockData["lastBlockTime"]
-		log.Debug("installProgress", installProgress, "configExists", configExists,  "lastBlockTime", lastBlockTime)
+		log.Debug("installProgress", installProgress, "configExists", configExists, "lastBlockTime", lastBlockTime)
 
 		// валюты
 		currencyListCf, err := c.GetCurrencyList(true)
@@ -119,19 +120,19 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	r.ParseForm()
 	tplName := r.FormValue("tpl_name")
-	parameters_ := make(map[string]interface {})
+	parameters_ := make(map[string]interface{})
 	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
 		log.Error("%v", err)
 	}
-	log.Debug("parameters_=",parameters_)
+	log.Debug("parameters_=", parameters_)
 	parameters := make(map[string]string)
 	for k, v := range parameters_ {
 		parameters[k] = utils.InterfaceToStr(v)
 	}
 	c.Parameters = parameters
-	log.Debug("parameters=",parameters)
-	log.Debug("tpl_name=",tplName)
+	log.Debug("parameters=", parameters)
+	log.Debug("tpl_name=", tplName)
 
 	// если в параметрах пришел язык, то установим его
 	newLang := utils.StrToInt(parameters["lang"])
@@ -144,7 +145,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.Alert = parameters["alert"]
 	//}
 
-	lang:=GetLang(w, r, parameters)
+	lang := GetLang(w, r, parameters)
 	log.Debug("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]
@@ -155,7 +156,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		c.TimeFormat = "2006-02-01 15:04:05"
 	}
 
-	c.Periods = map[int64]string{86400 : "1"+c.Lang["day"], 604800 : "1"+c.Lang["week"], 31536000 : "1"+c.Lang["year"], 2592000 : "1"+c.Lang["month"], 1209600 : "2"+c.Lang["weeks"], }
+	c.Periods = map[int64]string{86400: "1" + c.Lang["day"], 604800: "1" + c.Lang["week"], 31536000: "1" + c.Lang["year"], 2592000: "1" + c.Lang["month"], 1209600: "2" + c.Lang["weeks"]}
 
 	c.Races = map[int64]string{1: c.Lang["race_1"], 2: c.Lang["race_2"], 3: c.Lang["race_3"]}
 
@@ -167,9 +168,9 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		c.CommunityUsers = communityUsers
 		if len(communityUsers) == 0 {
-			c.MyPrefix = "";
+			c.MyPrefix = ""
 		} else {
-			c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
+			c.MyPrefix = utils.Int64ToStr(sessUserId) + "_"
 			c.Community = true
 		}
 		// нужна мин. комиссия на пуле для перевода монет
@@ -185,7 +186,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		configCommission := make(map[int64][]float64)
-		for k, v := range configCommission_{
+		for k, v := range configCommission_ {
 			configCommission[utils.StrToInt64(k)] = v
 		}
 		c.NodeConfig = config
@@ -198,44 +199,43 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("dbInit", dbInit)
 
-	status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
+	status, err := c.DCDB.Single("SELECT status FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		log.Error("%v", err)
 	}
 	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
-	if tplName!="" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
+	if tplName != "" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
 		tplName = tplName
-	} else if dbInit && installProgress=="complete" && len(configExists)==0  {
+	} else if dbInit && installProgress == "complete" && len(configExists) == 0 {
 		// первый запуск, еще не загружен блокчейн
 		tplName = "updatingBlockchain"
-	} else if dbInit && installProgress=="complete" && sessUserId > 0 {
+	} else if dbInit && installProgress == "complete" && sessUserId > 0 {
 		if status == "waiting_set_new_key" {
 			tplName = "setPassword"
 		} else if status == "waiting_accept_new_key" {
 			tplName = "waitingAcceptNewKey"
 		}
-	} else if dbInit && installProgress=="complete" && !c.Community && sessUserId == 0 && status=="waiting_set_new_key" {
+	} else if dbInit && installProgress == "complete" && !c.Community && sessUserId == 0 && status == "waiting_set_new_key" {
 		tplName = "setupPassword"
-	} else if dbInit && installProgress=="complete" && sessUserId == 0 && status=="waiting_accept_new_key" {
+	} else if dbInit && installProgress == "complete" && sessUserId == 0 && status == "waiting_accept_new_key" {
 		tplName = "waitingAcceptNewKey"
-	} else if dbInit && installProgress=="complete" {
+	} else if dbInit && installProgress == "complete" {
 		tplName = "login"
 	} else {
 		tplName = "installStep0" // самый первый запуск
 	}
-	log.Debug("dbInit", dbInit, "installProgress", installProgress,  "configExists", configExists)
+	log.Debug("dbInit", dbInit, "installProgress", installProgress, "configExists", configExists)
 	log.Debug("tplName>>>>>>>>>>>>>>>>>>>>>>", tplName)
-
 
 	// идет загрузка блокчейна
 	wTime := int64(2)
 	if c.ConfigIni["test_mode"] == "1" {
-		wTime = 2*365*86400
+		wTime = 2 * 365 * 86400
 		log.Debug("%v", wTime)
 		log.Debug("%v", lastBlockTime)
 	}
-	if dbInit && tplName!="installStep0" && (utils.Time()-lastBlockTime > 3600*wTime) && len(configExists)>0 {
+	if dbInit && tplName != "installStep0" && (utils.Time()-lastBlockTime > 3600*wTime) && len(configExists) > 0 {
 		if len(communityUsers) > 0 {
 			// исключение - админ пула
 			poolAdminUserId, err := c.DCDB.Single("SELECT pool_admin_user_id FROM config").String()
@@ -254,7 +254,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		tplName = "updatingBlockchain"
 	}
 
-	log.Debug("tplName2=",tplName)
+	log.Debug("tplName2=", tplName)
 
 	// кол-во ключей=подписей у юзера
 	var countSign int
@@ -283,10 +283,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		//myUserId = 0
 	}
 
-	log.Debug("countSign: %v",countSign)
+	log.Debug("countSign: %v", countSign)
 	c.UserId = userId
 	var CountSignArr []int
-	for i:=0; i < countSign; i++ {
+	for i := 0; i < countSign; i++ {
 		CountSignArr = append(CountSignArr, i)
 	}
 	c.CountSign = countSign
@@ -302,7 +302,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Access denied 0"))
 	} else if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
-		userPublicKey, err := c.DCDB.GetUserPublicKey(userId);
+		userPublicKey, err := c.DCDB.GetUserPublicKey(userId)
 		if err != nil {
 			log.Error("%v", err)
 		}
@@ -322,14 +322,14 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			sess.Delete("private_key")
 			sess.Delete("public_key")
 			w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
-			return;
+			return
 		}
 		if tplName == "login" {
 			tplName = "home"
 		}
 
 		if tplName == "home" && c.Parameters["first_select"] != "1" {
-			data, err := c.OneRow(`SELECT first_select, miner_id from `+c.MyPrefix+`my_table`).Int64()
+			data, err := c.OneRow(`SELECT first_select, miner_id from ` + c.MyPrefix + `my_table`).Int64()
 			if err != nil {
 				log.Error("%v", err)
 			}
@@ -366,7 +366,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			// Только если он сам не захочет, указав это в my_table
 			showSignData := false
 			if sessRestricted == 0 { // у незареганных в пуле юзеров нет MyPrefix, поэтому сохранять значение show_sign_data им негде
-				showSignData_, err := c.DCDB.Single("SELECT show_sign_data FROM "+c.MyPrefix+"my_table").String()
+				showSignData_, err := c.DCDB.Single("SELECT show_sign_data FROM " + c.MyPrefix + "my_table").String()
 				if err != nil {
 					log.Error("%v", err)
 				}
@@ -384,13 +384,13 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if dbInit && tplName != "updatingBlockchain" && tplName != "setPassword" && tplName != "waitingAcceptNewKey" {
-			html, err :=  CallController(c, "AlertMessage")
+			html, err := CallController(c, "AlertMessage")
 			if err != nil {
 				log.Error("%v", err)
 			}
 			w.Write([]byte(html))
 		}
-		w.Write([]byte("<input type='hidden' id='tpl_name' value='"+tplName+"'>"))
+		w.Write([]byte("<input type='hidden' id='tpl_name' value='" + tplName + "'>"))
 
 		myNotice, err := c.DCDB.GetMyNoticeData(sessRestricted, sessUserId, c.MyPrefix, globalLangReadOnly[lang])
 		if err != nil {
@@ -407,29 +407,29 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			log.Error("%v", err)
 		}
 		if myNotice["main_status_complete"] != "1" {
-			blockJs = "$('#block_id').html("+utils.Int64ToStr(blockId)+");$('#block_id').css('color', '#ff0000');";
+			blockJs = "$('#block_id').html(" + utils.Int64ToStr(blockId) + ");$('#block_id').css('color', '#ff0000');"
 		} else {
-			blockJs = "$('#block_id').html("+utils.Int64ToStr(blockId)+");$('#block_id').css('color', '#428BCA');";
+			blockJs = "$('#block_id').html(" + utils.Int64ToStr(blockId) + ");$('#block_id').css('color', '#428BCA');"
 		}
 		w.Write([]byte(`<script>
 								$( document ).ready(function() {
-								$('.lng_1').attr('href', '#`+tplName+`/lang=1');
-								$('.lng_42').attr('href', '#`+tplName+`/lang=42');
-								`+blockJs+`
+								$('.lng_1').attr('href', '#` + tplName + `/lang=1');
+								$('.lng_42').attr('href', '#` + tplName + `/lang=42');
+								` + blockJs + `
 								});
 								</script>`))
 		skipRestrictedUsers := []string{"cash_requests_in", "cash_requests_out", "upgrade", "notifications"}
 		// тем, кто не зареган на пуле не выдаем некоторые страницы
-		if ( sessRestricted == 0 || !utils.InSliceString(tplName, skipRestrictedUsers) ) {
+		if sessRestricted == 0 || !utils.InSliceString(tplName, skipRestrictedUsers) {
 			// вызываем контроллер в зависимости от шаблона
-			html, err :=  CallController(c, tplName)
+			html, err := CallController(c, tplName)
 			if err != nil {
 				log.Error("%v", err)
 			}
 			w.Write([]byte(html))
 		}
 	} else if len(tplName) > 0 {
-		log.Debug("tplName",tplName)
+		log.Debug("tplName", tplName)
 		html := ""
 		if ok, _ := regexp.MatchString(`^(?i)waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
@@ -442,7 +442,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write([]byte(html))
 	} else {
-		html, err :=  CallController(c, "login")
+		html, err := CallController(c, "login")
 		if err != nil {
 			log.Error("%v", err)
 		}

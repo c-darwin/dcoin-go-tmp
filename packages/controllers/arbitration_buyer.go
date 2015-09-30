@@ -1,30 +1,30 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
 
 type arbitrationBuyerPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
+	SignData        string
+	ShowSignData    bool
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	UserId          int64
+	Alert           string
+	Lang            map[string]string
+	CountSignArr    []int
 	LastTxFormatted string
-	CurrencyList map[int64]string
-	MyOrders []map[string]string
+	CurrencyList    map[int64]string
+	MyOrders        []map[string]string
 }
 
 func (c *Controller) ArbitrationBuyer() (string, error) {
 
 	log.Debug("ArbitrationBuyer")
 
-	txType := "money_back_request";
+	txType := "money_back_request"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -46,20 +46,19 @@ func (c *Controller) ArbitrationBuyer() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("arbitration_buyer", "arbitrationBuyer", &arbitrationBuyerPage{
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		UserId:          c.SessUserId,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		SignData:        "",
 		LastTxFormatted: lastTxFormatted,
-		CurrencyList: c.CurrencyList,
-		MyOrders: myOrders})
+		CurrencyList:    c.CurrencyList,
+		MyOrders:        myOrders})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

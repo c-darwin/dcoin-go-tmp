@@ -1,16 +1,17 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type InterfacePage struct {
-	Show_sign_data int64
-	Show_map int64
-	Show_progress_bar int64
-	Alert string
+	Show_sign_data          int64
+	Show_map                int64
+	Show_progress_bar       int64
+	Alert                   string
 	Param_show_progress_bar int64
-	Lang map[string]string
+	Lang                    map[string]string
 }
 
 func (c *Controller) Interface() (string, error) {
@@ -37,7 +38,7 @@ func (c *Controller) Interface() (string, error) {
 		alert = c.Lang["done"]
 	}
 
-	data, err := c.OneRow("SELECT * FROM "+c.MyPrefix+"my_table").Int64()
+	data, err := c.OneRow("SELECT * FROM " + c.MyPrefix + "my_table").Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -47,11 +48,11 @@ func (c *Controller) Interface() (string, error) {
 
 	param_show_progress_bar := utils.StrToInt64(c.Parameters["show_progress_bar"])
 
-	TemplateStr, err := makeTemplate("interface", "interface", &InterfacePage {
-		Lang: c.Lang,
-		Show_sign_data: show_sign_data,
-		Show_map: show_map,
-		Show_progress_bar: show_progress_bar,
+	TemplateStr, err := makeTemplate("interface", "interface", &InterfacePage{
+		Lang:                    c.Lang,
+		Show_sign_data:          show_sign_data,
+		Show_map:                show_map,
+		Show_progress_bar:       show_progress_bar,
 		Param_show_progress_bar: param_show_progress_bar,
 		Alert: alert})
 	if err != nil {
@@ -59,5 +60,3 @@ func (c *Controller) Interface() (string, error) {
 	}
 	return TemplateStr, nil
 }
-
-

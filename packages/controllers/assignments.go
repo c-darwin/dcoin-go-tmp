@@ -1,41 +1,42 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"strings"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"encoding/json"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"strings"
 )
 
 type AssignmentsPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Lang map[string]string
-	CountSignArr []int
-	CurrencyList map[int64]string
+	Alert              string
+	SignData           string
+	ShowSignData       bool
+	TxType             string
+	TxTypeId           int64
+	TimeNow            int64
+	UserId             int64
+	Lang               map[string]string
+	CountSignArr       []int
+	CurrencyList       map[int64]string
 	CashRequestsStatus map[string]string
-	MyCashRequests []map[string]string
-	ActualData map[string]string
-	MainQuestion string
-	NewPromiseAmount string
-	MyRace string
-	MyCountry string
-	ExamplePoints map[string]string
-	VideoHost string
-	PhotoHosts []string
+	MyCashRequests     []map[string]string
+	ActualData         map[string]string
+	MainQuestion       string
+	NewPromiseAmount   string
+	MyRace             string
+	MyCountry          string
+	ExamplePoints      map[string]string
+	VideoHost          string
+	PhotoHosts         []string
 	PromisedAmountData map[string]string
-	UserInfo map[string]string
-	CloneHosts map[int64][]string
+	UserInfo           map[string]string
+	CloneHosts         map[int64][]string
 }
 
 func (c *Controller) Assignments() (string, error) {
 
-	var randArr	 []int64
+	var randArr []int64
 	// Нельзя завершить голосование юзеров раньше чем через сутки, даже если набрано нужное кол-во голосов.
 	// В голосовании нодов ждать сутки не требуется, т.к. там нельзя поставить поддельных нодов
 
@@ -55,13 +56,13 @@ func (c *Controller) Assignments() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	addSql := "";
+	addSql := ""
 	currencyIds := strings.Join(currency, ",")
 	if len(currencyIds) > 0 || c.SessUserId == 1 {
 		if c.SessUserId != 1 {
-			addSql = "AND currency_id IN ("+currencyIds+")"
+			addSql = "AND currency_id IN (" + currencyIds + ")"
 		}
-		num, err := c.Single("SELECT count(id) FROM promised_amount WHERE status  =  'pending' AND del_block_id  =  0 "+addSql+"").Int64()
+		num, err := c.Single("SELECT count(id) FROM promised_amount WHERE status  =  'pending' AND del_block_id  =  0 " + addSql + "").Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -93,7 +94,7 @@ func (c *Controller) Assignments() (string, error) {
 		// ***********************************
 		// задания по модерации новых майнеров
 		// ***********************************
-		txType = "votes_miner";
+		txType = "votes_miner"
 		txTypeId = utils.TypeInt(txType)
 		timeNow = utils.Time()
 
@@ -118,7 +119,7 @@ func (c *Controller) Assignments() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		// проверим, не голосовали ли мы за это в последние 30 минут
-		repeated, err := c.Single("SELECT id FROM "+c.MyPrefix+"my_tasks WHERE type  =  'miner' AND id  =  ? AND time > ?", userInfo["vote_id"], utils.Time() - consts.ASSIGN_TIME).Int64()
+		repeated, err := c.Single("SELECT id FROM "+c.MyPrefix+"my_tasks WHERE type  =  'miner' AND id  =  ? AND time > ?", userInfo["vote_id"], utils.Time()-consts.ASSIGN_TIME).Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -134,7 +135,7 @@ func (c *Controller) Assignments() (string, error) {
 		// получим ID майнеров, у которых лежат фото нужного нам юзера
 		minersIds := utils.GetMinersKeepers(userInfo["photo_block_id"], userInfo["photo_max_miner_id"], userInfo["miners_keepers"], true)
 		if len(minersIds) > 0 {
-			photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+			photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -152,19 +153,19 @@ func (c *Controller) Assignments() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		tolerances := make(map[string]map[string]string)
-		if err :=  json.Unmarshal([]byte(data_["tolerances"]), &tolerances); err!=nil{
+		if err := json.Unmarshal([]byte(data_["tolerances"]), &tolerances); err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		var compatibility []int
-		if err :=  json.Unmarshal([]byte(data_["compatibility"]), &compatibility); err!=nil{
+		if err := json.Unmarshal([]byte(data_["compatibility"]), &compatibility); err != nil {
 			return "", utils.ErrInfo(err)
 		}
 
 		// формируем кусок SQL-запроса для соотношений отрезков
 		addSqlTolerances := ""
 		typesArr := []string{"face", "profile"}
-		for i:=0; i < len(typesArr); i++ {
-			for j:=1; j<=len(tolerances[typesArr[i]]); j++ {
+		for i := 0; i < len(typesArr); i++ {
+			for j := 1; j <= len(tolerances[typesArr[i]]); j++ {
 				currentRelations := utils.StrToFloat64(relations[typesArr[i][:1]+utils.IntToStr(j)])
 				diff := utils.StrToFloat64(tolerances[typesArr[i]][utils.IntToStr(j)]) * currentRelations
 				if diff == 0 {
@@ -172,15 +173,15 @@ func (c *Controller) Assignments() (string, error) {
 				}
 				min := currentRelations - diff
 				max := currentRelations + diff
-				addSqlTolerances += typesArr[i][:1]+utils.IntToStr(j)+">"+utils.Float64ToStr(min)+" AND "+typesArr[i][:1]+utils.IntToStr(j)+" < "+utils.Float64ToStr(max)+" AND "
+				addSqlTolerances += typesArr[i][:1] + utils.IntToStr(j) + ">" + utils.Float64ToStr(min) + " AND " + typesArr[i][:1] + utils.IntToStr(j) + " < " + utils.Float64ToStr(max) + " AND "
 			}
 		}
 		addSqlTolerances = addSqlTolerances[:len(addSqlTolerances)-4]
 
 		// формируем кусок SQL-запроса для совместимости версий
 		addSqlCompatibility := ""
-		for i:=0; i < len(compatibility); i++ {
-			addSqlCompatibility+=fmt.Sprintf(`%d,`, compatibility[i])
+		for i := 0; i < len(compatibility); i++ {
+			addSqlCompatibility += fmt.Sprintf(`%d,`, compatibility[i])
 		}
 		addSqlCompatibility = addSqlCompatibility[:len(addSqlCompatibility)-1]
 
@@ -213,7 +214,7 @@ func (c *Controller) Assignments() (string, error) {
 			// майнеры, у которых можно получить фото нужного нам юзера
 			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true)
 			if len(minersIds) > 0 {
-				photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+				photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -221,7 +222,7 @@ func (c *Controller) Assignments() (string, error) {
 			cloneHosts[user_id] = photoHosts
 		}
 
-		data, err := c.OneRow("SELECT race, country FROM "+c.MyPrefix+"my_table").Int64()
+		data, err := c.OneRow("SELECT race, country FROM " + c.MyPrefix + "my_table").Int64()
 		myRace = c.Races[data["race"]]
 		myCountry = consts.Countries[int(data["country"])]
 
@@ -239,7 +240,7 @@ func (c *Controller) Assignments() (string, error) {
 				FROM promised_amount
 				WHERE status =  'pending' AND
 							 del_block_id = 0
-				`+addSql+`
+				` + addSql + `
 		`).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -247,7 +248,7 @@ func (c *Controller) Assignments() (string, error) {
 		promisedAmountData["currency_name"] = c.CurrencyList[utils.StrToInt64(promisedAmountData["currency_id"])]
 
 		// проверим, не голосовали ли мы за это в последние 30 минут
-		repeated, err := c.Single("SELECT id FROM "+c.MyPrefix+"my_tasks WHERE type  =  'promised_amount' AND id  =  ? AND time > ?", promisedAmountData["id"], utils.Time() - consts.ASSIGN_TIME).Int64()
+		repeated, err := c.Single("SELECT id FROM "+c.MyPrefix+"my_tasks WHERE type  =  'promised_amount' AND id  =  ? AND time > ?", promisedAmountData["id"], utils.Time()-consts.ASSIGN_TIME).Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -284,13 +285,13 @@ func (c *Controller) Assignments() (string, error) {
 		// получим ID майнеров, у которых лежат фото нужного нам юзера
 		minersIds := utils.GetMinersKeepers(userInfo["photo_block_id"], userInfo["photo_max_miner_id"], userInfo["miners_keepers"], true)
 		if len(minersIds) > 0 {
-			photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+			photoHosts, err = c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
 		}
 
-		txType := "votes_promised_amount";
+		txType := "votes_promised_amount"
 		txTypeId = utils.TypeInt(txType)
 		timeNow = utils.Time()
 
@@ -308,30 +309,29 @@ func (c *Controller) Assignments() (string, error) {
 		tplTitle = "assignments"
 	}
 
-	TemplateStr, err := makeTemplate(tplName, tplTitle, &AssignmentsPage {
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		CurrencyList: c.CurrencyList,
-		MainQuestion: mainQuestion,
-		NewPromiseAmount: newPromiseAmount,
-		MyRace: myRace,
-		MyCountry: myCountry,
-		ExamplePoints: examplePoints,
-		VideoHost: videoHost,
-		PhotoHosts: photoHosts,
+	TemplateStr, err := makeTemplate(tplName, tplTitle, &AssignmentsPage{
+		Alert:              c.Alert,
+		Lang:               c.Lang,
+		CountSignArr:       c.CountSignArr,
+		ShowSignData:       c.ShowSignData,
+		UserId:             c.SessUserId,
+		TimeNow:            timeNow,
+		TxType:             txType,
+		TxTypeId:           txTypeId,
+		SignData:           "",
+		CurrencyList:       c.CurrencyList,
+		MainQuestion:       mainQuestion,
+		NewPromiseAmount:   newPromiseAmount,
+		MyRace:             myRace,
+		MyCountry:          myCountry,
+		ExamplePoints:      examplePoints,
+		VideoHost:          videoHost,
+		PhotoHosts:         photoHosts,
 		PromisedAmountData: promisedAmountData,
-		UserInfo: userInfo,
-		CloneHosts: cloneHosts})
+		UserInfo:           userInfo,
+		CloneHosts:         cloneHosts})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

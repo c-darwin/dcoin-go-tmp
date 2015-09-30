@@ -35,7 +35,7 @@ func TestblockDisseminator() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -67,7 +67,7 @@ func TestblockDisseminator() {
 		log.Debug("nodesIds: %v", nodesIds)
 
 		// получим хосты майнеров, которые на нашем уровне
-		hosts, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN ("+strings.Join(utils.SliceInt64ToString(nodesIds), `,`)+")").String()
+		hosts, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN (" + strings.Join(utils.SliceInt64ToString(nodesIds), `,`) + ")").String()
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue
@@ -130,7 +130,7 @@ func TestblockDisseminator() {
 					 * их порядок следования, чтобы получить валидный блок
 					 */
 					buf := make([]byte, 4)
-					_, err =conn.Read(buf)
+					_, err = conn.Read(buf)
 					if err != nil {
 						log.Error("%v", utils.ErrInfo(err))
 						return
@@ -167,17 +167,17 @@ func TestblockDisseminator() {
 								}
 								txHex := utils.BinToHex(utils.BytesShift(&binaryData, 16))
 								// проверим
-								addSql+=string(txHex)+","
+								addSql += string(txHex) + ","
 								if len(binaryData) == 0 {
 									break
 								}
 							}
 							addSql = addSql[:len(addSql)-1]
-							addSql = "WHERE id NOT IN ("+addSql+")"
+							addSql = "WHERE id NOT IN (" + addSql + ")"
 						}
 						// сами тр-ии
 						var transactions []byte
-						transactions_testblock, err := d.GetList(`SELECT data FROM transactions_testblock `+addSql).String()
+						transactions_testblock, err := d.GetList(`SELECT data FROM transactions_testblock ` + addSql).String()
 						if err != nil {
 							log.Error("%v", utils.ErrInfo(err))
 							return
@@ -222,7 +222,4 @@ func TestblockDisseminator() {
 		log.Info("%v", "Happy end")
 	}
 
-
 }
-
-

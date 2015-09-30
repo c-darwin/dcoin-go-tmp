@@ -1,19 +1,18 @@
 package dcparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
-
 )
 
 // Эту транзакцию имеет право генерить только нод, который генерит данный блок
 // подписана нодовским ключом
-func (p *Parser) NewPctInit() (error) {
+func (p *Parser) NewPctInit() error {
 	var err error
 	var fields []string
-	fields = []string {"new_pct", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields = []string{"new_pct", "sign"}
+	p.TxMap, err = p.GetTxMap(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -22,10 +21,10 @@ func (p *Parser) NewPctInit() (error) {
 
 type newPctType struct {
 	Currency map[string]map[string]string `json:"currency"`
-	Referral map[string]int64 `json:"referral"`
+	Referral map[string]int64             `json:"referral"`
 }
 
-func (p *Parser) NewPctFront() (error) {
+func (p *Parser) NewPctFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -48,18 +47,18 @@ func (p *Parser) NewPctFront() (error) {
 
 	newPctCurrency := make(map[string]map[string]string)
 	// раньше не было рефских
-	if p.BlockData!=nil && p.BlockData.BlockId<=77951 {
+	if p.BlockData != nil && p.BlockData.BlockId <= 77951 {
 		err = json.Unmarshal([]byte(p.TxMap["new_pct"]), &newPctCurrency)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	} else {
-		newPctTx:=new(newPctType)
+		newPctTx := new(newPctType)
 		err = json.Unmarshal([]byte(p.TxMap["new_pct"]), &newPctTx)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if newPctTx.Referral==nil {
+		if newPctTx.Referral == nil {
 			return p.ErrInfo("!Referral")
 		}
 		newPctCurrency = newPctTx.Currency
@@ -72,11 +71,11 @@ func (p *Parser) NewPctFront() (error) {
 	currencyIdsSql := ""
 	countCurrency := 0
 	for id := range newPctCurrency {
-		currencyIdsSql+=id+","
+		currencyIdsSql += id + ","
 		countCurrency++
 	}
-	currencyIdsSql = currencyIdsSql[0:len(currencyIdsSql)-1]
-	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+currencyIdsSql+")").Int()
+	currencyIdsSql = currencyIdsSql[0 : len(currencyIdsSql)-1]
+	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN (" + currencyIdsSql + ")").Int()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -85,7 +84,7 @@ func (p *Parser) NewPctFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_pct"])
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -98,8 +97,8 @@ func (p *Parser) NewPctFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxTime - pctTime <= p.Variables.Int64["new_pct_period"] {
-		return p.ErrInfo(fmt.Sprintf("14 days error %d - %d <= %d", p.TxTime, pctTime, p.Variables.Int64["new_pct_period"] ))
+	if p.TxTime-pctTime <= p.Variables.Int64["new_pct_period"] {
+		return p.ErrInfo(fmt.Sprintf("14 days error %d - %d <= %d", p.TxTime, pctTime, p.Variables.Int64["new_pct_period"]))
 	}
 	// берем все голоса miner_pct
 	pctVotes := make(map[int64]map[string]map[string]int64)
@@ -112,7 +111,7 @@ func (p *Parser) NewPctFront() (error) {
 		var currency_id, votes int64
 		var pct string
 		err = rows.Scan(&currency_id, &pct, &votes)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
 		log.Debug("newpctcurrency_id", currency_id, "pct", pct, "votes", votes)
@@ -135,7 +134,7 @@ func (p *Parser) NewPctFront() (error) {
 		var currency_id, votes int64
 		var pct string
 		err = rows.Scan(&currency_id, &pct, &votes)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
 		log.Debug("currency_id", currency_id, "pct", pct, "votes", votes)
@@ -162,7 +161,7 @@ func (p *Parser) NewPctFront() (error) {
 		log.Debug("pctArrminer_pct", pctArr, currencyId)
 		key := utils.GetMaxVote(pctArr, 0, 390, 100)
 		log.Debug("key", key)
-		if len(newPct["currency"][currencyIdStr]) == 0{
+		if len(newPct["currency"][currencyIdStr]) == 0 {
 			newPct["currency"][currencyIdStr] = make(map[string]string)
 		}
 		newPct["currency"][currencyIdStr]["miner_pct"] = utils.GetPctValue(key)
@@ -171,7 +170,7 @@ func (p *Parser) NewPctFront() (error) {
 		pctArr = utils.MakePctArray(data["user_pct"])
 		log.Debug("pctArruser_pct", pctArr, currencyId)
 		// раньше не было завимости юзерского % от майнерского
-		if p.BlockData!=nil && p.BlockData.BlockId<=95263 {
+		if p.BlockData != nil && p.BlockData.BlockId <= 95263 {
 			userMaxKey = 390
 		} else {
 			log.Debug("newPct", newPct)
@@ -183,7 +182,7 @@ func (p *Parser) NewPctFront() (error) {
 			userMaxKey = utils.FindUserPct(int(maxUserPctY))
 			log.Debug("maxUserPctY", maxUserPctY, "userMaxKey", userMaxKey, "currencyIdStr", currencyIdStr)
 			// отрезаем лишнее, т.к. поиск идет ровно до макимального возможного, т.е. до miner_pct/2
-			pctArr = utils.DelUserPct(pctArr, userMaxKey);
+			pctArr = utils.DelUserPct(pctArr, userMaxKey)
 			log.Debug("pctArr", pctArr)
 		}
 		key = utils.GetMaxVote(pctArr, 0, userMaxKey, 100)
@@ -199,9 +198,9 @@ func (p *Parser) NewPctFront() (error) {
 	// раньше не было рефских
 	if p.BlockData != nil && p.BlockData.BlockId <= 77951 {
 
-		newPct_ := newPct["currency"];
+		newPct_ := newPct["currency"]
 		jsonData, err = json.Marshal(newPct_)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
 	} else {
@@ -211,12 +210,12 @@ func (p *Parser) NewPctFront() (error) {
 		newPct_.Currency = newPct["currency"]
 		newPct_.Referral = make(map[string]int64)
 		refLevels := []string{"first", "second", "third"}
-		for i:=0; i<len(refLevels); i++ {
+		for i := 0; i < len(refLevels); i++ {
 			level := refLevels[i]
 			var votesReferral []map[int64]int64
 
 			// берем все голоса
-			rows, err := p.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+" ORDER BY "+level+" ASC ")
+			rows, err := p.Query("SELECT " + level + ", count(user_id) as votes FROM votes_referral GROUP BY " + level + " ORDER BY " + level + " ASC ")
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -224,34 +223,33 @@ func (p *Parser) NewPctFront() (error) {
 			for rows.Next() {
 				var level_, votes int64
 				err = rows.Scan(&level_, &votes)
-				if err!= nil {
+				if err != nil {
 					return p.ErrInfo(err)
 				}
-				votesReferral = append(votesReferral, map[int64]int64{level_:votes})
+				votesReferral = append(votesReferral, map[int64]int64{level_: votes})
 			}
 			newPct_.Referral[level] = (utils.GetMaxVote(votesReferral, 0, 30, 10))
 		}
 		jsonData, err = json.Marshal(newPct_)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
 
 	if string(p.TxMap["new_pct"]) != string(jsonData) {
-		return p.ErrInfo("p.TxMap[new_pct] != jsonData "+string(p.TxMap["new_pct"])+"!="+string(jsonData))
+		return p.ErrInfo("p.TxMap[new_pct] != jsonData " + string(p.TxMap["new_pct"]) + "!=" + string(jsonData))
 	}
 	log.Debug(string(jsonData))
 
 	return nil
 }
 
-
-func (p *Parser) NewPct() (error) {
+func (p *Parser) NewPct() error {
 
 	newPctCurrency := make(map[string]map[string]string)
-	newPctTx:=new(newPctType)
+	newPctTx := new(newPctType)
 	// раньше не было рефских
-	if p.BlockData.BlockId<=77951 {
+	if p.BlockData.BlockId <= 77951 {
 		err := json.Unmarshal([]byte(p.TxMap["new_pct"]), &newPctCurrency)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -261,19 +259,19 @@ func (p *Parser) NewPct() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if newPctTx.Referral==nil {
+		if newPctTx.Referral == nil {
 			return p.ErrInfo("!Referral")
 		}
 		newPctCurrency = newPctTx.Currency
 	}
-	for currencyId, data := range(newPctCurrency) {
+	for currencyId, data := range newPctCurrency {
 		err := p.ExecSql("INSERT INTO pct ( time, currency_id, miner, user, block_id ) VALUES ( ?, ?, ?, ?, ? )", p.BlockData.Time, currencyId, data["miner_pct"], data["user_pct"], p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
 	if p.BlockData.BlockId > 77951 {
-		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface {}{utils.Int64ToStr(newPctTx.Referral["first"]), utils.Int64ToStr(newPctTx.Referral["second"]), utils.Int64ToStr(newPctTx.Referral["third"])}, "referral", []string{}, []string{})
+		err := p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface{}{utils.Int64ToStr(newPctTx.Referral["first"]), utils.Int64ToStr(newPctTx.Referral["second"]), utils.Int64ToStr(newPctTx.Referral["third"])}, "referral", []string{}, []string{})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -282,7 +280,7 @@ func (p *Parser) NewPct() (error) {
 	return nil
 }
 
-func (p *Parser) NewPctRollback() (error) {
+func (p *Parser) NewPctRollback() error {
 	if p.BlockData.BlockId < 77951 {
 		err := p.selectiveRollback([]string{"first", "second", "third"}, "referral", "", false)
 		if err != nil {

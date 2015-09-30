@@ -1,33 +1,34 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"time"
 	"strings"
+	"time"
 )
 
 type promisedAmountListPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Lang map[string]string
-	CountSignArr []int
-	LastTxFormatted string
-	CurrencyList map[int64]string
-	ConfigCommission map[int64][]float64
-	Navigate string
-	Commission map[int64][]float64
-	PromisedAmountListAccepted []utils.PromisedAmounts
+	Alert                        string
+	SignData                     string
+	ShowSignData                 bool
+	TxType                       string
+	TxTypeId                     int64
+	TimeNow                      int64
+	UserId                       int64
+	Lang                         map[string]string
+	CountSignArr                 []int
+	LastTxFormatted              string
+	CurrencyList                 map[int64]string
+	ConfigCommission             map[int64][]float64
+	Navigate                     string
+	Commission                   map[int64][]float64
+	PromisedAmountListAccepted   []utils.PromisedAmounts
 	ActualizationPromisedAmounts int64
-	LimitsText string
+	LimitsText                   string
 }
 
 func (c *Controller) PromisedAmountList() (string, error) {
 
-	txType := "PromisedAmount";
+	txType := "PromisedAmount"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -43,23 +44,22 @@ func (c *Controller) PromisedAmountList() (string, error) {
 	actualizationPromisedAmounts, promisedAmountListAccepted, _, err := c.GetPromisedAmounts(c.SessUserId, c.Variables.Int64["cash_request_time"])
 
 	TemplateStr, err := makeTemplate("promised_amount_list", "promisedAmountList", &promisedAmountListPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		LastTxFormatted: lastTxFormatted,
-		CurrencyList: c.CurrencyList,
-		PromisedAmountListAccepted: promisedAmountListAccepted,
+		Alert:                        c.Alert,
+		Lang:                         c.Lang,
+		CountSignArr:                 c.CountSignArr,
+		ShowSignData:                 c.ShowSignData,
+		UserId:                       c.SessUserId,
+		TimeNow:                      timeNow,
+		TxType:                       txType,
+		TxTypeId:                     txTypeId,
+		SignData:                     "",
+		LastTxFormatted:              lastTxFormatted,
+		CurrencyList:                 c.CurrencyList,
+		PromisedAmountListAccepted:   promisedAmountListAccepted,
 		ActualizationPromisedAmounts: actualizationPromisedAmounts,
-		LimitsText: limitsText})
+		LimitsText:                   limitsText})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

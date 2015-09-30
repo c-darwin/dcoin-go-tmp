@@ -2,39 +2,38 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) UserAvatarInit() (error) {
+func (p *Parser) UserAvatarInit() error {
 
-	fields := []map[string]string {{"name":"string"}, {"avatar":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"name": "string"}, {"avatar": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) UserAvatarFront() (error) {
+func (p *Parser) UserAvatarFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"name":"user_name"}
+	verifyData := map[string]string{"name": "user_name"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if !utils.CheckInputData(p.TxMaps.String["avatar"], "img_url") && p.TxMaps.String["avatar"]!="0"  {
+	if !utils.CheckInputData(p.TxMaps.String["avatar"], "img_url") && p.TxMaps.String["avatar"] != "0" {
 		return fmt.Errorf("incorrect avatar")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["name"], p.TxMap["avatar"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -49,11 +48,11 @@ func (p *Parser) UserAvatarFront() (error) {
 	return nil
 }
 
-func (p *Parser) UserAvatar() (error) {
-	return p.selectiveLoggingAndUpd([]string{"name", "avatar"}, []interface {}{p.TxMaps.String["name"], p.TxMaps.String["avatar"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+func (p *Parser) UserAvatar() error {
+	return p.selectiveLoggingAndUpd([]string{"name", "avatar"}, []interface{}{p.TxMaps.String["name"], p.TxMaps.String["avatar"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
-func (p *Parser) UserAvatarRollback() (error) {
+func (p *Parser) UserAvatarRollback() error {
 	return p.selectiveRollback([]string{"name", "avatar"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 }
 

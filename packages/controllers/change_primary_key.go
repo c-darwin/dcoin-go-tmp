@@ -1,34 +1,35 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 )
 
 type changePrimaryKeyPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	CountSignArr []int
-	Lang map[string]string
-	LimitsText string
-	LastTxFormatted string
+	Alert             string
+	SignData          string
+	ShowSignData      bool
+	CountSignArr      []int
+	Lang              map[string]string
+	LimitsText        string
+	LastTxFormatted   string
 	LastChangeKeyTime int64
-	LastTxQueueTx bool
-	LastTxTx bool
-	UserId int64
-	LastTx []map[string]string
-	MyKeys []map[string]string
-	StatusArray map[string]string
-	TxType string
-	TxTypeId int64
-	TimeNow int64
+	LastTxQueueTx     bool
+	LastTxTx          bool
+	UserId            int64
+	LastTx            []map[string]string
+	MyKeys            []map[string]string
+	StatusArray       map[string]string
+	TxType            string
+	TxTypeId          int64
+	TimeNow           int64
 }
 
 func (c *Controller) ChangePrimaryKey() (string, error) {
 
 	var err error
 
-	txType := "ChangePrimaryKey";
+	txType := "ChangePrimaryKey"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -61,25 +62,24 @@ func (c *Controller) ChangePrimaryKey() (string, error) {
 		}
 	}
 
-
 	TemplateStr, err := makeTemplate("change_primary_key", "changePrimaryKey", &changePrimaryKeyPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		ShowSignData: c.ShowSignData,
-		SignData: "",
-		UserId: c.SessUserId,
-		CountSignArr: c.CountSignArr,
-		LimitsText: limitsText,
-		LastTxQueueTx: lastTxQueueTx,
-		LastTxTx: lastTxTx,
-		LastTxFormatted: lastTxFormatted,
+		Alert:             c.Alert,
+		Lang:              c.Lang,
+		ShowSignData:      c.ShowSignData,
+		SignData:          "",
+		UserId:            c.SessUserId,
+		CountSignArr:      c.CountSignArr,
+		LimitsText:        limitsText,
+		LastTxQueueTx:     lastTxQueueTx,
+		LastTxTx:          lastTxTx,
+		LastTxFormatted:   lastTxFormatted,
 		LastChangeKeyTime: lastChangeKeyTime,
-		LastTx: lastTx,
-		MyKeys: myKeys,
-		StatusArray: statusArray,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId})
+		LastTx:            lastTx,
+		MyKeys:            myKeys,
+		StatusArray:       statusArray,
+		TimeNow:           timeNow,
+		TxType:            txType,
+		TxTypeId:          txTypeId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -31,5 +31,5 @@ ShowMessM(char* title, char* text) {
 import "C"
 
 func SendMobileNotification(title, text string) {
-    C.ShowMessM(C.CString(title), C.CString(text))
+	C.ShowMessM(C.CString(title), C.CString(text))
 }

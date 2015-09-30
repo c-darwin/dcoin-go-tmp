@@ -1,29 +1,30 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 )
 
 type restoringAccessPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	CountSignArr []int
-	Lang map[string]string
-	UserId int64
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	AdminUserId int64
+	Alert           string
+	SignData        string
+	ShowSignData    bool
+	CountSignArr    []int
+	Lang            map[string]string
+	UserId          int64
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	AdminUserId     int64
 	ChangeKeyStatus string
-	Requests string
+	Requests        string
 }
 
 func (c *Controller) RestoringAccess() (string, error) {
 
 	var err error
 
-	txType := "ChangeKeyActive";
+	txType := "ChangeKeyActive"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -44,18 +45,18 @@ func (c *Controller) RestoringAccess() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("restoring_access", "restoringAccess", &restoringAccessPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		ShowSignData: c.ShowSignData,
-		SignData: "",
-		UserId: c.SessUserId,
-		CountSignArr: c.CountSignArr,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		AdminUserId: adminUserId,
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		ShowSignData:    c.ShowSignData,
+		SignData:        "",
+		UserId:          c.SessUserId,
+		CountSignArr:    c.CountSignArr,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		AdminUserId:     adminUserId,
 		ChangeKeyStatus: changeKeyStatus,
-		Requests: requests})
+		Requests:        requests})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

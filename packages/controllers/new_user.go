@@ -1,32 +1,33 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"strings"
-	"os"
 	"io/ioutil"
+	"os"
+	"strings"
 )
 
 type newUserPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	MyRefs map[int64]myRefsType
-	GlobalRefs map[int64]globalRefsType
-	CurrencyList map[int64]string
-	PoolUrl string
-	RefPhotos map[int64][]string
+	SignData        string
+	ShowSignData    bool
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	UserId          int64
+	Alert           string
+	Lang            map[string]string
+	CountSignArr    []int
+	MyRefs          map[int64]myRefsType
+	GlobalRefs      map[int64]globalRefsType
+	CurrencyList    map[int64]string
+	PoolUrl         string
+	RefPhotos       map[int64][]string
 	LastTxFormatted string
 }
 
 func (c *Controller) NewUser() (string, error) {
 
-	txType := "NewUser";
+	txType := "NewUser"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -37,8 +38,8 @@ func (c *Controller) NewUser() (string, error) {
 	if c.SessRestricted == 0 {
 		rows, err := c.Query(c.FormatQuery(`
 				SELECT users.user_id,	private_key,  log_id
-				FROM `+c.MyPrefix+`my_new_users
-				LEFT JOIN users ON users.user_id = `+c.MyPrefix+`my_new_users.user_id
+				FROM ` + c.MyPrefix + `my_new_users
+				LEFT JOIN users ON users.user_id = ` + c.MyPrefix + `my_new_users.user_id
 				WHERE status = 'approved'
 				`))
 		if err != nil {
@@ -53,15 +54,15 @@ func (c *Controller) NewUser() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			// проверим, не сменил ли уже юзер свой ключ
-			StrUserId:=utils.Int64ToStr(user_id)
+			StrUserId := utils.Int64ToStr(user_id)
 			if log_id == 0 {
 				myRefsKeys[user_id] = map[string]string{"user_id": StrUserId}
 			} else {
-				myRefsKeys[user_id] =  map[string]string{"user_id": StrUserId, "private_key": private_key}
-				md5:=string(utils.Md5(private_key))
-				kPath := *utils.Dir+"/public/"+md5[0:16]
-				kPathPng := kPath+".png"
-				kPathTxt := kPath+".txt"
+				myRefsKeys[user_id] = map[string]string{"user_id": StrUserId, "private_key": private_key}
+				md5 := string(utils.Md5(private_key))
+				kPath := *utils.Dir + "/public/" + md5[0:16]
+				kPathPng := kPath + ".png"
+				kPathTxt := kPath + ".txt"
 				if _, err := os.Stat(kPathPng); os.IsNotExist(err) {
 					privKey := strings.Replace(private_key, "-----BEGIN RSA PRIVATE KEY-----", "", -1)
 					privKey = strings.Replace(privKey, "-----END RSA PRIVATE KEY-----", "", -1)
@@ -74,8 +75,8 @@ func (c *Controller) NewUser() (string, error) {
 						return "", utils.ErrInfo(err)
 					}
 					/*$gd = key_to_img($private_key, $param, $row['user_id']);
-				imagepng($gd, $k_path_png);
-				file_put_contents($k_path_txt, trim($private_key));*/
+					imagepng($gd, $k_path_png);
+					file_put_contents($k_path_txt, trim($private_key));*/
 				}
 			}
 		}
@@ -100,7 +101,7 @@ func (c *Controller) NewUser() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		refs[referral] = map[int64]float64{currency_id:amount}
+		refs[referral] = map[int64]float64{currency_id: amount}
 	}
 
 	myRefsAmounts := make(map[int64]myRefsType)
@@ -115,7 +116,7 @@ func (c *Controller) NewUser() (string, error) {
 		}
 		minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
 		if len(minersIds) > 0 {
-			hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+			hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -129,7 +130,7 @@ func (c *Controller) NewUser() (string, error) {
 	}
 	for refUserId, refData := range myRefsKeys {
 		md5 := string(utils.Md5(refData["private_key"]))
-		myRefs[refUserId] = myRefsType{Key: refData["private_key"], KeyUrl: c.NodeConfig["pool_url"] + "public/"+md5[0:16]}
+		myRefs[refUserId] = myRefsType{Key: refData["private_key"], KeyUrl: c.NodeConfig["pool_url"] + "public/" + md5[0:16]}
 	}
 
 	/*
@@ -172,7 +173,7 @@ func (c *Controller) NewUser() (string, error) {
 		}
 		// получим ID майнеров, у которых лежат фото нужного нам юзера
 		minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
-		hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN ("+utils.JoinInts(minersIds, ",")+")").String()
+		hosts, err := c.GetList("SELECT http_host FROM miners_data WHERE miner_id  IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -187,21 +188,21 @@ func (c *Controller) NewUser() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("new_user", "newUser", &newUserPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		UserId:          c.SessUserId,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		SignData:        "",
 		LastTxFormatted: lastTxFormatted,
-		MyRefs: myRefs,
-		GlobalRefs: globalRefs,
-		CurrencyList: c.CurrencyList,
-		RefPhotos: refPhotos,
-		PoolUrl: c.NodeConfig["pool_url"]})
+		MyRefs:          myRefs,
+		GlobalRefs:      globalRefs,
+		CurrencyList:    c.CurrencyList,
+		RefPhotos:       refPhotos,
+		PoolUrl:         c.NodeConfig["pool_url"]})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -210,12 +211,12 @@ func (c *Controller) NewUser() (string, error) {
 
 type myRefsType struct {
 	Amounts map[int64]float64
-	Hosts []string
-	Key string
-	KeyUrl string
+	Hosts   []string
+	Key     string
+	KeyUrl  string
 }
 
 type globalRefsType struct {
 	Amounts []map[string]string
-	Hosts []string
+	Hosts   []string
 }

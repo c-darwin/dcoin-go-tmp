@@ -43,7 +43,7 @@ func (t *TcpServer) Type2() {
 			return
 		}
 		decryptedBinDataFull := decryptedBinData
-		txType:= utils.BytesShift(&decryptedBinData, 1) // type
+		txType := utils.BytesShift(&decryptedBinData, 1) // type
 		txTime := utils.BytesShift(&decryptedBinData, 4) // time
 		log.Debug("txType: %d", utils.BinToDec(txType))
 		log.Debug("txTime: %d", utils.BinToDec(txTime))
@@ -61,13 +61,13 @@ func (t *TcpServer) Type2() {
 		}
 		// заливаем тр-ию в БД
 		err = t.ExecSql(`DELETE FROM queue_tx WHERE hex(hash) = ?`, utils.Md5(decryptedBinDataFull))
-		if err!=nil {
+		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}
-		log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)",  utils.Md5(decryptedBinDataFull), highRate, utils.BinToHex(decryptedBinDataFull))
+		log.Debug("INSERT INTO queue_tx (hash, high_rate, data) (%s, %d, %s)", utils.Md5(decryptedBinDataFull), highRate, utils.BinToHex(decryptedBinDataFull))
 		err = t.ExecSql(`INSERT INTO queue_tx (hash, high_rate, data) VALUES ([hex], ?, [hex])`, utils.Md5(decryptedBinDataFull), highRate, utils.BinToHex(decryptedBinDataFull))
-		if err!=nil {
+		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}

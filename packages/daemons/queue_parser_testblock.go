@@ -34,7 +34,7 @@ func QueueParserTestblock() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -79,7 +79,7 @@ func QueueParserTestblock() {
 		// а тут у нас данные пишутся только в log_time_
 		// и сами тр-ии пишем в отдельную таблу
 		p := new(dcparser.Parser)
-		p.DCDB = d.DCDB;
+		p.DCDB = d.DCDB
 		if len(tx) > 0 {
 			log.Debug("len(tx): %d", len(tx))
 			for {
@@ -215,6 +215,5 @@ func QueueParserTestblock() {
 
 		log.Info("%v", "Happy end")
 	}
-
 
 }

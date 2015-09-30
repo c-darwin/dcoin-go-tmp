@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
@@ -6,30 +7,30 @@ import (
 )
 
 type cashRequestOutPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Lang map[string]string
-	CountSignArr []int
-	CurrencyList map[int64]string
-	CashRequestsStatus map[string]string
+	Alert               string
+	SignData            string
+	ShowSignData        bool
+	TxType              string
+	TxTypeId            int64
+	TimeNow             int64
+	UserId              int64
+	Lang                map[string]string
+	CountSignArr        []int
+	CurrencyList        map[int64]string
+	CashRequestsStatus  map[string]string
 	JsonCurrencyWallets string
-	PaymentSystems map[string]string
-	MinPromisedAmount int64
-	MaxLength int
-	AvailableCurrency []int64
-	MyCashRequests []map[string]string
-	Code string
-	HashCode string
+	PaymentSystems      map[string]string
+	MinPromisedAmount   int64
+	MaxLength           int
+	AvailableCurrency   []int64
+	MyCashRequests      []map[string]string
+	Code                string
+	HashCode            string
 }
 
 func (c *Controller) CashRequestOut() (string, error) {
 
-	txType := "CashRequestOut";
+	txType := "CashRequestOut"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -59,7 +60,7 @@ func (c *Controller) CashRequestOut() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		amount+=profit
+		amount += profit
 		jsonCurrencyWallets += fmt.Sprintf(`"%d":["%s","%v"],`, currency_id, c.CurrencyList[currency_id], amount)
 		availableCurrency = append(availableCurrency, currency_id)
 	}
@@ -70,28 +71,27 @@ func (c *Controller) CashRequestOut() (string, error) {
 	hashCode := utils.DSha256(utils.RandSeq(50))
 
 	TemplateStr, err := makeTemplate("cash_request_out", "cashRequestOut", &cashRequestOutPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		CurrencyList : c.CurrencyList,
-		PaymentSystems: c.PaymentSystems,
+		Alert:               c.Alert,
+		Lang:                c.Lang,
+		CountSignArr:        c.CountSignArr,
+		ShowSignData:        c.ShowSignData,
+		UserId:              c.SessUserId,
+		TimeNow:             timeNow,
+		TxType:              txType,
+		TxTypeId:            txTypeId,
+		SignData:            "",
+		CurrencyList:        c.CurrencyList,
+		PaymentSystems:      c.PaymentSystems,
 		JsonCurrencyWallets: jsonCurrencyWallets,
-		CashRequestsStatus: cashRequestsStatus,
-		AvailableCurrency: availableCurrency,
-		MinPromisedAmount: c.Variables.Int64["min_promised_amount"],
-		MyCashRequests: myCashRequests,
-		Code: string(code),
-		HashCode: string(hashCode),
-		MaxLength: 200})
+		CashRequestsStatus:  cashRequestsStatus,
+		AvailableCurrency:   availableCurrency,
+		MinPromisedAmount:   c.Variables.Int64["min_promised_amount"],
+		MyCashRequests:      myCashRequests,
+		Code:                string(code),
+		HashCode:            string(hashCode),
+		MaxLength:           200})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

@@ -1,18 +1,19 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 )
 
 type holidaysListPage struct {
-	SignData string
-	ShowSignData bool
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	LastTxFormatted string
-	LimitsText string
-	MyHolidaysPending []map[string]string
+	SignData           string
+	ShowSignData       bool
+	Alert              string
+	Lang               map[string]string
+	CountSignArr       []int
+	LastTxFormatted    string
+	LimitsText         string
+	MyHolidaysPending  []map[string]string
 	MyHolidaysAccepted []map[string]string
 }
 
@@ -38,19 +39,17 @@ func (c *Controller) HolidaysList() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("holidays_list", "holidaysList", &holidaysListPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		SignData: "",
-		LastTxFormatted: lastTxFormatted,
-		LimitsText: limitsText,
-		MyHolidaysPending: myHolidaysPending,
+		Alert:              c.Alert,
+		Lang:               c.Lang,
+		CountSignArr:       c.CountSignArr,
+		ShowSignData:       c.ShowSignData,
+		SignData:           "",
+		LastTxFormatted:    lastTxFormatted,
+		LimitsText:         limitsText,
+		MyHolidaysPending:  myHolidaysPending,
 		MyHolidaysAccepted: myHolidaysAccepted})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

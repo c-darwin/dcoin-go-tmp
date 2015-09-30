@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func ElectionsAdmin() {
@@ -29,7 +29,7 @@ func ElectionsAdmin() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -58,7 +58,7 @@ func ElectionsAdmin() {
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := d.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -77,7 +77,7 @@ func ElectionsAdmin() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		if curTime - adminTime <= variables.Int64["new_pct_period"] {
+		if curTime-adminTime <= variables.Int64["new_pct_period"] {
 			d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1)
 			continue BEGIN
 		}
@@ -101,7 +101,7 @@ func ElectionsAdmin() {
 				FROM votes_admin
 				WHERE time > ?
 				GROUP BY  admin_user_id
-				`, "admin_user_id", "votes", curTime - variables.Int64["new_pct_period"])
+				`, "admin_user_id", "votes", curTime-variables.Int64["new_pct_period"])
 		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -117,10 +117,10 @@ func ElectionsAdmin() {
 			continue BEGIN
 		}
 
-		_, myUserId, _, _, _, _, err := d.TestBlock();
+		_, myUserId, _, _, _, _, err := d.TestBlock()
 		forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewAdmin"), curTime, myUserId, newAdmin)
 		binSign, err := d.GetBinSign(forSign, myUserId)
-		if err!= nil {
+		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
@@ -131,7 +131,7 @@ func ElectionsAdmin() {
 		data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
 		err = d.InsertReplaceTxInQueue(data)
-		if err!= nil {
+		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
@@ -144,7 +144,7 @@ func ElectionsAdmin() {
 		}
 
 		d.dbUnlock()
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {
@@ -154,5 +154,3 @@ func ElectionsAdmin() {
 	}
 
 }
-
-

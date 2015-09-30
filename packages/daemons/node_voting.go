@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io/ioutil"
 	//"log"
 	"os"
@@ -12,7 +12,6 @@ import (
 /*
  * Если наш miner_id есть среди тех, кто должен скачать фото нового майнера к себе, то качаем
  */
-
 
 func NodeVoting() {
 	defer func() {
@@ -37,7 +36,7 @@ func NodeVoting() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -73,15 +72,15 @@ func NodeVoting() {
 				WHERE cron_checked_time < ? AND
 							 votes_end = 0 AND
 							 type = 'node_voting'
-				`, utils.Time() - consts.CRON_CHECKED_TIME_SEC)
+				`, utils.Time()-consts.CRON_CHECKED_TIME_SEC)
 		if err != nil {
 			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 		defer rows.Close()
-		if  ok := rows.Next(); ok {
-			var vote_id, miner_id int64;
-			var user_id, host, row_face_hash, row_profile_hash, photo_block_id, photo_max_miner_id, miners_keepers string;
+		if ok := rows.Next(); ok {
+			var vote_id, miner_id int64
+			var user_id, host, row_face_hash, row_profile_hash, photo_block_id, photo_max_miner_id, miners_keepers string
 			err = rows.Scan(&user_id, &host, &row_face_hash, &row_profile_hash, &photo_block_id, &photo_max_miner_id, &miners_keepers, &vote_id, &miner_id)
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 1)
@@ -93,27 +92,27 @@ func NodeVoting() {
 				utils.Sleep(1)
 				break
 			}
-			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true);
+			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true)
 			myUsersIds, err := d.GetMyUsersIds(true, true)
 			myMinersIds, err := d.GetMyMinersIds(myUsersIds)
 
 			// нет ли нас среди тех, кто должен скачать фото к себе и проголосовать
 			var intersectMyMiners []int64
 			for _, id := range minersIds {
-				if utils.InSliceInt64(int64(id), myMinersIds)	{
+				if utils.InSliceInt64(int64(id), myMinersIds) {
 					intersectMyMiners = append(intersectMyMiners, int64(id))
 				}
 			}
 			var vote int64
 			if len(intersectMyMiners) > 0 {
 				// копируем фото  к себе
-				profilePath := *utils.Dir+"/public/profile_"+user_id+".jpg";
+				profilePath := *utils.Dir + "/public/profile_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					d.PrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
-				facePath := *utils.Dir+"/public/face_"+user_id+".jpg";
+				facePath := *utils.Dir + "/public/face_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
 					d.PrintSleep(utils.ErrInfo(err), 1)
@@ -145,7 +144,7 @@ func NodeVoting() {
 				}
 
 				// проходимся по всем нашим майнерам, если это пул и по одному, если это сингл-мод
-				for _, myMinerId := range intersectMyMiners{
+				for _, myMinerId := range intersectMyMiners {
 
 					myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 					if err != nil {
@@ -157,7 +156,7 @@ func NodeVoting() {
 
 					forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("VotesNodeNewMiner"), curTime, myUserId, vote_id, vote)
 					binSign, err := d.GetBinSign(forSign, myUserId)
-					if err!= nil {
+					if err != nil {
 						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
@@ -168,9 +167,8 @@ func NodeVoting() {
 					data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(vote))...)
 					data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
-
 					err = d.InsertReplaceTxInQueue(data)
-					if err!= nil {
+					if err != nil {
 						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
@@ -186,7 +184,7 @@ func NodeVoting() {
 			}
 		}
 		d.dbUnlock()
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

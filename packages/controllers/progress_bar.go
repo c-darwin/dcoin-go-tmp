@@ -1,17 +1,17 @@
 package controllers
-import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"os"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
-	"html/template"
-	"bytes"
 
+import (
+	"bytes"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"html/template"
+	"os"
 )
 
 type progressBarPage struct {
-	ProgressPct int64
-	Lang map[string]string
-	ProgressBar map[string]int64
+	ProgressPct    int64
+	Lang           map[string]string
+	ProgressBar    map[string]int64
 	ProgressBarPct map[string]int64
 }
 
@@ -22,21 +22,21 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 
 	progressBarPct := make(map[string]int64)
-	progressBarPct["begin"] = 10;
-	progressBarPct["change_key"] = 10;
-	progressBarPct["my_table"] = 5;
-	progressBarPct["upgrade_country"] = 3;
-	progressBarPct["upgrade_face_hash"] = 3;
-	progressBarPct["upgrade_profile_hash"] = 3;
-	progressBarPct["upgrade_face_coords"] = 3;
-	progressBarPct["upgrade_profile_coords"] = 3;
-	progressBarPct["upgrade_video"] = 3;
-	progressBarPct["upgrade_host"] = 3;
-	progressBarPct["upgrade_geolocation"] = 3;
-	progressBarPct["promised_amount"] = 5;
-	progressBarPct["commission"] = 3;
-	progressBarPct["tasks"] = 8;
-	progressBarPct["vote"] = 5;
+	progressBarPct["begin"] = 10
+	progressBarPct["change_key"] = 10
+	progressBarPct["my_table"] = 5
+	progressBarPct["upgrade_country"] = 3
+	progressBarPct["upgrade_face_hash"] = 3
+	progressBarPct["upgrade_profile_hash"] = 3
+	progressBarPct["upgrade_face_coords"] = 3
+	progressBarPct["upgrade_profile_coords"] = 3
+	progressBarPct["upgrade_video"] = 3
+	progressBarPct["upgrade_host"] = 3
+	progressBarPct["upgrade_geolocation"] = 3
+	progressBarPct["promised_amount"] = 5
+	progressBarPct["commission"] = 3
+	progressBarPct["tasks"] = 8
+	progressBarPct["vote"] = 5
 	progressBarPct["referral"] = 1
 
 	progressBar := make(map[string]int64)
@@ -50,7 +50,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0)) || changeKey>0  {
+	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || changeKey > 0 {
 		progressBar["change_key"] = 1
 	}
 
@@ -70,16 +70,16 @@ func (c *Controller) ProgressBar() (string, error) {
 	// апгрейд аккаунта
 	myMinersId, err := c.GetMyMinerId(c.SessUserId)
 	if myMinersId > 0 {
-		progressBar["upgrade_country"] = 1;
-		progressBar["upgrade_face_hash"] = 1;
-		progressBar["upgrade_profile_hash"] = 1;
-		progressBar["upgrade_face_coords"] = 1;
-		progressBar["upgrade_profile_coords"] = 1;
-		progressBar["upgrade_video"] = 1;
-		progressBar["upgrade_host"] = 1;
-		progressBar["upgrade_geolocation"] = 1;
-	} else if c.SessRestricted==0 {
-		upgradeData, err := c.OneRow("SELECT user_id, race, country, geolocation, http_host as host, face_coords, profile_coords, video_url_id, video_type FROM "+c.MyPrefix+"my_table").String()
+		progressBar["upgrade_country"] = 1
+		progressBar["upgrade_face_hash"] = 1
+		progressBar["upgrade_profile_hash"] = 1
+		progressBar["upgrade_face_coords"] = 1
+		progressBar["upgrade_profile_coords"] = 1
+		progressBar["upgrade_video"] = 1
+		progressBar["upgrade_host"] = 1
+		progressBar["upgrade_geolocation"] = 1
+	} else if c.SessRestricted == 0 {
+		upgradeData, err := c.OneRow("SELECT user_id, race, country, geolocation, http_host as host, face_coords, profile_coords, video_url_id, video_type FROM " + c.MyPrefix + "my_table").String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -98,7 +98,7 @@ func (c *Controller) ProgressBar() (string, error) {
 		if len(upgradeData["profile_coords"]) > 0 {
 			progressBar["upgrade_profile_coords"] = 1
 		}
-		if _, err := os.Stat(*utils.Dir+"public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsExist(err) {
+		if _, err := os.Stat(*utils.Dir + "public/" + utils.Int64ToStr(c.SessUserId) + "_user_video.mp4"); os.IsExist(err) {
 			if len(upgradeData["video_url_id"]) > 0 {
 				progressBar["upgrade_video"] = 1
 			}
@@ -118,7 +118,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 	// возможно юзер уже отправил запрос на добавление обещенной суммы
 	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount"}), 1, c.TimeFormat)
-	if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0)) || promisedAmount>0  {
+	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || promisedAmount > 0 {
 		progressBar["promised_amount"] = 1
 	}
 
@@ -129,7 +129,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 	// возможно юзер уже отправил запрос на добавление комиссии
 	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_commission"}), 1, c.TimeFormat)
-	if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0)) || len(commission)>0  {
+	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || len(commission) > 0 {
 		progressBar["commission"] = 1
 	}
 
@@ -139,12 +139,12 @@ func (c *Controller) ProgressBar() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"votes_complex"}), 1, c.TimeFormat)
-	if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0)) || vote>0  {
+	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || vote > 0 {
 		progressBar["vote"] = 1
 	}
-	if c.SessRestricted==0 {
+	if c.SessRestricted == 0 {
 		// выполнялись ли задания
-		myTasks, err := c.Single("SELECT id FROM "+c.MyPrefix+"my_tasks").Int64()
+		myTasks, err := c.Single("SELECT id FROM " + c.MyPrefix + "my_tasks").Int64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -168,9 +168,9 @@ func (c *Controller) ProgressBar() (string, error) {
 	progressPct := progressBarPct["begin"]
 	for name, result := range progressBar {
 		if name == "referral" {
-			progressPct+=progressBarPct[name]*result
+			progressPct += progressBarPct[name] * result
 		} else {
-			progressPct+=progressBarPct[name]
+			progressPct += progressBarPct[name]
 		}
 	}
 	progressBar["begin"] = 1
@@ -183,14 +183,14 @@ func (c *Controller) ProgressBar() (string, error) {
 		}
 		t := template.Must(template.New("template").Parse(string(data)))
 		b := new(bytes.Buffer)
-		t.ExecuteTemplate(b, "progressBar", &progressBarPage{Lang:  c.Lang, ProgressPct: progressPct})
+		t.ExecuteTemplate(b, "progressBar", &progressBarPage{Lang: c.Lang, ProgressPct: progressPct})
 		return b.String(), nil
 	} else {
 		TemplateStr, err := makeTemplate("progress", "progress", &progressBarPage{
-			Lang:  c.Lang,
-			ProgressBar: progressBar,
+			Lang:           c.Lang,
+			ProgressBar:    progressBar,
 			ProgressBarPct: progressBarPct,
-			ProgressPct: progressPct})
+			ProgressPct:    progressPct})
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

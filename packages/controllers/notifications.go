@@ -1,19 +1,20 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type notificationsPage struct {
-	SignData string
-	ShowSignData bool
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
+	SignData        string
+	ShowSignData    bool
+	Alert           string
+	Lang            map[string]string
+	CountSignArr    []int
 	MyNotifications map[string]map[string]string
-	LangInt int64
-	NodeAdmin bool
-	Data map[string]string
+	LangInt         int64
+	NodeAdmin       bool
+	Data            map[string]string
 }
 
 func (c *Controller) Notifications() (string, error) {
@@ -33,7 +34,7 @@ func (c *Controller) Notifications() (string, error) {
 						 smtp_auth,
 						 smtp_username,
 						 smtp_password
-			FROM `+c.MyPrefix+`my_table
+			FROM ` + c.MyPrefix + `my_table
 			`).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -42,24 +43,22 @@ func (c *Controller) Notifications() (string, error) {
 	myNotifications := make(map[string]map[string]string)
 	myNotifications_, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_notifications ORDER BY sort ASC", -1)
 	for _, data := range myNotifications_ {
-		myNotifications[data["name"]] = map[string]string {"mobile": data["mobile"],"email": data["email"], "sms": data["sms"], "important": data["important"]}
+		myNotifications[data["name"]] = map[string]string{"mobile": data["mobile"], "email": data["email"], "sms": data["sms"], "important": data["important"]}
 	}
 	log.Debug("myNotifications", myNotifications)
 
 	TemplateStr, err := makeTemplate("notifications", "notifications", &notificationsPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		SignData: "",
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		SignData:        "",
 		MyNotifications: myNotifications,
-		NodeAdmin: c.NodeAdmin,
-		LangInt: c.LangInt,
-		Data: data})
+		NodeAdmin:       c.NodeAdmin,
+		LangInt:         c.LangInt,
+		Data:            data})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

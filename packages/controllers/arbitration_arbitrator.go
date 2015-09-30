@@ -1,31 +1,31 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
 
 type arbitrationArbitratorPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Lang map[string]string
-	CountSignArr []int
+	Alert           string
+	SignData        string
+	ShowSignData    bool
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	UserId          int64
+	Lang            map[string]string
+	CountSignArr    []int
 	LastTxFormatted string
-	CurrencyList map[int64]string
-	MinerId int64
-	MyOrders []map[string]string
+	CurrencyList    map[int64]string
+	MinerId         int64
+	MyOrders        []map[string]string
 }
 
 func (c *Controller) ArbitrationArbitrator() (string, error) {
 
 	log.Debug("ArbitrationArbitrator")
 
-	txType := "MoneyBackRequest";
+	txType := "MoneyBackRequest"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -38,8 +38,8 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 			LIMIT 20
 	`, 20, c.SessUserId)
 	for k, data := range myOrders {
-		if c.SessRestricted==0 {
-				data_, err := c.OneRow(`
+		if c.SessRestricted == 0 {
+			data_, err := c.OneRow(`
 						SELECT comment,
 									 comment_status
 						FROM `+c.MyPrefix+`my_comments
@@ -47,11 +47,11 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 									 type = 'arbitrator'
 						LIMIT 1
 				`, data["id"]).String()
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-				data["comment"] = data_["comment"]
-				data["comment_status"] = data_["comment_status"]
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			data["comment"] = data_["comment"]
+			data["comment_status"] = data_["comment_status"]
 		}
 		myOrders[k] = data
 	}
@@ -63,22 +63,21 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("arbitration_arbitrator", "arbitrationArbitrator", &arbitrationArbitratorPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		UserId:          c.SessUserId,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		SignData:        "",
 		LastTxFormatted: lastTxFormatted,
-		CurrencyList: c.CurrencyList,
-		MinerId: c.MinerId,
-		MyOrders: myOrders})
+		CurrencyList:    c.CurrencyList,
+		MinerId:         c.MinerId,
+		MyOrders:        myOrders})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

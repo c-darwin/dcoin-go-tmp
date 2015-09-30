@@ -1,11 +1,11 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type poolAdminPageLogin struct {
-
 }
 
 func (c *Controller) PoolAdminLogin() (string, error) {
@@ -23,9 +23,7 @@ func (c *Controller) PoolAdminLogin() (string, error) {
 	c.sess.Set("user_id", userId)
 	c.sess.Set("public_key", string(utils.BinToHex(publicKey)))
 
-	TemplateStr, err := makeTemplate("pool_admin_login", "poolAdminLogin", &poolAdminPage {
-
-	})
+	TemplateStr, err := makeTemplate("pool_admin_login", "poolAdminLogin", &poolAdminPage{})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

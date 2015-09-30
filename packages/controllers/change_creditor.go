@@ -1,26 +1,26 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
 
 type changeCreditorPage struct {
-	SignData string
+	SignData     string
 	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
+	UserId       int64
+	Alert        string
+	Lang         map[string]string
 	CountSignArr []int
-	CreditId float64
+	CreditId     float64
 }
 
 func (c *Controller) ChangeCreditor() (string, error) {
 
-	txType := "ChangeCreditor";
+	txType := "ChangeCreditor"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -28,19 +28,18 @@ func (c *Controller) ChangeCreditor() (string, error) {
 	log.Debug("creditId", creditId)
 
 	TemplateStr, err := makeTemplate("change_creditor", "changeCreditor", &changeCreditorPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		CreditId: creditId})
+		UserId:       c.SessUserId,
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId,
+		SignData:     "",
+		CreditId:     creditId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

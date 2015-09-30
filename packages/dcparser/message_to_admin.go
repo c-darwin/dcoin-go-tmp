@@ -8,19 +8,19 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
-//	"time"
+	//	"os"
+	//	"time"
 	//"strings"
 	//"bytes"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-//	"math"
-//	"database/sql"
-//	"bytes"
+	//	"math"
+	//	"database/sql"
+	//	"bytes"
 )
 
-func (p *Parser) MessageToAdminInit() (error) {
-	fields := []map[string]string {{"encrypted_message":"bytes"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) MessageToAdminInit() error {
+	fields := []map[string]string{{"encrypted_message": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -29,7 +29,7 @@ func (p *Parser) MessageToAdminInit() (error) {
 	return nil
 }
 
-func (p *Parser) MessageToAdminFront() (error) {
+func (p *Parser) MessageToAdminFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -42,7 +42,7 @@ func (p *Parser) MessageToAdminFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["encrypted_message"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -58,9 +58,9 @@ func (p *Parser) MessageToAdminFront() (error) {
 }
 
 // пишется только в локальную таблицу юзера-отправителя и админа
-func (p *Parser) MessageToAdmin() (error) {
+func (p *Parser) MessageToAdmin() error {
 
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
@@ -98,9 +98,9 @@ func (p *Parser) MessageToAdmin() (error) {
 	return nil
 }
 
-func (p *Parser) MessageToAdminRollback() (error) {
+func (p *Parser) MessageToAdminRollback() error {
 
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}

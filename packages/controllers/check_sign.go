@@ -1,11 +1,10 @@
 package controllers
+
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
-
 
 func (c *Controller) Check_sign() (string, error) {
 
@@ -39,9 +38,9 @@ func (c *Controller) Check_sign() (string, error) {
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 	log.Debug("RemoteAddr %s", RemoteAddr)
 	if configIni["sign_hash"] == "ip" {
-		hash = utils.Md5(RemoteAddr);
+		hash = utils.Md5(RemoteAddr)
 	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
+		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	}
 	log.Debug("hash %s", hash)
 
@@ -50,7 +49,7 @@ func (c *Controller) Check_sign() (string, error) {
 		// в цикле проверяем, кому подойдет присланная подпись
 		for _, userId := range c.CommunityUsers {
 
-			myPrefix := utils.Int64ToStr(userId)+"_"
+			myPrefix := utils.Int64ToStr(userId) + "_"
 			if !utils.InSliceString(myPrefix+"my_keys", allTables) {
 				continue
 			}
@@ -70,7 +69,7 @@ func (c *Controller) Check_sign() (string, error) {
 			log.Debug("hash: %s\n", hash)
 			log.Debug("forSign: ", forSign)
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true)
 			if err != nil {
 				continue
 			}
@@ -88,7 +87,7 @@ func (c *Controller) Check_sign() (string, error) {
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
 				c.sess.Set("public_key", string(utils.BinToHex([]byte(public_key))))
 
-				adminUSerID, err := c.DCDB.GetAdminUserId();
+				adminUSerID, err := c.DCDB.GetAdminUserId()
 				if err != nil {
 					return "{\"result\":0}", err
 				}
@@ -115,9 +114,9 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 			log.Debug("forSign", forSign)
 			log.Debug("publicKey %x\n", utils.HexToBin(publicKey))
-			log.Debug("sign_",string(sign))
+			log.Debug("sign_", string(sign))
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{utils.HexToBin(publicKey)}, forSign, utils.HexToBin(sign), true);
+			resultCheckSign, err := utils.CheckSign([][]byte{utils.HexToBin(publicKey)}, forSign, utils.HexToBin(sign), true)
 			if err != nil {
 				return "{\"result\":0}", err
 			}
@@ -168,10 +167,10 @@ func (c *Controller) Check_sign() (string, error) {
 			// если последний блок не старше 2-х часов
 			wTime := int64(2)
 			if c.ConfigIni["test_mode"] == "1" {
-				wTime = 2*365*24
+				wTime = 2 * 365 * 24
 			}
 			log.Debug("%v/%v/%v", time.Now().Unix(), utils.StrToInt64(infoBlock["time"]), wTime)
-			if (time.Now().Unix() - utils.StrToInt64(infoBlock["time"])) < 3600*wTime  {
+			if (time.Now().Unix() - utils.StrToInt64(infoBlock["time"])) < 3600*wTime {
 
 				// проверим, верный ли установочный пароль, если он, конечно, есть
 				setupPassword_, err := c.Single("SELECT setup_password FROM config").String()
@@ -194,9 +193,9 @@ func (c *Controller) Check_sign() (string, error) {
 				forSign, err := c.DCDB.GetDataAuthorization(hash)
 				log.Debug("forSign", forSign)
 				log.Debug("publicKey %x\n", utils.HexToBin(publicKey))
-				log.Debug("sign_",string(sign))
+				log.Debug("sign_", string(sign))
 				// проверим подпись
-				resultCheckSign, err := utils.CheckSign([][]byte{utils.HexToBin(publicKey)}, forSign, utils.HexToBin(sign), true);
+				resultCheckSign, err := utils.CheckSign([][]byte{utils.HexToBin(publicKey)}, forSign, utils.HexToBin(sign), true)
 				if err != nil {
 					return "{\"result\":0}", err
 				}
@@ -211,7 +210,7 @@ func (c *Controller) Check_sign() (string, error) {
 					}
 					//myUserId, err := c.GetMyUserId("")
 					//if myUserId > 0 {
-						c.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
+					c.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
 					//} else {
 					//	c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
 					//}
@@ -229,9 +228,9 @@ func (c *Controller) Check_sign() (string, error) {
 		} else {
 
 			if configIni["sign_hash"] == "ip" {
-				hash = utils.Md5(RemoteAddr);
+				hash = utils.Md5(RemoteAddr)
 			} else {
-				hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
+				hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 			}
 			log.Debug("hash", hash)
 
@@ -239,9 +238,9 @@ func (c *Controller) Check_sign() (string, error) {
 			forSign, err := c.DCDB.GetDataAuthorization(hash)
 			log.Debug("forSign", forSign)
 			log.Debug("publicKey %x\n", string(publicKey))
-			log.Debug("sign_",string(sign))
+			log.Debug("sign_", string(sign))
 			// проверим подпись
-			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true);
+			resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true)
 			if err != nil {
 				return "{\"result\":0}", err
 			}
@@ -265,7 +264,7 @@ func (c *Controller) Check_sign() (string, error) {
 			c.sess.Set("user_id", myUserId)
 
 			// если уже пришел блок, в котором зареган ключ юзера
-			if (myUserId!=-1) {
+			if myUserId != -1 {
 
 				public_key, err := c.DCDB.GetUserPublicKey(myUserId)
 				if err != nil {

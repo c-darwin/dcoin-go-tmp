@@ -27,7 +27,7 @@ func UnbanNodes() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -42,7 +42,7 @@ func UnbanNodes() {
 			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
-		for i:=0; i < 3600; i++ {
+		for i := 0; i < 3600; i++ {
 			if CheckDaemonsRestart() {
 				utils.Sleep(1)
 				break BEGIN

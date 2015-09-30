@@ -3,33 +3,32 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
+	//	"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 )
 
-
-func (p *Parser) VotesPromisedAmountInit() (error) {
-	fields := []map[string]string {{"promised_amount_id":"int64"}, {"result":"int64"}, {"comment":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) VotesPromisedAmountInit() error {
+	fields := []map[string]string{{"promised_amount_id": "int64"}, {"result": "int64"}, {"comment": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) VotesPromisedAmountFront() (error) {
+func (p *Parser) VotesPromisedAmountFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"promised_amount_id":"bigint", "result":"vote", "comment":"votes_comment"}
+	verifyData := map[string]string{"promised_amount_id": "bigint", "result": "vote", "comment": "votes_comment"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -46,7 +45,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if status!="pending" {
+	if status != "pending" {
 		return p.ErrInfo("voting is over")
 	}
 
@@ -61,7 +60,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["promised_amount_id"], p.TxMap["result"], p.TxMap["comment"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -77,7 +76,7 @@ func (p *Parser) VotesPromisedAmountFront() (error) {
 	return nil
 }
 
-func (p *Parser) VotesPromisedAmount() (error) {
+func (p *Parser) VotesPromisedAmount() error {
 
 	// начисляем баллы
 	p.points(p.Variables.Int64["promised_amount_points"])
@@ -107,8 +106,8 @@ func (p *Parser) VotesPromisedAmount() (error) {
 
 	data["user_id"] = utils.StrToInt64(promisedAmountData["user_id"])
 	data["votes_0"] = utils.StrToInt64(promisedAmountData["votes_0"])
-	data["votes_1"] =  utils.StrToInt64(promisedAmountData["votes_1"])
-	data["votes_start_time"] =  utils.StrToInt64(promisedAmountData["votes_start_time"])
+	data["votes_1"] = utils.StrToInt64(promisedAmountData["votes_1"])
+	data["votes_start_time"] = utils.StrToInt64(promisedAmountData["votes_start_time"])
 	data["votes_0_min"] = p.Variables.Int64["promised_amount_votes_0"]
 	data["votes_1_min"] = p.Variables.Int64["promised_amount_votes_1"]
 	data["votes_period"] = p.Variables.Int64["promised_amount_votes_period"]
@@ -161,7 +160,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 	}
 
 	// возможно с голосом пришел коммент
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
@@ -175,7 +174,7 @@ func (p *Parser) VotesPromisedAmount() (error) {
 	return nil
 }
 
-func (p *Parser) VotesPromisedAmountRollback() (error) {
+func (p *Parser) VotesPromisedAmountRollback() error {
 
 	// вычитаем баллы
 	p.pointsRollback(p.Variables.Int64["promised_amount_points"])
@@ -228,8 +227,6 @@ func (p *Parser) VotesPromisedAmountRollback() (error) {
 			p.rollbackAI("promised_amount", 1)
 		}
 	}
-
-
 
 	return nil
 }

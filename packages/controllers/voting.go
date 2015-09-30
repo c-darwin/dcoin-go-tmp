@@ -1,38 +1,39 @@
 package controllers
+
 import (
+	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
-	"fmt"
 )
 
 type VotingPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
+	SignData                   string
+	ShowSignData               bool
+	TxType                     string
+	TxTypeId                   int64
+	TimeNow                    int64
+	UserId                     int64
+	Alert                      string
+	Lang                       map[string]string
+	CountSignArr               []int
 	PromisedAmountCurrencyList map[int64]map[string]string
-	MaxOtherCurrenciesCount []int
-	RefsNums []int
-	Refs []string
-	Referral map[string]int64
-	MinerNewbie string
-	MaxCurrencyId int64
-	AllMaxPromisedAmount []int64
-	AllPct [391]map[string]string
-	LastTxFormatted string
-	WaitVoting map[int64]string
-	CurrencyList map[int64]string
-	JsPct string
+	MaxOtherCurrenciesCount    []int
+	RefsNums                   []int
+	Refs                       []string
+	Referral                   map[string]int64
+	MinerNewbie                string
+	MaxCurrencyId              int64
+	AllMaxPromisedAmount       []int64
+	AllPct                     [391]map[string]string
+	LastTxFormatted            string
+	WaitVoting                 map[int64]string
+	CurrencyList               map[int64]string
+	JsPct                      string
 }
 
 func (c *Controller) Voting() (string, error) {
 
-	txType := "VotesComplex";
+	txType := "VotesComplex"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -45,8 +46,8 @@ func (c *Controller) Voting() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	minerNewbie := ""
-	if regTime > utils.Time() - c.Variables.Int64["miner_newbie_time"] && c.SessUserId !=1 {
-		minerNewbie = strings.Replace(c.Lang["hold_time_wait2"], "[sec]", utils.TimeLeft(c.Variables.Int64["miner_newbie_time"] - (utils.Time() - regTime), c.Lang), -1)
+	if regTime > utils.Time()-c.Variables.Int64["miner_newbie_time"] && c.SessUserId != 1 {
+		minerNewbie = strings.Replace(c.Lang["hold_time_wait2"], "[sec]", utils.TimeLeft(c.Variables.Int64["miner_newbie_time"]-(utils.Time()-regTime), c.Lang), -1)
 	} else {
 		// валюты
 		rows, err := c.Query(c.FormatQuery(`
@@ -74,8 +75,8 @@ func (c *Controller) Voting() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			// после добавления обещанной суммы должно пройти не менее min_hold_time_promise_amount сек, чтобы за неё можно было голосовать
-			if start_time > utils.Time() - c.Variables.Int64["min_hold_time_promise_amount"] {
-				waitVoting[currency_id] = strings.Replace(c.Lang["hold_time_wait"], "[sec]", utils.TimeLeft(c.Variables.Int64["min_hold_time_promise_amount"] - (utils.Time() - start_time), c.Lang), -1)
+			if start_time > utils.Time()-c.Variables.Int64["min_hold_time_promise_amount"] {
+				waitVoting[currency_id] = strings.Replace(c.Lang["hold_time_wait"], "[sec]", utils.TimeLeft(c.Variables.Int64["min_hold_time_promise_amount"]-(utils.Time()-start_time), c.Lang), -1)
 				continue
 			}
 			// если по данной валюте еще не набралось >1000 майнеров, то за неё голосовать нельзя.
@@ -103,7 +104,7 @@ func (c *Controller) Voting() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			if voteTime > 0 {
-				waitVoting[currency_id] = strings.Replace(c.Lang["wait_voting"], "[sec]", utils.TimeLeft(c.Variables.Int64["limit_votes_complex_period"] - (utils.Time() - voteTime), c.Lang), -1)
+				waitVoting[currency_id] = strings.Replace(c.Lang["wait_voting"], "[sec]", utils.TimeLeft(c.Variables.Int64["limit_votes_complex_period"]-(utils.Time()-voteTime), c.Lang), -1)
 				continue
 			}
 
@@ -151,7 +152,7 @@ func (c *Controller) Voting() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	allMaxPromisedAmount := []int64{1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000,200000,500000,1000000,2000000,5000000,10000000,20000000,50000000,100000000,200000000,500000000,1000000000}
+	allMaxPromisedAmount := []int64{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000}
 
 	allPct := utils.GetPctArray()
 	pctArray := utils.GetPctArray()
@@ -168,34 +169,33 @@ func (c *Controller) Voting() (string, error) {
 	}
 
 	refs := []string{"first", "second", "third"}
-	refsNums := []int{0,5,10,15,20,25,30}
+	refsNums := []int{0, 5, 10, 15, 20, 25, 30}
 
 	TemplateStr, err := makeTemplate("voting", "voting", &VotingPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		Alert:                      c.Alert,
+		Lang:                       c.Lang,
+		CountSignArr:               c.CountSignArr,
+		ShowSignData:               c.ShowSignData,
+		UserId:                     c.SessUserId,
+		TimeNow:                    timeNow,
+		TxType:                     txType,
+		TxTypeId:                   txTypeId,
+		SignData:                   "",
 		PromisedAmountCurrencyList: promisedAmountCurrencyList,
-		MaxOtherCurrenciesCount: []int{0,1,2,3,4},
-		RefsNums: refsNums,
-		Referral: referral,
-		MinerNewbie: minerNewbie,
-		MaxCurrencyId: maxCurrencyId,
-		AllMaxPromisedAmount: allMaxPromisedAmount,
-		AllPct: allPct,
-		LastTxFormatted: lastTxFormatted,
-		WaitVoting: waitVoting,
-		CurrencyList: c.CurrencyList,
-		JsPct: jsPct,
-		Refs: refs})
+		MaxOtherCurrenciesCount:    []int{0, 1, 2, 3, 4},
+		RefsNums:                   refsNums,
+		Referral:                   referral,
+		MinerNewbie:                minerNewbie,
+		MaxCurrencyId:              maxCurrencyId,
+		AllMaxPromisedAmount:       allMaxPromisedAmount,
+		AllPct:                     allPct,
+		LastTxFormatted:            lastTxFormatted,
+		WaitVoting:                 waitVoting,
+		CurrencyList:               c.CurrencyList,
+		JsPct:                      jsPct,
+		Refs:                       refs})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

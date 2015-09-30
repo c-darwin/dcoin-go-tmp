@@ -5,7 +5,6 @@ import (
 	"io"
 )
 
-
 func (t *TcpServer) Type1() {
 	log.Debug("dataType: 1")
 	// размер данных
@@ -177,7 +176,7 @@ func (t *TcpServer) Type1() {
 		}
 		// в ответ получаем размер данных, которые нам хочет передать сервер
 		buf := make([]byte, 4)
-		_, err =t.Conn.Read(buf)
+		_, err = t.Conn.Read(buf)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return

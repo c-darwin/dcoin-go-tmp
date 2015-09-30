@@ -6,24 +6,24 @@ import (
 	"strings"
 )
 
-func (p *Parser) AdminUnbanMinersInit() (error) {
+func (p *Parser) AdminUnbanMinersInit() error {
 
-	fields := []map[string]string {{"users_ids":"string"},{"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"users_ids": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) AdminUnbanMinersFront() (error) {
+func (p *Parser) AdminUnbanMinersFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"users_ids":"users_ids"}
+	verifyData := map[string]string{"users_ids": "users_ids"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -31,12 +31,12 @@ func (p *Parser) AdminUnbanMinersFront() (error) {
 
 	// проверим, точно ли были забанены те, кого разбаниваем
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 		num, err := p.Single("SELECT user_id FROM abuses WHERE user_id  =  ?, 'num_rows'", users_ids[i]).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if num==0 {
+		if num == 0 {
 			return p.ErrInfo("no abuses")
 		}
 
@@ -45,13 +45,13 @@ func (p *Parser) AdminUnbanMinersFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if status!="suspended_miner" {
+		if status != "suspended_miner" {
 			return p.ErrInfo("status!=suspended_miner")
 		}
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["users_ids"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -62,10 +62,10 @@ func (p *Parser) AdminUnbanMinersFront() (error) {
 	return nil
 }
 
-func (p *Parser) AdminUnbanMiners() (error) {
+func (p *Parser) AdminUnbanMiners() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 
 		userId := utils.StrToInt64(users_ids[i])
 
@@ -80,7 +80,7 @@ func (p *Parser) AdminUnbanMiners() (error) {
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(userId)
+		myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -111,7 +111,7 @@ func (p *Parser) AdminUnbanMiners() (error) {
 		for rows.Next() {
 			var id, log_id int64
 			var status, status_backup, tdc_amount_update string
-			err = rows.Scan(&id, &status, &status_backup,	&tdc_amount_update, &log_id)
+			err = rows.Scan(&id, &status, &status_backup, &tdc_amount_update, &log_id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -138,10 +138,10 @@ func (p *Parser) AdminUnbanMiners() (error) {
 	return nil
 }
 
-func (p *Parser) AdminUnbanMinersRollback() (error) {
+func (p *Parser) AdminUnbanMinersRollback() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 
 		userId := utils.StrToInt64(users_ids[i])
 
@@ -165,14 +165,14 @@ func (p *Parser) AdminUnbanMinersRollback() (error) {
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, _, myPrefix, _ , err := p.GetMyUserId(userId)
+		myUserId, _, myPrefix, _, err := p.GetMyUserId(userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		if userId == myUserId {
 			// обновим статус в нашей локальной табле.
 			// sms/email не трогаем, т.к. скорее всего данные чуть позже вернутся
-			err = p.ExecSql("UPDATE "+myPrefix+"my_table SET status = 'suspended_miner', miner_id = 0")
+			err = p.ExecSql("UPDATE " + myPrefix + "my_table SET status = 'suspended_miner', miner_id = 0")
 			if err != nil {
 				return p.ErrInfo(err)
 			}

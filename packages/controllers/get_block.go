@@ -1,7 +1,8 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
+	//	"encoding/json"
 )
 
 func (c *Controller) GetBlock() (string, error) {
@@ -24,4 +25,3 @@ func (c *Controller) GetBlock() (string, error) {
 	}
 	return block, nil
 }
-

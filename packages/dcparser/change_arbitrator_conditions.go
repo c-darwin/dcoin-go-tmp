@@ -1,25 +1,24 @@
 package dcparser
 
 import (
-	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
-	"strings"
+	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"strings"
 )
 
-func (p *Parser) ChangeArbitratorConditionsInit() (error) {
+func (p *Parser) ChangeArbitratorConditionsInit() error {
 
-	fields := []map[string]string {{"conditions":"string"}, {"url":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"conditions": "string"}, {"url": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) ChangeArbitratorConditionsFront() (error) {
+func (p *Parser) ChangeArbitratorConditionsFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -72,7 +71,7 @@ func (p *Parser) ChangeArbitratorConditionsFront() (error) {
 			if !utils.CheckInputData(data[4], "pct") || commissionPct > 10 || commissionPct < 0.01 {
 				return fmt.Errorf("incorrect commissionPct")
 			}
-			if maxCommission >0 && minCommission > maxCommission {
+			if maxCommission > 0 && minCommission > maxCommission {
 				return fmt.Errorf("minCommission > maxCommission")
 			}
 			if maxAmount > 0 && minAmount > maxAmount {
@@ -91,21 +90,21 @@ func (p *Parser) ChangeArbitratorConditionsFront() (error) {
 				minusCf = 1
 			}
 		}
-		count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+strings.Join(currencyArray, ",")+")").Int64()
+		count, err := p.Single("SELECT count(id) FROM currency WHERE id IN (" + strings.Join(currencyArray, ",") + ")").Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if count != int64(len(conditions)) - minusCf {
+		if count != int64(len(conditions))-minusCf {
 			return p.ErrInfo("count != int64(len(conditions)) - minusCf")
 		}
 	}
 
-	if !utils.CheckInputData(p.TxMaps.String["url"], "arbitrator_url") && p.TxMaps.String["url"]!="0"  {
+	if !utils.CheckInputData(p.TxMaps.String["url"], "arbitrator_url") && p.TxMaps.String["url"] != "0" {
 		return fmt.Errorf("incorrect url")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["conditions"], p.TxMap["url"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -120,7 +119,7 @@ func (p *Parser) ChangeArbitratorConditionsFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeArbitratorConditions() (error) {
+func (p *Parser) ChangeArbitratorConditions() error {
 
 	logData, err := p.OneRow("SELECT * FROM arbitrator_conditions WHERE user_id  =  ?", p.TxUserID).String()
 	if err != nil {
@@ -143,7 +142,7 @@ func (p *Parser) ChangeArbitratorConditions() (error) {
 		}
 	}
 
-	err = p.selectiveLoggingAndUpd([]string{"url"}, []interface {}{p.TxMaps.String["url"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"url"}, []interface{}{p.TxMaps.String["url"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -151,7 +150,7 @@ func (p *Parser) ChangeArbitratorConditions() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeArbitratorConditionsRollback() (error) {
+func (p *Parser) ChangeArbitratorConditionsRollback() error {
 	err := p.selectiveRollback([]string{"url"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)

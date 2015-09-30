@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
@@ -40,7 +41,7 @@ func (c *Controller) SaveVideo() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		return `{"url":"http://www.youtube.com/embed/`+videoId+`"}`, nil
+		return `{"url":"http://www.youtube.com/embed/` + videoId + `"}`, nil
 	} else {
 		return `{"url":""}`, nil
 	}

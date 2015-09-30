@@ -2,28 +2,28 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) ChangeKeyRequestInit() (error) {
+func (p *Parser) ChangeKeyRequestInit() error {
 
-	fields := []map[string]string {{"to_user_id":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"to_user_id": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) ChangeKeyRequestFront() (error) {
+func (p *Parser) ChangeKeyRequestFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"to_user_id":"bigint"}
+	verifyData := map[string]string{"to_user_id": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -47,7 +47,7 @@ func (p *Parser) ChangeKeyRequestFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -62,13 +62,13 @@ func (p *Parser) ChangeKeyRequestFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeKeyRequest() (error) {
+func (p *Parser) ChangeKeyRequest() error {
 	// change_key_close ставим в 0. чтобы админ через 30 дней мог сменить ключ
-	return p.selectiveLoggingAndUpd([]string{"change_key_time", "change_key_close"}, []interface {}{p.BlockData.Time, 0}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])})
+	return p.selectiveLoggingAndUpd([]string{"change_key_time", "change_key_close"}, []interface{}{p.BlockData.Time, 0}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["to_user_id"])})
 }
 
-func (p *Parser) ChangeKeyRequestRollback() (error) {
-	return p.selectiveRollback([]string{"change_key_time","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["to_user_id"]), false)
+func (p *Parser) ChangeKeyRequestRollback() error {
+	return p.selectiveRollback([]string{"change_key_time", "change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["to_user_id"]), false)
 }
 
 func (p *Parser) ChangeKeyRequestRollbackFront() error {

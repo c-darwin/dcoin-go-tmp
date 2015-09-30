@@ -1,11 +1,12 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type InformationPage struct {
 	AlertMessages []map[string]string
-	Lang map[string]string
+	Lang          map[string]string
 }
 
 func (c *Controller) Information() (string, error) {
@@ -18,7 +19,7 @@ func (c *Controller) Information() (string, error) {
 		show := false
 		if v["currency_list"] != "ALL" {
 			// проверим, есть ли у нас обещнные суммы с такой валютой
-			amounts, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN ("+v["currency_list"]+")").Int64()
+			amounts, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN (" + v["currency_list"] + ")").Int64()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -33,13 +34,11 @@ func (c *Controller) Information() (string, error) {
 		}
 	}
 
-	TemplateStr, err := makeTemplate("information", "information", &InformationPage {
-		Lang: c.Lang,
+	TemplateStr, err := makeTemplate("information", "information", &InformationPage{
+		Lang:          c.Lang,
 		AlertMessages: alertMessages})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

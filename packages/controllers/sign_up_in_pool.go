@@ -1,7 +1,8 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) SignUpInPool() (string, error) {
@@ -16,7 +17,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 
 	var userId int64
 	var codeSign string
-	if c.SessUserId<=0 {
+	if c.SessUserId <= 0 {
 		// запрос пришел с десктопного кошелька юзера
 		codeSign = c.r.FormValue("code_sign")
 		if !utils.CheckInputData(codeSign, "hex_sign") {
@@ -30,9 +31,9 @@ func (c *Controller) SignUpInPool() (string, error) {
 		var hash []byte
 		RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 		if configIni["sign_hash"] == "ip" {
-			hash = utils.Md5(RemoteAddr);
+			hash = utils.Md5(RemoteAddr)
 		} else {
-			hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
+			hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 		}
 		log.Debug("hash %s", hash)
 		forSign, err := c.GetDataAuthorization(hash)
@@ -43,7 +44,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 			return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 		}
 		// проверим подпись
-		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin([]byte(codeSign)), true);
+		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin([]byte(codeSign)), true)
 		if err != nil {
 			return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 		}
@@ -60,11 +61,11 @@ func (c *Controller) SignUpInPool() (string, error) {
 		result, _ := json.Marshal(map[string]string{"error": c.Lang["pool_error"]})
 		return "", errors.New(string(result))
 	}*/
-	email:=c.r.FormValue("email")
+	email := c.r.FormValue("email")
 	if !utils.ValidateEmail(email) {
 		return "", utils.JsonAnswer("Incorrect email", "error").Error()
 	}
-	nodePrivateKey:=c.r.FormValue("node_private_key")
+	nodePrivateKey := c.r.FormValue("node_private_key")
 	if !utils.CheckInputData(nodePrivateKey, "private_key") {
 		return "", utils.JsonAnswer("Incorrect private_key", "error").Error()
 	}
@@ -104,7 +105,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 	schema_.PrefixUserId = int(userId)
 	schema_.GetSchema()
 
-	prefix := utils.Int64ToStr(userId)+"_"
+	prefix := utils.Int64ToStr(userId) + "_"
 	err = c.ExecSql("INSERT INTO "+prefix+"my_table ( user_id, email ) VALUES ( ?, ? )", userId, email)
 	if err != nil {
 		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()

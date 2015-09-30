@@ -2,30 +2,29 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 //  продавец меняет % и кол-во дней для новых сделок
-func (p *Parser) ChangeSellerHoldBackInit() (error) {
+func (p *Parser) ChangeSellerHoldBackInit() error {
 
-	fields := []map[string]string {{"arbitration_days_refund":"int64"}, {"hold_back_pct":"money"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"arbitration_days_refund": "int64"}, {"hold_back_pct": "money"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) ChangeSellerHoldBackFront() (error) {
+func (p *Parser) ChangeSellerHoldBackFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"arbitration_days_refund":"smallint", "hold_back_pct":"pct"}
+	verifyData := map[string]string{"arbitration_days_refund": "smallint", "hold_back_pct": "pct"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -36,7 +35,7 @@ func (p *Parser) ChangeSellerHoldBackFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["arbitration_days_refund"], p.TxMap["hold_back_pct"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -51,12 +50,12 @@ func (p *Parser) ChangeSellerHoldBackFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeSellerHoldBack() (error) {
-	return p.selectiveLoggingAndUpd([]string{"arbitration_days_refund", "seller_hold_back_pct"}, []interface {}{p.TxMaps.Int64["arbitration_days_refund"], p.TxMaps.Money["hold_back_pct"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+func (p *Parser) ChangeSellerHoldBack() error {
+	return p.selectiveLoggingAndUpd([]string{"arbitration_days_refund", "seller_hold_back_pct"}, []interface{}{p.TxMaps.Int64["arbitration_days_refund"], p.TxMaps.Money["hold_back_pct"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
-func (p *Parser) ChangeSellerHoldBackRollback() (error) {
-	return p.selectiveRollback([]string{"arbitration_days_refund","seller_hold_back_pct"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+func (p *Parser) ChangeSellerHoldBackRollback() error {
+	return p.selectiveRollback([]string{"arbitration_days_refund", "seller_hold_back_pct"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 }
 
 func (p *Parser) ChangeSellerHoldBackRollbackFront() error {

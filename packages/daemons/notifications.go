@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"github.com/c-darwin/dcoin-go-tmp/packages/sendnotif"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/sendnotif"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math"
 )
 
@@ -30,11 +30,10 @@ func Notifications() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 
 		//sendnotif.SendMobileNotification("11111111", "222222222222222222")
-
 
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -74,12 +73,12 @@ func Notifications() {
 			d.PrintSleep(err, 1)
 			continue BEGIN
 		}*/
-		myBlockId, err:= d.GetMyBlockId()
+		myBlockId, err := d.GetMyBlockId()
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
-		blockId, err:= d.GetBlockId()
+		blockId, err := d.GetBlockId()
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue BEGIN
@@ -89,12 +88,12 @@ func Notifications() {
 			continue BEGIN
 		}
 		if len(myUsersIds) > 0 {
-			for i:=0; i < len(myUsersIds); i++ {
+			for i := 0; i < len(myUsersIds); i++ {
 				myPrefix := ""
 				if community {
-					myPrefix = utils.Int64ToStr(myUsersIds[i])+"_";
+					myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 				}
-				myData, err := d.OneRow("SELECT * FROM "+myPrefix+"my_table").String()
+				myData, err := d.OneRow("SELECT * FROM " + myPrefix + "my_table").String()
 				if err != nil {
 					d.PrintSleep(err, 1)
 					continue BEGIN
@@ -161,10 +160,10 @@ func Notifications() {
 					}
 				}
 			case "incoming_cash_requests":
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
 					data, err := d.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", myPrefix, userId).String()
@@ -173,7 +172,7 @@ func Notifications() {
 						continue BEGIN
 					}
 					if len(data) > 0 {
-						text := `You"ve got the request for `+data["amount"]+` `+currencyList[utils.StrToInt64(data["currencyId"])]+`. It has to be repaid within the next 48 hours.`
+						text := `You"ve got the request for ` + data["amount"] + ` ` + currencyList[utils.StrToInt64(data["currencyId"])] + `. It has to be repaid within the next 48 hours.`
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -197,19 +196,19 @@ func Notifications() {
 				}
 			case "change_in_status":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					status, err := d.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_status = 0").String()
+					status, err := d.Single("SELECT status FROM " + myPrefix + "my_table WHERE notification_status = 0").String()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(status) > 0 {
-						text := `New status: `+status
+						text := `New status: ` + status
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -224,19 +223,19 @@ func Notifications() {
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_status = 1")
+						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_status = 1")
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
 				}
-			case "dc_came_from" :
+			case "dc_came_from":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
 					// откатываем наши блоки до начала вилки
@@ -249,7 +248,7 @@ func Notifications() {
 							FROM `+myPrefix+`my_dc_transactions
 							WHERE to_user_id = ? AND
 									 	notification = 0 AND
-									 	status = 'approved'` ,- 1, userId)
+									 	status = 'approved'`, -1, userId)
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
@@ -259,7 +258,7 @@ func Notifications() {
 						if data["comment_status"] == "decrypted" {
 							comment = data["comment"]
 						}
-						text := `You've got `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]+` `+comment
+						text := `You've got ` + data["amount"] + ` D` + currencyList[utils.StrToInt64(data["currency_id"])] + ` ` + comment
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -281,12 +280,12 @@ func Notifications() {
 						}
 					}
 				}
-			case "dc_sent" :
+			case "dc_sent":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
 					// откатываем наши блоки до начала вилки
@@ -304,7 +303,7 @@ func Notifications() {
 					}
 					for _, data := range myDcTransactions {
 
-						text := `Debiting `+data["amount"]+` D`+currencyList[utils.StrToInt64(data["currency_id"])]
+						text := `Debiting ` + data["amount"] + ` D` + currencyList[utils.StrToInt64(data["currency_id"])]
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -326,15 +325,15 @@ func Notifications() {
 						}
 					}
 				}
-			case "update_primary_key" :
+			case "update_primary_key":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					data, err := d.OneRow("SELECT id FROM "+myPrefix+"my_keys WHERE notification = 0 AND status = 'approved'").String()
+					data, err := d.OneRow("SELECT id FROM " + myPrefix + "my_keys WHERE notification = 0 AND status = 'approved'").String()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
@@ -364,19 +363,19 @@ func Notifications() {
 				}
 			case "update_email":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					myNewEmail, err := d.Single("SELECT status FROM "+myPrefix+"my_table WHERE notification_email  =  0").String()
+					myNewEmail, err := d.Single("SELECT status FROM " + myPrefix + "my_table WHERE notification_email  =  0").String()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(myNewEmail) > 0 {
-						text := `New email: `+myNewEmail
+						text := `New email: ` + myNewEmail
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -391,28 +390,28 @@ func Notifications() {
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_email = 1")
+						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_email = 1")
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
 						}
 					}
 				}
-			case "update_sms_request" :
+			case "update_sms_request":
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					smsHttpGetRequest, err := d.Single("SELECT sms_http_get_request FROM "+myPrefix+"my_table WHERE notification_sms_http_get_request  =  0").String()
+					smsHttpGetRequest, err := d.Single("SELECT sms_http_get_request FROM " + myPrefix + "my_table WHERE notification_sms_http_get_request  =  0").String()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					if len(smsHttpGetRequest) > 0 {
-						text := `New sms_http_get_request `+smsHttpGetRequest
+						text := `New sms_http_get_request ` + smsHttpGetRequest
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -427,7 +426,7 @@ func Notifications() {
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = d.ExecSql("UPDATE "+myPrefix+"my_table SET notification_sms_http_get_request = 1")
+						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_sms_http_get_request = 1")
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
@@ -451,7 +450,7 @@ func Notifications() {
 				pctUpd := false
 				for _, data := range myDcTransactions {
 					pctUpd = true
-					text += fmt.Sprintf("New pct %v! miner: %v %/block, user: %v %/block", currencyList[utils.StrToInt64(data["currency_id"])], ((math.Pow(1+utils.StrToFloat64(data["miner"]), 120)-1)*100), ((math.Pow(1+utils.StrToFloat64(data["user"]), 120)-1)*100))
+					text += fmt.Sprintf("New pct %v! miner: %v %/block, user: %v %/block", currencyList[utils.StrToInt64(data["currency_id"])], ((math.Pow(1+utils.StrToFloat64(data["miner"]), 120) - 1) * 100), ((math.Pow(1+utils.StrToFloat64(data["user"]), 120) - 1) * 100))
 				}
 				if pctUpd {
 					err = d.ExecSql("UPDATE pct SET notification = 1 WHERE notification = 0")
@@ -491,13 +490,13 @@ func Notifications() {
 				}
 			case "voting_time": // Прошло 2 недели с момента Вашего голосования за %
 
-				for i:=0; i<len(myUsersIds); i++ {
+				for i := 0; i < len(myUsersIds); i++ {
 					myPrefix := ""
 					if community {
-						myPrefix = utils.Int64ToStr(myUsersIds[i])+"_"
+						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					lastVoting, err := d.Single("SELECT last_voting FROM "+myPrefix+"my_complex_votes WHERE notification  =  0").Int64()
+					lastVoting, err := d.Single("SELECT last_voting FROM " + myPrefix + "my_complex_votes WHERE notification  =  0").Int64()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
@@ -518,7 +517,7 @@ func Notifications() {
 						if notificationsArray[name][userId]["sms"] == "1" {
 							utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], text)
 						}
-						err = d.ExecSql("UPDATE "+myPrefix+"my_complex_votes SET notification = 1")
+						err = d.ExecSql("UPDATE " + myPrefix + "my_complex_votes SET notification = 1")
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
@@ -546,13 +545,13 @@ func Notifications() {
 				}
 
 				// в пуле это лишняя инфа
-				if community{
+				if community {
 					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				if len(newVersion) > 0 {
 					for userId, emailSms := range notificationInfo {
-						text := "New version: "+newVersion
+						text := "New version: " + newVersion
 
 						if notificationsArray[name][userId]["mobile"] == "1" {
 							sendnotif.SendMobileNotification(subj, text)
@@ -589,8 +588,8 @@ func Notifications() {
 					} else {
 						adminUserId = my_table["user_id"]
 					}
-					emailSms := notificationInfo[adminUserId];
-					myData := userEmailSmsData[adminUserId];
+					emailSms := notificationInfo[adminUserId]
+					myData := userEmailSmsData[adminUserId]
 					if len(myData) > 0 {
 						networkTime, err := utils.GetNetworkTime()
 						if err != nil {
@@ -600,7 +599,7 @@ func Notifications() {
 						diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
 						text := ""
 						if diff > 5 {
-							text = "Divergence time "+utils.Int64ToStr(diff)+" sec"
+							text = "Divergence time " + utils.Int64ToStr(diff) + " sec"
 						}
 
 						if emailSms["mobile"] == "1" {
@@ -620,7 +619,7 @@ func Notifications() {
 				}
 			}
 		}
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

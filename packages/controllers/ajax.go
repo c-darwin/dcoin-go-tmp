@@ -1,9 +1,10 @@
 package controllers
+
 import (
+	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"regexp"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
 )
 
 func Ajax(w http.ResponseWriter, r *http.Request) {
@@ -29,8 +30,8 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	c.w = w
 	c.sess = sess
 	c.SessRestricted = sessRestricted
-	dbInit := false;
-	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
+	dbInit := false
+	if len(configIni["db_user"]) > 0 || configIni["db_type"] == "sqlite" {
 		dbInit = true
 	}
 
@@ -63,7 +64,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 				if c.SessUserId == poolAdminUserId {
 					c.PoolAdmin = true
 				}
-				c.MyPrefix = utils.Int64ToStr(sessUserId)+"_";
+				c.MyPrefix = utils.Int64ToStr(sessUserId) + "_"
 			} else {
 				c.PoolAdmin = true
 			}
@@ -74,20 +75,20 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	c.dbInit = dbInit
-	parameters_ := make(map[string]interface {})
+	parameters_ := make(map[string]interface{})
 	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
 		log.Error("%v", err)
 	}
-	log.Debug("parameters_=",parameters_)
+	log.Debug("parameters_=", parameters_)
 	parameters := make(map[string]string)
 	for k, v := range parameters_ {
 		parameters[k] = utils.InterfaceToStr(v)
 	}
 	c.Parameters = parameters
-	log.Debug("parameters=",parameters)
+	log.Debug("parameters=", parameters)
 
-	lang:=GetLang(w, r, parameters)
+	lang := GetLang(w, r, parameters)
 	log.Debug("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
 	c.LangInt = int64(lang)
@@ -107,18 +108,18 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	controllerName := r.FormValue("controllerName")
-	log.Debug("controllerName=",controllerName)
+	log.Debug("controllerName=", controllerName)
 
 	html := ""
 
 	//w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	if ok, _ := regexp.MatchString(`^(?i)SendToPool|CheckSetupPassword|getBlock|AcceptNewKeyStatus|availableKeys|ClearDbLite|UploadVideo|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
+	if ok, _ := regexp.MatchString(`^(?i)SaveToken|SendToPool|CheckSetupPassword|getBlock|AcceptNewKeyStatus|availableKeys|ClearDbLite|UploadVideo|DcoinKey|SynchronizationBlockchain|PoolAddUsers|SaveQueue|AlertMessage|Menu|SaveHost|GetMinerDataMap|SignUpInPool|Check_sign|PoolDataBaseDump|GetSellerData|GenerateNewPrimaryKey|GenerateNewNodeKey|CheckNode|SignLogin|SaveNotifications|ProgressBar|MinersMap|GetMinerData|EncryptComment|Logout|SaveVideo|SaveShopData|SaveRaceCountry|MyNoticeData|HolidaysList|ClearVideo|CheckCfCurrency|WalletsListCfProject|SendTestEmail|SendSms|SaveUserCoords|SaveGeolocation|SaveEmailSms|Profile|DeleteVideo|CropPhoto$`, controllerName); !ok {
 		html = "Access denied 0"
 	} else {
-		pages:="CheckSetupPassword|AcceptNewKeyStatus|availableKeys|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu|SignUpInPool|SignLogin"
+		pages := "CheckSetupPassword|AcceptNewKeyStatus|availableKeys|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SynchronizationBlockchain|UpdatingBlockchain|Menu|SignUpInPool|SignLogin"
 		if utils.IOS() { // На IOS можно сгенерить ключ без сессии
-			pages+="|DcoinKey"
+			pages += "|DcoinKey"
 		}
 		if ok, _ := regexp.MatchString(`^(?i)`+pages+`$`, controllerName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"

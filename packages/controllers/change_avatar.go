@@ -1,27 +1,28 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 )
 
 type ChangeAvatarPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
+	SignData        string
+	ShowSignData    bool
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	UserId          int64
+	Alert           string
+	Lang            map[string]string
+	CountSignArr    []int
 	LastTxFormatted string
-	Avatar string
-	Name string
+	Avatar          string
+	Name            string
 }
 
 func (c *Controller) ChangeAvatar() (string, error) {
 
-	txType := "UserAvatar";
+	txType := "UserAvatar"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -39,21 +40,20 @@ func (c *Controller) ChangeAvatar() (string, error) {
 	name := data["name"]
 
 	TemplateStr, err := makeTemplate("change_avatar", "changeAvatar", &ChangeAvatarPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		UserId:          c.SessUserId,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		SignData:        "",
 		LastTxFormatted: lastTxFormatted,
-		Avatar: avatar,
-		Name: name})
+		Avatar:          avatar,
+		Name:            name})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

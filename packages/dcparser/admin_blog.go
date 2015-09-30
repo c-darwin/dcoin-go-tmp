@@ -5,17 +5,17 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) AdminBlogInit() (error) {
+func (p *Parser) AdminBlogInit() error {
 
-	fields := []map[string]string {{"lng":"string"}, {"title":"string"}, {"message":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"lng": "string"}, {"title": "string"}, {"message": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) AdminBlogFront() (error) {
+func (p *Parser) AdminBlogFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
@@ -30,7 +30,7 @@ func (p *Parser) AdminBlogFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["lng"], p.TxMap["title"], p.TxMap["message"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -41,7 +41,7 @@ func (p *Parser) AdminBlogFront() (error) {
 	return nil
 }
 
-func (p *Parser) AdminBlog() (error) {
+func (p *Parser) AdminBlog() error {
 	err := p.ExecSql("INSERT INTO admin_blog ( time, lng, title, message ) VALUES ( ?, ?, ?, ? )", p.BlockData.Time, p.TxMaps.String["lng"], p.TxMaps.String["title"], p.TxMaps.String["message"])
 	if err != nil {
 		return p.ErrInfo(err)
@@ -49,7 +49,7 @@ func (p *Parser) AdminBlog() (error) {
 	return nil
 }
 
-func (p *Parser) AdminBlogRollback() (error) {
+func (p *Parser) AdminBlogRollback() error {
 	err := p.ExecSql("DELETE FROM admin_blog WHERE time = ? AND lng = ? AND title = ? AND message = ?", p.BlockData.Time, p.TxMaps.String["lng"], p.TxMaps.String["title"], p.TxMaps.String["message"])
 	if err != nil {
 		return p.ErrInfo(err)

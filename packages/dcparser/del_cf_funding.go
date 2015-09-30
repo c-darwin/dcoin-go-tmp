@@ -1,29 +1,29 @@
 package dcparser
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"database/sql"
 )
 
-func (p *Parser) DelCfFundingInit() (error) {
+func (p *Parser) DelCfFundingInit() error {
 
-	fields := []map[string]string {{"funding_id":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"funding_id": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) DelCfFundingFront() (error) {
+func (p *Parser) DelCfFundingFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"funding_id":"int"}
+	verifyData := map[string]string{"funding_id": "int"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -34,7 +34,7 @@ func (p *Parser) DelCfFundingFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if projectId==0 {
+	if projectId == 0 {
 		return p.ErrInfo("incorrect funding_id")
 	}
 
@@ -43,12 +43,12 @@ func (p *Parser) DelCfFundingFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if projectActive==0 {
+	if projectActive == 0 {
 		return p.ErrInfo("incorrect projectId")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["funding_id"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -59,26 +59,26 @@ func (p *Parser) DelCfFundingFront() (error) {
 	return nil
 }
 
-func (p *Parser) DelCfFunding() (error) {
+func (p *Parser) DelCfFunding() error {
 
 	// нужно учесть набежавшие %
 	var amount float64
 	var time, project_id, currency_id int64
 	err := p.QueryRow(p.FormatQuery("SELECT amount, time, project_id, currency_id FROM cf_funding WHERE id  =  ?"), p.TxMaps.Int64["funding_id"]).Scan(&amount, &time, &project_id, &currency_id)
-	if err != nil && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
-	pointsStatus := []map[int64]string {{0:"user"}}
-	pct, err :=p.GetPct()
+	pointsStatus := []map[int64]string{{0: "user"}}
+	pct, err := p.GetPct()
 	// то, что выросло за время сбора
-	profit, err := p.calcProfit_(amount, time, p.BlockData.Time, pct[currency_id], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0);
+	profit, err := p.calcProfit_(amount, time, p.BlockData.Time, pct[currency_id], pointsStatus, [][]int64{}, []map[int64]string{}, 0, 0)
 	if err != nil {
-		return  p.ErrInfo(err)
+		return p.ErrInfo(err)
 	}
 	sumAndPct := amount + profit
 	err = p.updateRecipientWallet(p.TxUserID, currency_id, sumAndPct, "cf_project_refund", project_id, "cf_project_refund", "decrypted", true)
-	if err!= nil {
+	if err != nil {
 		return p.ErrInfo(err)
 	}
 	err = p.ExecSql("UPDATE cf_funding SET del_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["funding_id"])
@@ -89,7 +89,7 @@ func (p *Parser) DelCfFunding() (error) {
 	return nil
 }
 
-func (p *Parser) DelCfFundingRollback() (error) {
+func (p *Parser) DelCfFundingRollback() error {
 	err := p.ExecSql("UPDATE cf_funding SET del_block_id = 0 WHERE id = ?", p.TxMaps.Int64["funding_id"])
 	if err != nil {
 		return p.ErrInfo(err)

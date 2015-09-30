@@ -5,25 +5,24 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) DelCreditInit() (error) {
+func (p *Parser) DelCreditInit() error {
 
-	fields := []map[string]string {{"credit_id":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"credit_id": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) DelCreditFront() (error) {
+func (p *Parser) DelCreditFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"credit_id":"bigint"}
+	verifyData := map[string]string{"credit_id": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -34,12 +33,12 @@ func (p *Parser) DelCreditFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if id==0 {
+	if id == 0 {
 		return p.ErrInfo("not a creditor")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["credit_id"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -50,11 +49,11 @@ func (p *Parser) DelCreditFront() (error) {
 	return nil
 }
 
-func (p *Parser) DelCredit() (error) {
+func (p *Parser) DelCredit() error {
 	return p.ExecSql("UPDATE credits SET del_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["credit_id"])
 }
 
-func (p *Parser) DelCreditRollback() (error) {
+func (p *Parser) DelCreditRollback() error {
 	return p.ExecSql("UPDATE credits SET del_block_id = 0 WHERE id = ?", p.TxMaps.Int64["credit_id"])
 }
 

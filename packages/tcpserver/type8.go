@@ -7,8 +7,8 @@ import (
 
 func (t *TcpServer) Type8() {
 	/* делаем запрос на указанную ноду, чтобы получить оттуда тело блока
-		 * запрос шлет демон blocksCollection и queueParserBlocks через p.GetBlocks()
-		 */
+	 * запрос шлет демон blocksCollection и queueParserBlocks через p.GetBlocks()
+	 */
 	// размер данных
 	buf := make([]byte, 4)
 	_, err := t.Conn.Read(buf)
@@ -53,7 +53,7 @@ func (t *TcpServer) Type8() {
 		}
 		// в ответ получаем размер данных, которые нам хочет передать сервер
 		buf := make([]byte, 4)
-		_, err =conn2.Read(buf)
+		_, err = conn2.Read(buf)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			return

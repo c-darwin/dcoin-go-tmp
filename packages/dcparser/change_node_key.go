@@ -8,7 +8,7 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	//"bytes"
@@ -17,10 +17,10 @@ import (
 	//"database/sql"
 )
 
-func (p *Parser) ChangeNodeKeyInit() (error) {
+func (p *Parser) ChangeNodeKeyInit() error {
 
-	fields := []map[string]string {{"new_node_public_key":"bytes"},{"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"new_node_public_key": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -29,7 +29,7 @@ func (p *Parser) ChangeNodeKeyInit() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeNodeKeyFront() (error) {
+func (p *Parser) ChangeNodeKeyFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -42,7 +42,7 @@ func (p *Parser) ChangeNodeKeyFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"new_node_public_key":"public_key"}
+	verifyData := map[string]string{"new_node_public_key": "public_key"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -54,10 +54,10 @@ func (p *Parser) ChangeNodeKeyFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_node_public_key"])
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil || !CheckSignResult {
 		forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_node_public_key"])
-		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 		if err != nil || !CheckSignResult {
 			return p.ErrInfo("incorrect sign")
 		}
@@ -71,7 +71,7 @@ func (p *Parser) ChangeNodeKeyFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeNodeKey() (error) {
+func (p *Parser) ChangeNodeKey() error {
 
 	// Всегда есть, что логировать, т.к. это обновление ключа
 	logData, err := p.OneRow("SELECT * FROM miners_data WHERE user_id  =  ?", p.TxUserID).String()
@@ -90,7 +90,7 @@ func (p *Parser) ChangeNodeKey() (error) {
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (p *Parser) ChangeNodeKey() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeNodeKeyRollback() (error) {
+func (p *Parser) ChangeNodeKeyRollback() error {
 	// получим log_id, по которому можно найти данные, которые были до этого
 	// $log_id всегда больше нуля, т.к. это откат обновления ключа
 
@@ -135,11 +135,11 @@ func (p *Parser) ChangeNodeKeyRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
-	if p.TxUserID == myUserId  {
+	if p.TxUserID == myUserId {
 		// обновим статус в нашей локальной табле.
 		err = p.ExecSql("UPDATE "+myPrefix+"my_node_keys SET status = 'my_pending', block_id = 0, time = 0 WHERE hex(public_key) = ? AND status = 'approved' AND block_id = ?", p.TxMaps.Bytes["new_node_public_key"], p.BlockData.BlockId)
 		if err != nil {

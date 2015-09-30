@@ -2,36 +2,35 @@ package dcparser
 
 import (
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
-func (p *Parser) NewCfProjectInit() (error) {
+func (p *Parser) NewCfProjectInit() error {
 
-	fields := []map[string]string {{"currency_id":"int64"}, {"amount":"int64"}, {"end_time":"int64"}, {"latitude":"float64"}, {"longitude":"float64"}, {"category_id":"int64"}, {"project_currency_name":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"currency_id": "int64"}, {"amount": "int64"}, {"end_time": "int64"}, {"latitude": "float64"}, {"longitude": "float64"}, {"category_id": "int64"}, {"project_currency_name": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) NewCfProjectFront() (error) {
+func (p *Parser) NewCfProjectFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"currency_id":"int", "amount":"int", "end_time":"int", "latitude":"coordinate", "longitude":"coordinate", "category_id":"smallint", "project_currency_name":"cf_currency_name"}
+	verifyData := map[string]string{"currency_id": "int", "amount": "int", "end_time": "int", "latitude": "coordinate", "longitude": "coordinate", "category_id": "smallint", "project_currency_name": "cf_currency_name"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	if p.BlockData!=nil && p.BlockData.BlockId>=168904 {
+	if p.BlockData != nil && p.BlockData.BlockId >= 168904 {
 		// является ли данный юзер майнером
 		err = p.checkMiner(p.TxUserID)
 		if err != nil {
@@ -39,7 +38,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 		}
 	}
 	var time1, time2 int64
-	if p.BlockData!=nil {
+	if p.BlockData != nil {
 		time1 = p.BlockData.Time
 		time2 = time1
 	} else { // голая тр-ия с запасом 30 сек на время генерации блока. Т.к. при попадинии в блок время будет уже другим
@@ -48,7 +47,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 	}
 
 	// дата завершения проекта не может быть более чем на 91 дней и менее чем на 6 дней вперед от текущего времени
-	if p.TxMaps.Int64["end_time"] - time1 > 3600*24*91 || p.TxMaps.Int64["end_time"] - time2 < 3600*24*6 {
+	if p.TxMaps.Int64["end_time"]-time1 > 3600*24*91 || p.TxMaps.Int64["end_time"]-time2 < 3600*24*6 {
 		return p.ErrInfo("incorrect end_time")
 	}
 	if ok, err := p.CheckCurrency(p.TxMaps.Int64["currency_id"]); !ok {
@@ -78,7 +77,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["end_time"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["category_id"], p.TxMap["project_currency_name"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -93,7 +92,7 @@ func (p *Parser) NewCfProjectFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewCfProject() (error) {
+func (p *Parser) NewCfProject() error {
 
 	err := p.ExecSql("INSERT INTO cf_projects ( user_id, currency_id, amount, project_currency_name, start_time, end_time, latitude, longitude, category_id, block_id ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["amount"], p.TxMaps.String["project_currency_name"], p.BlockData.Time, p.TxMaps.Int64["end_time"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["category_id"], p.BlockData.BlockId)
 	if err != nil {
@@ -103,7 +102,7 @@ func (p *Parser) NewCfProject() (error) {
 	return nil
 }
 
-func (p *Parser) NewCfProjectRollback() (error) {
+func (p *Parser) NewCfProjectRollback() error {
 	err := p.ExecSql("DELETE FROM cf_projects WHERE block_id = ? AND user_id = ?", p.BlockData.BlockId, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)

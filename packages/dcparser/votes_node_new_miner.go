@@ -3,28 +3,27 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
+	//	"encoding/json"
 	//"regexp"
 	//"math"
-//	"strings"
+	//	"strings"
 	"os"
-
 )
 
 // голосования нодов, которые должны сохранить фото у себя.
 // если смог загрузить фото к себе и хэш сошелся - 1, если нет - 0
 // эту транзакцию генерит нод со своим ключом
 
-func (p *Parser) VotesNodeNewMinerInit() (error) {
-	fields := []map[string]string {{"vote_id":"int64"},{"result":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) VotesNodeNewMinerInit() error {
+	fields := []map[string]string{{"vote_id": "int64"}, {"result": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) VotesNodeNewMinerFront() (error) {
+func (p *Parser) VotesNodeNewMinerFront() error {
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -40,7 +39,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	}
 	// получим public_key
 	p.nodePublicKey, err = p.GetNodePublicKey(p.TxUserID)
-	if len(p.nodePublicKey)==0 {
+	if len(p.nodePublicKey) == 0 {
 		return utils.ErrInfoFmt("incorrect user_id len(nodePublicKey) = 0")
 	}
 
@@ -49,7 +48,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["vote_id"], p.TxMap["result"])
-	CheckSignResult, err := utils.CheckSign([][]byte{p.nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{p.nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -84,8 +83,7 @@ func (p *Parser) VotesNodeNewMinerFront() (error) {
 	return nil
 }
 
-
-func (p *Parser) VotesNodeNewMiner() (error) {
+func (p *Parser) VotesNodeNewMiner() error {
 
 	var votes [2]int64
 	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
@@ -107,7 +105,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	votes[p.TxMaps.Int64["result"]]++
 
 	// обновляем голоса. При откате просто вычитаем
-	err = p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = ? WHERE id = ?", votes[p.TxMaps.Int64["result"]], p.TxMaps.Int64["vote_id"] )
+	err = p.ExecSql("UPDATE votes_miners SET votes_"+utils.Int64ToStr(p.TxMaps.Int64["result"])+" = ? WHERE id = ?", votes[p.TxMaps.Int64["result"]], p.TxMaps.Int64["vote_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -119,7 +117,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	}
 
 	// ID майнеров, у которых сохраняются фотки
-	minersIds := utils.GetMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
+	minersIds := utils.GetMinersKeepers(minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 
 	log.Debug("minersIds", minersIds, len(minersIds))
 	// данные для проверки окончания голосования
@@ -145,7 +143,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 			return p.ErrInfo(err)
 		}
 	}
-	if  p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
+	if p.minersCheckVotes1(minerData) || p.minersCheckMyMinerIdAndVotes0(minerData) {
 		// отметим del_block_id всем, кто голосовал за данного юзера,
 		// чтобы через N блоков по крону удалить бесполезные записи
 		err = p.ExecSql("UPDATE log_votes SET del_block_id = ? WHERE voting_id = ? AND type = 'votes_miners'", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])
@@ -167,7 +165,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-	} else if (p.minersCheckMyMinerIdAndVotes0(minerData)) {
+	} else if p.minersCheckMyMinerIdAndVotes0(minerData) {
 		// если набрано >5 голосов "против" и мы среди тех X майнеров, которые копировали фото к себе
 		// либо если набранное кол-во голосов = кол-ву майнеров (актуально в самом начале запуска проекта)
 		facePath := fmt.Sprintf(*utils.Dir+"/public/face_%v.jpg", votesData["user_id"])
@@ -191,7 +189,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			err =os.Remove(facePath)
+			err = os.Remove(facePath)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -199,7 +197,7 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			err =os.Remove(profilePath)
+			err = os.Remove(profilePath)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -231,18 +229,16 @@ func (p *Parser) VotesNodeNewMiner() (error) {
 	return nil
 }
 
-
 type MinerData struct {
-	adminUiserId int64
-	myMinersIds map[int]int
-	minersIds map[int]int
-	votes0 int64
-	votes1 int64
+	adminUiserId     int64
+	myMinersIds      map[int]int
+	minersIds        map[int]int
+	votes0           int64
+	votes1           int64
 	minMinersKeepers int64
 }
 
-func (p *Parser) VotesNodeNewMinerRollback() (error) {
-
+func (p *Parser) VotesNodeNewMinerRollback() error {
 
 	votesData, err := p.OneRow("SELECT user_id, votes_start_time, votes_0, votes_1 FROM votes_miners WHERE id = ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
@@ -275,7 +271,7 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	minersIds := utils.GetMinersKeepers( minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
+	minersIds := utils.GetMinersKeepers(minersData["photo_block_id"], minersData["photo_max_miner_id"], minersData["miners_keepers"], true)
 	minerData.myMinersIds, err = p.getMyMinersIds()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -315,7 +311,7 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-	} else if (p.minersCheckMyMinerIdAndVotes0(minerData)) {
+	} else if p.minersCheckMyMinerIdAndVotes0(minerData) {
 		// если фото плохое и мы среди тех 10 майнеров, которые копировали (или нет) фото к себе,
 		// а затем переместили фото в корзину
 
@@ -326,7 +322,7 @@ func (p *Parser) VotesNodeNewMinerRollback() (error) {
 		}
 
 		// перемещаем фото из корзины, если есть, что перемещать
-		if len(data["profile_file_name"])>0 && len(data["face_file_name"])>0 {
+		if len(data["profile_file_name"]) > 0 && len(data["face_file_name"]) > 0 {
 			utils.CopyFileContents("recycle_bin/"+data["face_file_name"], *utils.Dir+"/public/face_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
 			utils.CopyFileContents("recycle_bin/"+data["profile_file_name"], *utils.Dir+"/public/profile_"+utils.Int64ToStr(votesData["user_id"])+".jpg")
 		}

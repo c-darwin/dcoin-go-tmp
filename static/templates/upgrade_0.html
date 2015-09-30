@@ -3,13 +3,14 @@
 <script>
 	$('#next').bind('click', function () {
 		var sel = $('input:radio[name=race]:checked').val();
-		if(typeof sel == "undefined") {
+		var country = $("#country option:selected").val();
+		if(typeof sel == "undefined" || typeof country == "undefined") {
 			$('#alert').html('<div class="alert alert-danger"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Please select race.</div>')
 		} else {
 			$('#wrapper').spin(false);
 			$.post('ajax?controllerName=saveRaceCountry', {
 						'race': $('input:radio[name=race]:checked').val(),
-						'country': $("#country option:selected").val()
+						'country': country
 					},
 					function (data) {
 						$('#wrapper').spin(false);

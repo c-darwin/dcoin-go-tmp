@@ -7,8 +7,8 @@ import (
 
 func (t *TcpServer) Type9() {
 	/* Делаем запрос на указанную ноду, чтобы получить оттуда номер макс. блока
- * запрос шлет демон blocksCollection
- */
+	 * запрос шлет демон blocksCollection
+	 */
 	// размер данных
 	buf := make([]byte, 4)
 	_, err := t.Conn.Read(buf)

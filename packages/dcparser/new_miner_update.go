@@ -10,18 +10,17 @@ import (
  * чтобы получить новый набор майнеров,
  * которые должны сохранить фото у себя
  */
-func (p *Parser) NewMinerUpdateInit() (error) {
+func (p *Parser) NewMinerUpdateInit() error {
 
-	fields := []map[string]string {{"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) NewMinerUpdateFront() (error) {
+func (p *Parser) NewMinerUpdateFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -29,7 +28,7 @@ func (p *Parser) NewMinerUpdateFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -62,7 +61,7 @@ func (p *Parser) NewMinerUpdateFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewMinerUpdate() (error) {
+func (p *Parser) NewMinerUpdate() error {
 
 	// отменяем голосования по всем предыдущим
 	err := p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE user_id = ? AND type = 'node_voting' AND votes_end = 0", p.BlockData.BlockId, p.TxUserID)
@@ -83,7 +82,7 @@ func (p *Parser) NewMinerUpdate() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.selectiveLoggingAndUpd([]string{"photo_block_id", "photo_max_miner_id"}, []interface {}{p.BlockData.BlockId, maxMinerId}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"photo_block_id", "photo_max_miner_id"}, []interface{}{p.BlockData.BlockId, maxMinerId}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -91,8 +90,8 @@ func (p *Parser) NewMinerUpdate() (error) {
 	return nil
 }
 
-func (p *Parser) NewMinerUpdateRollback() (error) {
-	err := p.selectiveRollback([]string{"photo_block_id","photo_max_miner_id"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+func (p *Parser) NewMinerUpdateRollback() error {
+	err := p.selectiveRollback([]string{"photo_block_id", "photo_max_miner_id"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 
 	// отменяем новое голосование
 	err = p.ExecSql("DELETE FROM votes_miners WHERE type = 'node_voting' AND user_id = ? AND votes_start_time = ?", p.TxUserID, p.BlockData.Time)

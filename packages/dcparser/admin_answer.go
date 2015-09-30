@@ -5,10 +5,10 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) AdminAnswerInit() (error) {
+func (p *Parser) AdminAnswerInit() error {
 
-	fields := []map[string]string {{"to_user_id":"int64"}, {"encrypted_message":"bytes"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"to_user_id": "int64"}, {"encrypted_message": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -17,7 +17,7 @@ func (p *Parser) AdminAnswerInit() (error) {
 	return nil
 }
 
-func (p *Parser) AdminAnswerFront() (error) {
+func (p *Parser) AdminAnswerFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
@@ -27,14 +27,14 @@ func (p *Parser) AdminAnswerFront() (error) {
 	if len(p.TxMaps.Bytes["encrypted_message"]) > 20480 {
 		return p.ErrInfo("len encrypted_message>20480")
 	}
-	verifyData := map[string]string {"to_user_id":"user_id"}
+	verifyData := map[string]string{"to_user_id": "user_id"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"], p.TxMap["encrypted_message"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -45,10 +45,10 @@ func (p *Parser) AdminAnswerFront() (error) {
 	return nil
 }
 
-func (p *Parser) AdminAnswer() (error) {
+func (p *Parser) AdminAnswer() error {
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -74,9 +74,9 @@ func (p *Parser) AdminAnswer() (error) {
 	return nil
 }
 
-func (p *Parser) AdminAnswerRollback() (error) {
+func (p *Parser) AdminAnswerRollback() error {
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

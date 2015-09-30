@@ -5,25 +5,24 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) ChangeGeolocationInit() (error) {
+func (p *Parser) ChangeGeolocationInit() error {
 
-	fields := []map[string]string {{"latitude":"float64"}, {"longitude":"float64"}, {"country":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"latitude": "float64"}, {"longitude": "float64"}, {"country": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) ChangeGeolocationFront() (error) {
+func (p *Parser) ChangeGeolocationFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"latitude":"coordinate", "longitude":"coordinate", "country":"country"}
+	verifyData := map[string]string{"latitude": "coordinate", "longitude": "coordinate", "country": "country"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -42,7 +41,7 @@ func (p *Parser) ChangeGeolocationFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["country"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -57,14 +56,14 @@ func (p *Parser) ChangeGeolocationFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeGeolocation() (error) {
+func (p *Parser) ChangeGeolocation() error {
 
 	// возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateMain(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.selectiveLoggingAndUpd([]string{"latitude", "longitude", "country"}, []interface {}{p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], }, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err = p.selectiveLoggingAndUpd([]string{"latitude", "longitude", "country"}, []interface{}{p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -151,12 +150,12 @@ func (p *Parser) ChangeGeolocation() (error) {
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
-		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET geolocation_status = 'approved'")
+		err = p.ExecSql("UPDATE " + myPrefix + "my_table SET geolocation_status = 'approved'")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -164,7 +163,7 @@ func (p *Parser) ChangeGeolocation() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeGeolocationRollback() (error) {
+func (p *Parser) ChangeGeolocationRollback() error {
 
 	// возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateRollbackMain(p.TxUserID)
@@ -172,7 +171,7 @@ func (p *Parser) ChangeGeolocationRollback() (error) {
 		return p.ErrInfo(err)
 	}
 
-	err = p.selectiveRollback([]string{"latitude","longitude","country"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+	err = p.selectiveRollback([]string{"latitude", "longitude", "country"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -218,12 +217,12 @@ func (p *Parser) ChangeGeolocationRollback() (error) {
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == myUserId {
-		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET geolocation_status = 'my_pending'")
+		err = p.ExecSql("UPDATE " + myPrefix + "my_table SET geolocation_status = 'my_pending'")
 		if err != nil {
 			return p.ErrInfo(err)
 		}

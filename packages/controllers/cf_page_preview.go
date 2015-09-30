@@ -1,60 +1,61 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
+	"encoding/json"
 	"errors"
 	"regexp"
-	"encoding/json"
 	"time"
 )
 
 type CfPagePreviewPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	CfLng map[string]string
-	CurrencyList map[int64]string
-	CfUrl string
-	ShowHeaders bool
-	Page string
-	CfCurrencyName string
-	LangId int64
-	ProjectId int64
-	BlurbImg string
-	HeadImg string
-	DescriptionImg string
-	Picture string
-	VideoType string
-	VideoUrlId string
-	NewsImg string
-	Links [][]string
-	ImgBlank string
-	Project map[string]string
-	ProjectLang map[string]string
-	ProjectFunding float64
-	ProjectCountFunders int64
-	ProjectFunders []map[string]string
-	ProjectComments []map[string]string
-	LangComments map[string]string
+	SignData             string
+	ShowSignData         bool
+	TxType               string
+	TxTypeId             int64
+	TimeNow              int64
+	UserId               int64
+	Alert                string
+	Lang                 map[string]string
+	CountSignArr         []int
+	CfLng                map[string]string
+	CurrencyList         map[int64]string
+	CfUrl                string
+	ShowHeaders          bool
+	Page                 string
+	CfCurrencyName       string
+	LangId               int64
+	ProjectId            int64
+	BlurbImg             string
+	HeadImg              string
+	DescriptionImg       string
+	Picture              string
+	VideoType            string
+	VideoUrlId           string
+	NewsImg              string
+	Links                [][]string
+	ImgBlank             string
+	Project              map[string]string
+	ProjectLang          map[string]string
+	ProjectFunding       float64
+	ProjectCountFunders  int64
+	ProjectFunders       []map[string]string
+	ProjectComments      []map[string]string
+	LangComments         map[string]string
 	ProjectCountComments int64
-	AuthorInfo map[string]string
-	PagesArray []string
-	ConfigCfPs map[string][]string
-	ProjectPs map[string]string
-	Black int64
+	AuthorInfo           map[string]string
+	PagesArray           []string
+	ConfigCfPs           map[string][]string
+	ProjectPs            map[string]string
+	Black                int64
 }
 
 func (c *Controller) CfPagePreview() (string, error) {
 
 	var err error
 
-	txType := "CfComment";
+	txType := "CfComment"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -70,7 +71,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 
 	page := c.Parameters["page"]
 	if len(page) > 0 {
-		if ok, _ := regexp.MatchString(`^(?i)[a-z]{0,10}$`, page); !ok{
+		if ok, _ := regexp.MatchString(`^(?i)[a-z]{0,10}$`, page); !ok {
 			return "", errors.New("incorrect page")
 		}
 	}
@@ -113,7 +114,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 		videoType = data["video_type"]
 		videoUrlId = data["video_url_id"]
 		newsImg = data["news_img"]
-		if len(data["links"]) > 0 && data["links"]!="0" {
+		if len(data["links"]) > 0 && data["links"] != "0" {
 			var links_ [][]interface{}
 			err = json.Unmarshal([]byte(data["links"]), &links_)
 			if err != nil {
@@ -188,18 +189,17 @@ func (c *Controller) CfPagePreview() (string, error) {
 		}
 	}
 
-
 	project, err := c.OneRow("SELECT * FROM cf_projects WHERE id = ?", projectId).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	// сколько дней осталось
-	days := utils.Round( (utils.StrToFloat64(project["end_time"]) - float64(utils.Time())) / 86400, 0)
+	days := utils.Round((utils.StrToFloat64(project["end_time"])-float64(utils.Time()))/86400, 0)
 	if days <= 0 {
 		days = 0
 	}
 	project["days"] = utils.Float64ToStr(days)
-	if project["close_block_id"] !="0" || project["del_block_id"] !="0" {
+	if project["close_block_id"] != "0" || project["del_block_id"] != "0" {
 		project["ended"] = "1"
 	} else {
 		project["ended"] = "0"
@@ -207,7 +207,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 
 	// дата старта
 	t := time.Unix(utils.StrToInt64(project["start_time"]), 0)
-	project["start_date"] =  t.Format(c.TimeFormat)
+	project["start_date"] = t.Format(c.TimeFormat)
 
 	// в какой валюте идет сбор
 	project["currency"] = c.CurrencyList[utils.StrToInt64(project["currency_id"])]
@@ -290,7 +290,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 	}
 	var projectCountComments int64
 	for _, v := range langComments {
-		projectCountComments+=utils.StrToInt64(v)
+		projectCountComments += utils.StrToInt64(v)
 	}
 
 	cfLng, err := c.GetAllCfLng()
@@ -333,49 +333,47 @@ func (c *Controller) CfPagePreview() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("cf_page_preview", "cfPagePreview", &CfPagePreviewPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		CfLng: cfLng,
-		CurrencyList: c.CurrencyList,
-		CfUrl: cfUrl,
-		ShowHeaders: showHeaders,
-		Page: page,
-		CfCurrencyName: cfCurrencyName,
-		LangId: langId,
-		ProjectId: projectId,
-		BlurbImg: blurbImg,
-		HeadImg: headImg,
-		DescriptionImg: descriptionImg,
-		Picture: picture,
-		VideoType: videoType,
-		VideoUrlId: videoUrlId,
-		NewsImg: newsImg,
-		Links: links,
-		ImgBlank: imgBlank,
-		Project: project,
-		ProjectLang: projectLang,
-		ProjectFunding: projectFunding,
-		ProjectCountFunders: projectCountFunders,
-		ProjectFunders: projectFunders,
-		ProjectComments: projectComments,
-		LangComments: langComments,
+		Alert:                c.Alert,
+		Lang:                 c.Lang,
+		CountSignArr:         c.CountSignArr,
+		ShowSignData:         c.ShowSignData,
+		UserId:               c.SessUserId,
+		TimeNow:              timeNow,
+		TxType:               txType,
+		TxTypeId:             txTypeId,
+		SignData:             "",
+		CfLng:                cfLng,
+		CurrencyList:         c.CurrencyList,
+		CfUrl:                cfUrl,
+		ShowHeaders:          showHeaders,
+		Page:                 page,
+		CfCurrencyName:       cfCurrencyName,
+		LangId:               langId,
+		ProjectId:            projectId,
+		BlurbImg:             blurbImg,
+		HeadImg:              headImg,
+		DescriptionImg:       descriptionImg,
+		Picture:              picture,
+		VideoType:            videoType,
+		VideoUrlId:           videoUrlId,
+		NewsImg:              newsImg,
+		Links:                links,
+		ImgBlank:             imgBlank,
+		Project:              project,
+		ProjectLang:          projectLang,
+		ProjectFunding:       projectFunding,
+		ProjectCountFunders:  projectCountFunders,
+		ProjectFunders:       projectFunders,
+		ProjectComments:      projectComments,
+		LangComments:         langComments,
 		ProjectCountComments: projectCountComments,
-		AuthorInfo: authorInfo,
-		PagesArray: pagesArray,
-		ConfigCfPs: configCfPs,
-		ProjectPs: projectPs,
-		Black: black})
+		AuthorInfo:           authorInfo,
+		PagesArray:           pagesArray,
+		ConfigCfPs:           configCfPs,
+		ProjectPs:            projectPs,
+		Black:                black})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

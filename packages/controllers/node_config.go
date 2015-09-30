@@ -1,25 +1,26 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
-	"io/ioutil"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"encoding/json"
+	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"io/ioutil"
 )
 
 type nodeConfigPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
 	CountSignArr []int
-	Config map[string]string
-	WaitingList []map[string]string
-	MyStatus string
-	MyMode string
-	ConfigIni string
-	UserId int64
-	Lang map[string]string
-	Users []map[int64]map[string]string
+	Config       map[string]string
+	WaitingList  []map[string]string
+	MyStatus     string
+	MyMode       string
+	ConfigIni    string
+	UserId       int64
+	Lang         map[string]string
+	Users        []map[int64]map[string]string
 }
 
 func (c *Controller) NodeConfigControl() (string, error) {
@@ -30,7 +31,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 
 	log.Debug("c.Parameters", c.Parameters)
 	if _, ok := c.Parameters["save_config"]; ok {
-		err := c.ExecSql("UPDATE config SET in_connections_ip_limit = ?, in_connections = ?, out_connections = ?, cf_url = ?, pool_url = ?, pool_admin_user_id = ?, exchange_api_url = ?, auto_reload = ?, http_host = ?", c.Parameters["in_connections_ip_limit"], c.Parameters["in_connections"], c.Parameters["out_connections"] , c.Parameters["cf_url"], c.Parameters["pool_url"], c.Parameters["pool_admin_user_id"], c.Parameters["exchange_api_url"],  c.Parameters["auto_reload"],  c.Parameters["http_host"])
+		err := c.ExecSql("UPDATE config SET in_connections_ip_limit = ?, in_connections = ?, out_connections = ?, cf_url = ?, pool_url = ?, pool_admin_user_id = ?, exchange_api_url = ?, auto_reload = ?, http_host = ?", c.Parameters["in_connections_ip_limit"], c.Parameters["in_connections"], c.Parameters["out_connections"], c.Parameters["cf_url"], c.Parameters["pool_url"], c.Parameters["pool_admin_user_id"], c.Parameters["exchange_api_url"], c.Parameters["auto_reload"], c.Parameters["http_host"])
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -42,7 +43,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	}
 
 	if _, ok := c.Parameters["switch_pool_mode"]; ok {
-		dq := c.GetQuotes();
+		dq := c.GetQuotes()
 		log.Debug("c.Community", c.Community)
 		if !c.Community { // сингл-мод
 
@@ -50,7 +51,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 			myUserId, err := c.GetMyUserId("")
 			for _, table := range consts.MyTables {
 
-				err = c.ExecSql("ALTER TABLE "+dq+table+dq+" RENAME TO "+dq+utils.Int64ToStr(myUserId)+"_"+table+dq)
+				err = c.ExecSql("ALTER TABLE " + dq + table + dq + " RENAME TO " + dq + utils.Int64ToStr(myUserId) + "_" + table + dq)
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -89,7 +90,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 			}
 			myUserId, err := c.GetPoolAdminUserId()
 			for _, table := range consts.MyTables {
-				err = c.ExecSql("ALTER TABLE "+dq+utils.Int64ToStr(myUserId)+"_"+table+dq+" RENAME TO "+dq+table+dq)
+				err = c.ExecSql("ALTER TABLE " + dq + utils.Int64ToStr(myUserId) + "_" + table + dq + " RENAME TO " + dq + table + dq)
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -108,12 +109,12 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	if scriptName == "my_lock" {
 		myStatus = "OFF"
 	}
-	myMode := "Single";
+	myMode := "Single"
 	if c.Community {
 		myMode = "Pool"
 	}
 
-	configIni, err := ioutil.ReadFile(*utils.Dir+"/config.ini")
+	configIni, err := ioutil.ReadFile(*utils.Dir + "/config.ini")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -121,22 +122,22 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	tcp_listening, err := c.Single(`SELECT tcp_listening FROM `+c.MyPrefix+`my_table`).String()
+	tcp_listening, err := c.Single(`SELECT tcp_listening FROM ` + c.MyPrefix + `my_table`).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	config["tcp_listening"] = tcp_listening;
+	config["tcp_listening"] = tcp_listening
 
-	TemplateStr, err := makeTemplate("node_config", "nodeConfig", &nodeConfigPage {
-		Alert: c.Alert,
-		Lang: c.Lang,
+	TemplateStr, err := makeTemplate("node_config", "nodeConfig", &nodeConfigPage{
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		ShowSignData: c.ShowSignData,
-		SignData: "",
-		Config: config,
-		UserId: c.SessUserId,
-		MyStatus: myStatus,
-		MyMode: myMode,
-		ConfigIni: string(configIni),
+		SignData:     "",
+		Config:       config,
+		UserId:       c.SessUserId,
+		MyStatus:     myStatus,
+		MyMode:       myMode,
+		ConfigIni:    string(configIni),
 		CountSignArr: c.CountSignArr})
 	if err != nil {
 		return "", utils.ErrInfo(err)

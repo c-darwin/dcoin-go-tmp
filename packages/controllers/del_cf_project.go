@@ -1,20 +1,21 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type DelCfProjectPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	Lang map[string]string
-	UserId int64
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	CountSignArr []int
-	DelId int64
+	Alert               string
+	SignData            string
+	ShowSignData        bool
+	Lang                map[string]string
+	UserId              int64
+	TxType              string
+	TxTypeId            int64
+	TimeNow             int64
+	CountSignArr        []int
+	DelId               int64
 	ProjectCurrencyName string
 }
 
@@ -22,7 +23,7 @@ func (c *Controller) DelCfProject() (string, error) {
 
 	var err error
 
-	txType := "DelCfProject";
+	txType := "DelCfProject"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -33,21 +34,19 @@ func (c *Controller) DelCfProject() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("del_cf_project", "delCfProject", &DelCfProjectPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		SignData : fmt.Sprintf(`%d,%d,%d,%d`, txTypeId, timeNow, c.SessUserId, delId),
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		DelId: delId,
+		Alert:               c.Alert,
+		Lang:                c.Lang,
+		CountSignArr:        c.CountSignArr,
+		ShowSignData:        c.ShowSignData,
+		SignData:            fmt.Sprintf(`%d,%d,%d,%d`, txTypeId, timeNow, c.SessUserId, delId),
+		UserId:              c.SessUserId,
+		TimeNow:             timeNow,
+		TxType:              txType,
+		TxTypeId:            txTypeId,
+		DelId:               delId,
 		ProjectCurrencyName: projectCurrencyName})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

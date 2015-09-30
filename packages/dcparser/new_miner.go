@@ -1,34 +1,34 @@
 package dcparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
 	"regexp"
 )
 
-
 type exampleSpots struct {
-	Face map[string][]interface {} `json:"face"`
-	Profile map[string][]interface {} `json:"profile"`
+	Face    map[string][]interface{} `json:"face"`
+	Profile map[string][]interface{} `json:"profile"`
 }
-func (p *Parser) NewMinerInit() (error) {
+
+func (p *Parser) NewMinerInit() error {
 	var fields []map[string]string
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
-		fields = []map[string]string{{"race":"int64"}, {"country":"int64"}, {"latitude":"float64"}, {"longitude":"float64"}, {"http_host":"string"}, {"face_coords":"string"}, {"profile_coords":"string"}, {"face_hash":"string"}, {"profile_hash":"string"}, {"video_type":"string"}, {"video_url_id":"string"}, {"node_public_key":"bytes"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"race": "int64"}, {"country": "int64"}, {"latitude": "float64"}, {"longitude": "float64"}, {"http_host": "string"}, {"face_coords": "string"}, {"profile_coords": "string"}, {"face_hash": "string"}, {"profile_hash": "string"}, {"video_type": "string"}, {"video_url_id": "string"}, {"node_public_key": "bytes"}, {"sign": "bytes"}}
 	} else {
-		fields = []map[string]string{{"race":"int64"}, {"country":"int64"}, {"latitude":"float64"}, {"longitude":"float64"}, {"http_host":"string"}, {"tcp_host":"string"}, {"face_coords":"string"}, {"profile_coords":"string"}, {"face_hash":"string"}, {"profile_hash":"string"}, {"video_type":"string"}, {"video_url_id":"string"}, {"node_public_key":"bytes"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"race": "int64"}, {"country": "int64"}, {"latitude": "float64"}, {"longitude": "float64"}, {"http_host": "string"}, {"tcp_host": "string"}, {"face_coords": "string"}, {"profile_coords": "string"}, {"face_hash": "string"}, {"profile_hash": "string"}, {"video_type": "string"}, {"video_url_id": "string"}, {"node_public_key": "bytes"}, {"sign": "bytes"}}
 	}
-	err := p.GetTxMaps(fields);
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	p.TxMap["node_public_key"] = utils.BinToHex(p.TxMap["node_public_key"]);
-	p.TxMaps.Bytes["node_public_key"] = utils.BinToHex(p.TxMaps.Bytes["node_public_key"]);
+	p.TxMap["node_public_key"] = utils.BinToHex(p.TxMap["node_public_key"])
+	p.TxMaps.Bytes["node_public_key"] = utils.BinToHex(p.TxMaps.Bytes["node_public_key"])
 	return nil
 }
 
-func (p *Parser) NewMinerFront() (error) {
+func (p *Parser) NewMinerFront() error {
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -60,7 +60,7 @@ func (p *Parser) NewMinerFront() (error) {
 	if !utils.CheckInputData(p.TxMap["http_host"], "http_host") {
 		return utils.ErrInfoFmt("http_host")
 	}
-	if p.BlockData== nil || p.BlockData.BlockId > 250900 {
+	if p.BlockData == nil || p.BlockData.BlockId > 250900 {
 		if !utils.CheckInputData(p.TxMap["tcp_host"], "tcp_host") {
 			return utils.ErrInfoFmt("tcp_host")
 		}
@@ -89,11 +89,11 @@ func (p *Parser) NewMinerFront() (error) {
 	forSign := ""
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["race"], p.TxMap["country"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["http_host"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["node_public_key"])
-	} else{
+	} else {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["race"], p.TxMap["country"], p.TxMap["latitude"], p.TxMap["longitude"], p.TxMap["http_host"], p.TxMap["tcp_host"], p.TxMap["face_hash"], p.TxMap["profile_hash"], p.TxMap["face_coords"], p.TxMap["profile_coords"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["node_public_key"])
 
 	}
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -110,7 +110,7 @@ func (p *Parser) NewMinerFront() (error) {
 		return p.ErrInfo(err)
 	}
 	//  на всякий случай не даем начать нодовское, если идет юзерское голосование
-	userVoting, err := p.DCDB.Single("SELECT id FROM votes_miners WHERE user_id = ? AND type = 'user_voting' AND votes_end = 0",p.TxUserID).String()
+	userVoting, err := p.DCDB.Single("SELECT id FROM votes_miners WHERE user_id = ? AND type = 'user_voting' AND votes_end = 0", p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -119,7 +119,7 @@ func (p *Parser) NewMinerFront() (error) {
 	}
 
 	// проверим, не является ли юзер майнером и  не разжалованный ли это бывший майнер
-	minerStatus, err := p.DCDB.Single("SELECT status FROM miners_data WHERE user_id = ? AND status IN ('miner','passive_miner','suspended_miner')",p.TxUserID).String()
+	minerStatus, err := p.DCDB.Single("SELECT status FROM miners_data WHERE user_id = ? AND status IN ('miner','passive_miner','suspended_miner')", p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -136,14 +136,13 @@ func (p *Parser) NewMinerFront() (error) {
 	return nil
 }
 
-
 func (p *Parser) NewMiner() error {
 	tcpHost := ""
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
 		match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
 		if len(match) != 0 {
-			tcpHost = match[1]+":8088"
+			tcpHost = match[1] + ":8088"
 		}
 	} else {
 		tcpHost = p.TxMaps.String["tcp_host"]
@@ -154,7 +153,7 @@ func (p *Parser) NewMiner() error {
 		return p.ErrInfo(err)
 	}
 	// т.к. у юзера это может быть не первая попытка стать майнером, то отменяем голосования по всем предыдущим
-	err = p.DCDB.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE user_id = ? AND type = 'node_voting' AND end_block_id = 0 AND votes_end = 0", p.BlockData.BlockId,p.TxUserID)
+	err = p.DCDB.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE user_id = ? AND type = 'node_voting' AND end_block_id = 0 AND votes_end = 0", p.BlockData.BlockId, p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -184,7 +183,7 @@ func (p *Parser) NewMiner() error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	n:=len(segments["face"])+1
+	n := len(segments["face"]) + 1
 	faceRelations := make([]float64, n, n)
 	faceRelations[0] = utils.PpLenght(faceCoords[1], faceCoords[2])
 
@@ -194,7 +193,7 @@ func (p *Parser) NewMiner() error {
 		// 3. нос-губа
 		// 4. губа-подбородок
 		// 5. ширина челюсти
-		faceRelations[utils.StrToInt(num)] = utils.Round( (utils.PpLenght(faceCoords[utils.StrToInt(spots[0])], faceCoords[utils.StrToInt(spots[1])]) / faceRelations[0]) , 4)
+		faceRelations[utils.StrToInt(num)] = utils.Round((utils.PpLenght(faceCoords[utils.StrToInt(spots[0])], faceCoords[utils.StrToInt(spots[1])]) / faceRelations[0]), 4)
 	}
 	faceRelations[0] = 1
 
@@ -206,8 +205,7 @@ func (p *Parser) NewMiner() error {
 	}
 	profileCoords = append([][2]int{{0, 0}}, profileCoords...)
 
-
-	n=len(segments["profile"])+1
+	n = len(segments["profile"]) + 1
 	profileRelations := make([]float64, n, n)
 	profileRelations[0] = utils.PpLenght(profileCoords[1], profileCoords[2])
 
@@ -216,7 +214,7 @@ func (p *Parser) NewMiner() error {
 		// 2. глаз - край носа
 		// 3. подбородок - низ уха
 		// 4. верх уха - низ уха
-		profileRelations[utils.StrToInt(num)] = utils.Round( (utils.PpLenght(profileCoords[utils.StrToInt(spots[0])], profileCoords[utils.StrToInt(spots[1])]) / profileRelations[0]) , 4)
+		profileRelations[utils.StrToInt(num)] = utils.Round((utils.PpLenght(profileCoords[utils.StrToInt(spots[0])], profileCoords[utils.StrToInt(spots[1])]) / profileRelations[0]), 4)
 	}
 	profileRelations[0] = 1
 
@@ -224,19 +222,19 @@ func (p *Parser) NewMiner() error {
 	addSql["names"] = ""
 	addSql["values"] = ""
 	addSql["upd"] = ""
-	for j:=1; j < len(faceRelations); j++ {
+	for j := 1; j < len(faceRelations); j++ {
 		addSql["names"] += fmt.Sprintf("f%v,\n", j)
 		addSql["values"] += fmt.Sprintf("'%v',\n", faceRelations[j])
 		addSql["upd"] += fmt.Sprintf("f%v='%v',\n", j, faceRelations[j])
 	}
-	for j:=1; j < len(profileRelations); j++ {
+	for j := 1; j < len(profileRelations); j++ {
 		addSql["names"] += fmt.Sprintf("p%v,\n", j)
 		addSql["values"] += fmt.Sprintf("'%v',\n", profileRelations[j])
 		addSql["upd"] += fmt.Sprintf("p%v='%v',\n", j, profileRelations[j])
 	}
-	addSql["names"] = addSql["names"][0:len(addSql["names"])-2]
-	addSql["values"] = addSql["values"][0:len(addSql["values"])-2]
-	addSql["upd"] = addSql["upd"][0:len(addSql["upd"])-2]
+	addSql["names"] = addSql["names"][0 : len(addSql["names"])-2]
+	addSql["values"] = addSql["values"][0 : len(addSql["values"])-2]
+	addSql["upd"] = addSql["upd"][0 : len(addSql["upd"])-2]
 
 	// Для откатов
 	// проверим, есть ли в БД запись, которую нужно залогировать
@@ -245,13 +243,13 @@ func (p *Parser) NewMiner() error {
 		return p.ErrInfo(err)
 	}
 	if len(logData) > 0 {
-		addSql1 := "";
-		addSql2 := "";
-		for i:=1; i<=20; i++ {
+		addSql1 := ""
+		addSql2 := ""
+		for i := 1; i <= 20; i++ {
 			addSql1 += fmt.Sprintf("f%v, ", i)
 			addSql2 += fmt.Sprintf("%v,", logData[fmt.Sprintf("f%v", i)])
 		}
-		for i:=1; i<=20; i++ {
+		for i := 1; i <= 20; i++ {
 			addSql1 += fmt.Sprintf("p%v, ", i)
 			addSql2 += fmt.Sprintf("%v,", logData[fmt.Sprintf("p%v", i)])
 		}
@@ -279,7 +277,7 @@ func (p *Parser) NewMiner() error {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		err = p.ExecSql("UPDATE faces SET "+addSql["upd"]+", version = ?, race = ?, country = ?, log_id = ? WHERE user_id = ?", spotsVersion, p.TxMaps.Int64["race"], p.TxMaps.Int64["country"], logId,p.TxUserID)
+		err = p.ExecSql("UPDATE faces SET "+addSql["upd"]+", version = ?, race = ?, country = ?, log_id = ? WHERE user_id = ?", spotsVersion, p.TxMaps.Int64["race"], p.TxMaps.Int64["country"], logId, p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -291,13 +289,13 @@ func (p *Parser) NewMiner() error {
 						version,
 						race,
 						country,
-						`+addSql["names"]+`
+						` + addSql["names"] + `
 					) VALUES (
-						`+string(p.TxMap["user_id"])+`,
-						'`+spotsVersion+`',
-						`+string(p.TxMap["race"])+`,
-						`+string(p.TxMap["country"])+`,
-						`+addSql["values"]+`
+						` + string(p.TxMap["user_id"]) + `,
+						'` + spotsVersion + `',
+						` + string(p.TxMap["race"]) + `,
+						` + string(p.TxMap["country"]) + `,
+						` + addSql["values"] + `
 					)`)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -305,7 +303,7 @@ func (p *Parser) NewMiner() error {
 	}
 
 	// проверим, есть ли в БД запись, которую надо залогировать
-	logData, err = p.OneRow("SELECT * FROM miners_data WHERE user_id = ?",p.TxUserID).String()
+	logData, err = p.OneRow("SELECT * FROM miners_data WHERE user_id = ?", p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -336,7 +334,7 @@ func (p *Parser) NewMiner() error {
 					prev_log_id
 				) VALUES (
 					?, ?, ?, [hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-				) `, "log_id",  logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["http_host"], logData["tcp_host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
+				) `, "log_id", logData["user_id"], logData["miner_id"], logData["status"], logData["node_public_key"], logData["face_hash"], logData["profile_hash"], logData["photo_block_id"], logData["photo_max_miner_id"], logData["miners_keepers"], logData["face_coords"], logData["profile_coords"], logData["video_type"], logData["video_url_id"], logData["http_host"], logData["tcp_host"], logData["latitude"], logData["longitude"], logData["country"], p.BlockData.BlockId, logData["log_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -360,7 +358,7 @@ func (p *Parser) NewMiner() error {
 					http_host = ?,
 					tcp_host = ?,
 					log_id = ?
-				WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMaps.String["face_hash"], p.TxMaps.String["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMaps.String["face_coords"], p.TxMaps.String["profile_coords"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], p.TxMaps.String["http_host"], tcpHost, logId,p.TxUserID)
+				WHERE user_id = ?`, p.TxMap["node_public_key"], p.TxMaps.String["face_hash"], p.TxMaps.String["profile_hash"], p.BlockData.BlockId, maxMinerId, p.Variables.Int64["miners_keepers"], p.TxMaps.String["face_coords"], p.TxMaps.String["profile_coords"], p.TxMaps.String["video_type"], p.TxMaps.String["video_url_id"], p.TxMaps.Float64["latitude"], p.TxMaps.Float64["longitude"], p.TxMaps.Int64["country"], p.TxMaps.String["http_host"], tcpHost, logId, p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -390,7 +388,7 @@ func (p *Parser) NewMiner() error {
 		}
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
@@ -403,12 +401,12 @@ func (p *Parser) NewMiner() error {
 	return nil
 }
 
-func (p *Parser) NewMinerRollback() (error) {
-	err := p.generalRollback("faces",p.TxUserID, "", false)
+func (p *Parser) NewMinerRollback() error {
+	err := p.generalRollback("faces", p.TxUserID, "", false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.generalRollback("miners_data",p.TxUserID, "", false)
+	err = p.generalRollback("miners_data", p.TxUserID, "", false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -416,12 +414,12 @@ func (p *Parser) NewMinerRollback() (error) {
 	p.ExecSql(`UPDATE votes_miners
 					SET votes_end = 0, end_block_id = 0
 					WHERE user_id = ? AND type = 'node_voting' AND end_block_id = ? AND votes_end > 0`,
-					p.TxUserID, p.BlockData.BlockId)
+		p.TxUserID, p.BlockData.BlockId)
 	p.ExecSql(`DELETE FROM votes_miners
-					WHERE type = 'node_voting' AND user_id = ? AND votes_start_time = ?`,p.TxUserID, p.BlockData.Time)
+					WHERE type = 'node_voting' AND user_id = ? AND votes_start_time = ?`, p.TxUserID, p.BlockData.Time)
 	p.rollbackAI("votes_miners", 1)
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}

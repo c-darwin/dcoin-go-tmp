@@ -1,10 +1,11 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"fmt"
 	"github.com/astaxie/beego/config"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"fmt"
 	"os"
 )
 
@@ -30,7 +31,7 @@ func (c *Controller) InstallStep1() (string, error) {
 	sqliteDbUrl := c.r.FormValue("sqlite_db_url")
 	keyPassword := c.r.FormValue("key_password")
 
-	if installType=="standard" {
+	if installType == "standard" {
 		dbType = "sqlite"
 	} else {
 		if len(url) == 0 {
@@ -48,17 +49,17 @@ func (c *Controller) InstallStep1() (string, error) {
 	confIni.Set("log_tables", "")
 	confIni.Set("log_fns", "")
 	confIni.Set("sign_hash", "ip")
-	if len(sqliteDbUrl) > 0 && dbType=="sqlite" {
+	if len(sqliteDbUrl) > 0 && dbType == "sqlite" {
 		utils.SqliteDbUrl = sqliteDbUrl
 	}
 
-	if dbType=="sqlite" {
+	if dbType == "sqlite" {
 		confIni.Set("db_user", "")
 		confIni.Set("db_host", "")
 		confIni.Set("db_port", "")
 		confIni.Set("db_password", "")
 		confIni.Set("db_name", "")
-	} else if dbType=="postgresql" || dbType=="mysql" {
+	} else if dbType == "postgresql" || dbType == "mysql" {
 		confIni.Set("db_type", dbType)
 		confIni.Set("db_user", dbUsername)
 		confIni.Set("db_host", dbHost)
@@ -67,7 +68,7 @@ func (c *Controller) InstallStep1() (string, error) {
 		confIni.Set("db_name", dbName)
 	}
 
-	err = confIni.SaveConfigFile(*utils.Dir+"/config.ini")
+	err = confIni.SaveConfigFile(*utils.Dir + "/config.ini")
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +80,7 @@ func (c *Controller) InstallStep1() (string, error) {
 		if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
 			utils.DB.Close()
 			log.Debug("DB CLOSE")
-			for i:=0; i<5; i++ {
+			for i := 0; i < 5; i++ {
 				_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
@@ -126,12 +127,12 @@ func (c *Controller) InstallStep1() (string, error) {
 		}
 
 		//if len(userId)>0 {
-			err = c.DCDB.ExecSql("INSERT INTO my_table (user_id, key_password) VALUES (?, ?)", userId, keyPassword)
-			if err != nil {
-				log.Error("%v", utils.ErrInfo(err))
-				panic(err)
-				os.Exit(1)
-			}
+		err = c.DCDB.ExecSql("INSERT INTO my_table (user_id, key_password) VALUES (?, ?)", userId, keyPassword)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+			os.Exit(1)
+		}
 		//}
 		log.Debug("setupPassword: (%s) / (%s)", setupPassword, utils.DSha256(setupPassword))
 		if len(setupPassword) > 0 {

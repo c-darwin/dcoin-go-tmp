@@ -1,32 +1,31 @@
 package dcparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	//"sort"
-//	"time"
+	//	"time"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
-
-func (p *Parser) NewMaxPromisedAmountsInit() (error) {
+func (p *Parser) NewMaxPromisedAmountsInit() error {
 	var err error
 	var fields []string
-	fields = []string {"new_max_promised_amounts", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields = []string{"new_max_promised_amounts", "sign"}
+	p.TxMap, err = p.GetTxMap(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
-func (p *Parser) NewMaxPromisedAmountsFront() (error) {
+func (p *Parser) NewMaxPromisedAmountsFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -69,17 +68,17 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 		if !utils.CheckInputData(currencyId, "int") {
 			return p.ErrInfo("currencyId")
 		}
-		currencyIdsSql += currencyId+",";
+		currencyIdsSql += currencyId + ","
 		countCurrency++
 		if !utils.InSliceInt64(amount, allMaxAmounts) {
 			return p.ErrInfo("incorrect amount")
 		}
 	}
-	currencyIdsSql = currencyIdsSql[0:len(currencyIdsSql)-1]
+	currencyIdsSql = currencyIdsSql[0 : len(currencyIdsSql)-1]
 	if countCurrency == 0 {
 		return p.ErrInfo("countCurrency")
 	}
-	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+currencyIdsSql+")").Int64()
+	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN (" + currencyIdsSql + ")").Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -88,7 +87,7 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_max_promised_amounts"])
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -101,7 +100,7 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxTime - pctTime <= p.Variables.Int64["new_max_promised_amount"] {
+	if p.TxTime-pctTime <= p.Variables.Int64["new_max_promised_amount"] {
 		return p.ErrInfo("14 day error")
 	}
 
@@ -115,10 +114,10 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 	for rows.Next() {
 		var currency_id, amount, votes int64
 		err = rows.Scan(&currency_id, &amount, &votes)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
-		maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount:votes})
+		maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount: votes})
 		//fmt.Println("currency_id", currency_id)
 	}
 
@@ -128,17 +127,17 @@ func (p *Parser) NewMaxPromisedAmountsFront() (error) {
 	}
 
 	jsonData, err := json.Marshal(NewMaxPromisedAmountsVotes)
-	if err!= nil {
+	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if string(p.TxMap["new_max_promised_amounts"]) != string(jsonData) {
-		return p.ErrInfo("p.TxMap[new_max_promised_amounts] != jsonData "+string(p.TxMap["new_max_promised_amounts"])+"!="+string(jsonData))
+		return p.ErrInfo("p.TxMap[new_max_promised_amounts] != jsonData " + string(p.TxMap["new_max_promised_amounts"]) + "!=" + string(jsonData))
 	}
 
 	return nil
 }
 
-func (p *Parser) NewMaxPromisedAmounts() (error) {
+func (p *Parser) NewMaxPromisedAmounts() error {
 
 	newMaxPromisedAmounts := make(map[string]int64)
 	err := json.Unmarshal(p.TxMap["new_max_promised_amounts"], &newMaxPromisedAmounts)
@@ -155,7 +154,7 @@ func (p *Parser) NewMaxPromisedAmounts() (error) {
 	return nil
 }
 
-func (p *Parser) NewMaxPromisedAmountsRollback() (error) {
+func (p *Parser) NewMaxPromisedAmountsRollback() error {
 
 	return nil
 }

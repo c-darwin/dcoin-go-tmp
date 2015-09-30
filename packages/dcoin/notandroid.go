@@ -2,16 +2,16 @@
 
 package dcoin
 
-import  (
-	_ "github.com/mattn/go-sqlite3"
-	"syscall"
-	"net"
-	"os"
-	"net/http"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
+import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
+	"github.com/c-darwin/dcoin-go-tmp/packages/tcpserver"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	_ "github.com/mattn/go-sqlite3"
+	"net"
+	"net/http"
+	"os"
 	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -37,7 +37,7 @@ func IosLog(text string) {
 }
 
 //export go_callback_int
-func go_callback_int(){
+func go_callback_int() {
 	SigChan <- syscall.Signal(1)
 }
 
@@ -77,7 +77,6 @@ func waitSig() {
 	C.waitSig()
 }
 
-
 func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	l, err := net.Listen("tcp", ListenHttpHost)
 	if err != nil {
@@ -92,7 +91,7 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	}
 
 	go func() {
-		err = http.Serve(NewBoundListener(100, l), http.TimeoutHandler(http.DefaultServeMux, time.Duration(600 * time.Second), "Your request has timed out"))
+		err = http.Serve(NewBoundListener(100, l), http.TimeoutHandler(http.DefaultServeMux, time.Duration(600*time.Second), "Your request has timed out"))
 		if err != nil {
 			log.Error("Error listening: %v (%v)", err, ListenHttpHost)
 			panic(err)
@@ -107,7 +106,7 @@ func tcpListener(db *utils.DCDB) {
 		if db == nil {
 			for {
 				db = utils.DB
-				if db!=nil {
+				if db != nil {
 					break
 				}
 			}

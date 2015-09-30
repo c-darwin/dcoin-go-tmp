@@ -1,7 +1,8 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) SaveShopData() (string, error) {

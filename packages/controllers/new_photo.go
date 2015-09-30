@@ -1,7 +1,8 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) NewPhoto() (string, error) {
@@ -16,7 +17,7 @@ func (c *Controller) NewPhoto() (string, error) {
 	}
 
 	// получим ID майнеров, у которых лежат фото нужного нам юзера
-	minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true);
+	minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
 
 	// берем 1 случайный из 10-и ID майнеров
 	k := utils.RandInt(0, len(minersIds))
@@ -26,10 +27,9 @@ func (c *Controller) NewPhoto() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	result, err := json.Marshal(map[string]string{"face": host+"public/face_"+utils.Int64ToStr(userId)+".jpg", "profile": host+"public/profile_"+utils.Int64ToStr(userId)+".jpg"})
+	result, err := json.Marshal(map[string]string{"face": host + "public/face_" + utils.Int64ToStr(userId) + ".jpg", "profile": host + "public/profile_" + utils.Int64ToStr(userId) + ".jpg"})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return string(result), nil
 }
-

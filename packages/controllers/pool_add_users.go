@@ -1,13 +1,15 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
-	"encoding/json"
-	"regexp"
 	"bytes"
-	"io"
+	"encoding/json"
+	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"io"
+	"regexp"
 )
+
 /*type JsonBackup struct {
 	Community []string `json:"community"`
 	Data map[string][]map[string]string `json:"data"`
@@ -82,11 +84,11 @@ func (c *Controller) PoolAddUsers() (string, error) {
 		for i, data := range arr {
 			log.Debug("%v", i)
 			colNames := ""
-			values := []interface {} {}
+			values := []interface{}{}
 			qq := ""
 			for name, value := range data {
 
-				if ok, _ := regexp.MatchString("my_table", table); ok{
+				if ok, _ := regexp.MatchString("my_table", table); ok {
 					if name == "host" {
 						name = "http_host"
 					}
@@ -95,17 +97,17 @@ func (c *Controller) PoolAddUsers() (string, error) {
 					name = "show_progress_bar"
 				}
 
-				colNames += name+","
+				colNames += name + ","
 				values = append(values, value)
-				if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok{
-					qq+="[hex],"
+				if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok {
+					qq += "[hex],"
 				} else {
-					qq+="?,"
+					qq += "?,"
 				}
 			}
-			colNames = colNames[0:len(colNames)-1]
-			qq = qq[0:len(qq)-1]
-			query := `INSERT INTO `+table+` (`+colNames+`) VALUES (`+qq+`)`
+			colNames = colNames[0 : len(colNames)-1]
+			qq = qq[0 : len(qq)-1]
+			query := `INSERT INTO ` + table + ` (` + colNames + `) VALUES (` + qq + `)`
 			log.Debug("%v", query)
 			log.Debug("%v", values)
 			err = c.ExecSql(query, values...)
@@ -114,7 +116,6 @@ func (c *Controller) PoolAddUsers() (string, error) {
 			}
 		}
 	}
-
 
 	return "", nil
 }

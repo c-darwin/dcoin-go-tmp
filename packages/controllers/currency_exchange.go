@@ -1,38 +1,39 @@
 package controllers
+
 import (
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"time"
-	"encoding/json"
 )
 
 type currencyExchangePage struct {
-	SignData string
-	ShowSignData bool
-	BuyCurrencyName string
-	SellCurrencyName string
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CurrencyList map[int64]string
+	SignData             string
+	ShowSignData         bool
+	BuyCurrencyName      string
+	SellCurrencyName     string
+	TxType               string
+	TxTypeId             int64
+	TimeNow              int64
+	UserId               int64
+	Alert                string
+	Lang                 map[string]string
+	CurrencyList         map[int64]string
 	CurrencyListFullName map[int64]string
-	CurrencyListName map[int64]string
-	SellOrders []map[string]string
-	BuyOrders []map[string]string
-	MyOrders []map[string]string
-	ConfigCommission map[int64][]float64
-	BuyCurrencyId int64
-	SellCurrencyId int64
-	WalletsAmounts map[int64]float64
-	CountSignArr []int
+	CurrencyListName     map[int64]string
+	SellOrders           []map[string]string
+	BuyOrders            []map[string]string
+	MyOrders             []map[string]string
+	ConfigCommission     map[int64][]float64
+	BuyCurrencyId        int64
+	SellCurrencyId       int64
+	WalletsAmounts       map[int64]float64
+	CountSignArr         []int
 }
 
 func (c *Controller) CurrencyExchange() (string, error) {
 
-	txType := "NewForexOrder";
+	txType := "NewForexOrder"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -51,7 +52,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		if len(actualCurrencies) > 0 {
-			addSql = " WHERE id IN ("+strings.Join(actualCurrencies, ",")+")";
+			addSql = " WHERE id IN (" + strings.Join(actualCurrencies, ",") + ")"
 		}
 	}
 	currencyListName := make(map[int64]string)
@@ -88,15 +89,11 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	buyCurrencyName := currencyListName[buyCurrencyId]
 	sellCurrencyName := currencyListName[sellCurrencyId]
 
-
 	// валюты
 	currencyListFullName, err := c.GetCurrencyListFullName()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
-
-
 
 	buyOrders, err := c.GetAll(`
 			SELECT *
@@ -115,7 +112,6 @@ func (c *Controller) CurrencyExchange() (string, error) {
 						 empty_block_id = 0 AND
 						 del_block_id = 0
 						 `, 100, sellCurrencyId, buyCurrencyId)
-
 
 	myOrders, err := c.GetAll(`
 			SELECT *
@@ -147,91 +143,90 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		amount+=profit
+		amount += profit
 		amount = utils.Round(amount, 2)
 		forex_orders_amount, err := c.Single("SELECT sum(amount) FROM forex_orders WHERE user_id = ? AND sell_currency_id = ? AND del_block_id = 0", c.SessUserId, currency_id).Float64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		amount-=forex_orders_amount
+		amount -= forex_orders_amount
 		walletsAmounts[currency_id] = amount
 	}
 
-/*
-	data, err := static.Asset("static/templates/currency_exchange.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	alert_success, err := static.Asset("static/templates/alert_success.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	signatures, err := static.Asset("static/templates/signatures.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	funcMap := template.FuncMap{
-		"mult": func(a, b string) float64 {
-			return utils.StrToFloat64(a)*utils.StrToFloat64(b)
-		},
-		"div": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
-		},
-		"round": func(a float64, num int) float64 {
-			return utils.Round(a, num)
-		},
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-	t = template.Must(t.Parse(string(alert_success)))
-	t = template.Must(t.Parse(string(signatures)))
-	b := new(bytes.Buffer)
-	err = t.ExecuteTemplate(b, "currencyExchange", &currencyExchangePage{
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		WalletsAmounts: walletsAmounts,
-		CurrencyListName: currencyListName,
-		BuyCurrencyId: buyCurrencyId,
-		SellCurrencyId: sellCurrencyId,
-		BuyCurrencyName: buyCurrencyName,
-		SellCurrencyName: sellCurrencyName,
-		CurrencyListFullName : currencyListFullName,
-		ConfigCommission: c.ConfigCommission,
-		TimeNow: timeNow,
-		SellOrders: sellOrders,
-		BuyOrders: buyOrders,
-		MyOrders: myOrders,
-		UserId: c.SessUserId,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: ""})
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	return b.String(), nil
+	/*
+		data, err := static.Asset("static/templates/currency_exchange.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		alert_success, err := static.Asset("static/templates/alert_success.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		signatures, err := static.Asset("static/templates/signatures.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		funcMap := template.FuncMap{
+			"mult": func(a, b string) float64 {
+				return utils.StrToFloat64(a)*utils.StrToFloat64(b)
+			},
+			"div": func(a, b interface{}) float64 {
+				return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
+			},
+			"round": func(a float64, num int) float64 {
+				return utils.Round(a, num)
+			},
+		}
+		t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+		t = template.Must(t.Parse(string(alert_success)))
+		t = template.Must(t.Parse(string(signatures)))
+		b := new(bytes.Buffer)
+		err = t.ExecuteTemplate(b, "currencyExchange", &currencyExchangePage{
+			Lang: c.Lang,
+			CountSignArr: c.CountSignArr,
+			ShowSignData: c.ShowSignData,
+			WalletsAmounts: walletsAmounts,
+			CurrencyListName: currencyListName,
+			BuyCurrencyId: buyCurrencyId,
+			SellCurrencyId: sellCurrencyId,
+			BuyCurrencyName: buyCurrencyName,
+			SellCurrencyName: sellCurrencyName,
+			CurrencyListFullName : currencyListFullName,
+			ConfigCommission: c.ConfigCommission,
+			TimeNow: timeNow,
+			SellOrders: sellOrders,
+			BuyOrders: buyOrders,
+			MyOrders: myOrders,
+			UserId: c.SessUserId,
+			TxType: txType,
+			TxTypeId: txTypeId,
+			SignData: ""})
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		return b.String(), nil
 	*/
 
-
 	TemplateStr, err := makeTemplate("currency_exchange", "currencyExchange", &currencyExchangePage{
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		WalletsAmounts: walletsAmounts,
-		CurrencyListName: currencyListName,
-		BuyCurrencyId: buyCurrencyId,
-		SellCurrencyId: sellCurrencyId,
-		BuyCurrencyName: buyCurrencyName,
-		SellCurrencyName: sellCurrencyName,
-		CurrencyListFullName : currencyListFullName,
-		ConfigCommission: c.ConfigCommission,
-		TimeNow: timeNow,
-		SellOrders: sellOrders,
-		BuyOrders: buyOrders,
-		MyOrders: myOrders,
-		UserId: c.SessUserId,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: ""})
+		Lang:                 c.Lang,
+		CountSignArr:         c.CountSignArr,
+		ShowSignData:         c.ShowSignData,
+		WalletsAmounts:       walletsAmounts,
+		CurrencyListName:     currencyListName,
+		BuyCurrencyId:        buyCurrencyId,
+		SellCurrencyId:       sellCurrencyId,
+		BuyCurrencyName:      buyCurrencyName,
+		SellCurrencyName:     sellCurrencyName,
+		CurrencyListFullName: currencyListFullName,
+		ConfigCommission:     c.ConfigCommission,
+		TimeNow:              timeNow,
+		SellOrders:           sellOrders,
+		BuyOrders:            buyOrders,
+		MyOrders:             myOrders,
+		UserId:               c.SessUserId,
+		TxType:               txType,
+		TxTypeId:             txTypeId,
+		SignData:             ""})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

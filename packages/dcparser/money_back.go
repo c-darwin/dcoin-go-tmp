@@ -1,39 +1,39 @@
 package dcparser
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"time"
-	"database/sql"
 	"math"
-//
+	"time"
+	//
 )
 
-func (p *Parser) MoneyBackInit() (error) {
+func (p *Parser) MoneyBackInit() error {
 
-	fields := []map[string]string {{"order_id":"int64"}, {"amount":"money"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"order_id": "int64"}, {"amount": "money"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) MoneyBackFront() (error) {
+func (p *Parser) MoneyBackFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"order_id":"bigint", "amount":"amount"}
+	verifyData := map[string]string{"order_id": "bigint", "amount": "amount"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	var txTime int64
-	if p.BlockData!=nil {
+	if p.BlockData != nil {
 		txTime = p.BlockData.Time
 	} else {
 		txTime = time.Now().Unix() - 30 // просто на всякий случай небольшой запас
@@ -69,7 +69,7 @@ func (p *Parser) MoneyBackFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["order_id"], p.TxMap["amount"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -80,15 +80,15 @@ func (p *Parser) MoneyBackFront() (error) {
 	return nil
 }
 
-func (p *Parser) MoneyBack() (error) {
+func (p *Parser) MoneyBack() error {
 
 	data, err := p.OneRow("SELECT buyer, seller, currency_id FROM orders WHERE id  =  ?", p.TxMaps.Int64["order_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	buyerUserId := data["buyer"];
-	sellerUserId := data["seller"];
-	p.TxMaps.Int64["currency_id"] = data["currency_id"];
+	buyerUserId := data["buyer"]
+	sellerUserId := data["seller"]
+	p.TxMaps.Int64["currency_id"] = data["currency_id"]
 
 	// возможно нужно обновить таблицу points_status
 	err = p.pointsUpdateMain(sellerUserId)
@@ -107,10 +107,10 @@ func (p *Parser) MoneyBack() (error) {
 	var wallet_amount float64
 	var last_update int64
 	err = p.QueryRow(p.FormatQuery("SELECT amount, last_update FROM wallets WHERE user_id = ? AND currency_id = ?"), sellerUserId, p.TxMaps.Int64["currency_id"]).Scan(&wallet_amount, &last_update)
-	if err != nil && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
-	profit, err := p.calcProfit_(wallet_amount, last_update, p.BlockData.Time, pct[p.TxMaps.Int64["currency_id"]], []map[int64]string {{0:"user"}}, [][]int64{}, []map[int64]string{}, 0, 0)
+	profit, err := p.calcProfit_(wallet_amount, last_update, p.BlockData.Time, pct[p.TxMaps.Int64["currency_id"]], []map[int64]string{{0: "user"}}, [][]int64{}, []map[int64]string{}, 0, 0)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -128,13 +128,13 @@ func (p *Parser) MoneyBack() (error) {
 		return p.ErrInfo(err)
 	}
 	// НЕ учитываем все текущие суммы холдбека, т.к. кроме этой суммы у продавца может ничего и не быть
-	all := math.Floor((totalAmount - cashRequestsAmount - forexOrdersAmount)*100)/100
+	all := math.Floor((totalAmount-cashRequestsAmount-forexOrdersAmount)*100) / 100
 	var amount float64
 	if all >= p.TxMaps.Money["amount"] {
 		amount = p.TxMaps.Money["amount"]
 	} else {
 		amount = all
-		creditAmount := p.TxMaps.Money["amount"] - amount;
+		creditAmount := p.TxMaps.Money["amount"] - amount
 		err = p.ExecSql("INSERT INTO credits ( time, amount, from_user_id, to_user_id, currency_id, pct, tx_hash, tx_block_id ) VALUES ( ?, ?, ?, ?, ?, 100, [hex], ? )", p.BlockData.Time, creditAmount, sellerUserId, buyerUserId, p.TxMaps.Int64["currency_id"], p.TxHash, p.BlockData.BlockId)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -143,24 +143,24 @@ func (p *Parser) MoneyBack() (error) {
 
 	// если на счету продавца еще что-то есть, то делаем перевод покупателю
 	if amount >= 0.01 {
-		err = p.updateSenderWallet(sellerUserId, p.TxMaps.Int64["currency_id"], amount, 0, "money_back", p.TxMaps.Int64["order_id"], buyerUserId, "money_back", "decrypted");
+		err = p.updateSenderWallet(sellerUserId, p.TxMaps.Int64["currency_id"], amount, 0, "money_back", p.TxMaps.Int64["order_id"], buyerUserId, "money_back", "decrypted")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		err = p.updateRecipientWallet(buyerUserId, p.TxMaps.Int64["currency_id"], p.TxMaps.Money["amount"], "money_back", p.TxMaps.Int64["order_id"], "money_back", "encrypted", true)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
 	}
 	if p.TxUserID == sellerUserId {
 		// отмечаем, какую сумму вернул продавец, чтобы арбитр её учел
-		err := p.selectiveLoggingAndUpd([]string{"voluntary_refund"}, []interface {}{p.TxMaps.Money["amount"]}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
+		err := p.selectiveLoggingAndUpd([]string{"voluntary_refund"}, []interface{}{p.TxMaps.Money["amount"]}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	} else {
 		// отмечаем, какую сумму вернул арбитр, чтобы продавец её учел при доп. манибеке
-		err := p.selectiveLoggingAndUpd([]string{"refund", "refund_arbitrator_id", "arbitrator_refund_time"}, []interface {}{p.TxMaps.Money["amount"], p.TxUserID, p.BlockData.Time}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
+		err := p.selectiveLoggingAndUpd([]string{"refund", "refund_arbitrator_id", "arbitrator_refund_time"}, []interface{}{p.TxMaps.Money["amount"], p.TxUserID, p.BlockData.Time}, "orders", []string{"id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["order_id"])})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -169,15 +169,15 @@ func (p *Parser) MoneyBack() (error) {
 	return nil
 }
 
-func (p *Parser) MoneyBackRollback() (error) {
+func (p *Parser) MoneyBackRollback() error {
 
 	data, err := p.OneRow("SELECT buyer, seller, currency_id FROM orders WHERE id  =  ?", p.TxMaps.Int64["order_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	buyerUserId := data["buyer"];
-	sellerUserId := data["seller"];
-	p.TxMaps.Int64["currency_id"] = data["currency_id"];
+	buyerUserId := data["buyer"]
+	sellerUserId := data["seller"]
+	p.TxMaps.Int64["currency_id"] = data["currency_id"]
 
 	// возможно нужно обновить таблицу points_status
 	err = p.pointsUpdateRollbackMain(buyerUserId)

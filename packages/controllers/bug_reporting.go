@@ -1,26 +1,27 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type bugReportingPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
 	CountSignArr []int
-	Lang map[string]string
-	UserId int64
-	ParentId int64
-	Messages []map[string]string
-	TxType string
-	TxTypeId int64
-	TimeNow int64
+	Lang         map[string]string
+	UserId       int64
+	ParentId     int64
+	Messages     []map[string]string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
 }
 
 func (c *Controller) BugReporting() (string, error) {
 
-	txType := "MessageToAdmin";
+	txType := "MessageToAdmin"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -38,18 +39,18 @@ func (c *Controller) BugReporting() (string, error) {
 			ORDER BY id DESC
 			`, -1, parentId, parentId)
 
-	TemplateStr, err := makeTemplate("bug_reporting", "bugReporting", &bugReportingPage {
-		Alert: c.Alert,
-		Lang: c.Lang,
+	TemplateStr, err := makeTemplate("bug_reporting", "bugReporting", &bugReportingPage{
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		ShowSignData: c.ShowSignData,
-		SignData: "",
-		UserId: c.SessUserId,
-		ParentId: parentId,
-		Messages: messages,
+		SignData:     "",
+		UserId:       c.SessUserId,
+		ParentId:     parentId,
+		Messages:     messages,
 		CountSignArr: c.CountSignArr,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId})
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

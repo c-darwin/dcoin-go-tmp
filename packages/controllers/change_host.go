@@ -1,27 +1,28 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 )
 
 type changeHostPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
 	CountSignArr []int
-	Data map[string]string
-	Lang map[string]string
-	UserId int64
-	LimitsText string
-	TxType string
-	TxTypeId int64
-	TimeNow int64
+	Data         map[string]string
+	Lang         map[string]string
+	UserId       int64
+	LimitsText   string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
 }
 
 func (c *Controller) ChangeHost() (string, error) {
 
-	txType := "ChangeHost";
+	txType := "ChangeHost"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -40,18 +41,18 @@ func (c *Controller) ChangeHost() (string, error) {
 	limitsText := strings.Replace(c.Lang["change_host_limits_text"], "[limit]", utils.Int64ToStr(c.Variables.Int64["limit_change_host"]), -1)
 	limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["limit_change_host_period"]], -1)
 
-	TemplateStr, err := makeTemplate("change_host", "changeHost", &changeHostPage {
-		Alert: c.Alert,
-		UserId: c.SessUserId,
+	TemplateStr, err := makeTemplate("change_host", "changeHost", &changeHostPage{
+		Alert:        c.Alert,
+		UserId:       c.SessUserId,
 		CountSignArr: c.CountSignArr,
-		Data: data,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		LimitsText: limitsText,
+		Data:         data,
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId,
+		LimitsText:   limitsText,
 		ShowSignData: c.ShowSignData,
-		SignData: "",
-		Lang: c.Lang})
+		SignData:     "",
+		Lang:         c.Lang})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

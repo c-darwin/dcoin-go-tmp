@@ -1,25 +1,24 @@
 package dcparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
 	"sort"
 )
 
-
-func (p *Parser) NewMaxOtherCurrenciesInit() (error) {
+func (p *Parser) NewMaxOtherCurrenciesInit() error {
 	var err error
 	var fields []string
-	fields = []string {"new_max_other_currencies", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields = []string{"new_max_other_currencies", "sign"}
+	p.TxMap, err = p.GetTxMap(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
+func (p *Parser) NewMaxOtherCurrenciesFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -57,17 +56,17 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 		if !utils.CheckInputData(currencyId, "int") {
 			return p.ErrInfo("currencyId")
 		}
-		currencyIdsSql += currencyId+",";
+		currencyIdsSql += currencyId + ","
 		countCurrency++
 		if count > totalCountCurrencies {
 			return p.ErrInfo("count > totalCountCurrencies")
 		}
 	}
-	currencyIdsSql = currencyIdsSql[0:len(currencyIdsSql)-1]
+	currencyIdsSql = currencyIdsSql[0 : len(currencyIdsSql)-1]
 	if countCurrency == 0 {
 		return p.ErrInfo("countCurrency")
 	}
-	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+currencyIdsSql+")").Int64()
+	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN (" + currencyIdsSql + ")").Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -76,7 +75,7 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["new_max_other_currencies"])
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -89,7 +88,7 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxTime - pctTime <= p.Variables.Int64["new_max_other_currencies"] {
+	if p.TxTime-pctTime <= p.Variables.Int64["new_max_other_currencies"] {
 		return p.ErrInfo("14 day error")
 	}
 
@@ -103,10 +102,10 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	for rows.Next() {
 		var currency_id, count, votes int64
 		err = rows.Scan(&currency_id, &count, &votes)
-		if err!= nil {
+		if err != nil {
 			return p.ErrInfo(err)
 		}
-		maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count:votes})
+		maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count: votes})
 		//fmt.Println("currency_id", currency_id)
 	}
 	//fmt.Println("maxOtherCurrenciesVotes", maxOtherCurrenciesVotes)
@@ -117,17 +116,17 @@ func (p *Parser) NewMaxOtherCurrenciesFront() (error) {
 	}
 
 	jsonData, err := json.Marshal(newMaxOtherCurrenciesVotes)
-	if err!= nil {
+	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if string(p.TxMap["new_max_other_currencies"]) != string(jsonData) {
-		return p.ErrInfo("p.TxMap[new_max_other_currencies] != jsonData "+string(p.TxMap["new_max_other_currencies"])+"!="+string(jsonData))
+		return p.ErrInfo("p.TxMap[new_max_other_currencies] != jsonData " + string(p.TxMap["new_max_other_currencies"]) + "!=" + string(jsonData))
 	}
 
 	return nil
 }
 
-func (p *Parser) NewMaxOtherCurrencies() (error) {
+func (p *Parser) NewMaxOtherCurrencies() error {
 
 	currencyList := make(map[string]int64)
 	err := json.Unmarshal(p.TxMap["new_max_other_currencies"], &currencyList)
@@ -143,7 +142,7 @@ func (p *Parser) NewMaxOtherCurrencies() (error) {
 	//sort.Sort(sort.Reverse(sort.IntSlice(keys)))
 
 	for _, currencyId := range currencyIds {
-		count:=currencyList[utils.IntToStr(currencyId)]
+		count := currencyList[utils.IntToStr(currencyId)]
 
 		logData, err := p.OneRow("SELECT max_other_currencies, log_id FROM currency WHERE id  =  ?", currencyId).String()
 		if err != nil {
@@ -165,7 +164,7 @@ func (p *Parser) NewMaxOtherCurrencies() (error) {
 	return nil
 }
 
-func (p *Parser) NewMaxOtherCurrenciesRollback() (error) {
+func (p *Parser) NewMaxOtherCurrenciesRollback() error {
 	currencyList := make(map[string]int64)
 	err := json.Unmarshal(p.TxMap["new_max_other_currencies"], &currencyList)
 	if err != nil {

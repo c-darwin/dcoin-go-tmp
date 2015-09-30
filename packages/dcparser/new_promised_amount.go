@@ -3,43 +3,42 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
+	//	"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	"strings"
 )
-
 
 // если из-за смены местоположения или изначально после new_promised_amount получили rejected,
 // то просто шлем новый запрос. возможно был косяк с видео-файлом.
 // Если было delete=1, то перезаписываем
 
-func (p *Parser) NewPromisedAmountInit() (error) {
+func (p *Parser) NewPromisedAmountInit() error {
 	var fields []map[string]string
-	if p.BlockData!= nil && p.BlockData.BlockId < 27134 {
-		fields = []map[string]string {{"currency_id":"int64"}, {"amount":"money"}, {"video_type":"string"}, {"video_url_id":"string"}, {"sign":"bytes"}}
+	if p.BlockData != nil && p.BlockData.BlockId < 27134 {
+		fields = []map[string]string{{"currency_id": "int64"}, {"amount": "money"}, {"video_type": "string"}, {"video_url_id": "string"}, {"sign": "bytes"}}
 	} else {
-		fields = []map[string]string {{"currency_id":"int64"}, {"amount":"money"}, {"video_type":"string"}, {"video_url_id":"string"}, {"payment_systems_ids":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"currency_id": "int64"}, {"amount": "money"}, {"video_type": "string"}, {"video_url_id": "string"}, {"payment_systems_ids": "string"}, {"sign": "bytes"}}
 	}
-	err := p.GetTxMaps(fields);
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) NewPromisedAmountFront() (error) {
+func (p *Parser) NewPromisedAmountFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"currency_id":"int", "amount":"amount", "video_type":"video_type", "video_url_id":"video_url_id"}
-	if p.BlockData == nil || p.BlockData.BlockId >  27134 {
+	verifyData := map[string]string{"currency_id": "int", "amount": "amount", "video_type": "video_type", "video_url_id": "video_url_id"}
+	if p.BlockData == nil || p.BlockData.BlockId > 27134 {
 		verifyData["payment_systems_ids"] = "payment_systems_ids"
 	}
 	err = p.CheckInputData(verifyData)
@@ -80,7 +79,7 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	// т.к. можно перевести из mining в repaid, где нет лимитов, и так проделать много раз, то
 	// нужно жестко лимитировать ОБЩУЮ сумму по всем promised_amount данной валюты
 	repaidAmount, err := p.GetRepaidAmount(p.TxMaps.Int64["currency_id"], p.TxUserID)
-	if p.TxMaps.Money["amount"] + repaidAmount > float64(newMaxPromisedAmount) {
+	if p.TxMaps.Money["amount"]+repaidAmount > float64(newMaxPromisedAmount) {
 		return p.ErrInfo("amount")
 	}
 
@@ -121,28 +120,28 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if latitude == 0 && p.TxUserID!=1 {
+	if latitude == 0 && p.TxUserID != 1 {
 		return p.ErrInfo("!geo")
 	}
-/*
-	var txTime int64
-	if p.BlockData!=nil { // тр-ия пришла в блоке
-		txTime = p.BlockData.Time
-	} else { // голая тр-ия
-		txTime = time.Now().Unix() - 30 // просто на всякий случай небольшой запас
-	}*/
+	/*
+		var txTime int64
+		if p.BlockData!=nil { // тр-ия пришла в блоке
+			txTime = p.BlockData.Time
+		} else { // голая тр-ия
+			txTime = time.Now().Unix() - 30 // просто на всякий случай небольшой запас
+		}*/
 	err = p.CheckCashRequests(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	forSign:=""
-	if p.BlockData!=nil && p.BlockData.BlockId < 27134 {
+	forSign := ""
+	if p.BlockData != nil && p.BlockData.BlockId < 27134 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["video_type"], p.TxMap["video_url_id"])
 	} else {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["amount"], p.TxMap["video_type"], p.TxMap["video_url_id"], p.TxMap["payment_systems_ids"])
 	}
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -157,13 +156,13 @@ func (p *Parser) NewPromisedAmountFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewPromisedAmount() (error) {
+func (p *Parser) NewPromisedAmount() error {
 	addSqlNames := ""
 	addSqlValues := ""
 	if p.BlockData.BlockId > 27134 {
 		paymentSystemsIds := strings.Split(string(p.TxMaps.String["payment_systems_ids"]), ",")
 		for i, v := range paymentSystemsIds {
-			addSqlNames += fmt.Sprintf("ps%d,", (i+1))
+			addSqlNames += fmt.Sprintf("ps%d,", (i + 1))
 			addSqlValues += fmt.Sprintf("%s,", v)
 		}
 	}
@@ -174,26 +173,26 @@ func (p *Parser) NewPromisedAmount() (error) {
 						user_id,
 						amount,
 						currency_id,
-						`+addSqlNames+`
+						` + addSqlNames + `
 						video_type,
 						video_url_id,
 						votes_start_time
 					)
 					VALUES (
-						`+utils.Int64ToStr(p.TxMaps.Int64["user_id"])+`,
-						`+utils.Float64ToStr(p.TxMaps.Money["amount"])+`,
-						`+utils.Int64ToStr(p.TxMaps.Int64["currency_id"])+`,
-						`+addSqlValues+`
-						'`+p.TxMaps.String["video_type"]+`',
-						'`+p.TxMaps.String["video_url_id"]+`',
-						`+utils.Int64ToStr(p.BlockData.Time)+`
+						` + utils.Int64ToStr(p.TxMaps.Int64["user_id"]) + `,
+						` + utils.Float64ToStr(p.TxMaps.Money["amount"]) + `,
+						` + utils.Int64ToStr(p.TxMaps.Int64["currency_id"]) + `,
+						` + addSqlValues + `
+						'` + p.TxMaps.String["video_type"] + `',
+						'` + p.TxMaps.String["video_url_id"] + `',
+						` + utils.Int64ToStr(p.BlockData.Time) + `
 					)`)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxMaps.Int64["user_id"])
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxMaps.Int64["user_id"])
 	if err != nil {
 		return err
 	}
@@ -208,7 +207,7 @@ func (p *Parser) NewPromisedAmount() (error) {
 	return nil
 }
 
-func (p *Parser) NewPromisedAmountRollback() (error) {
+func (p *Parser) NewPromisedAmountRollback() error {
 	err := p.ExecSql("DELETE FROM promised_amount WHERE user_id = ? AND amount = ? AND currency_id = ? AND status = 'pending' AND votes_start_time = ?", p.TxMaps.Int64["user_id"], p.TxMaps.Money["amount"], p.TxMaps.Int64["currency_id"], p.BlockData.Time)
 	if err != nil {
 		return p.ErrInfo(err)

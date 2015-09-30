@@ -35,7 +35,7 @@ func TestblockIsReady() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -68,13 +68,13 @@ func TestblockIsReady() {
 			continue
 		}
 
-		sleepData, err := d.GetSleepData();
+		sleepData, err := d.GetSleepData()
 		sleep := d.GetIsReadySleep(prevBlock.Level, sleepData["is_ready"])
 		prevHeadHash := prevBlock.HeadHash
 
 		// Если случится откат или придет новый блок, то testblock станет неактуален
 		startSleep := utils.Time()
-		for i:=0; i < int(sleep); i++ {
+		for i := 0; i < int(sleep); i++ {
 			err, restart := d.dbLock()
 			if restart {
 				break BEGIN
@@ -96,22 +96,21 @@ func TestblockIsReady() {
 				continue BEGIN
 			}
 			log.Info("%v", "i", i, "time", utils.Time())
-			if utils.Time() - startSleep > sleep {
+			if utils.Time()-startSleep > sleep {
 				break
 			}
-			utils.Sleep(1)  // спим 1 сек. общее время = $sleep
+			utils.Sleep(1) // спим 1 сек. общее время = $sleep
 		}
 
-
 		/*
-		Заголовок
-		TYPE (0-блок, 1-тр-я)       FF (256)
-		BLOCK_ID   				       FF FF FF FF (4 294 967 295)
-		TIME       					       FF FF FF FF (4 294 967 295)
-		USER_ID                          FF FF FF FF FF (1 099 511 627 775)
-		LEVEL                              FF (256)
-		SIGN                               от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-		Далее - тело блока (Тр-ии)
+			Заголовок
+			TYPE (0-блок, 1-тр-я)       FF (256)
+			BLOCK_ID   				       FF FF FF FF (4 294 967 295)
+			TIME       					       FF FF FF FF (4 294 967 295)
+			USER_ID                          FF FF FF FF FF (1 099 511 627 775)
+			LEVEL                              FF (256)
+			SIGN                               от 128 байта до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+			Далее - тело блока (Тр-ии)
 		*/
 
 		// блокируем изменения данных в тестблоке
@@ -173,14 +172,14 @@ func TestblockIsReady() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		forSign := fmt.Sprintf("0,%v,%s,%v,%v,%v,%s", testBlockData["block_id"], prevBlockHash, testBlockData["time"], testBlockData["user_id"], testBlockData["level"],utils.BinToHex([]byte(testBlockData["mrkl_root"])))
+		forSign := fmt.Sprintf("0,%v,%s,%v,%v,%v,%s", testBlockData["block_id"], prevBlockHash, testBlockData["time"], testBlockData["user_id"], testBlockData["level"], utils.BinToHex([]byte(testBlockData["mrkl_root"])))
 		log.Debug("forSign %v", forSign)
 		log.Debug("signature %x", testBlockData["signature"])
 
 		p := new(dcparser.Parser)
 		p.DCDB = d.DCDB
 		// проверяем подпись
-		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true);
+		_, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, []byte(testBlockData["signature"]), true)
 		if err != nil {
 			log.Error("incorrect signature %v")
 			p.RollbackTransactionsTestblock(true)
@@ -211,10 +210,10 @@ func TestblockIsReady() {
 		}
 
 		// готовим заголовок
-		newBlockIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["block_id"]), 4 );
-		timeBinary := utils.DecToBin(utils.StrToInt64(testBlockData["time"]), 4 );
-		userIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["user_id"]), 5 );
-		levelBinary := utils.DecToBin(utils.StrToInt64(testBlockData["level"]), 1 );
+		newBlockIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["block_id"]), 4)
+		timeBinary := utils.DecToBin(utils.StrToInt64(testBlockData["time"]), 4)
+		userIdBinary := utils.DecToBin(utils.StrToInt64(testBlockData["user_id"]), 5)
+		levelBinary := utils.DecToBin(utils.StrToInt64(testBlockData["level"]), 1)
 		//prevBlockHashBinary := prevBlock.Hash
 		//merkleRootBinary := testBlockData["mrklRoot"];
 
@@ -259,6 +258,5 @@ func TestblockIsReady() {
 
 		utils.Sleep(1)
 	}
-
 
 }

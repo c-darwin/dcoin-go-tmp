@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-func (p *Parser) NewHolidaysInit() (error) {
-	fields := []map[string]string {{"start_time":"int64"}, {"end_time":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) NewHolidaysInit() error {
+	fields := []map[string]string{{"start_time": "int64"}, {"end_time": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) NewHolidaysFront() (error) {
+func (p *Parser) NewHolidaysFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"start_time":"bigint", "end_time":"bigint"}
+	verifyData := map[string]string{"start_time": "bigint", "end_time": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -35,7 +35,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["start_time"], p.TxMap["end_time"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -47,7 +47,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 	}
 
 	var txTime int64
-	if p.BlockData!=nil {
+	if p.BlockData != nil {
 		txTime = p.BlockData.Time
 	} else {
 		// если каникулы попадут в один блок с cash_requet_out и у каникул будет время начала равно времени блока, то будет ошибка. Делаем запас 1 час
@@ -59,7 +59,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 	}
 
 	// допустим отпуск не более чем на X дней.
-	if  p.TxMaps.Int64["end_time"] - p.TxMaps.Int64["start_time"] > p.Variables.Int64["holidays_max"] {
+	if p.TxMaps.Int64["end_time"]-p.TxMaps.Int64["start_time"] > p.Variables.Int64["holidays_max"] {
 		return p.ErrInfo("end_time - start_time > holidays_max")
 	}
 
@@ -86,7 +86,7 @@ func (p *Parser) NewHolidaysFront() (error) {
 
 	return nil
 }
-func (p *Parser) NewHolidays() (error) {
+func (p *Parser) NewHolidays() error {
 	//fmt.Println("TxMap", p.TxMap)
 	//var myUserIds []int64;
 	err := p.ExecSql(`INSERT INTO holidays (user_id, start_time,end_time) VALUES (?, ?, ?)`,
@@ -95,12 +95,12 @@ func (p *Parser) NewHolidays() (error) {
 		return err
 	}
 	// проверим, не наш ли это user_id
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
 	//fmt.Println(myUserIds)
-	if p.TxUserID  == myUserId && myBlockId <= p.BlockData.BlockId {
+	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		// обновим статус в нашей локальной табле
 		err := p.ExecSql("DELETE FROM "+myPrefix+"my_holidays WHERE start_time=? AND end_time=?", p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
 		if err != nil {
@@ -109,7 +109,7 @@ func (p *Parser) NewHolidays() (error) {
 	}
 	return nil
 }
-func (p *Parser) NewHolidaysRollback() (error) {
+func (p *Parser) NewHolidaysRollback() error {
 	//fmt.Println(p.TxMap)
 	err := p.ExecSql("DELETE FROM holidays WHERE user_id=? AND start_time=? AND end_time=?", p.TxUserID, p.TxMaps.Int64["start_time"], p.TxMaps.Int64["end_time"])
 
@@ -124,7 +124,6 @@ func (p *Parser) NewHolidaysRollback() (error) {
 	return err
 }
 
-
-func (p *Parser) NewHolidaysRollbackFront() (error) {
+func (p *Parser) NewHolidaysRollbackFront() error {
 	return p.limitRequestsRollback("holidays")
 }

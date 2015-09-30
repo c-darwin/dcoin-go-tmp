@@ -1,14 +1,15 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"bytes"
 	"errors"
 	"fmt"
-	"net"
-	"io/ioutil"
-	"time"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io"
-	"bytes"
+	"io/ioutil"
+	"net"
 	"strings"
+	"time"
 )
 
 func (c *Controller) UploadVideo() (string, error) {
@@ -43,7 +44,7 @@ func (c *Controller) UploadVideo() (string, error) {
 		videoType = c.r.MultipartForm.Value["type"][0]
 	}
 	end := "mp4"
-  	switch contentType {
+	switch contentType {
 	case "video/mp4", "video/quicktime":
 		end = "mp4"
 	case "video/ogg":
@@ -53,14 +54,14 @@ func (c *Controller) UploadVideo() (string, error) {
 	case "video/3gpp":
 
 		fmt.Println("3gpp")
-		conn, err := net.DialTimeout("tcp", "3gp.dcoin.club:8099", 5 * time.Second)
+		conn, err := net.DialTimeout("tcp", "3gp.dcoin.club:8099", 5*time.Second)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		defer conn.Close()
 
 		conn.SetReadDeadline(time.Now().Add(240 * time.Second))
-		conn.SetWriteDeadline(time.Now().Add(240* time.Second))
+		conn.SetWriteDeadline(time.Now().Add(240 * time.Second))
 
 		// в 4-х байтах пишем размер данных, которые пошлем далее
 		size := utils.DecToBin(len(videoBuffer.Bytes()), 4)
@@ -103,7 +104,7 @@ func (c *Controller) UploadVideo() (string, error) {
 
 	var name string
 	if videoType == "user_video" {
-		name = "public/"+utils.Int64ToStr(c.SessUserId)+"_user_video."+end;
+		name = "public/" + utils.Int64ToStr(c.SessUserId) + "_user_video." + end
 	} else {
 		x := strings.Split(videoType, "-")
 		if len(x) < 2 {
@@ -111,9 +112,9 @@ func (c *Controller) UploadVideo() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 		}
-		name = "public/"+utils.Int64ToStr(c.SessUserId)+"_promised_amount_"+x[1]+"."+end;
+		name = "public/" + utils.Int64ToStr(c.SessUserId) + "_promised_amount_" + x[1] + "." + end
 	}
-	log.Debug(*utils.Dir+"/"+name)
+	log.Debug(*utils.Dir + "/" + name)
 	err = ioutil.WriteFile(*utils.Dir+"/"+name, binaryVideo, 0644)
 	if err != nil {
 		return "", utils.ErrInfo(err)

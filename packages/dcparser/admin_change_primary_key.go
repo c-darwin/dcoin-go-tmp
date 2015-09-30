@@ -2,15 +2,15 @@ package dcparser
 
 import (
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
-func (p *Parser) AdminChangePrimaryKeyInit() (error) {
+func (p *Parser) AdminChangePrimaryKeyInit() error {
 
-	fields := []map[string]string {{"for_user_id":"int64"}, {"public_key":"bytes"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"for_user_id": "int64"}, {"public_key": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -19,14 +19,14 @@ func (p *Parser) AdminChangePrimaryKeyInit() (error) {
 	return nil
 }
 
-func (p *Parser) AdminChangePrimaryKeyFront() (error) {
+func (p *Parser) AdminChangePrimaryKeyFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"for_user_id":"user_id", "public_key_hex":"public_key"}
+	verifyData := map[string]string{"for_user_id": "user_id", "public_key_hex": "public_key"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -56,18 +56,18 @@ func (p *Parser) AdminChangePrimaryKeyFront() (error) {
 	}
 
 	// прошел ли месяц с момента, когда кто-то запросил смену ключа
-	if p.BlockData !=nil && p.BlockData.BlockId > 170770 {
-		if txTime - data["change_key_time"] < consts.CHANGE_KEY_PERIOD {
+	if p.BlockData != nil && p.BlockData.BlockId > 170770 {
+		if txTime-data["change_key_time"] < consts.CHANGE_KEY_PERIOD {
 			return p.ErrInfo("CHANGE_KEY_PERIOD")
 		}
 	} else {
-		if txTime - data["change_key_time"] < consts.CHANGE_KEY_PERIOD_170770 {
+		if txTime-data["change_key_time"] < consts.CHANGE_KEY_PERIOD_170770 {
 			return p.ErrInfo("CHANGE_KEY_PERIOD_170770")
 		}
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["for_user_id"], p.TxMap["public_key_hex"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -79,11 +79,11 @@ func (p *Parser) AdminChangePrimaryKeyFront() (error) {
 }
 
 func (p *Parser) AdminChangePrimaryKey() error {
-	return p.selectiveLoggingAndUpd([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, []interface {}{p.TxMaps.Bytes["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
+	return p.selectiveLoggingAndUpd([]string{"public_key_0", "public_key_1", "public_key_2", "change_key_close"}, []interface{}{p.TxMaps.Bytes["public_key_hex"], "", "", "1"}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxMaps.Int64["for_user_id"])})
 }
 
 func (p *Parser) AdminChangePrimaryKeyRollback() error {
-	return p.selectiveRollback([]string{"public_key_0","public_key_1","public_key_2","change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
+	return p.selectiveRollback([]string{"public_key_0", "public_key_1", "public_key_2", "change_key_close"}, "users", "user_id="+utils.Int64ToStr(p.TxMaps.Int64["for_user_id"]), false)
 }
 
 func (p *Parser) AdminChangePrimaryKeyRollbackFront() error {

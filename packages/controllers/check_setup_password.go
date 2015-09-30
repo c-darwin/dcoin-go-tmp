@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
@@ -15,17 +16,15 @@ func (c *Controller) CheckSetupPassword() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		publicKey, err := c.GetUserPublicKey(userId);
+		publicKey, err := c.GetUserPublicKey(userId)
 		if err != nil {
 			return "", err
 		}
 		c.sess.Set("user_id", userId)
 		c.sess.Set("public_key", string(utils.BinToHex(publicKey)))
-		log.Debug("public_key check: %s",string(utils.BinToHex(publicKey)))
+		log.Debug("public_key check: %s", string(utils.BinToHex(publicKey)))
 		return "ok", nil
 	}
 	return "", nil
 
 }
-
-

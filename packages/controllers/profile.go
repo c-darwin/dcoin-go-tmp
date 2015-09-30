@@ -1,9 +1,10 @@
 package controllers
+
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"fmt"
-	"encoding/json"
 )
 
 func (c *Controller) Profile() (string, error) {
@@ -31,7 +32,7 @@ func (c *Controller) Profile() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		t := time.Unix(abusestime, 0)
-		abuses+=fmt.Sprintf("from_user_id: %d; time: %s; comment: %s<br>", from_user_id, t.Format(c.TimeFormat), comment)
+		abuses += fmt.Sprintf("from_user_id: %d; time: %s; comment: %s<br>", from_user_id, t.Format(c.TimeFormat), comment)
 	}
 	if len(abuses) == 0 {
 		abuses = "No"
@@ -48,4 +49,3 @@ func (c *Controller) Profile() (string, error) {
 
 	return string(result), nil
 }
-

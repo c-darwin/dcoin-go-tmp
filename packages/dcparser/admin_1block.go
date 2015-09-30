@@ -5,33 +5,32 @@ import (
 	"regexp"
 )
 
-
-func (p *Parser) Admin1BlockInit() (error) {
-	fields := []string {"data", "sign"}
+func (p *Parser) Admin1BlockInit() error {
+	fields := []string{"data", "sign"}
 	TxMap := make(map[string][]byte)
-	TxMap, err := p.GetTxMap(fields);
-	p.TxMap = TxMap;
+	TxMap, err := p.GetTxMap(fields)
+	p.TxMap = TxMap
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Parser) Admin1BlockFront() (error) {
+func (p *Parser) Admin1BlockFront() error {
 	// public_key админа еще нет, он в этом блоке
 	return nil
 }
 
-
 type firstBlock struct {
-	Publickey string `json:"public_key"`
-	NodePublicKey string `json:"node_public_key"`
-	Host string `json:"host"`
-	Currency [][]interface{} `json:"currency"`
-	Variables map[string]interface{} `json:"variables"`
-	SpotsCompatibility map[string]string `json:"spots_compatibility"`
+	Publickey          string                 `json:"public_key"`
+	NodePublicKey      string                 `json:"node_public_key"`
+	Host               string                 `json:"host"`
+	Currency           [][]interface{}        `json:"currency"`
+	Variables          map[string]interface{} `json:"variables"`
+	SpotsCompatibility map[string]string      `json:"spots_compatibility"`
 }
-func (p *Parser) Admin1Block() (error) {
+
+func (p *Parser) Admin1Block() error {
 	var firstBlock firstBlock
 	err := json.Unmarshal(p.TxMap["data"], &firstBlock)
 	if err != nil {
@@ -67,7 +66,7 @@ func (p *Parser) Admin1Block() (error) {
 	re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
 	match := re.FindStringSubmatch(firstBlock.Host)
 	if len(match) != 0 {
-		tcpHost = match[1]+":8088"
+		tcpHost = match[1] + ":8088"
 	}
 	err = p.ExecSql(`INSERT INTO miners_data (user_id, miner_id, status, node_public_key, http_host, tcp_host, photo_block_id, photo_max_miner_id, miners_keepers)
 		VALUES (1,1,'miner',[hex],?,?,1,1,1)`,
@@ -95,6 +94,6 @@ func (p *Parser) Admin1Block() (error) {
 	return nil
 }
 
-func (p *Parser) Admin1BlockRollback() (error) {
+func (p *Parser) Admin1BlockRollback() error {
 	return nil
 }

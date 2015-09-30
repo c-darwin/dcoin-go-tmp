@@ -1,25 +1,26 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type moneyBackRequestPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
 	CountSignArr []int
-	Lang map[string]string
-	UserId int64
-	OrderId int64
-	Order map[string]string
-	TxType string
-	TxTypeId int64
-	TimeNow int64
+	Lang         map[string]string
+	UserId       int64
+	OrderId      int64
+	Order        map[string]string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
 }
 
 func (c *Controller) MoneyBackRequest() (string, error) {
 
-	txType := "MoneyBackRequest";
+	txType := "MoneyBackRequest"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -30,17 +31,17 @@ func (c *Controller) MoneyBackRequest() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("money_back_request", "moneyBackRequest", &moneyBackRequestPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		ShowSignData: c.ShowSignData,
-		SignData: "",
-		UserId: c.SessUserId,
-		OrderId: orderId,
-		Order: order,
+		SignData:     "",
+		UserId:       c.SessUserId,
+		OrderId:      orderId,
+		Order:        order,
 		CountSignArr: c.CountSignArr,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId})
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

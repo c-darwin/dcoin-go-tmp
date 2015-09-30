@@ -1,27 +1,28 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"time"
 	"encoding/json"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"time"
 )
 
 type currencyExchangeDeletePage struct {
-	SignData string
+	SignData     string
 	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
+	UserId       int64
+	Alert        string
+	Lang         map[string]string
 	CountSignArr []int
-	DelId int64
+	DelId        int64
 }
 
 func (c *Controller) CurrencyExchangeDelete() (string, error) {
 
-	txType := "DelForexOrder";
+	txType := "DelForexOrder"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -64,15 +65,15 @@ func (c *Controller) CurrencyExchangeDelete() (string, error) {
 	return b.String(), nil*/
 
 	TemplateStr, err := makeTemplate("currency_exchange_delete", "currencyExchangeDelete", &currencyExchangeDeletePage{
-		Lang: c.Lang,
+		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		DelId: delId,
-		SignData: signData})
+		UserId:       c.SessUserId,
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId,
+		DelId:        delId,
+		SignData:     signData})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

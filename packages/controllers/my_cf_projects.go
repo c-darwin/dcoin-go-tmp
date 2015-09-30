@@ -1,30 +1,30 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type MyCfProjectsPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
 	CountSignArr []int
-	Lang map[string]string
-	CfLng map[string]string
+	Lang         map[string]string
+	CfLng        map[string]string
 	CurrencyList map[int64]string
-	Projects map[string]map[string]string
-	UserId int64
+	Projects     map[string]map[string]string
+	UserId       int64
 	ProjectsLang map[string]map[string]string
 }
-
 
 func (c *Controller) MyCfProjects() (string, error) {
 
 	var err error
 
-	txType := "NewCfProject";
+	txType := "NewCfProject"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
@@ -47,29 +47,27 @@ func (c *Controller) MyCfProjects() (string, error) {
 			data[k] = v
 		}
 		projects[data["id"]] = data
-		lang, err:=c.GetMap(`SELECT id, lang_id FROM cf_projects_data WHERE project_id = ?`, "id", "lang_id", data["id"])
+		lang, err := c.GetMap(`SELECT id, lang_id FROM cf_projects_data WHERE project_id = ?`, "id", "lang_id", data["id"])
 		projectsLang[data["id"]] = lang
 	}
 
 	cfLng, err := c.GetAllCfLng()
 
 	TemplateStr, err := makeTemplate("my_cf_projects", "myCfProjects", &MyCfProjectsPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		CfLng: cfLng,
+		UserId:       c.SessUserId,
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId,
+		CfLng:        cfLng,
 		CurrencyList: c.CurrencyList,
-		Projects: projects,
+		Projects:     projects,
 		ProjectsLang: projectsLang})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

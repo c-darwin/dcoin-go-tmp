@@ -1,14 +1,16 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/availablekey"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type availableKeysPage struct {
 	AutoLogin bool
-	Key string
-	LangId int
+	Key       string
+	LangId    int
 }
+
 /*
 func checkAvailableKey(key string, db *utils.DCDB) (int64, string, error) {
 	publicKeyAsn, err := utils.GetPublicFromPrivate(key)

@@ -2,14 +2,14 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) ChangeKeyActiveInit() (error) {
+func (p *Parser) ChangeKeyActiveInit() error {
 
-	fields := []map[string]string {{"secret":"bytes"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"secret": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -24,7 +24,7 @@ func (p *Parser) ChangeKeyActiveInit() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeKeyActiveFront() (error) {
+func (p *Parser) ChangeKeyActiveFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -44,7 +44,7 @@ func (p *Parser) ChangeKeyActiveFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMaps.String["secret_hex"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -59,11 +59,11 @@ func (p *Parser) ChangeKeyActiveFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeKeyActive() (error) {
-	return p.selectiveLoggingAndUpd([]string{"change_key"}, []interface {}{p.TxMaps.Int64["active"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+func (p *Parser) ChangeKeyActive() error {
+	return p.selectiveLoggingAndUpd([]string{"change_key"}, []interface{}{p.TxMaps.Int64["active"]}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
-func (p *Parser) ChangeKeyActiveRollback() (error) {
+func (p *Parser) ChangeKeyActiveRollback() error {
 	return p.selectiveRollback([]string{"change_key"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 }
 

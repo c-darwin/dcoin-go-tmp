@@ -1,19 +1,19 @@
 package tcpserver
 
 import (
+	"flag"
+	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/op/go-logging"
 	"net"
 	"runtime"
-	"fmt"
-	"github.com/op/go-logging"
 	"sync"
-	"flag"
 )
 
 var (
-	log = logging.MustGetLogger("tcpserver")
+	log     = logging.MustGetLogger("tcpserver")
 	counter int64
-	mutex = &sync.Mutex{}
+	mutex   = &sync.Mutex{}
 )
 
 func init() {
@@ -22,7 +22,7 @@ func init() {
 
 type TcpServer struct {
 	*utils.DCDB
-	Conn net.Conn
+	Conn      net.Conn
 	variables *utils.Variables
 }
 
@@ -78,7 +78,7 @@ func (t *TcpServer) HandleTcpRequest() {
 		t.Type2()
 	case 3:
 		t.Type3()
-	case 4 :
+	case 4:
 		t.Type4()
 	case 5:
 		t.Type5()

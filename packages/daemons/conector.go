@@ -1,16 +1,15 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"time"
-	"net"
-	"io/ioutil"
-	"strings"
-	"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"io/ioutil"
+	"net"
+	"os"
+	"strings"
+	"time"
 )
-
 
 func Connector() {
 	defer func() {
@@ -20,7 +19,7 @@ func Connector() {
 		}
 	}()
 
-	if _, err := os.Stat(*utils.Dir+"/nodes.inc"); os.IsNotExist(err) {
+	if _, err := os.Stat(*utils.Dir + "/nodes.inc"); os.IsNotExist(err) {
 		data, err := static.Asset("static/nodes.inc")
 		if err != nil {
 			log.Error("%v", err)
@@ -46,7 +45,7 @@ func Connector() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -88,7 +87,7 @@ func Connector() {
 			collective = append(collective, myUserId)
 		}
 		// в сингл-моде будет только $my_miners_ids[0]
-		myMinersIds, err := d.GetMyMinersIds(collective);
+		myMinersIds, err := d.GetMyMinersIds(collective)
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue
@@ -134,7 +133,7 @@ func Connector() {
 			}*/
 
 			// если нода забанена недавно
-			if utils.StrToInt64(data["ban_start"]) > utils.Time() - consts.NODE_BAN_TIME {
+			if utils.StrToInt64(data["ban_start"]) > utils.Time()-consts.NODE_BAN_TIME {
 				delMiners = append(delMiners, data["miner_id"])
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
 				if err != nil {
@@ -160,10 +159,10 @@ func Connector() {
 					ch_ <- check(host, userId)
 				}()
 				select {
-					case reachable := <-ch_:
-						ch <- reachable
-					case <-time.After(consts.WAIT_CONFIRMED_NODES*time.Second):
-						ch <-  &answerType{userId: userId, answer: 0}
+				case reachable := <-ch_:
+					ch <- reachable
+				case <-time.After(consts.WAIT_CONFIRMED_NODES * time.Second):
+					ch <- &answerType{userId: userId, answer: 0}
 				}
 			}(userId, host["host"])
 		}
@@ -198,7 +197,7 @@ func Connector() {
 				d.PrintSleep(err, 1)
 				continue BEGIN
 			}
-			i0:=0
+			i0 := 0
 			for {
 				rand := 1
 				if max > 1 {
@@ -206,7 +205,7 @@ func Connector() {
 				}
 				idArray[rand] = 1
 				i0++
-				if i0>30 || len(idArray)>=need || len(idArray)>=max {
+				if i0 > 30 || len(idArray) >= need || len(idArray) >= max {
 					break
 				}
 			}
@@ -223,7 +222,7 @@ func Connector() {
 			ids := ""
 			if len(idArray) > 0 {
 				for id, _ := range idArray {
-					ids+=utils.IntToStr(id)+","
+					ids += utils.IntToStr(id) + ","
 				}
 				ids = ids[:len(ids)-1]
 				minersHosts, err := d.GetMap(`
@@ -232,7 +231,7 @@ func Connector() {
 						WHERE miner_id IN (`+ids+`)`, "tcp_host", "user_id")
 				for host, userId := range minersHosts {
 					if len(nodesBan[host]) > 0 {
-						if utils.StrToInt64(nodesBan[host]) > utils.Time() - consts.NODE_BAN_TIME {
+						if utils.StrToInt64(nodesBan[host]) > utils.Time()-consts.NODE_BAN_TIME {
 							continue
 						}
 					}
@@ -255,7 +254,7 @@ func Connector() {
 		log.Debug("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
 		if len(hosts) < 10 {
-			hostsData_, err := ioutil.ReadFile(*utils.Dir+"/nodes.inc")
+			hostsData_, err := ioutil.ReadFile(*utils.Dir + "/nodes.inc")
 			if err != nil {
 				d.PrintSleep(err, 1)
 				continue BEGIN
@@ -271,7 +270,7 @@ func Connector() {
 				max = len(hostsData)
 			}
 			log.Debug("max: %v", max)
-			for i:=0; i < max; i++ {
+			for i := 0; i < max; i++ {
 				r := utils.RandInt(0, max)
 				if len(hostsData) <= r {
 					continue
@@ -285,7 +284,7 @@ func Connector() {
 					continue
 				}
 				if len(nodesBan[host]) > 0 {
-					if utils.StrToInt64(nodesBan[host]) > utils.Time() - consts.NODE_BAN_TIME {
+					if utils.StrToInt64(nodesBan[host]) > utils.Time()-consts.NODE_BAN_TIME {
 						continue
 					}
 				}
@@ -309,7 +308,7 @@ func Connector() {
 		if nodeCount > 5 {
 			nodesFile := ""
 			for k, v := range nodesInc {
-				nodesFile+=k+";"+v+"\n"
+				nodesFile += k + ";" + v + "\n"
 			}
 			nodesFile = nodesFile[:len(nodesFile)-1]
 			err := ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(nodesFile), 0644)
@@ -319,7 +318,7 @@ func Connector() {
 			}
 		}
 
-		for i:=0; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			if CheckDaemonsRestart() {
 				utils.Sleep(1)
 				break BEGIN
@@ -342,7 +341,7 @@ func check(host string, userId int64) *answerType {
 		return &answerType{userId: userId, answer: 0}
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
-	conn, err := net.DialTimeout("tcp", host, 5 * time.Second)
+	conn, err := net.DialTimeout("tcp", host, 5*time.Second)
 
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))

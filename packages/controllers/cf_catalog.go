@@ -1,18 +1,18 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-
 )
 
 type cfCatalogPage struct {
-	Lang map[string]string
-	CfUrl string
-	CfCategory []map[string]string
+	Lang         map[string]string
+	CfUrl        string
+	CfCategory   []map[string]string
 	CurrencyList map[int64]string
-	CurCategory string
-	Projects map[string]map[string]string
-	UserId int64
-	CategoryId string
+	CurCategory  string
+	Projects     map[string]map[string]string
+	UserId       int64
+	CategoryId   string
 }
 
 func (c *Controller) CfCatalog() (string, error) {
@@ -25,11 +25,11 @@ func (c *Controller) CfCatalog() (string, error) {
 	var curCategory string
 	addSql := ""
 	if categoryId != "0" {
-		addSql = `AND category_id = `+categoryId
+		addSql = `AND category_id = ` + categoryId
 		curCategory = c.Lang["cf_category_"+categoryId]
 	}
 
-	cfUrl := "";
+	cfUrl := ""
 
 	projects := make(map[string]map[string]string)
 	cfProjects, err := c.GetAll(`
@@ -60,18 +60,16 @@ func (c *Controller) CfCatalog() (string, error) {
 	cfCategory := utils.MakeCfCategories(c.Lang)
 
 	TemplateStr, err := makeTemplate("cf_catalog", "cfCatalog", &cfCatalogPage{
-		Lang: c.Lang,
-		CfCategory: cfCategory,
+		Lang:         c.Lang,
+		CfCategory:   cfCategory,
 		CurrencyList: c.CurrencyList,
-		CurCategory: curCategory,
-		Projects: projects,
-		UserId: c.SessUserId,
-		CategoryId: categoryId,
-		CfUrl: cfUrl})
+		CurCategory:  curCategory,
+		Projects:     projects,
+		UserId:       c.SessUserId,
+		CategoryId:   categoryId,
+		CfUrl:        cfUrl})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

@@ -1,15 +1,16 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"regexp"
 	"encoding/json"
-	"strings"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math"
+	"regexp"
+	"strings"
 )
 
 func (c *Controller) AlertMessage() (string, error) {
 
-	if c.SessRestricted!=0 {
+	if c.SessRestricted != 0 {
 		return "", nil
 	}
 
@@ -38,7 +39,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		}
 		if data["currency_list"] != "ALL" {
 			// проверим, есть ли у нас обещанные суммы с такой валютой
-			promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN ("+data["currency_list"]+")").Int64()
+			promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE currency_id IN (" + data["currency_list"] + ")").Int64()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -54,13 +55,13 @@ func (c *Controller) AlertMessage() (string, error) {
 		result += `<script>
 			$('#close_alert').bind('click', function () {
 				$.post( 'ajax?controllerName=closeAlert', {
-					'id' : '`+data["id"]+`'
+					'id' : '` + data["id"] + `'
 				} );
 			});
 			</script>
 			 <div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			 <h4>Warning!</h4>
-			    `+adminMessage+`
+			    ` + adminMessage + `
 			  </div>`
 	}
 
@@ -77,7 +78,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	newMaxVer := "0"
-	for i:=0; i < len(newVer); i++ {
+	for i := 0; i < len(newVer); i++ {
 		if utils.VersionOrdinal(newVer[i]) > utils.VersionOrdinal(myVer) && newMaxVer == "0" {
 			newMaxVer = newVer[i]
 		}
@@ -91,7 +92,7 @@ func (c *Controller) AlertMessage() (string, error) {
 	}
 
 	// для пулов и ограниченных юзеров выводим сообщение без кнопок
-	if (c.Community || c.SessRestricted!=0) && newMaxVer != "0" {
+	if (c.Community || c.SessRestricted != 0) && newMaxVer != "0" {
 		newVersion = strings.Replace(c.Lang["new_version_pulls"], "[ver]", newMaxVer, -1)
 	}
 
@@ -113,7 +114,7 @@ func (c *Controller) AlertMessage() (string, error) {
 
 			<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			    <h4>Warning!</h4>
-			   <div id='new_version_text'>`+newVersion+`</div>
+			   <div id='new_version_text'>` + newVersion + `</div>
 			 </div>`
 	}
 
@@ -133,7 +134,7 @@ func (c *Controller) AlertMessage() (string, error) {
 				alertTime := strings.Replace(c.Lang["alert_time"], "[sec]", utils.Int64ToStr(diff), -1)
 				result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				     <h4>Warning!</h4>
-				     <div>`+alertTime+`</div>
+				     <div>` + alertTime + `</div>
 				     </div>`
 			}
 		}
@@ -153,7 +154,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		if len(myNodeKey) == 0 && myMinerId > 0 {
 			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				     <h4>Warning!</h4>
-				     <div>`+c.Lang["alert_change_node_key"]+`</div>
+				     <div>` + c.Lang["alert_change_node_key"] + `</div>
 				     </div>`
 		}
 	}
@@ -161,15 +162,15 @@ func (c *Controller) AlertMessage() (string, error) {
 	// просто информируем, что в данном разделе у юзера нет прав
 	skipCommunity := []string{"nodeConfig", "nulling", "startStop"}
 	skipRestrictedUsers := []string{"nodeConfig", "changeNodeKey", "nulling", "startStop", "cashRequestsIn", "cashRequestsOut", "upgrade", "notifications", "interface"}
-	if (!c.NodeAdmin && utils.InSliceString(c.TplName, skipCommunity)) || (c.SessRestricted!=0 && utils.InSliceString(c.TplName, skipRestrictedUsers)) {
+	if (!c.NodeAdmin && utils.InSliceString(c.TplName, skipCommunity)) || (c.SessRestricted != 0 && utils.InSliceString(c.TplName, skipRestrictedUsers)) {
 		result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			  <h4>Warning!</h4>
-			  <div>`+c.Lang["permission_denied"]+`</div>
+			  <div>` + c.Lang["permission_denied"] + `</div>
 			  </div>`
 	}
 
 	// информируем, что у юзера нет прав и нужно стать майнером
-	minersOnly := []string{"myCfProjects", "newCfProject","cashRequestsIn", "cashRequestsOut", "changeNodeKey", "voting", "geolocation", "promisedAmountList", "promisedAmountAdd", "holidaysList", "newHolidays", "points", "tasks", "changeHost", "newUser", "changeCommission"}
+	minersOnly := []string{"myCfProjects", "newCfProject", "cashRequestsIn", "cashRequestsOut", "changeNodeKey", "voting", "geolocation", "promisedAmountList", "promisedAmountAdd", "holidaysList", "newHolidays", "points", "tasks", "changeHost", "newUser", "changeCommission"}
 	if utils.InSliceString(c.TplName, minersOnly) {
 		minerId, err := c.Single("SELECT miner_id FROM users LEFT JOIN miners_data ON users.user_id  =  miners_data.user_id WHERE users.user_id  =  ?", c.SessUserId).Int64()
 		if err != nil {
@@ -178,7 +179,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		if minerId == 0 {
 			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				 <h4>Warning!</h4>
-				 <div>`+c.Lang["only_for_miners"]+`</div>
+				 <div>` + c.Lang["only_for_miners"] + `</div>
 				 </div>`
 		}
 	}
@@ -197,14 +198,14 @@ func (c *Controller) AlertMessage() (string, error) {
 		}
 		if len(lastTx) == 0 { // юзер еще не начинал смену ключа
 			text = c.Lang["alert_change_primary_key"]
-		} else if len(lastTx[0]["error"]) > 0 || len(lastTx[0]["queue_tx"]) > 0 || len(lastTx[0]["tx"]) > 0 || utils.Time() - utils.StrToInt64(lastTx[0]["time_int"]) > 3600 {
+		} else if len(lastTx[0]["error"]) > 0 || len(lastTx[0]["queue_tx"]) > 0 || len(lastTx[0]["tx"]) > 0 || utils.Time()-utils.StrToInt64(lastTx[0]["time_int"]) > 3600 {
 			text = c.Lang["please_try_again_change_key"]
 		} else {
 			text = c.Lang["please_wait_changing_key"]
 		}
 		result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-				  <h4>`+c.Lang["warning"]+`</h4>
-				  <div>`+text+`</div>
+				  <h4>` + c.Lang["warning"] + `</h4>
+				  <div>` + text + `</div>
 				  </div>`
 	}
 

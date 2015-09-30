@@ -2,8 +2,8 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"regexp"
 	"os"
+	"regexp"
 )
 
 func CleaningDb() {
@@ -29,7 +29,7 @@ func CleaningDb() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -37,7 +37,7 @@ func CleaningDb() {
 		// проверим, не нужно ли нам выйти из цикла
 		if CheckDaemonsRestart() {
 			break BEGIN
-		}		
+		}
 
 		curBlockId, err := d.GetBlockId()
 		if err != nil {
@@ -51,7 +51,7 @@ func CleaningDb() {
 			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		if curBlockId - 30 > endBlockId {
+		if curBlockId-30 > endBlockId {
 			blocks, err := d.GetMap(`
 					SELECT id, data
 					FROM block_chain
@@ -104,7 +104,7 @@ func CleaningDb() {
 		}
 		log.Debug("mainLock: %v", mainLock)
 		log.Debug("utils.Time(): %v", utils.Time())
-		if mainLock > 0 && utils.Time() - autoReload > mainLock {
+		if mainLock > 0 && utils.Time()-autoReload > mainLock {
 			// на всякий случай пометим, что работаем
 			err = d.ExecSql("UPDATE main_lock SET script_name = 'cleaning_db'")
 			if err != nil {
@@ -123,9 +123,9 @@ func CleaningDb() {
 			}
 			for _, table := range allTables {
 				log.Debug("table: %s", table)
-				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang`, table); !ok{
+				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang`, table); !ok {
 					log.Debug("DELETE FROM %s", table)
-					err = d.ExecSql("DELETE FROM "+table)
+					err = d.ExecSql("DELETE FROM " + table)
 					if err != nil {
 						d.PrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
@@ -153,7 +153,7 @@ func CleaningDb() {
 			}
 		}
 
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

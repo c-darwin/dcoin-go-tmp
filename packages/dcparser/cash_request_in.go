@@ -8,29 +8,28 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	"time"
 	//"strings"
 	//"bytes"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-//	"math"
-	"database/sql"
+	//	"math"
 	"bytes"
+	"database/sql"
 )
 
 /* Если майнера забанил админ после того, как к нему пришел запрос cash_request_out,
  * то он всё равно должен отдать свои обещанные суммы, которые получат статус repaid.
-*/
-func (p *Parser) CashRequestInInit() (error) {
+ */
+func (p *Parser) CashRequestInInit() error {
 
-	fields := []map[string]string {{"cash_request_id":"int64"},{"code":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"cash_request_id": "int64"}, {"code": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
-
 
 /* не забываем, что cash_request_OUT_front проверяет формат amount,
  * можно ли делать запрос указанному юзеру, есть ли у юзера
@@ -38,7 +37,7 @@ func (p *Parser) CashRequestInInit() (error) {
  * является ли отправитель майнером
  *
  * */
-func (p *Parser) CashRequestInFront() (error) {
+func (p *Parser) CashRequestInFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -50,7 +49,7 @@ func (p *Parser) CashRequestInFront() (error) {
 	// if ( !check_input_data ($this->tx_data['code'], 'cash_code') )
 	//	return 'cash_request_in_front code';
 
-	verifyData := map[string]string {"cash_request_id":"bigint"}
+	verifyData := map[string]string{"cash_request_id": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -60,7 +59,7 @@ func (p *Parser) CashRequestInFront() (error) {
 	var status string
 	var hash_code []byte
 	err = p.QueryRow(p.FormatQuery("SELECT to_user_id, status, hash_code, time FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&to_user_id, &status, &hash_code, &cTime)
-	if err != nil && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
@@ -70,7 +69,7 @@ func (p *Parser) CashRequestInFront() (error) {
 		return p.ErrInfo("to_user_id!=user_id")
 	}
 	// должно быть pending
-	if status!="pending" {
+	if status != "pending" {
 		return p.ErrInfo("status!=pending")
 	}
 	// проверим код
@@ -78,18 +77,18 @@ func (p *Parser) CashRequestInFront() (error) {
 		return p.ErrInfo("code!=hash_code")
 	}
 	var txTime int64
-	if p.BlockData!=nil { // тр-ия пришла в блоке
+	if p.BlockData != nil { // тр-ия пришла в блоке
 		txTime = p.BlockData.Time
 	} else {
 		txTime = time.Now().Unix() // просто на всякий случай небольшой запас
 	}
 	// запрос может быть принят, только если он был отправлен не позднее чем через cash_request_time сек назад
-	if cTime < txTime - p.Variables.Int64["cash_request_time"] {
+	if cTime < txTime-p.Variables.Int64["cash_request_time"] {
 		return p.ErrInfo(fmt.Sprintf("%d < %d - %d", cTime, txTime, p.Variables.Int64["cash_request_time"]))
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["cash_request_id"], p.TxMap["code"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -99,13 +98,13 @@ func (p *Parser) CashRequestInFront() (error) {
 	return nil
 }
 
-func (p *Parser) CashRequestIn() (error) {
+func (p *Parser) CashRequestIn() error {
 	var to_user_id, from_user_id, currency_id, cTime int64
 	var status string
 	var hash_code []byte
 	var amount float64
 	err := p.QueryRow(p.FormatQuery("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
-	if err != nil && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 	// возможно нужно обновить таблицу points_status
@@ -113,14 +112,14 @@ func (p *Parser) CashRequestIn() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	promisedAmountStatus := "repaid";
+	promisedAmountStatus := "repaid"
 	// есть вероятность того, что после попадания в Dc-сеть cash_request_out придет admin_ban_miner, а после попадения в сеть cash_request_in придет admin_unban_miner. В admin_unban_miner смена статуса suspended на repaid у нового promised_amount учтено
 	userStatus, err := p.Single("SELECT status FROM miners_data WHERE user_id  =  ?", p.TxUserID).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	var repaidPromisedAmountId int64
-	if (userStatus == "suspended_miner") {
+	if userStatus == "suspended_miner" {
 		promisedAmountStatus = "suspended"
 		// нужно понять, какой promised_amount ранее имел статус repaid
 		repaidPromisedAmountId, err = p.Single("SELECT id FROM promised_amount WHERE user_id  =  ? AND currency_id  =  ? AND status_backup  =  'repaid' AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxUserID, currency_id).Int64()
@@ -145,7 +144,7 @@ func (p *Parser) CashRequestIn() (error) {
 			return p.ErrInfo(err)
 		}
 		// tdc_amount не пересчитываются, т.к. пока есть cash_requests с pending, они не растут
-		err = p.ExecSql("UPDATE promised_amount SET amount = amount + ?, tdc_amount = ?, tdc_amount_update = ?, cash_request_in_block_id = ?, log_id = ? WHERE id = ?", amount, (utils.StrToFloat64(data["tdc_amount"])+amount), p.BlockData.Time, p.BlockData.BlockId, logId, repaidPromisedAmountId)
+		err = p.ExecSql("UPDATE promised_amount SET amount = amount + ?, tdc_amount = ?, tdc_amount_update = ?, cash_request_in_block_id = ?, log_id = ? WHERE id = ?", amount, (utils.StrToFloat64(data["tdc_amount"]) + amount), p.BlockData.Time, p.BlockData.BlockId, logId, repaidPromisedAmountId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -174,7 +173,7 @@ func (p *Parser) CashRequestIn() (error) {
 	}
 
 	// обновим сумму на кошельке отправителя, вычтя amount и залогировав предыдущее значение
-	err = p.updateSenderWallet(from_user_id, currency_id, amount, 0, "cash_request", p.TxMaps.Int64["cash_request_id"], p.TxUserID, "cash_request", "decrypted");
+	err = p.updateSenderWallet(from_user_id, currency_id, amount, 0, "cash_request", p.TxMaps.Int64["cash_request_id"], p.TxUserID, "cash_request", "decrypted")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -191,13 +190,13 @@ func (p *Parser) CashRequestIn() (error) {
 		return p.ErrInfo(err)
 	}
 	var forRepaidCurrencyIdsNew []int64
-	for _, currencyId := range forRepaidCurrencyIds{
+	for _, currencyId := range forRepaidCurrencyIds {
 		// либо сумма погашенных стала >= максимальной обещанной, т.к. в этом случае прислать этому юзеру cash_request_out будет невозможно
-		maxPromisedAmount, err := p.GetMaxPromisedAmount(currencyId);
+		maxPromisedAmount, err := p.GetMaxPromisedAmount(currencyId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		repaidAmount, err := p.GetRepaidAmount(currencyId, p.TxUserID);
+		repaidAmount, err := p.GetRepaidAmount(currencyId, p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -215,7 +214,7 @@ func (p *Parser) CashRequestIn() (error) {
 
 	existsRequests := p.CheckCashRequests(p.TxUserID)
 	// возможно, что данный cash_requests с approved был единственный, и последующий вызов метода mining начислит новые TDC в соответствии с имеющимся % роста,. значит необходимо обновить tdc_amount и tdc_amount_update
-	if len(forRepaidCurrencyIdsNew) == 0 || existsRequests==nil { // у юзера нет долгов, нужно ставить ему cash_request_out_time=0
+	if len(forRepaidCurrencyIdsNew) == 0 || existsRequests == nil { // у юзера нет долгов, нужно ставить ему cash_request_out_time=0
 		err = p.updPromisedAmounts(p.TxUserID, false, true, 0)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -236,7 +235,7 @@ func (p *Parser) CashRequestIn() (error) {
 		return p.ErrInfo(err)
 	}
 	// проверим, не наш ли это user_id
-	_, myBlockId, myPrefix, myUserIds , err:= p.GetMyUserId(p.TxMaps.Int64["to_user_id"])
+	_, myBlockId, myPrefix, myUserIds, err := p.GetMyUserId(p.TxMaps.Int64["to_user_id"])
 	if err != nil {
 		return err
 	}
@@ -246,9 +245,9 @@ func (p *Parser) CashRequestIn() (error) {
 			return err
 		}
 		if len(collective) > 0 && utils.InSliceInt64(cashRequestsDataFromUserId, myUserIds) { // наш юзер - это отправитель _out
-			myPrefix = utils.Int64ToStr(cashRequestsDataFromUserId)+"_"
+			myPrefix = utils.Int64ToStr(cashRequestsDataFromUserId) + "_"
 		} else if len(collective) > 0 && utils.InSliceInt64(p.TxUserID, myUserIds) { // наш юзер - это отправитель _in
-			myPrefix = utils.Int64ToStr(p.TxUserID)+"_"
+			myPrefix = utils.Int64ToStr(p.TxUserID) + "_"
 		} else {
 			myPrefix = ""
 		}
@@ -261,7 +260,7 @@ func (p *Parser) CashRequestIn() (error) {
 	return nil
 }
 
-func (p *Parser) CashRequestInRollback() (error) {
+func (p *Parser) CashRequestInRollback() error {
 	err := p.updPromisedAmountsRollback(p.TxUserID, true)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -275,7 +274,7 @@ func (p *Parser) CashRequestInRollback() (error) {
 	var hash_code []byte
 	var amount float64
 	err = p.QueryRow(p.FormatQuery("SELECT from_user_id, to_user_id, currency_id, status, hash_code, time, amount FROM cash_requests WHERE id  =  ?"), p.TxMaps.Int64["cash_request_id"]).Scan(&from_user_id, &to_user_id, &currency_id, &status, &hash_code, &cTime, &amount)
-	if err != nil && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
@@ -343,19 +342,19 @@ func (p *Parser) CashRequestInRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	// проверим, не наш ли это user_id
-	_, _, myPrefix, myUserIds , err:= p.GetMyUserId(p.TxUserID)
+	_, _, myPrefix, myUserIds, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
-	if (utils.InSliceInt64(p.TxUserID, myUserIds) || utils.InSliceInt64(cashRequestsFromUserId, myUserIds)) {
+	if utils.InSliceInt64(p.TxUserID, myUserIds) || utils.InSliceInt64(cashRequestsFromUserId, myUserIds) {
 		collective, err := p.GetCommunityUsers()
 		if err != nil {
 			return err
 		}
 		if len(collective) > 0 && utils.InSliceInt64(cashRequestsFromUserId, myUserIds) { // наш юзер - это отправитель _out
-			myPrefix = utils.Int64ToStr(cashRequestsFromUserId)+"_"
+			myPrefix = utils.Int64ToStr(cashRequestsFromUserId) + "_"
 		} else if len(collective) > 0 && utils.InSliceInt64(p.TxUserID, myUserIds) { // наш юзер - это отправитель _in
-			myPrefix = utils.Int64ToStr(p.TxUserID)+"_"
+			myPrefix = utils.Int64ToStr(p.TxUserID) + "_"
 		} else {
 			myPrefix = ""
 		}

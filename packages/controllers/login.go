@@ -1,19 +1,20 @@
 package controllers
+
 import (
-	"html/template"
 	"bytes"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"html/template"
 )
 
 type loginStruct struct {
-	Lang map[string]string
+	Lang          map[string]string
 	MyModalIdName string
-	UserID int64
+	UserID        int64
 	PoolTechWorks int
 	SetupPassword bool
-	Community bool
-	Mobile bool
+	Community     bool
+	Mobile        bool
 }
 
 func (c *Controller) Login() (string, error) {
@@ -51,7 +52,7 @@ func (c *Controller) Login() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if len(myKey) == 0 && (len(setupPassword_) > 0 || setupPassword_ == string(utils.DSha256("")) ) {
+		if len(myKey) == 0 && (len(setupPassword_) > 0 || setupPassword_ == string(utils.DSha256(""))) {
 			setupPassword = true
 		}
 	}
@@ -62,10 +63,10 @@ func (c *Controller) Login() (string, error) {
 		return "", err
 	}
 	if len(config["pool_admin_user_id"]) > 1 && config["pool_admin_user_id"] != utils.Int64ToStr(c.UserId) && config["pool_tech_works"] == "1" {
-	 	pool_tech_works = 1
+		pool_tech_works = 1
 	} else {
 		pool_tech_works = 0
 	}
-	t.ExecuteTemplate(b, "login", &loginStruct{Lang:  c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword, Community: c.Community, Mobile: utils.Mobile()})
+	t.ExecuteTemplate(b, "login", &loginStruct{Lang: c.Lang, MyModalIdName: "myModalLogin", UserID: c.UserId, PoolTechWorks: pool_tech_works, SetupPassword: setupPassword, Community: c.Community, Mobile: utils.Mobile()})
 	return b.String(), nil
 }

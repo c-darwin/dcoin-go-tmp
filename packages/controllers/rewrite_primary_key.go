@@ -1,12 +1,13 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type rewritePrimaryKeyPage struct {
 	Alert string
-	Lang map[string]string
+	Lang  map[string]string
 }
 
 func (c *Controller) RewritePrimaryKey() (string, error) {
@@ -65,9 +66,9 @@ func (c *Controller) RewritePrimaryKey() (string, error) {
 		}
 	}
 
-	TemplateStr, err := makeTemplate("rewrite_primary_key", "rewritePrimaryKey", &rewritePrimaryKeyPage {
+	TemplateStr, err := makeTemplate("rewrite_primary_key", "rewritePrimaryKey", &rewritePrimaryKeyPage{
 		Alert: c.Alert,
-		Lang: c.Lang})
+		Lang:  c.Lang})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -2,41 +2,40 @@ package dcparser
 
 import (
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	 "github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
-func (p *Parser) CfCommentInit() (error) {
+func (p *Parser) CfCommentInit() error {
 
-	fields := []map[string]string {{"project_id":"int64"}, {"lang_id":"int64"}, {"comment":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"project_id": "int64"}, {"lang_id": "int64"}, {"comment": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) CfCommentFront() (error) {
+func (p *Parser) CfCommentFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"project_id":"int", "comment":"cf_comment"}
+	verifyData := map[string]string{"project_id": "int", "comment": "cf_comment"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	if !utils.CheckInputData(p.TxMaps.Int64["lang_id"], "tinyint") || p.TxMaps.Int64["lang_id"]<=0 {
+	if !utils.CheckInputData(p.TxMaps.Int64["lang_id"], "tinyint") || p.TxMaps.Int64["lang_id"] <= 0 {
 		return fmt.Errorf("incorrect lang_id")
 	}
 
 	var txTime int64
-	if p.BlockData!=nil {
+	if p.BlockData != nil {
 		txTime = p.BlockData.Time
 	} else { // голая тр-ия с запасом 30 сек на время генерации блока. Т.к. при попадинии в блок время будет уже другим
 		txTime = time.Now().Unix() - 30
@@ -47,9 +46,9 @@ func (p *Parser) CfCommentFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	addSql :=""
+	addSql := ""
 	if author > 0 {
-		addSql = " AND lang_id = "+utils.Int64ToStr(p.TxMaps.Int64["lang_id"])
+		addSql = " AND lang_id = " + utils.Int64ToStr(p.TxMaps.Int64["lang_id"])
 	} else {
 		addSql = ""
 	}
@@ -61,7 +60,7 @@ func (p *Parser) CfCommentFront() (error) {
 	}
 
 	// в 1 проект можно писать только 1 комммент в сутки
-	if txTime - commentTime < consts.LIMIT_TIME_COMMENTS_CF_PROJECT {
+	if txTime-commentTime < consts.LIMIT_TIME_COMMENTS_CF_PROJECT {
 		return p.ErrInfo("comment_time")
 	}
 
@@ -82,7 +81,7 @@ func (p *Parser) CfCommentFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["project_id"], p.TxMap["lang_id"], p.TxMap["comment"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -97,7 +96,7 @@ func (p *Parser) CfCommentFront() (error) {
 	return nil
 }
 
-func (p *Parser) CfComment() (error) {
+func (p *Parser) CfComment() error {
 
 	err := p.ExecSql("INSERT INTO cf_comments ( user_id, project_id, lang_id, comment, time, block_id ) VALUES ( ?, ?, ?, ?, ?, ? )", p.TxUserID, p.TxMaps.Int64["project_id"], p.TxMaps.Int64["lang_id"], p.TxMaps.String["comment"], p.BlockData.Time, p.BlockData.BlockId)
 	if err != nil {
@@ -107,7 +106,7 @@ func (p *Parser) CfComment() (error) {
 	return nil
 }
 
-func (p *Parser) CfCommentRollback() (error) {
+func (p *Parser) CfCommentRollback() error {
 	err := p.ExecSql("DELETE FROM cf_comments WHERE block_id = ? AND user_id = ? AND project_id = ? AND lang_id = ?", p.BlockData.BlockId, p.TxUserID, p.TxMaps.Int64["project_id"], p.TxMaps.Int64["lang_id"])
 	if err != nil {
 		return p.ErrInfo(err)

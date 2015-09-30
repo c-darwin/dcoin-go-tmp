@@ -1,11 +1,11 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	//"log"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
@@ -36,7 +36,7 @@ func ReductionGenerator() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -65,7 +65,7 @@ func ReductionGenerator() {
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := d.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
 			d.unlockPrintSleep(err, 1)
 			continue BEGIN
@@ -109,7 +109,7 @@ func ReductionGenerator() {
 				FROM votes_reduction
 				WHERE time > ?
 				GROUP BY  currency_id, pct
-				`, curTime - variables.Int64["reduction_period"])
+				`, curTime-variables.Int64["reduction_period"])
 		if err != nil {
 			d.unlockPrintSleep(err, 1)
 			continue BEGIN
@@ -134,7 +134,7 @@ func ReductionGenerator() {
 					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
-				if curTime - reductionTime > variables.Int64["reduction_period"] {
+				if curTime-reductionTime > variables.Int64["reduction_period"] {
 					reductionCurrencyId = utils.StrToInt(currency_id)
 					reductionPct = pct
 					reductionType = "manual"
@@ -153,7 +153,7 @@ func ReductionGenerator() {
 			continue BEGIN
 		}
 		sumWallets := make(map[int]float64)
-		for currencyId, amount := range(sumWallets_) {
+		for currencyId, amount := range sumWallets_ {
 			sumWallets[utils.StrToInt(currencyId)] = utils.StrToFloat64(amount)
 		}
 
@@ -164,10 +164,10 @@ func ReductionGenerator() {
 			continue BEGIN
 		}
 
-		for currencyId, amount := range(sumTdc) {
+		for currencyId, amount := range sumTdc {
 			currencyIdInt := utils.StrToInt(currencyId)
 			if sumWallets[currencyIdInt] == 0 {
-				sumWallets[currencyIdInt] =  utils.StrToFloat64(amount)
+				sumWallets[currencyIdInt] = utils.StrToFloat64(amount)
 			} else {
 				sumWallets[currencyIdInt] += utils.StrToFloat64(amount)
 			}
@@ -183,7 +183,7 @@ func ReductionGenerator() {
 							 del_mining_block_id = 0 AND
 							  (cash_request_out_time = 0 OR cash_request_out_time > ?)
 				GROUP BY currency_id
-				`, "currency_id", "sum_amount", curTime - variables.Int64["cash_request_time"])
+				`, "currency_id", "sum_amount", curTime-variables.Int64["cash_request_time"])
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue BEGIN
@@ -201,12 +201,12 @@ func ReductionGenerator() {
 					continue BEGIN
 				}
 				// прошло ли 48 часов
-				if curTime - reductionTime <= consts.AUTO_REDUCTION_PERIOD {
+				if curTime-reductionTime <= consts.AUTO_REDUCTION_PERIOD {
 					continue
 				}
 
 				// если обещанных сумм менее чем 100% от объема DC на кошельках, то запускаем урезание
-				if utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount * consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
+				if utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount*consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
 
 					// проверим, есть ли хотя бы 1000 юзеров, у которых на кошелках есть или была данная валюты
 					countUsers, err := d.Single("SELECT count(user_id) FROM wallets WHERE currency_id  =  ?", currencyId).Int64()
@@ -215,10 +215,10 @@ func ReductionGenerator() {
 						continue BEGIN
 					}
 					if countUsers >= consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN {
-						reductionCurrencyId = currencyId;
-						reductionPct = consts.AUTO_REDUCTION_PCT;
-						reductionType = "promised_amount";
-						break;
+						reductionCurrencyId = currencyId
+						reductionPct = consts.AUTO_REDUCTION_PCT
+						reductionType = "promised_amount"
+						break
 					}
 				}
 
@@ -226,10 +226,10 @@ func ReductionGenerator() {
 		}
 		if reductionCurrencyId > 0 && reductionPct > 0 {
 
-			_, myUserId, _, _, _, _, err := d.TestBlock();
+			_, myUserId, _, _, _, _, err := d.TestBlock()
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
 			binSign, err := d.GetBinSign(forSign, myUserId)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
@@ -242,7 +242,7 @@ func ReductionGenerator() {
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
 			err = d.InsertReplaceTxInQueue(data)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
@@ -259,7 +259,7 @@ func ReductionGenerator() {
 			}
 		}
 		d.dbUnlock()
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

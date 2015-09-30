@@ -2,29 +2,28 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) NewCreditInit() (error) {
+func (p *Parser) NewCreditInit() error {
 
-	fields := []map[string]string {{"to_user_id":"int64"}, {"amount":"money"}, {"currency_id":"int64"}, {"pct":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"to_user_id": "int64"}, {"amount": "money"}, {"currency_id": "int64"}, {"pct": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) NewCreditFront() (error) {
+func (p *Parser) NewCreditFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"to_user_id":"bigint", "amount":"amount", "pct":"credit_pct"}
+	verifyData := map[string]string{"to_user_id": "bigint", "amount": "amount", "pct": "credit_pct"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -56,7 +55,7 @@ func (p *Parser) NewCreditFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"], p.TxMap["amount"], p.TxMap["currency_id"], p.TxMap["pct"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -79,11 +78,11 @@ func (p *Parser) NewCreditFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewCredit() (error) {
+func (p *Parser) NewCredit() error {
 	return p.ExecSql("INSERT INTO credits ( time, amount, from_user_id, to_user_id, currency_id, pct, tx_hash, tx_block_id ) VALUES ( ?, ?, ?, ?, ?, ?, [hex], ? )", p.BlockData.Time, p.TxMaps.Money["amount"], p.TxUserID, p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.String["pct"], p.TxHash, p.BlockData.BlockId)
 }
 
-func (p *Parser) NewCreditRollback() (error) {
+func (p *Parser) NewCreditRollback() error {
 	err := p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)

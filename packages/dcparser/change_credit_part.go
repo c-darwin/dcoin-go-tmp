@@ -2,29 +2,28 @@ package dcparser
 
 import (
 	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) ChangeCreditPartInit() (error) {
+func (p *Parser) ChangeCreditPartInit() error {
 
-	fields := []map[string]string {{"pct":"float64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"pct": "float64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) ChangeCreditPartFront() (error) {
+func (p *Parser) ChangeCreditPartFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"pct":"credit_pct"}
+	verifyData := map[string]string{"pct": "credit_pct"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -49,7 +48,7 @@ func (p *Parser) ChangeCreditPartFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["pct"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -64,11 +63,11 @@ func (p *Parser) ChangeCreditPartFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeCreditPart() (error) {
-	return p.selectiveLoggingAndUpd([]string{"credit_part"}, []interface {}{utils.Float64ToStr(p.TxMaps.Float64["pct"])}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+func (p *Parser) ChangeCreditPart() error {
+	return p.selectiveLoggingAndUpd([]string{"credit_part"}, []interface{}{utils.Float64ToStr(p.TxMaps.Float64["pct"])}, "users", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 }
 
-func (p *Parser) ChangeCreditPartRollback() (error) {
+func (p *Parser) ChangeCreditPartRollback() error {
 	return p.selectiveRollback([]string{"credit_part"}, "users", "id="+utils.Int64ToStr(p.TxUserID), false)
 
 }

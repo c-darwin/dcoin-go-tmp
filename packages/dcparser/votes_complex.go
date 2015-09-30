@@ -1,21 +1,19 @@
 package dcparser
 
 import (
-	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"sort"
 	"time"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-
 )
 
-
-func (p *Parser) VotesComplexInit() (error) {
+func (p *Parser) VotesComplexInit() error {
 	var err error
 	var fields []string
-	fields = []string {"json_data", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields = []string{"json_data", "sign"}
+	p.TxMap, err = p.GetTxMap(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -49,7 +47,7 @@ func makeVcomplex(json_data []byte) (*vComplex, error) {
 	return vComplex, nil
 }
 
-func (p *Parser) VotesComplexFront() (error) {
+func (p *Parser) VotesComplexFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -63,7 +61,7 @@ func (p *Parser) VotesComplexFront() (error) {
 	}
 
 	var txTime int64
-	if p.BlockData!=nil {
+	if p.BlockData != nil {
 		txTime = p.BlockData.Time
 	} else {
 		txTime = time.Now().Unix() - 30
@@ -76,7 +74,7 @@ func (p *Parser) VotesComplexFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["json_data"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -86,8 +84,8 @@ func (p *Parser) VotesComplexFront() (error) {
 
 	currencyVotes := make(map[string][]float64)
 	var doubleCheck []int64
- 	 // раньше не было рефских
-	if p.BlockData==nil || p.BlockData.BlockId > 77951 {
+	// раньше не было рефских
+	if p.BlockData == nil || p.BlockData.BlockId > 77951 {
 
 		vComplex, err := makeVcomplex(p.TxMap["json_data"])
 		if err != nil {
@@ -100,9 +98,9 @@ func (p *Parser) VotesComplexFront() (error) {
 		if vComplex.Currency == nil {
 			return p.ErrInfo("!Currency")
 		}
-		if p.BlockData==nil || p.BlockData.BlockId > 153750 {
+		if p.BlockData == nil || p.BlockData.BlockId > 153750 {
 			if vComplex.Admin > 0 {
-				adminUserId, err := p.Single("SELECT user_id FROM users WHERE user_id  =  ?",vComplex.Admin).Int64()
+				adminUserId, err := p.Single("SELECT user_id FROM users WHERE user_id  =  ?", vComplex.Admin).Int64()
 				if err != nil {
 					return p.ErrInfo(err)
 				}
@@ -129,7 +127,7 @@ func (p *Parser) VotesComplexFront() (error) {
 		}
 
 		// проверим, что нет дублей
-		if (utils.InSliceInt64(utils.StrToInt64(currencyId), doubleCheck)) {
+		if utils.InSliceInt64(utils.StrToInt64(currencyId), doubleCheck) {
 			return p.ErrInfo("double currencyId")
 		}
 		doubleCheck = append(doubleCheck, utils.StrToInt64(currencyId))
@@ -164,7 +162,7 @@ func (p *Parser) VotesComplexFront() (error) {
 		if countMiners < p.Variables.Int64["min_miners_of_voting"] {
 			return p.ErrInfo("countMiners")
 		}
-		if len(data) !=5 {
+		if len(data) != 5 {
 			return p.ErrInfo("incorrect data")
 		}
 		if !utils.CheckPct(data[0]) {
@@ -175,7 +173,7 @@ func (p *Parser) VotesComplexFront() (error) {
 		}
 
 		// max promise amount
-		if (!utils.InSliceInt64(int64(data[2]), utils.GetAllMaxPromisedAmount())) {
+		if !utils.InSliceInt64(int64(data[2]), utils.GetAllMaxPromisedAmount()) {
 			log.Debug("%v", int64(data[2]))
 			log.Debug("%v", utils.GetAllMaxPromisedAmount())
 			return p.ErrInfo("incorrect max promised amount")
@@ -187,7 +185,7 @@ func (p *Parser) VotesComplexFront() (error) {
 		}
 
 		// max other currency 0/1/2/3/.../76
-		if !utils.CheckInputData(int(data[3]), "int") || int64(data[3]) > totalCountCurrencies  {
+		if !utils.CheckInputData(int(data[3]), "int") || int64(data[3]) > totalCountCurrencies {
 			return p.ErrInfo(fmt.Sprintf("incorrect max other currency %d > %d", data[3], totalCountCurrencies))
 		}
 
@@ -212,7 +210,7 @@ func (p *Parser) VotesComplexFront() (error) {
 	return nil
 }
 
-func (p *Parser) VotesComplex() (error) {
+func (p *Parser) VotesComplex() error {
 
 	currencyVotes := make(map[string][]float64)
 
@@ -223,13 +221,12 @@ func (p *Parser) VotesComplex() (error) {
 		}
 		currencyVotes = vComplex.Currency
 		// голоса за реф. %
-		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface {}{vComplex.Referral["first"], vComplex.Referral["second"], vComplex.Referral["third"]}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+		p.selectiveLoggingAndUpd([]string{"first", "second", "third"}, []interface{}{vComplex.Referral["first"], vComplex.Referral["second"], vComplex.Referral["third"]}, "votes_referral", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 
 		// раньше не было выборов админа
-		if p.BlockData.BlockId >= 153750 && vComplex.Admin>0 {
-			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []interface {}{vComplex.Admin, p.TxTime}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
+		if p.BlockData.BlockId >= 153750 && vComplex.Admin > 0 {
+			p.selectiveLoggingAndUpd([]string{"admin_user_id", "time"}, []interface{}{vComplex.Admin, p.TxTime}, "votes_admin", []string{"user_id"}, []string{string(p.TxMap["user_id"])})
 		}
-
 
 	} else { // раньше не было рефских и выбора админа
 		vComplex := make(map[string][]float64)
@@ -249,41 +246,41 @@ func (p *Parser) VotesComplex() (error) {
 
 	for _, currencyId := range currencyIds {
 
-		data:=currencyVotes[utils.IntToStr(currencyId)]
+		data := currencyVotes[utils.IntToStr(currencyId)]
 		currencyIdStr := utils.IntToStr(currencyId)
 		UserIdStr := string(p.TxMap["user_id"])
 		// miner_pct
-		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{utils.Float64ToStr(data[0]), p.TxTime}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err := p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface{}{utils.Float64ToStr(data[0]), p.TxTime}, "votes_miner_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// user_pct
-		err = p.selectiveLoggingAndUpd([]string{"pct"}, []interface {}{utils.Float64ToStr(data[1])}, "votes_user_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct"}, []interface{}{utils.Float64ToStr(data[1])}, "votes_user_pct", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// max_promised_amount
-		err = p.selectiveLoggingAndUpd([]string{"amount"}, []interface {}{int64(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"amount"}, []interface{}{int64(data[2])}, "votes_max_promised_amount", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// max_other_currencies
-		err = p.selectiveLoggingAndUpd([]string{"count"}, []interface {}{int64(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"count"}, []interface{}{int64(data[3])}, "votes_max_other_currencies", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// reduction
-		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface {}{int64(data[4]), p.TxTime}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
+		err = p.selectiveLoggingAndUpd([]string{"pct", "time"}, []interface{}{int64(data[4]), p.TxTime}, "votes_reduction", []string{"user_id", "currency_id"}, []string{UserIdStr, currencyIdStr})
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+		myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -298,7 +295,7 @@ func (p *Parser) VotesComplex() (error) {
 	return nil
 }
 
-func (p *Parser) VotesComplexRollback() (error) {
+func (p *Parser) VotesComplexRollback() error {
 
 	currencyVotes := make(map[string][]float64)
 
@@ -307,7 +304,7 @@ func (p *Parser) VotesComplexRollback() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if p.BlockData.BlockId > 153750  && vComplex.Admin != 0  {
+		if p.BlockData.BlockId > 153750 && vComplex.Admin != 0 {
 			err := p.selectiveRollback([]string{"admin_user_id", "time"}, "votes_admin", "user_id="+string(p.TxMap["user_id"]), false)
 			if err != nil {
 				return p.ErrInfo(err)
@@ -366,7 +363,7 @@ func (p *Parser) VotesComplexRollback() (error) {
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, _, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+		myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -379,7 +376,6 @@ func (p *Parser) VotesComplexRollback() (error) {
 			}
 		}
 	}
-
 
 	return nil
 }

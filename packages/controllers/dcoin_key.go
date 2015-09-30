@@ -1,10 +1,11 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"strings"
-	"errors"
 	"encoding/base64"
+	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"regexp"
+	"strings"
 )
 
 func (c *Controller) DcoinKey() (string, error) {
@@ -18,11 +19,11 @@ func (c *Controller) DcoinKey() (string, error) {
 		local = true
 	}
 	if utils.IOS() && c.SessUserId == 0 && !local {
-		return "", utils.ErrInfo(errors.New("Not local request from "+c.r.RemoteAddr))
+		return "", utils.ErrInfo(errors.New("Not local request from " + c.r.RemoteAddr))
 	}
 	privKey := ""
 	if len(c.r.FormValue("first")) > 0 {
-		privKey, err = c.Single(`SELECT private_key FROM `+c.MyPrefix+`my_keys WHERE status='my_pending'`).String()
+		privKey, err = c.Single(`SELECT private_key FROM ` + c.MyPrefix + `my_keys WHERE status='my_pending'`).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -78,5 +79,3 @@ func (c *Controller) DcoinKey() (string, error) {
 
 	return "", nil
 }
-
-

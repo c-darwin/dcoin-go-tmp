@@ -1,23 +1,22 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"bytes"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"crypto/rand"
-	"regexp"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"net/url"
-	"bytes"
+	"regexp"
 )
-
 
 /*
  * Важно! отключать демона при обнулении данных в БД
-*/
+ */
 
 func Shop() {
 	defer func() {
@@ -42,7 +41,7 @@ func Shop() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -81,7 +80,7 @@ func Shop() {
 		}
 		for _, userId := range community {
 			privateKey := ""
-			myPrefix := utils.Int64ToStr(userId)+"_"
+			myPrefix := utils.Int64ToStr(userId) + "_"
 			allTables, err := d.GetAllTables()
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 5)
@@ -116,14 +115,14 @@ func Shop() {
 			if len(privateKey) == 0 {
 				continue
 			}
-			myData, err := d.OneRow("SELECT shop_secret_key, shop_callback_url FROM "+myPrefix+"my_table").String()
+			myData, err := d.OneRow("SELECT shop_secret_key, shop_callback_url FROM " + myPrefix + "my_table").String()
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
 			}
 
 			// Получаем инфу о входящих переводах и начисляем их на счета юзеров
-			dq := d.GetQuotes();
+			dq := d.GetQuotes()
 			rows, err := d.Query(`
 					SELECT id, block_id, type_id, currency_id, amount, to_user_id, comment_status, comment
 					FROM `+dq+myPrefix+`my_dc_transactions`+dq+`
@@ -132,7 +131,7 @@ func Shop() {
 								 merchant_checked = 0 AND
 								 status = 'approved'
 					ORDER BY id DESC
-					`, blockId - confirmations)
+					`, blockId-confirmations)
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN
@@ -179,12 +178,12 @@ func Shop() {
 						// расшифруем коммент
 						if comment_status == "encrypted" {
 
-							block, _ := pem.Decode([]byte(privateKey));
+							block, _ := pem.Decode([]byte(privateKey))
 							if block == nil || block.Type != "RSA PRIVATE KEY" {
 								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
 							}
-							private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
+							private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 							if err != nil {
 								d.PrintSleep(utils.ErrInfo(err), 5)
 								continue BEGIN
@@ -266,7 +265,7 @@ func Shop() {
 			}
 		}
 
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

@@ -1,21 +1,21 @@
 package dcparser
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
 )
 
-func (p *Parser) AbusesInit() (error) {
-	fields := []map[string]string {{"abuses":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) AbusesInit() error {
+	fields := []map[string]string{{"abuses": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) AbusesFront() (error) {
+func (p *Parser) AbusesFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -31,10 +31,10 @@ func (p *Parser) AbusesFront() (error) {
 		return fmt.Errorf(">100")
 	}
 	for userId, comment := range abuses {
-		if !utils.CheckInputData(userId, "user_id")  {
+		if !utils.CheckInputData(userId, "user_id") {
 			return fmt.Errorf("incorrect abuses user_id")
 		}
-		if !utils.CheckInputData(comment, "abuse_comment")  {
+		if !utils.CheckInputData(comment, "abuse_comment") {
 			return fmt.Errorf("incorrect abuse_comment")
 		}
 		// является ли данный юзер майнером
@@ -45,7 +45,7 @@ func (p *Parser) AbusesFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["abuses"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -60,7 +60,7 @@ func (p *Parser) AbusesFront() (error) {
 	return nil
 }
 
-func (p *Parser) Abuses() (error) {
+func (p *Parser) Abuses() error {
 
 	var abuses map[string]string
 	err := json.Unmarshal(p.TxMap["abuses"], &abuses)
@@ -76,7 +76,7 @@ func (p *Parser) Abuses() (error) {
 	return nil
 }
 
-func (p *Parser) AbusesRollback() (error) {
+func (p *Parser) AbusesRollback() error {
 	var abuses map[string]string
 	err := json.Unmarshal(p.TxMap["abuses"], &abuses)
 	if err != nil {

@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math"
@@ -6,21 +7,21 @@ import (
 )
 
 type StatisticPage struct {
-	Lang map[string]string
-	UserId int64
-	UserInfoId int64
-	CurrencyList map[int64]string
-	SumWallets map[int64]float64
-	SumPromisedAmount map[string]string
-	PromisedAmountMiners map[string]string
-	WalletsUsers map[string]string
-	CashRequests []map[string]string
-	UserInfoWallets []utils.DCAmounts
-	Credits map[string]string
+	Lang                       map[string]string
+	UserId                     int64
+	UserInfoId                 int64
+	CurrencyList               map[int64]string
+	SumWallets                 map[int64]float64
+	SumPromisedAmount          map[string]string
+	PromisedAmountMiners       map[string]string
+	WalletsUsers               map[string]string
+	CashRequests               []map[string]string
+	UserInfoWallets            []utils.DCAmounts
+	Credits                    map[string]string
 	PromisedAmountListAccepted []utils.PromisedAmounts
-	CountUsers int64
-	CurrencyPct map[int64]map[string]string
-	Reduction []map[string]string
+	CountUsers                 int64
+	CurrencyPct                map[int64]map[string]string
+	Reduction                  []map[string]string
 }
 
 func (c *Controller) Statistic() (string, error) {
@@ -81,7 +82,7 @@ func (c *Controller) Statistic() (string, error) {
 			WHERE status = 'mining' AND
 					     del_block_id = 0 AND
 						(cash_request_out_time = 0 OR cash_request_out_time > ?)
-			GROUP BY currency_id`, "currency_id", "sum_amount", utils.Time() - c.Variables.Int64["cash_request_time"])
+			GROUP BY currency_id`, "currency_id", "sum_amount", utils.Time()-c.Variables.Int64["cash_request_time"])
 
 	// получаем кол-во майнеров по валютам
 	promisedAmountMiners, err := c.GetMap(`
@@ -109,10 +110,10 @@ func (c *Controller) Statistic() (string, error) {
 			FROM cash_requests
 			ORDER BY id DESC
 			LIMIT 20`, 20)
-	for i:=0; i< len(cashRequests); i++{
+	for i := 0; i < len(cashRequests); i++ {
 		if cashRequests[i]["del_block_id"] != "0" {
 			cashRequests[i]["status"] = "reduction closed"
-		} else if (utils.Time() - utils.StrToInt64(cashRequests[i]["time"]) > c.Variables.Int64["cash_request_time"] && cashRequests[i]["status"] != "approved") {
+		} else if utils.Time()-utils.StrToInt64(cashRequests[i]["time"]) > c.Variables.Int64["cash_request_time"] && cashRequests[i]["status"] != "approved" {
 			cashRequests[i]["status"] = "rejected"
 		}
 		t := time.Unix(utils.StrToInt64(cashRequests[i]["time"]), 0)
@@ -160,10 +161,9 @@ func (c *Controller) Statistic() (string, error) {
 		}
 		currencyPct[currencyId] = make(map[string]string)
 		currencyPct[currencyId]["name"] = name
-		currencyPct[currencyId]["miner"] = utils.Float64ToStr(utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 6));
-		currencyPct[currencyId]["user"] = utils.Float64ToStr(utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 6));
+		currencyPct[currencyId]["miner"] = utils.Float64ToStr(utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 6))
+		currencyPct[currencyId]["user"] = utils.Float64ToStr(utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 6))
 	}
-
 
 	/*
 	 * Произошедшие сокращения
@@ -173,7 +173,7 @@ func (c *Controller) Statistic() (string, error) {
 			FROM reduction
 			ORDER BY time DESC
 			LIMIT 20`, 20)
-	for i:=0; i< len(reduction); i++ {
+	for i := 0; i < len(reduction); i++ {
 		if reduction[i]["type"] != "auto" {
 			reduction[i]["type"] = "voting"
 		}
@@ -182,26 +182,24 @@ func (c *Controller) Statistic() (string, error) {
 		reduction[i]["time"] = t.Format(c.TimeFormat)
 	}
 
-	TemplateStr, err := makeTemplate("statistic", "statistic", &StatisticPage {
-		Lang: c.Lang,
-		CurrencyList: c.CurrencyListCf,
-		UserInfoId : userInfoId,
-		SumWallets: sumWallets,
-		SumPromisedAmount: sumPromisedAmount,
-		PromisedAmountMiners: promisedAmountMiners,
-		WalletsUsers: walletsUsers,
-		CashRequests: cashRequests,
-		UserInfoWallets: userInfoWallets,
-		Credits: credits,
+	TemplateStr, err := makeTemplate("statistic", "statistic", &StatisticPage{
+		Lang:                       c.Lang,
+		CurrencyList:               c.CurrencyListCf,
+		UserInfoId:                 userInfoId,
+		SumWallets:                 sumWallets,
+		SumPromisedAmount:          sumPromisedAmount,
+		PromisedAmountMiners:       promisedAmountMiners,
+		WalletsUsers:               walletsUsers,
+		CashRequests:               cashRequests,
+		UserInfoWallets:            userInfoWallets,
+		Credits:                    credits,
 		PromisedAmountListAccepted: promisedAmountListAccepted,
-		CountUsers: countUsers,
-		CurrencyPct: currencyPct,
-		Reduction: reduction,
-		UserId: c.SessUserId})
+		CountUsers:                 countUsers,
+		CurrencyPct:                currencyPct,
+		Reduction:                  reduction,
+		UserId:                     c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

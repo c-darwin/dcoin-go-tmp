@@ -1,35 +1,36 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"time"
 	"strings"
+	"time"
 )
 
 type newPromisedAmountPage struct {
-	Alert string
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Lang map[string]string
-	CountSignArr []int
-	LastTxFormatted string
-	ConfigCommission map[int64][]float64
-	Navigate string
-	CurrencyId int64
-	CurrencyList map[int64]map[string]string
-	CurrencyListName map[int64]string
+	Alert              string
+	SignData           string
+	ShowSignData       bool
+	TxType             string
+	TxTypeId           int64
+	TimeNow            int64
+	UserId             int64
+	Lang               map[string]string
+	CountSignArr       []int
+	LastTxFormatted    string
+	ConfigCommission   map[int64][]float64
+	Navigate           string
+	CurrencyId         int64
+	CurrencyList       map[int64]map[string]string
+	CurrencyListName   map[int64]string
 	MaxPromisedAmounts map[string]string
-	LimitsText string
-	PaymentSystems map[string]string
-	CountPs []int
+	LimitsText         string
+	PaymentSystems     map[string]string
+	CountPs            []int
 }
 
 func (c *Controller) NewPromisedAmount() (string, error) {
 
-	txType := "NewPromisedAmount";
+	txType := "NewPromisedAmount"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -52,13 +53,13 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 	currencyListName := make(map[int64]string)
 	defer rows.Close()
 	for rows.Next() {
-		var id  int64
+		var id int64
 		var name, full_name, max_other_currencies string
 		err = rows.Scan(&id, &name, &full_name, &max_other_currencies)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		currencyList[id] = map[string]string{"id":utils.Int64ToStr(id), "name":name, "full_name":full_name, "max_other_currencies":max_other_currencies}
+		currencyList[id] = map[string]string{"id": utils.Int64ToStr(id), "name": name, "full_name": full_name, "max_other_currencies": max_other_currencies}
 		currencyListName[id] = name
 	}
 
@@ -79,27 +80,27 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 	limitsText := strings.Replace(c.Lang["limits_text"], "[limit]", utils.Int64ToStr(c.Variables.Int64["limit_promised_amount"]), -1)
 	limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["limit_promised_amount_period"]], -1)
 
-	countPs := []int{1,2,3,4,5}
+	countPs := []int{1, 2, 3, 4, 5}
 
 	TemplateStr, err := makeTemplate("new_promised_amount", "newPromisedAmount", &newPromisedAmountPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		ConfigCommission: c.ConfigCommission,
-		Navigate: navigate,
-		CurrencyId: currencyId,
-		CurrencyList: currencyList,
-		CurrencyListName: currencyListName,
+		Alert:              c.Alert,
+		Lang:               c.Lang,
+		CountSignArr:       c.CountSignArr,
+		ShowSignData:       c.ShowSignData,
+		UserId:             c.SessUserId,
+		TimeNow:            timeNow,
+		TxType:             txType,
+		TxTypeId:           txTypeId,
+		SignData:           "",
+		ConfigCommission:   c.ConfigCommission,
+		Navigate:           navigate,
+		CurrencyId:         currencyId,
+		CurrencyList:       currencyList,
+		CurrencyListName:   currencyListName,
 		MaxPromisedAmounts: maxPromisedAmounts,
-		LimitsText: limitsText,
-		PaymentSystems: paymentSystems,
-		CountPs: countPs})
+		LimitsText:         limitsText,
+		PaymentSystems:     paymentSystems,
+		CountPs:            countPs})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

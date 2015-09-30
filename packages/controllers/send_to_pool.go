@@ -1,11 +1,12 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
-	"net"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io/ioutil"
-	"time"
+	"net"
 	"os"
+	"time"
 )
 
 func (c *Controller) SendToPool() (string, error) {
@@ -23,7 +24,7 @@ func (c *Controller) SendToPool() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	conn, err := net.DialTimeout("tcp", tcpHost, 5 * time.Second)
+	conn, err := net.DialTimeout("tcp", tcpHost, 5*time.Second)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -36,22 +37,22 @@ func (c *Controller) SendToPool() (string, error) {
 	data = append(data, utils.DecToBin(c.SessUserId, 5)...)
 	data = append(data, utils.EncodeLengthPlusData(filesSign)...)
 
-	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"); err == nil {
-		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg")
+	if _, err := os.Stat(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_face.jpg"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_face.jpg")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(0, 1), file...))...)
 	}
-	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"); err == nil {
-		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg")
+	if _, err := os.Stat(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_profile.jpg"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_profile.jpg")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(1, 1), file...))...)
 	}
-	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); err == nil {
-		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4")
+	if _, err := os.Stat(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_video.mp4"); err == nil {
+		file, err := ioutil.ReadFile(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_video.mp4")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

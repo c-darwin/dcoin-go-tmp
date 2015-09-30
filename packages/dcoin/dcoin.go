@@ -1,36 +1,34 @@
 package dcoin
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
-	"os"
-	"net/http"
-	_ "image/png"
-	"github.com/c-darwin/dcoin-go-tmp/packages/controllers"
+	"fmt"
 	"github.com/astaxie/beego/config"
-	"github.com/elazarl/go-bindata-assetfs"
+	"github.com/astaxie/beego/session"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/controllers"
+	"github.com/c-darwin/dcoin-go-tmp/packages/daemons"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/elazarl/go-bindata-assetfs"
+	"github.com/op/go-logging"
+	_ "image/png"
 	"io"
 	"io/ioutil"
 	"math/rand"
-	"time"
-	"strings"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"github.com/op/go-logging"
-	"runtime"
+	"net/http"
+	"os"
 	"os/exec"
-	"fmt"
-	"github.com/astaxie/beego/session"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"runtime"
+	"strings"
+	"time"
 )
-
 
 var (
-	log = logging.MustGetLogger("dcoin")
-	format = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}["+consts.VERSION+"]"+string(byte(0)))
-	configIni map[string]string
+	log            = logging.MustGetLogger("dcoin")
+	format         = logging.MustStringFormatter("%{color}%{time:15:04:05.000} %{shortfile} %{shortfunc} [%{level:.4s}] %{color:reset} %{message}[" + consts.VERSION + "]" + string(byte(0)))
+	configIni      map[string]string
 	globalSessions *session.Manager
 )
-
-
 
 func Stop() {
 	log.Debug("Stop()")
@@ -38,16 +36,16 @@ func Stop() {
 	var err error
 	utils.DB, err = utils.NewDbConnect(configIni)
 	log.Debug("DCOIN Stop : %v", utils.DB)
-	IosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
+	IosLog("utils.DB:" + fmt.Sprintf("%v", utils.DB))
 	if err != nil {
-		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		//panic(err)
 		//os.Exit(1)
 	}
 	err = utils.DB.ExecSql(`INSERT INTO stop_daemons(stop_time) VALUES (?)`, utils.Time())
 	if err != nil {
-		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 	}
 	log.Debug("DCOIN Stop")
@@ -65,16 +63,16 @@ func Start(dir string) {
 		}
 	}()
 
-	if dir!="" {
+	if dir != "" {
 		*utils.Dir = dir
 	}
 
-	IosLog("dir:"+dir)
+	IosLog("dir:" + dir)
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
 	// читаем config.ini
-	if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
+	if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
 error_log=1
 log=1
@@ -99,7 +97,7 @@ db_name=`)
 	}
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
-		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
@@ -113,24 +111,24 @@ db_name=`)
 	go func() {
 		utils.DB, err = utils.NewDbConnect(configIni)
 		log.Debug("%v", utils.DB)
-		IosLog("utils.DB:"+fmt.Sprintf("%v", utils.DB))
+		IosLog("utils.DB:" + fmt.Sprintf("%v", utils.DB))
 		if err != nil {
-			IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+			IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 			os.Exit(1)
 		}
 	}()
 
-	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0777)
+	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
-		IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 		os.Exit(1)
 	}
 	defer f.Close()
-	IosLog("configIni:"+fmt.Sprintf("%v", configIni))
+	IosLog("configIni:" + fmt.Sprintf("%v", configIni))
 	var backend *logging.LogBackend
 	switch configIni["log_output"] {
 	case "file":
@@ -145,7 +143,7 @@ db_name=`)
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
 	logLevel, err := logging.LogLevel(configIni["log_level"])
-	if err!= nil {
+	if err != nil {
 		logLevel = logging.DEBUG
 	}
 
@@ -153,11 +151,11 @@ db_name=`)
 	backendLeveled.SetLevel(logLevel, "")
 	logging.SetBackend(backendLeveled)
 
-	rand.Seed( time.Now().UTC().UnixNano())
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	log.Debug("public")
 	IosLog("public")
-	if _, err := os.Stat(*utils.Dir+"/public"); os.IsNotExist(err) {
+	if _, err := os.Stat(*utils.Dir + "/public"); os.IsNotExist(err) {
 		err = os.Mkdir(*utils.Dir+"/public", 0755)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
@@ -171,9 +169,9 @@ db_name=`)
 	log.Debug("daemonsStart")
 	IosLog("daemonsStart")
 	//TestblockIsReady,TestblockGenerator,TestblockDisseminator,Shop,ReductionGenerator,QueueParserTx,QueueParserTestblock,QueueParserBlocks,PctGenerator,Notifications,NodeVoting,MaxPromisedAmountGenerator,MaxOtherCurrenciesGenerator,ElectionsAdmin,Disseminator,Confirmations,Connector,Clear,CleaningDb,CfProjects,BlocksCollection
-	daemonsStart := map[string]func(){"UnbanNodes":daemons.UnbanNodes, "FirstChangePkey":daemons.FirstChangePkey, "TestblockIsReady":daemons.TestblockIsReady,"TestblockGenerator":daemons.TestblockGenerator,"TestblockDisseminator":daemons.TestblockDisseminator,"Shop":daemons.Shop,"ReductionGenerator":daemons.ReductionGenerator,"QueueParserTx":daemons.QueueParserTx,"QueueParserTestblock":daemons.QueueParserTestblock,"QueueParserBlocks":daemons.QueueParserBlocks,"PctGenerator":daemons.PctGenerator,"Notifications":daemons.Notifications,"NodeVoting":daemons.NodeVoting,"MaxPromisedAmountGenerator":daemons.MaxPromisedAmountGenerator,"MaxOtherCurrenciesGenerator":daemons.MaxOtherCurrenciesGenerator,"ElectionsAdmin":daemons.ElectionsAdmin,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"CfProjects":daemons.CfProjects,"BlocksCollection":daemons.BlocksCollection}
+	daemonsStart := map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "TestblockIsReady": daemons.TestblockIsReady, "TestblockGenerator": daemons.TestblockGenerator, "TestblockDisseminator": daemons.TestblockDisseminator, "Shop": daemons.Shop, "ReductionGenerator": daemons.ReductionGenerator, "QueueParserTx": daemons.QueueParserTx, "QueueParserTestblock": daemons.QueueParserTestblock, "QueueParserBlocks": daemons.QueueParserBlocks, "PctGenerator": daemons.PctGenerator, "Notifications": daemons.Notifications, "NodeVoting": daemons.NodeVoting, "MaxPromisedAmountGenerator": daemons.MaxPromisedAmountGenerator, "MaxOtherCurrenciesGenerator": daemons.MaxOtherCurrenciesGenerator, "ElectionsAdmin": daemons.ElectionsAdmin, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "CfProjects": daemons.CfProjects, "BlocksCollection": daemons.BlocksCollection}
 	if utils.Mobile() {
-		daemonsStart = map[string]func(){"UnbanNodes":daemons.UnbanNodes,"FirstChangePkey":daemons.FirstChangePkey,"QueueParserTx":daemons.QueueParserTx,"Notifications":daemons.Notifications,"Disseminator":daemons.Disseminator,"Confirmations":daemons.Confirmations,"Connector":daemons.Connector,"Clear":daemons.Clear,"CleaningDb":daemons.CleaningDb,"BlocksCollection":daemons.BlocksCollection}
+		daemonsStart = map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "QueueParserTx": daemons.QueueParserTx, "Notifications": daemons.Notifications, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "BlocksCollection": daemons.BlocksCollection}
 
 	}
 
@@ -193,7 +191,6 @@ db_name=`)
 		}
 	}
 
-
 	IosLog("MonitorDaemons")
 	// мониторинг демонов
 	daemonsTable := make(map[string]string)
@@ -205,9 +202,7 @@ db_name=`)
 				log.Debug("daemonsTable: %v\n", daemonsTable)
 			}
 		}
-	} ()
-
-
+	}()
 
 	IosLog("signals")
 	// сигналы демонам для выхода
@@ -215,8 +210,6 @@ db_name=`)
 
 	utils.Sleep(1)
 	db := utils.DB
-
-
 
 	IosLog("stop_daemons")
 	// мониторим сигнал из БД о том, что демонам надо завершаться
@@ -230,14 +223,14 @@ db_name=`)
 			if !first {
 				err = utils.DB.ExecSql(`DELETE FROM stop_daemons`)
 				if err != nil {
-					IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+					IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 					log.Error("%v", utils.ErrInfo(err))
 				}
 				first = true
 			}
 			dExists, err := utils.DB.Single(`SELECT stop_time FROM stop_daemons`).Int64()
 			if err != nil {
-				IosLog("err:"+fmt.Sprintf("%s", utils.ErrInfo(err)))
+				IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 				log.Error("%v", utils.ErrInfo(err))
 			}
 			log.Debug("dExtit: %d", dExists)
@@ -258,9 +251,7 @@ db_name=`)
 			}
 			utils.Sleep(1)
 		}
-	} ()
-
-
+	}()
 
 	IosLog("BrowserHttpHost")
 	BrowserHttpHost := "http://localhost:8089"
@@ -299,7 +290,7 @@ db_name=`)
 
 	log.Debug("ALL RIGHT")
 	IosLog("ALL RIGHT")
-	utils.Sleep(3600*24*90)
+	utils.Sleep(3600 * 24 * 90)
 	log.Debug("EXIT")
 }
 
@@ -314,7 +305,6 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 	})
 }
 
-
 func openBrowser(BrowserHttpHost string) {
 	log.Debug("runtime.GOOS: %v", runtime.GOOS)
 	var err error
@@ -323,7 +313,7 @@ func openBrowser(BrowserHttpHost string) {
 		err = exec.Command("xdg-open", BrowserHttpHost).Start()
 	case "windows", "darwin":
 		err = exec.Command("open", BrowserHttpHost).Start()
-		if err!=nil {
+		if err != nil {
 			exec.Command("cmd", "/c", "start", BrowserHttpHost).Start()
 		}
 	default:
@@ -333,4 +323,3 @@ func openBrowser(BrowserHttpHost string) {
 		log.Error("%v", err)
 	}
 }
-

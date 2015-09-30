@@ -1,12 +1,14 @@
 package controllers
+
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io/ioutil"
 	"net/http"
-	"fmt"
-	"encoding/json"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
+
 func (c *Controller) SendMobile() (string, error) {
 
 	if !c.NodeAdmin || c.SessRestricted != 0 {
@@ -16,12 +18,12 @@ func (c *Controller) SendMobile() (string, error) {
 	c.r.ParseForm()
 	text := c.r.FormValue("text")
 
-	sms_http_get_request, err := c.Single("SELECT sms_http_get_request FROM "+c.MyPrefix+"my_table").String()
+	sms_http_get_request, err := c.Single("SELECT sms_http_get_request FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
 		return string(result), nil
 	}
-	resp, err := http.Get(sms_http_get_request+text)
+	resp, err := http.Get(sms_http_get_request + text)
 	if err != nil {
 		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
 		return string(result), nil
@@ -36,4 +38,3 @@ func (c *Controller) SendMobile() (string, error) {
 	return string(result), nil
 
 }
-

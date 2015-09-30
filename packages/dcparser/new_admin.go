@@ -5,24 +5,24 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) NewAdminInit() (error) {
+func (p *Parser) NewAdminInit() error {
 
-	fields := []map[string]string {{"admin_user_id":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"admin_user_id": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) NewAdminFront() (error) {
+func (p *Parser) NewAdminFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"admin_user_id":"bigint"}
+	verifyData := map[string]string{"admin_user_id": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -50,7 +50,7 @@ func (p *Parser) NewAdminFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["admin_user_id"])
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -63,7 +63,7 @@ func (p *Parser) NewAdminFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxTime - adminTime <= p.Variables.Int64["new_pct_period"] {
+	if p.TxTime-adminTime <= p.Variables.Int64["new_pct_period"] {
 		return p.ErrInfo("14 day error")
 	}
 	// сколько всего майнеров
@@ -91,12 +91,12 @@ func (p *Parser) NewAdminFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewAdmin() (error) {
-	return p.selectiveLoggingAndUpd([]string{"user_id", "time"}, []interface {}{p.TxMaps.Int64["admin_user_id"], p.TxTime}, "admin", []string{}, []string{})
+func (p *Parser) NewAdmin() error {
+	return p.selectiveLoggingAndUpd([]string{"user_id", "time"}, []interface{}{p.TxMaps.Int64["admin_user_id"], p.TxTime}, "admin", []string{}, []string{})
 }
 
-func (p *Parser) NewAdminRollback() (error) {
-	return p.selectiveRollback([]string{"user_id","time"}, "admin", "", false)
+func (p *Parser) NewAdminRollback() error {
+	return p.selectiveRollback([]string{"user_id", "time"}, "admin", "", false)
 }
 
 func (p *Parser) NewAdminRollbackFront() error {

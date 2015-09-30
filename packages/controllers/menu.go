@@ -1,40 +1,40 @@
 package controllers
-import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
-	"html/template"
-	"bytes"
-	"strings"
 
+import (
+	"bytes"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"html/template"
+	"strings"
 )
 
 type menuPage struct {
 	MyModalIdName string
 	SetupPassword bool
-	Lang map[string]string
-	LangInt int64
-	PoolAdmin bool
-	Community bool
-	MinerId int64
-	Name string
-	UserId int64
+	Lang          map[string]string
+	LangInt       int64
+	PoolAdmin     bool
+	Community     bool
+	MinerId       int64
+	Name          string
+	UserId        int64
 	DaemonsStatus string
-	MyNotice map[string]string
-	BlockId int64
-	Avatar string
-	NoAvatar string
-	FaceUrls string
-	Restricted int64
-	Mobile bool
+	MyNotice      map[string]string
+	BlockId       int64
+	Avatar        string
+	NoAvatar      string
+	FaceUrls      string
+	Restricted    int64
+	Mobile        bool
 }
 
 func (c *Controller) Menu() (string, error) {
 
-	if !c.dbInit || c.SessUserId==0 {
+	if !c.dbInit || c.SessUserId == 0 {
 		return "", nil
 	}
 
-	status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
+	status, err := c.DCDB.Single("SELECT status FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		log.Error("%v", err)
 	}
@@ -57,9 +57,9 @@ func (c *Controller) Menu() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		if miner > 0 {
-			name = "ID "+utils.Int64ToStr(c.SessUserId)+" (miner)"
+			name = "ID " + utils.Int64ToStr(c.SessUserId) + " (miner)"
 		} else {
-			name = "ID "+utils.Int64ToStr(c.SessUserId)
+			name = "ID " + utils.Int64ToStr(c.SessUserId)
 		}
 	}
 
@@ -71,13 +71,13 @@ func (c *Controller) Menu() (string, error) {
 		}
 		if len(data) > 0 {
 			// получим ID майнеров, у которых лежат фото нужного нам юзера
-			minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true);
+			minersIds := utils.GetMinersKeepers(data["photo_block_id"], data["photo_max_miner_id"], data["miners_keepers"], true)
 			if len(minersIds) > 0 {
-				hosts, err := c.GetList("SELECT http_host as host FROM miners_data WHERE miner_id IN ("+utils.JoinInts(minersIds, ",")+")").String()
+				hosts, err := c.GetList("SELECT http_host as host FROM miners_data WHERE miner_id IN (" + utils.JoinInts(minersIds, ",") + ")").String()
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
-				for i:=0; i < len(hosts); i++ {
+				for i := 0; i < len(hosts); i++ {
 					face_urls = append(face_urls, hosts[i]+"public/face_"+utils.Int64ToStr(c.SessUserId)+".jpg")
 				}
 			}
@@ -99,10 +99,10 @@ func (c *Controller) Menu() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if (scriptName == "my_lock") {
-			daemonsStatus = `<li title="`+c.Lang["daemons_status_off"]+`"><a href="#" id="start_daemons" style="color:#C90600"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
+		if scriptName == "my_lock" {
+			daemonsStatus = `<li title="` + c.Lang["daemons_status_off"] + `"><a href="#" id="start_daemons" style="color:#C90600"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
 		} else {
-			daemonsStatus = `<li title="`+c.Lang["daemons_status_on"]+`"><a href="#" id="stop_daemons" style="color:#009804"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
+			daemonsStatus = `<li title="` + c.Lang["daemons_status_on"] + `"><a href="#" id="stop_daemons" style="color:#009804"><i class="fa fa-power-off" style="font-size: 20px"></i></a></li>`
 		}
 	}
 

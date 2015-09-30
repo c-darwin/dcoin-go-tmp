@@ -4,40 +4,40 @@ import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
-//	"encoding/json"
+	//	"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	//"bytes"
 )
 
-func (p *Parser) MiningInit() (error) {
-	fields := []map[string]string {{"promised_amount_id":"int64"}, {"amount":"money"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) MiningInit() error {
+	fields := []map[string]string{{"promised_amount_id": "int64"}, {"amount": "money"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) MiningFront() (error) {
+func (p *Parser) MiningFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"promised_amount_id":"bigint", "amount":"amount"}
+	verifyData := map[string]string{"promised_amount_id": "bigint", "amount": "amount"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["promised_amount_id"], p.TxMap["amount"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -54,14 +54,14 @@ func (p *Parser) MiningFront() (error) {
 		return p.ErrInfo("0 promised_amount for mining")
 	}
 
-	newTdc, err := p.getTdc (p.TxMaps.Int64["promised_amount_id"], p.TxUserID);
+	newTdc, err := p.getTdc(p.TxMaps.Int64["promised_amount_id"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	log.Debug("newTdc", newTdc)
 	log.Debug("p.TxMaps.Float64[amount]", p.TxMaps.Money["amount"])
-	if newTdc < p.TxMaps.Money["amount"] + 0.01 { // запас 0.01 на всяк случай
-		return p.ErrInfo(fmt.Sprintf("incorrect amount %d<%f+0.01", newTdc, p.TxMaps.Money["amount"] ))
+	if newTdc < p.TxMaps.Money["amount"]+0.01 { // запас 0.01 на всяк случай
+		return p.ErrInfo(fmt.Sprintf("incorrect amount %d<%f+0.01", newTdc, p.TxMaps.Money["amount"]))
 	}
 	if p.TxMaps.Money["amount"] < 0.02 {
 		return p.ErrInfo("incorrect amount")
@@ -74,10 +74,9 @@ func (p *Parser) MiningFront() (error) {
 	return nil
 }
 
-
 /* $del_block_id указывается, когда майнинг происходит как побочный результат удаления обещанной суммы
  * */
-func (p *Parser) mining_(delMiningBlockId int64) (error) {
+func (p *Parser) mining_(delMiningBlockId int64) error {
 
 	// возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateMain(p.TxUserID)
@@ -119,19 +118,19 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	}
 
 	// возможно, что данный юзер имеет непогашенные cash_requests, значит новые TDC у него не растут, а просто обновляется tdc_amount_update
-	newTdc, err := p.getTdc (p.TxMaps.Int64["promised_amount_id"], p.TxUserID);
+	newTdc, err := p.getTdc(p.TxMaps.Int64["promised_amount_id"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// списываем сумму с promised_amount
-	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, del_mining_block_id = ?, log_id = ? WHERE id = ?", utils.Round((newTdc - p.TxMaps.Money["amount"]), 2), p.BlockData.Time, delMiningBlockId, logId, p.TxMaps.Int64["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, del_mining_block_id = ?, log_id = ? WHERE id = ?", utils.Round((newTdc-p.TxMaps.Money["amount"]), 2), p.BlockData.Time, delMiningBlockId, logId, p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// комиссия системы
-	systemCommission := utils.Round(p.TxMaps.Money["amount"] * float64(float64(p.Variables.Int64["system_commission"]) / 100), 2 )
+	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["system_commission"])/100), 2)
 	if systemCommission == 0 {
 		systemCommission = 0.01
 	}
@@ -141,13 +140,13 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	log.Debug("systemCommission", systemCommission)
 
 	// теперь начисляем DC, залогировав предыдущее значение
-	err = p.updateRecipientWallet( p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", true );
+	err = p.updateRecipientWallet(p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	// теперь начисляем комиссию системе
 	if systemCommission > 0 {
-		err = p.updateRecipientWallet( 1, currencyId, systemCommission, "system_commission", p.TxMaps.Int64["promised_amount_id"], "", "", true );
+		err = p.updateRecipientWallet(1, currencyId, systemCommission, "system_commission", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 	}
 	// реферальные
 	refData, err := p.OneRow("SELECT * FROM referral").Float64()
@@ -155,12 +154,12 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 		return p.ErrInfo(err)
 	}
 	if refs[0] > 0 {
-		log.Debug("%v, %v, %v", p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"])
-		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["first"] / 100), 2 )
+		log.Debug("%v, %v, %v", p.TxMaps.Money["amount"], float64(refData["first"]/100), refData["first"])
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["first"]/100), 2)
 		log.Debug("refs[0]", refs[0], refAmount)
 		//log.Debug(p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"], refAmount)
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
+			err = p.updateRecipientWallet(refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -173,10 +172,10 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	}
 
 	if refs[1] > 0 {
-		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["second"] / 100), 2 )
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
 		log.Debug("refs[1]", refs[1], refAmount)
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[1], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
+			err = p.updateRecipientWallet(refs[1], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -189,10 +188,10 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	}
 
 	if refs[2] > 0 {
-		refAmount := utils.Round (p.TxMaps.Money["amount"] * float64(refData["third"] / 100), 2 )
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["third"]/100), 2)
 		log.Debug("refs[2]", refs[2], refAmount)
 		if refAmount > 0 {
-			err = p.updateRecipientWallet( refs[2], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true );
+			err = p.updateRecipientWallet(refs[2], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -206,11 +205,11 @@ func (p *Parser) mining_(delMiningBlockId int64) (error) {
 	return nil
 }
 
-func (p *Parser) Mining() (error) {
+func (p *Parser) Mining() error {
 	return p.mining_(0)
 }
 
-func (p *Parser) MiningRollback() (error) {
+func (p *Parser) MiningRollback() error {
 	promisedAmountData, err := p.OneRow("SELECT * FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -257,7 +256,7 @@ func (p *Parser) MiningRollback() (error) {
 		return p.ErrInfo(err)
 	}
 	if refs[2] > 0 {
-		refAmount := utils.Round( p.TxMaps.Money["amount"] * float64(refData["third"] / 100), 2 );
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["third"]/100), 2)
 		if refAmount > 0 {
 			err = p.generalRollback("wallets", refs[2], "AND currency_id = "+promisedAmountData["currency_id"], false)
 			if err != nil {
@@ -272,7 +271,7 @@ func (p *Parser) MiningRollback() (error) {
 		}
 	}
 	if refs[1] > 0 {
-		refAmount := utils.Round( p.TxMaps.Money["amount"] * float64(refData["second"] / 100), 2 );
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
 		if refAmount > 0 {
 			err = p.generalRollback("wallets", refs[1], "AND currency_id = "+promisedAmountData["currency_id"], false)
 			if err != nil {
@@ -287,7 +286,7 @@ func (p *Parser) MiningRollback() (error) {
 		}
 	}
 	if refs[0] > 0 {
-		refAmount := utils.Round( p.TxMaps.Money["amount"] * float64(refData["second"] / 100), 2 );
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
 		if refAmount > 0 {
 			err = p.generalRollback("wallets", refs[0], "AND currency_id = "+promisedAmountData["currency_id"], false)
 			if err != nil {
@@ -303,7 +302,7 @@ func (p *Parser) MiningRollback() (error) {
 	}
 
 	// откатим комиссию системы
-	systemCommission := utils.Round (p.TxMaps.Money["amount"] * float64(float64(p.Variables.Int64["systemCommission"]) / 100), 2 );
+	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["systemCommission"])/100), 2)
 	if systemCommission == 0 {
 		systemCommission = 0.01
 	}

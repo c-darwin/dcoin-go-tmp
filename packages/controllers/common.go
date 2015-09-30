@@ -1,23 +1,24 @@
 package controllers
+
 import (
-	"reflect"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"net/http"
+	"bytes"
+	"flag"
 	"fmt"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/session"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"strconv"
-	"time"
-	"github.com/op/go-logging"
-	"unicode"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
-	"bytes"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/op/go-logging"
 	"html/template"
-	"strings"
+	"net/http"
 	"os"
-	"flag"
+	"reflect"
 	"runtime"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
 )
 
 var log = logging.MustGetLogger("controllers")
@@ -25,45 +26,45 @@ var log = logging.MustGetLogger("controllers")
 type Controller struct {
 	dbInit bool
 	*utils.DCDB
-	r *http.Request
-	w http.ResponseWriter
-	sess session.SessionStore
-	Lang map[string]string
-	TplName string
-	LangInt int64
-	Navigate string
-	ContentInc bool
-	Periods map[int64]string
-	Community bool
-	CommunityUsers []int64
-	ShowSignData bool
-	MyPrefix string
-	Alert string
-	UserId int64
-	Admin bool
-	SessRestricted int64
-	SessUserId int64
-	MyNotice map[string]string
-	Parameters map[string]string
-	Variables *utils.Variables
-	CountSign int
-	CountSignArr []int
-	TimeFormat string
-	PoolAdmin bool
-	PoolAdminUserId int64
-	NodeAdmin bool
-	NodeConfig map[string]string
+	r                *http.Request
+	w                http.ResponseWriter
+	sess             session.SessionStore
+	Lang             map[string]string
+	TplName          string
+	LangInt          int64
+	Navigate         string
+	ContentInc       bool
+	Periods          map[int64]string
+	Community        bool
+	CommunityUsers   []int64
+	ShowSignData     bool
+	MyPrefix         string
+	Alert            string
+	UserId           int64
+	Admin            bool
+	SessRestricted   int64
+	SessUserId       int64
+	MyNotice         map[string]string
+	Parameters       map[string]string
+	Variables        *utils.Variables
+	CountSign        int
+	CountSignArr     []int
+	TimeFormat       string
+	PoolAdmin        bool
+	PoolAdminUserId  int64
+	NodeAdmin        bool
+	NodeConfig       map[string]string
 	ConfigCommission map[int64][]float64
-	CurrencyList map[int64]string
-	CurrencyListCf map[int64]string
-	PaymentSystems map[string]string
+	CurrencyList     map[int64]string
+	CurrencyListCf   map[int64]string
+	PaymentSystems   map[string]string
 	ConfirmedBlockId int64
-	MinerId int64
-	Races map[int64]string
+	MinerId          int64
+	Races            map[int64]string
 }
 
 var (
-	configIni map[string]string
+	configIni      map[string]string
 	globalSessions *session.Manager
 	// в гоурутинах используется только для чтения
 	globalLangReadOnly map[int]map[string]string
@@ -71,11 +72,11 @@ var (
 
 func SessInit() {
 	var err error
-	path := *utils.Dir+`/tmp`
-	if runtime.GOOS =="windows" {
+	path := *utils.Dir + `/tmp`
+	if runtime.GOOS == "windows" {
 		path = "tmp"
 	}
-	globalSessions, err = session.NewManager("file",`{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)
+	globalSessions, err = session.NewManager("file", `{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 	}
@@ -87,7 +88,7 @@ func ConfigInit() {
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
-			if _, err := os.Stat(*utils.Dir+"/config.ini"); os.IsNotExist(err) {
+			if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
 				utils.Sleep(1)
 				continue
 			}
@@ -106,7 +107,7 @@ func ConfigInit() {
 		}
 	}()
 	globalLangReadOnly = make(map[int]map[string]string)
-	for _, v := range consts.LangMap{
+	for _, v := range consts.LangMap {
 		data, err := static.Asset(fmt.Sprintf("static/lang/%d.ini", v))
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
@@ -126,7 +127,7 @@ func init() {
 	flag.Parse()
 }
 
-func CallController(c *Controller, name string)  (string, error) {
+func CallController(c *Controller, name string) (string, error) {
 	// имя экспортируемого метода должно начинаться с заглавной буквы
 	a := []rune(name)
 	a[0] = unicode.ToUpper(a[0])
@@ -140,7 +141,6 @@ func CallController(c *Controller, name string)  (string, error) {
 	}
 	return html, err
 }
-
 
 func CallMethod(i interface{}, methodName string) (string, error) {
 	var ptr reflect.Value
@@ -171,8 +171,8 @@ func CallMethod(i interface{}, methodName string) (string, error) {
 		finalMethod = method
 	}
 
-	if (finalMethod.IsValid()) {
-		x:=finalMethod.Call([]reflect.Value{})
+	if finalMethod.IsValid() {
+		x := finalMethod.Call([]reflect.Value{})
 		err_, found := x[1].Interface().(error)
 		var err error
 		if found {
@@ -187,20 +187,18 @@ func CallMethod(i interface{}, methodName string) (string, error) {
 	return "", fmt.Errorf("not found")
 }
 
-
-
 func GetSessUserId(sess session.SessionStore) int64 {
 	sessUserId := sess.Get("user_id")
 	log.Debug("sessUserId: %v", sessUserId)
 	switch sessUserId.(type) {
-		case int64:
-			return sessUserId.(int64)
-		case int:
-			return int64(sessUserId.(int))
-		case string:
-			return utils.StrToInt64(sessUserId.(string))
-		default:
-			return 0
+	case int64:
+		return sessUserId.(int64)
+	case int:
+		return int64(sessUserId.(int))
+	case string:
+		return utils.StrToInt64(sessUserId.(string))
+	default:
+		return 0
 	}
 	return 0
 }
@@ -274,10 +272,9 @@ func SetLang(w http.ResponseWriter, r *http.Request, lang int) {
 	http.SetCookie(w, &cookie)
 }
 
-
 // если в lang прислали какую-то гадость
 func CheckLang(lang int) bool {
-	for _, v := range consts.LangMap{
+	for _, v := range consts.LangMap {
 		if lang == v {
 			return true
 		}
@@ -285,17 +282,16 @@ func CheckLang(lang int) bool {
 	return false
 }
 
-
 func GetLang(w http.ResponseWriter, r *http.Request, parameters map[string]string) int {
 	var lang int = 1
 	lang = utils.StrToInt(parameters["lang"])
 	if !CheckLang(lang) {
-		if langCookie, err := r.Cookie("lang"); err==nil {
+		if langCookie, err := r.Cookie("lang"); err == nil {
 			lang, _ = strconv.Atoi(langCookie.Value)
 		}
 	}
 	if !CheckLang(lang) {
-		al := r.Header.Get("Accept-Language")  // en-US,en;q=0.5
+		al := r.Header.Get("Accept-Language") // en-US,en;q=0.5
 		log.Debug("Accept-Language: %s", r.Header.Get("Accept-Language"))
 		if len(al) >= 2 {
 			if _, ok := consts.LangMap[al[:2]]; ok {
@@ -306,10 +302,8 @@ func GetLang(w http.ResponseWriter, r *http.Request, parameters map[string]strin
 	return lang
 }
 
-
-
-func makeTemplate(html, name string, tData interface {}) (string, error) {
-	data, err := static.Asset("static/templates/"+html+".html")
+func makeTemplate(html, name string, tData interface{}) (string, error) {
+	data, err := static.Asset("static/templates/" + html + ".html")
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -330,12 +324,12 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 			}
 		},
 		"div": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
+			return utils.InterfaceToFloat64(a) / utils.InterfaceToFloat64(b)
 		},
 		"mult": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)*utils.InterfaceToFloat64(b)
+			return utils.InterfaceToFloat64(a) * utils.InterfaceToFloat64(b)
 		},
-		"round": func(a  interface{}, num int) float64 {
+		"round": func(a interface{}, num int) float64 {
 			return utils.Round(utils.InterfaceToFloat64(a), num)
 		},
 		"len": func(s []map[string]string) int {
@@ -345,10 +339,10 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 			return len(s)
 		},
 		"sum": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)+utils.InterfaceToFloat64(b)
+			return utils.InterfaceToFloat64(a) + utils.InterfaceToFloat64(b)
 		},
 		"minus": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)-utils.InterfaceToFloat64(b)
+			return utils.InterfaceToFloat64(a) - utils.InterfaceToFloat64(b)
 		},
 		"noescape": func(s string) template.HTML {
 			return template.HTML(s)
@@ -376,11 +370,11 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 			for _, value := range args {
 				switch value.(type) {
 				case int64:
-					result+=utils.Int64ToStr(value.(int64))
+					result += utils.Int64ToStr(value.(int64))
 				case float64:
-					result+=utils.Float64ToStr(value.(float64))
+					result += utils.Float64ToStr(value.(float64))
 				case string:
-					result+=value.(string)
+					result += value.(string)
 				}
 			}
 			return result
@@ -410,7 +404,6 @@ func makeTemplate(html, name string, tData interface {}) (string, error) {
 		"notificationsLang": func(lang map[string]string, name string) string {
 			return lang["notifications_"+name]
 		},
-
 	}
 	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))

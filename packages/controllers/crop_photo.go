@@ -1,13 +1,14 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
 	"bytes"
-	"strings"
+	"encoding/base64"
+	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"image"
 	"image/jpeg"
-	"encoding/base64"
 	"os"
+	"strings"
 )
 
 func (c *Controller) CropPhoto() (string, error) {
@@ -31,9 +32,9 @@ func (c *Controller) CropPhoto() (string, error) {
 	}
 	path := ""
 	if c.r.FormValue("type") == "face" {
-		path = *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_face.jpg"
+		path = *utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_face.jpg"
 	} else {
-		path = *utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_profile.jpg"
+		path = *utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_profile.jpg"
 	}
 	out, err := os.Create(path)
 	if err != nil {

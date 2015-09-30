@@ -1,7 +1,8 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) AcceptNewKeyStatus() (string, error) {
@@ -11,7 +12,7 @@ func (c *Controller) AcceptNewKeyStatus() (string, error) {
 	}
 
 	result := ""
-	status, err := c.DCDB.Single("SELECT status FROM "+c.MyPrefix+"my_table").String()
+	status, err := c.DCDB.Single("SELECT status FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -22,4 +23,3 @@ func (c *Controller) AcceptNewKeyStatus() (string, error) {
 
 	return result, nil
 }
-

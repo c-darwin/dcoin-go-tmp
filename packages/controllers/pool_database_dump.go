@@ -1,10 +1,11 @@
 package controllers
-import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
 
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+import (
+	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+
 	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"regexp"
 	"time"
 )
@@ -33,14 +34,14 @@ func (c *Controller) PoolDataBaseDump() (string, error) {
 			mainMap[table] = data
 		}
 	} else {
-		for i:=0; i < len(c.CommunityUsers); i++ {
+		for i := 0; i < len(c.CommunityUsers); i++ {
 			for _, table := range consts.MyTables {
-				table = utils.Int64ToStr(c.CommunityUsers[i])+"_"+table
+				table = utils.Int64ToStr(c.CommunityUsers[i]) + "_" + table
 				if utils.InSliceString(table, allTables) {
 					data, err := c.GetAll(`SELECT * FROM `+table, -1)
 					for k, arr := range data {
 						for name, value := range arr {
-							if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok{
+							if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok {
 								data[k][name] = string(utils.BinToHex([]byte(value)))
 							}
 						}
@@ -78,22 +79,21 @@ func (c *Controller) PoolDataBaseDump() (string, error) {
 			values := []string{}
 			qq := ""
 			for name, value := range data {
-				colNames += name+","
+				colNames += name + ","
 				values = append(values, value)
-				if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok{
-					qq+="[hex],"
+				if ok, _ := regexp.MatchString("(hash_code|public_key|encrypted)", name); ok {
+					qq += "[hex],"
 				} else {
-					qq+="?,"
+					qq += "?,"
 				}
 			}
-			colNames = colNames[0:len(colNames)-1]
-			qq = qq[0:len(qq)-1]
-			query := `INSERT INTO `+table+` (`+colNames+`) VALUES (`+qq+`)`
+			colNames = colNames[0 : len(colNames)-1]
+			qq = qq[0 : len(qq)-1]
+			query := `INSERT INTO ` + table + ` (` + colNames + `) VALUES (` + qq + `)`
 			log.Debug("%v", query)
 			log.Debug("%v", values)
 		}
 	}
-
 
 	return "", nil
 }

@@ -1,36 +1,37 @@
 package controllers
+
 import (
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"encoding/json"
 )
 
 type walletsListPage struct {
-	SignData string
-	CfProjectId int64
-	Alert string
-	Lang map[string]string
-	CurrencyList map[int64]string
-	Wallets []utils.DCAmounts
-	MyDcTransactions []map[string]string
-	UserTypeId int64
-	UserType string
-	ProjectTypeId int64
-	ProjectType string
-	Time int64
-	CurrentBlockId int64
-	ConfirmedBlockId int64
-	Community bool
-	MinerId int64
-	UserId int64
-	UserIdStr string
-	Config map[string]string
-	ConfigCommission map[int64][]float64
-	LastTxFormatted string
+	SignData             string
+	CfProjectId          int64
+	Alert                string
+	Lang                 map[string]string
+	CurrencyList         map[int64]string
+	Wallets              []utils.DCAmounts
+	MyDcTransactions     []map[string]string
+	UserTypeId           int64
+	UserType             string
+	ProjectTypeId        int64
+	ProjectType          string
+	Time                 int64
+	CurrentBlockId       int64
+	ConfirmedBlockId     int64
+	Community            bool
+	MinerId              int64
+	UserId               int64
+	UserIdStr            string
+	Config               map[string]string
+	ConfigCommission     map[int64][]float64
+	LastTxFormatted      string
 	ArbitrationTrustList map[int64]map[int64][]string
-	ShowSignData bool
-	Names map[string]string
-	CountSignArr []int
+	ShowSignData         bool
+	Names                map[string]string
+	CountSignArr         []int
 }
 
 func (c *Controller) WalletsList() (string, error) {
@@ -38,9 +39,9 @@ func (c *Controller) WalletsList() (string, error) {
 	var err error
 
 	// валюты
-	currencyList:=c.CurrencyListCf
+	currencyList := c.CurrencyListCf
 
-	confirmedBlockId:=c.ConfirmedBlockId
+	confirmedBlockId := c.ConfirmedBlockId
 
 	var wallets []utils.DCAmounts
 	var myDcTransactions []map[string]string
@@ -54,7 +55,7 @@ func (c *Controller) WalletsList() (string, error) {
 			for id, data := range myDcTransactions {
 				t := time.Unix(utils.StrToInt64(data["time"]), 0)
 				timeFormatted := t.Format(c.TimeFormat)
-				log.Debug("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat )
+				log.Debug("timeFormatted", utils.StrToInt64(data["time"]), timeFormatted, c.TimeFormat)
 				myDcTransactions[id]["timeFormatted"] = timeFormatted
 				myDcTransactions[id]["numBlocks"] = "0"
 				blockId := utils.StrToInt64(data["block_id"])
@@ -64,8 +65,8 @@ func (c *Controller) WalletsList() (string, error) {
 			}
 		}
 	}
-	userType := "SendDc";
-	projectType := "CfSendDc";
+	userType := "SendDc"
+	projectType := "CfSendDc"
 	userTypeId := utils.TypeInt(userType)
 	projectTypeId := utils.TypeInt(projectType)
 	timeNow := time.Now().Unix()
@@ -97,8 +98,8 @@ func (c *Controller) WalletsList() (string, error) {
 
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
-	if len(last_tx)>0 {
-		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang);
+	if len(last_tx) > 0 {
+		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)
 	}
 	arbitrationTrustList_, err := c.GetMap(`
 			SELECT arbitrator_user_id,
@@ -110,7 +111,7 @@ func (c *Controller) WalletsList() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	arbitrationTrustList :=make(map[int64]map[int64][]string)
+	arbitrationTrustList := make(map[int64]map[int64][]string)
 	var jsonMap map[string][]string
 	for arbitrator_user_id, conditions := range arbitrationTrustList_ {
 		err = json.Unmarshal([]byte(conditions), &jsonMap)
@@ -119,38 +120,38 @@ func (c *Controller) WalletsList() (string, error) {
 		}
 		uidInt := utils.StrToInt64(arbitrator_user_id)
 		arbitrationTrustList[uidInt] = make(map[int64][]string)
-		for currenycId, data:= range jsonMap{
+		for currenycId, data := range jsonMap {
 			arbitrationTrustList[uidInt][utils.StrToInt64(currenycId)] = data
 		}
 	}
 	log.Debug("arbitrationTrustList", arbitrationTrustList)
 
 	TemplateStr, err := makeTemplate("wallets_list", "walletsList", &walletsListPage{
-		CountSignArr: c.CountSignArr,
-		CfProjectId: cfProjectId,
-		Names: names,
-		UserIdStr: utils.Int64ToStr(c.SessUserId),
-		Alert: c.Alert,
-		Community: c.Community,
-		ConfigCommission: c.ConfigCommission,
-		ProjectType: projectType,
-		UserType: userType,
-		UserId: c.SessUserId,
-		Lang: c.Lang,
-		CurrencyList: currencyList,
-		Wallets: wallets,
-		MyDcTransactions: myDcTransactions,
-		UserTypeId: userTypeId,
-		ProjectTypeId: projectTypeId,
-		Time: timeNow,
-		CurrentBlockId: currentBlockId,
-		ConfirmedBlockId: confirmedBlockId,
-		MinerId: minerId,
-		Config: c.NodeConfig,
-		LastTxFormatted: 	lastTxFormatted,
+		CountSignArr:         c.CountSignArr,
+		CfProjectId:          cfProjectId,
+		Names:                names,
+		UserIdStr:            utils.Int64ToStr(c.SessUserId),
+		Alert:                c.Alert,
+		Community:            c.Community,
+		ConfigCommission:     c.ConfigCommission,
+		ProjectType:          projectType,
+		UserType:             userType,
+		UserId:               c.SessUserId,
+		Lang:                 c.Lang,
+		CurrencyList:         currencyList,
+		Wallets:              wallets,
+		MyDcTransactions:     myDcTransactions,
+		UserTypeId:           userTypeId,
+		ProjectTypeId:        projectTypeId,
+		Time:                 timeNow,
+		CurrentBlockId:       currentBlockId,
+		ConfirmedBlockId:     confirmedBlockId,
+		MinerId:              minerId,
+		Config:               c.NodeConfig,
+		LastTxFormatted:      lastTxFormatted,
 		ArbitrationTrustList: arbitrationTrustList,
-		ShowSignData: c.ShowSignData,
-		SignData: ""})
+		ShowSignData:         c.ShowSignData,
+		SignData:             ""})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

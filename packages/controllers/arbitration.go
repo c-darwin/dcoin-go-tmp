@@ -1,40 +1,41 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 )
 
 type arbitrationPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	Arbitrators []*arbitrationType
-	MyTrustList []map[string]string
-	PendingTx int64
-	Arbitrator int64
+	SignData              string
+	ShowSignData          bool
+	TxType                string
+	TxTypeId              int64
+	TimeNow               int64
+	UserId                int64
+	Alert                 string
+	Lang                  map[string]string
+	CountSignArr          []int
+	Arbitrators           []*arbitrationType
+	MyTrustList           []map[string]string
+	PendingTx             int64
+	Arbitrator            int64
 	ArbitrationDaysRefund int64
-	LastTxFormatted string
-	ArbitrationTrustList int64
+	LastTxFormatted       string
+	ArbitrationTrustList  int64
 }
 
 type arbitrationType struct {
-	Arbitrator_user_id int64
-	Url string
-	Count int64
+	Arbitrator_user_id     int64
+	Url                    string
+	Count                  int64
 	Count_rejected_refunds int64
-	Refund_data_count int64
-	Refund_data_sum float64
+	Refund_data_count      int64
+	Refund_data_sum        float64
 }
 
 func (c *Controller) Arbitration() (string, error) {
 
-	txType := "ChangeArbitratorList";
+	txType := "ChangeArbitratorList"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -143,70 +144,70 @@ func (c *Controller) Arbitration() (string, error) {
 	pendingTx := pendingTx_[txTypeId]
 
 	/*
-	data, err := static.Asset("static/templates/arbitration.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	signatures, err := static.Asset("static/templates/signatures.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	alert_success, err := static.Asset("static/templates/alert_success.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	funcMap := template.FuncMap{
-		"div": func(a, b interface{}) float64 {
-			return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
-		},
-		"round": func(a float64, num int) float64 {
-			return utils.Round(a, num)
-		},
-	}
-	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-	t = template.Must(t.Parse(string(alert_success)))
-	t = template.Must(t.Parse(string(signatures)))
-	b := new(bytes.Buffer)
-	err = t.ExecuteTemplate(b, "arbitration", &arbitrationPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		Arbitrators: arbitrators,
-		MyTrustList: myTrustList,
-		PendingTx: pendingTx,
-		Arbitrator: arbitrator,
-		ArbitrationDaysRefund: arbitrationDaysRefund,
-		LastTxFormatted: lastTxFormatted,
-		ArbitrationTrustList: arbitrationTrustList})
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	return b.String(), nil
+		data, err := static.Asset("static/templates/arbitration.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		signatures, err := static.Asset("static/templates/signatures.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		alert_success, err := static.Asset("static/templates/alert_success.html")
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		funcMap := template.FuncMap{
+			"div": func(a, b interface{}) float64 {
+				return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
+			},
+			"round": func(a float64, num int) float64 {
+				return utils.Round(a, num)
+			},
+		}
+		t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
+		t = template.Must(t.Parse(string(alert_success)))
+		t = template.Must(t.Parse(string(signatures)))
+		b := new(bytes.Buffer)
+		err = t.ExecuteTemplate(b, "arbitration", &arbitrationPage{
+			Alert: c.Alert,
+			Lang: c.Lang,
+			CountSignArr: c.CountSignArr,
+			ShowSignData: c.ShowSignData,
+			UserId: c.SessUserId,
+			TimeNow: timeNow,
+			TxType: txType,
+			TxTypeId: txTypeId,
+			SignData: "",
+			Arbitrators: arbitrators,
+			MyTrustList: myTrustList,
+			PendingTx: pendingTx,
+			Arbitrator: arbitrator,
+			ArbitrationDaysRefund: arbitrationDaysRefund,
+			LastTxFormatted: lastTxFormatted,
+			ArbitrationTrustList: arbitrationTrustList})
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		return b.String(), nil
 	*/
 
 	TemplateStr, err := makeTemplate("arbitration", "arbitration", &arbitrationPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		Arbitrators: arbitrators,
-		MyTrustList: myTrustList,
-		PendingTx: pendingTx,
-		Arbitrator: arbitrator,
+		Alert:                 c.Alert,
+		Lang:                  c.Lang,
+		CountSignArr:          c.CountSignArr,
+		ShowSignData:          c.ShowSignData,
+		UserId:                c.SessUserId,
+		TimeNow:               timeNow,
+		TxType:                txType,
+		TxTypeId:              txTypeId,
+		SignData:              "",
+		Arbitrators:           arbitrators,
+		MyTrustList:           myTrustList,
+		PendingTx:             pendingTx,
+		Arbitrator:            arbitrator,
 		ArbitrationDaysRefund: arbitrationDaysRefund,
-		LastTxFormatted: lastTxFormatted,
-		ArbitrationTrustList: arbitrationTrustList})
+		LastTxFormatted:       lastTxFormatted,
+		ArbitrationTrustList:  arbitrationTrustList})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

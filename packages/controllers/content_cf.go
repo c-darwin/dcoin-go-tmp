@@ -1,16 +1,17 @@
 package controllers
+
 import (
-	"net/http"
-	"regexp"
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
-	"encoding/json"
+	"net/http"
+	"regexp"
 )
 
 type contentCf struct {
-	CfUrl string
-	Lang string
-	Nav template.JS
+	CfUrl  string
+	Lang   string
+	Nav    template.JS
 	CfLang map[string]string
 }
 
@@ -18,8 +19,8 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 
 	c := new(Controller)
 	c.r = r
-	dbInit := false;
-	if len(configIni["db_user"]) > 0 || (configIni["db_type"]=="sqlite") {
+	dbInit := false
+	if len(configIni["db_user"]) > 0 || (configIni["db_type"] == "sqlite") {
 		dbInit = true
 	}
 	if dbInit {
@@ -45,7 +46,7 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 
 		r.ParseForm()
 		tplName := r.FormValue("tpl_name")
-		parameters_ := make(map[string]interface {})
+		parameters_ := make(map[string]interface{})
 		err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 		if err != nil {
 			log.Error("%v", err)
@@ -71,10 +72,10 @@ func ContentCf(w http.ResponseWriter, r *http.Request) {
 		sess, _ := globalSessions.SessionStart(w, r)
 		defer sess.SessionRelease(w)
 		c.SessUserId = GetSessUserId(sess)
-		if config["pool_admin_user_id"]!="0" &&  config["pool_admin_user_id"]!=utils.Int64ToStr(c.SessUserId) && config["pool_tech_works"]!="1" {
+		if config["pool_admin_user_id"] != "0" && config["pool_admin_user_id"] != utils.Int64ToStr(c.SessUserId) && config["pool_tech_works"] != "1" {
 			tplName = "pool_tech_works"
 		} else if len(tplName) > 0 {
-			if ok, _ := regexp.MatchString("^[\\w]{1,30}$", tplName); !ok{
+			if ok, _ := regexp.MatchString("^[\\w]{1,30}$", tplName); !ok {
 				tplName = "cfCatalog"
 			}
 		} else {

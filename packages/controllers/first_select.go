@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
@@ -6,7 +7,6 @@ import (
 type firstSelectPage struct {
 	Lang map[string]string
 }
-
 
 func (c *Controller) FirstSelect() (string, error) {
 

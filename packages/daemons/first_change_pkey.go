@@ -1,9 +1,9 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"bytes"
 	"github.com/c-darwin/dcoin-go-tmp/packages/availablekey"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func FirstChangePkey() {
@@ -29,7 +29,7 @@ func FirstChangePkey() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -59,9 +59,9 @@ func FirstChangePkey() {
 		var status, myPrefix string
 		for _, uid := range uids {
 			if len(community) > 0 {
-				myPrefix = utils.Int64ToStr(uid)+"_"
+				myPrefix = utils.Int64ToStr(uid) + "_"
 			}
-			status, err = d.Single(`SELECT status FROM `+myPrefix+`my_table`).String()
+			status, err = d.Single(`SELECT status FROM ` + myPrefix + `my_table`).String()
 			if err != nil {
 				d.PrintSleep(err, 1)
 				continue BEGIN
@@ -83,15 +83,15 @@ func FirstChangePkey() {
 				if !bytes.Equal(myUserPublicKey, []byte(userPublicKey)) {
 					log.Debug("myUserPublicKey:%s != userPublicKey:%s", utils.BinToHex(myUserPublicKey), utils.BinToHex(userPublicKey))
 					// удаляем старый ключ
-					err = d.ExecSql(`DELETE FROM `+myPrefix+`my_keys`)
+					err = d.ExecSql(`DELETE FROM ` + myPrefix + `my_keys`)
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
 					}
 					// и user_id
-					q := `UPDATE `+myPrefix+`my_table SET status="my_pending", user_id=0`
+					q := `UPDATE ` + myPrefix + `my_table SET status="my_pending", user_id=0`
 					if len(community) > 0 {
-						q = `DELETE FROM `+myPrefix+`my_table`
+						q = `DELETE FROM ` + myPrefix + `my_table`
 					}
 					err = d.ExecSql(q)
 					if err != nil {
@@ -122,7 +122,7 @@ func FirstChangePkey() {
 							}
 						}
 						// генерим и шлем новую тр-ию
-						err = d.SendTxChangePkey(userId);
+						err = d.SendTxChangePkey(userId)
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
@@ -134,14 +134,14 @@ func FirstChangePkey() {
 				}
 
 				// проверим, не прошла ли тр-ия и не сменился ли уже ключ
-				userPubKeyCount, err := d.Single(`SELECT count(*) FROM `+myPrefix+`my_keys WHERE status='approved'`).Int64()
+				userPubKeyCount, err := d.Single(`SELECT count(*) FROM ` + myPrefix + `my_keys WHERE status='approved'`).Int64()
 				if err != nil {
 					d.PrintSleep(err, 1)
 					continue BEGIN
 				}
 				log.Debug("userPubKey: %v", userPubKeyCount)
 				if userPubKeyCount > 1 {
-					err = d.ExecSql(`UPDATE `+myPrefix+`my_table SET status='user'`)
+					err = d.ExecSql(`UPDATE ` + myPrefix + `my_table SET status='user'`)
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN
@@ -149,7 +149,7 @@ func FirstChangePkey() {
 					// также, если это пул, то надо удалить приватный ключ из базы данных, т.к. взлом пула будет означать угон всех акков
 					// хранение ключа на мобильном - безопасно, хранение ключа на ПК, пока Dcoin не стал популярен, тоже допустимо
 					if len(community) > 0 {
-						err = d.ExecSql(`DELETE private_key FROM `+myPrefix+`my_keys`)
+						err = d.ExecSql(`DELETE private_key FROM ` + myPrefix + `my_keys`)
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
@@ -167,9 +167,9 @@ func FirstChangePkey() {
 				}
 				log.Debug("lastTx: %v", lastTx)
 				if len(lastTx) > 0 {
-					if len(lastTx[0]["error"]) > 0 || utils.Time() - utils.StrToInt64(lastTx[0]["time_int"]) > 1800 {
+					if len(lastTx[0]["error"]) > 0 || utils.Time()-utils.StrToInt64(lastTx[0]["time_int"]) > 1800 {
 						// генерим и шлем новую тр-ию
-						err = d.SendTxChangePkey(uid);
+						err = d.SendTxChangePkey(uid)
 						if err != nil {
 							d.PrintSleep(err, 1)
 							continue BEGIN
@@ -179,7 +179,7 @@ func FirstChangePkey() {
 			}
 		}
 
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {
@@ -189,5 +189,3 @@ func FirstChangePkey() {
 	}
 
 }
-
-

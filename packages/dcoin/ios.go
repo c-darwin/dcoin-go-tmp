@@ -16,11 +16,11 @@ logNS(char* text) {
 */
 import "C"
 
-import  (
-	"net/http"
+import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"net"
 	"github.com/hydrogen18/stoppableListener"
+	"net"
+	"net/http"
 )
 
 var stop = make(chan bool)
@@ -31,7 +31,7 @@ func IosLog(text string) {
 	}
 }
 
-func StartHTTPServer(ListenHttpHost string){
+func StartHTTPServer(ListenHttpHost string) {
 	originalListener, err := net.Listen("tcp", ListenHttpHost)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func StartHTTPServer(ListenHttpHost string){
 func StopHTTPServer() {
 	log.Debug("StopHTTPServer()")
 	IosLog("StopHTTPServer 0")
-	go func() {stop<-true}();
+	go func() { stop <- true }()
 	utils.Sleep(1)
 	IosLog("StopHTTPServer 1")
 }

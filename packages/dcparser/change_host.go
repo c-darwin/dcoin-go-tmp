@@ -6,23 +6,22 @@ import (
 	"regexp"
 )
 
-func (p *Parser) ChangeHostInit() (error) {
+func (p *Parser) ChangeHostInit() error {
 	var fields []map[string]string
 
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
-		fields = []map[string]string{{"http_host":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"http_host": "string"}, {"sign": "bytes"}}
 	} else {
-		fields = []map[string]string{{"http_host":"string"}, {"tcp_host":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"http_host": "string"}, {"tcp_host": "string"}, {"sign": "bytes"}}
 	}
-	err := p.GetTxMaps(fields);
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) ChangeHostFront() (error) {
+func (p *Parser) ChangeHostFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -30,9 +29,9 @@ func (p *Parser) ChangeHostFront() (error) {
 	}
 	var verifyData map[string]string
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
-		verifyData = map[string]string {"http_host":"http_host"}
+		verifyData = map[string]string{"http_host": "http_host"}
 	} else {
-		verifyData = map[string]string {"http_host":"http_host", "tcp_host":"tcp_host"}
+		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host"}
 	}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
@@ -62,9 +61,9 @@ func (p *Parser) ChangeHostFront() (error) {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"], p.TxMap["tcp_host"])
 	}
 	if p.BlockData != nil && p.BlockData.BlockId <= 240240 {
-		CheckSignResult, err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+		CheckSignResult, err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	} else {
-		CheckSignResult, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+		CheckSignResult, err = utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	}
 	if err != nil {
 		return p.ErrInfo(err)
@@ -80,13 +79,13 @@ func (p *Parser) ChangeHostFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeHost() (error) {
+func (p *Parser) ChangeHost() error {
 	tcpHost := ""
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
 		match := re.FindStringSubmatch(p.TxMaps.String["http_host"])
 		if len(match) != 0 {
-			tcpHost = match[1]+":8088"
+			tcpHost = match[1] + ":8088"
 		}
 	} else {
 		tcpHost = p.TxMaps.String["tcp_host"]
@@ -95,13 +94,13 @@ func (p *Parser) ChangeHost() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == myUserId && myBlockId <= p.BlockData.BlockId {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET host_status = 'approved'")
+		err = p.ExecSql("UPDATE " + myPrefix + "my_table SET host_status = 'approved'")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -110,18 +109,18 @@ func (p *Parser) ChangeHost() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeHostRollback() (error) {
+func (p *Parser) ChangeHostRollback() error {
 	err := p.selectiveRollback([]string{"http_host", "tcp_host"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	if p.TxUserID == myUserId {
 		// обновим статус в нашей локальной табле.
-		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET host_status = 'my_pending'")
+		err = p.ExecSql("UPDATE " + myPrefix + "my_table SET host_status = 'my_pending'")
 		if err != nil {
 			return p.ErrInfo(err)
 		}

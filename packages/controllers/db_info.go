@@ -1,18 +1,19 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type DbInfoPage struct {
-	TimeNow string
-	NodesBan []map[string]string
-	NodesConnection []map[string]string
-	MainLock []map[string]string
-	Variables map[string]string
-	QueueTx int64
+	TimeNow               string
+	NodesBan              []map[string]string
+	NodesConnection       []map[string]string
+	MainLock              []map[string]string
+	Variables             map[string]string
+	QueueTx               int64
 	TransactionsTestblock int64
-	Transactions int64
-	Lang map[string]string
+	Transactions          int64
+	Lang                  map[string]string
 }
 
 func (c *Controller) DbInfo() (string, error) {
@@ -61,20 +62,18 @@ func (c *Controller) DbInfo() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage {
-		Lang: c.Lang,
-		TimeNow: timeNow,
-		NodesBan: nodesBan,
-		NodesConnection: nodesConnection,
-		MainLock: mainLock,
-		Variables: variables,
-		QueueTx: queueTx,
+	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage{
+		Lang:                  c.Lang,
+		TimeNow:               timeNow,
+		NodesBan:              nodesBan,
+		NodesConnection:       nodesConnection,
+		MainLock:              mainLock,
+		Variables:             variables,
+		QueueTx:               queueTx,
 		TransactionsTestblock: transactionsTestblock,
-		Transactions: transactions})
+		Transactions:          transactions})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

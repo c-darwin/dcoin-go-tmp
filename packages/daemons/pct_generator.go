@@ -35,7 +35,7 @@ func PctGenerator() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -64,7 +64,7 @@ func PctGenerator() {
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := d.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -83,7 +83,7 @@ func PctGenerator() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		if curTime - pctTime > variables.Int64["new_pct_period"] {
+		if curTime-pctTime > variables.Int64["new_pct_period"] {
 
 			// берем все голоса miner_pct
 			pctVotes := make(map[int64]map[string]map[string]int64)
@@ -97,7 +97,7 @@ func PctGenerator() {
 				var currency_id, votes int64
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
-				if err!= nil {
+				if err != nil {
 					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
@@ -110,7 +110,7 @@ func PctGenerator() {
 				}
 				pctVotes[currency_id]["miner_pct"][pct] = votes
 			}
-	
+
 			// берем все голоса user_pct
 			rows, err = d.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
 			if err != nil {
@@ -122,7 +122,7 @@ func PctGenerator() {
 				var currency_id, votes int64
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
-				if err!= nil {
+				if err != nil {
 					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
 				}
@@ -135,26 +135,26 @@ func PctGenerator() {
 				}
 				pctVotes[currency_id]["user_pct"][pct] = votes
 			}
-	
+
 			newPct := make(map[string]map[string]map[string]string)
 			newPct["currency"] = make(map[string]map[string]string)
 			var userMaxKey int64
 			PctArray := utils.GetPctArray()
-	
+
 			log.Info("%v", "pctVotes", pctVotes)
 			for currencyId, data := range pctVotes {
-	
+
 				currencyIdStr := utils.Int64ToStr(currencyId)
 				// определяем % для майнеров
 				pctArr := utils.MakePctArray(data["miner_pct"])
 				log.Info("%v", "pctArrminer_pct", pctArr, currencyId)
 				key := utils.GetMaxVote(pctArr, 0, 390, 100)
 				log.Info("%v", "key", key)
-				if len(newPct["currency"][currencyIdStr]) == 0{
+				if len(newPct["currency"][currencyIdStr]) == 0 {
 					newPct["currency"][currencyIdStr] = make(map[string]string)
 				}
 				newPct["currency"][currencyIdStr]["miner_pct"] = utils.GetPctValue(key)
-	
+
 				// определяем % для юзеров
 				pctArr = utils.MakePctArray(data["user_pct"])
 				log.Info("%v", "pctArruser_pct", pctArr, currencyId)
@@ -168,7 +168,7 @@ func PctGenerator() {
 				userMaxKey = utils.FindUserPct(int(maxUserPctY))
 				log.Info("%v", "maxUserPctY", maxUserPctY, "userMaxKey", userMaxKey, "currencyIdStr", currencyIdStr)
 				// отрезаем лишнее, т.к. поиск идет ровно до макимального возможного, т.е. до miner_pct/2
-				pctArr = utils.DelUserPct(pctArr, userMaxKey);
+				pctArr = utils.DelUserPct(pctArr, userMaxKey)
 				log.Info("%v", "pctArr", pctArr)
 
 				key = utils.GetMaxVote(pctArr, 0, userMaxKey, 100)
@@ -179,17 +179,17 @@ func PctGenerator() {
 				newPct["currency"][currencyIdStr]["user_pct"] = utils.GetPctValue(key)
 				log.Info("%v", "user_pct", newPct["currency"][currencyIdStr]["user_pct"])
 			}
-	
+
 			newPct_ := new(newPctType)
 			newPct_.Currency = make(map[string]map[string]string)
 			newPct_.Currency = newPct["currency"]
 			newPct_.Referral = make(map[string]int64)
 			refLevels := []string{"first", "second", "third"}
-			for i:=0; i<len(refLevels); i++ {
+			for i := 0; i < len(refLevels); i++ {
 				level := refLevels[i]
 				var votesReferral []map[int64]int64
-	        	// берем все голоса
-				rows, err := d.Query("SELECT "+level+", count(user_id) as votes FROM votes_referral GROUP BY "+level+" ORDER BY "+level+" ASC ")
+				// берем все голоса
+				rows, err := d.Query("SELECT " + level + ", count(user_id) as votes FROM votes_referral GROUP BY " + level + " ORDER BY " + level + " ASC ")
 				if err != nil {
 					d.unlockPrintSleep(utils.ErrInfo(err), 1)
 					continue BEGIN
@@ -198,24 +198,24 @@ func PctGenerator() {
 				for rows.Next() {
 					var level_, votes int64
 					err = rows.Scan(&level_, &votes)
-					if err!= nil {
+					if err != nil {
 						d.unlockPrintSleep(utils.ErrInfo(err), 1)
 						continue BEGIN
 					}
-					votesReferral = append(votesReferral, map[int64]int64{level_:votes})
+					votesReferral = append(votesReferral, map[int64]int64{level_: votes})
 				}
 				newPct_.Referral[level] = (utils.GetMaxVote(votesReferral, 0, 30, 10))
 			}
 			jsonData, err := json.Marshal(newPct_)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
 
-			_, myUserId, _, _, _, _, err := d.TestBlock();
+			_, myUserId, _, _, _, _, err := d.TestBlock()
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewPct"), curTime, myUserId, jsonData)
 			binSign, err := d.GetBinSign(forSign, myUserId)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
@@ -226,7 +226,7 @@ func PctGenerator() {
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
 			err = d.InsertReplaceTxInQueue(data)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
@@ -244,7 +244,7 @@ func PctGenerator() {
 			}
 		}
 		d.dbUnlock()
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {
@@ -256,5 +256,5 @@ func PctGenerator() {
 
 type newPctType struct {
 	Currency map[string]map[string]string `json:"currency"`
-	Referral map[string]int64 `json:"referral"`
+	Referral map[string]int64             `json:"referral"`
 }

@@ -1,9 +1,10 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 func (c *Controller) MinersMap() (string, error) {
@@ -34,7 +35,7 @@ func (c *Controller) MinersMap() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	addSql := "";
+	addSql := ""
 	if paymentSystemId > 0 {
 		addSql = fmt.Sprintf(` (ps1 = %d OR ps2 = %d OR ps3 = %d OR ps4 = %d OR ps5 = %d) AND`, paymentSystemId, paymentSystemId, paymentSystemId, paymentSystemId, paymentSystemId)
 	}
@@ -70,7 +71,7 @@ func (c *Controller) MinersMap() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		var returnAmount float64
-		if repaid + amount < maxPromisedAmounts {
+		if repaid+amount < maxPromisedAmounts {
 			returnAmount = amount
 		} else {
 			returnAmount = maxPromisedAmounts - repaid
@@ -84,7 +85,6 @@ func (c *Controller) MinersMap() (string, error) {
 		result = result[:len(result)-1]
 	}
 	log.Debug(result)
-	result = `{ "info": [`+result+`]}`
+	result = `{ "info": [` + result + `]}`
 	return result, nil
 }
-

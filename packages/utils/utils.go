@@ -1,67 +1,66 @@
 package utils
 
 import (
-	"image/draw"
-	"image"
-	"image/color"
-	"image/png"
-	"time"
 	"bytes"
-	"net"
-	"net/smtp"
-	"github.com/jordan-wright/email"
-	"os"
-	"encoding/base64"
-	"github.com/golang/freetype"
-	"github.com/c-darwin/dcoin-go-tmp/packages/static"
-	"fmt"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
-	"strings"
-	"runtime"
-	"path/filepath"
-	"strconv"
-	"errors"
 	"crypto"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"math"
-	"crypto/sha256"
-	"encoding/hex"
-	"crypto/rsa"
-	"reflect"
-	"regexp"
-	"net/http"
-	"io"
-	"math/big"
-	"crypto/x509"
-	"math/rand"
-	"encoding/pem"
-	"sort"
-	crand "crypto/rand"
 	"crypto/aes"
 	"crypto/cipher"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
+	"encoding/pem"
+	"errors"
 	"flag"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/static"
+	"github.com/golang/freetype"
+	"github.com/jordan-wright/email"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
+	"io"
+	"io/ioutil"
+	"math"
+	"math/big"
+	"math/rand"
+	"net"
+	"net/http"
+	"net/smtp"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"runtime"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 )
 
-
 type BlockData struct {
-	BlockId int64
-	Time int64
-	UserId int64
-	Level int64
-	Sign []byte
-	Hash []byte
+	BlockId  int64
+	Time     int64
+	UserId   int64
+	Level    int64
+	Sign     []byte
+	Hash     []byte
 	HeadHash []byte
 }
 
 type prevBlockType struct {
-	Hash string
+	Hash     string
 	HeadHash string
-	BlockId int64
-	Time int64
-	Level int64
+	BlockId  int64
+	Time     int64
+	Level    int64
 }
 
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
@@ -78,7 +77,7 @@ func IOS() bool {
 	return false
 }
 func Mobile() bool {
-	if IOS() || runtime.GOOS=="android" {
+	if IOS() || runtime.GOOS == "android" {
 		return true
 	}
 	return false
@@ -87,6 +86,7 @@ func Sleep(sec time.Duration) {
 	//log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
 	time.Sleep(sec * time.Second)
 }
+
 type SortCfCatalog []map[string]string
 
 func (s SortCfCatalog) Len() int {
@@ -100,7 +100,7 @@ func (s SortCfCatalog) Less(i, j int) bool {
 }
 func MakeCfCategories(lang map[string]string) []map[string]string {
 	var cfCategory []map[string]string
-	for i:=0; i < 18; i++ {
+	for i := 0; i < 18; i++ {
 		cfCategory = append(cfCategory, map[string]string{"id": IntToStr(i), "name": lang["cf_category_"+IntToStr(i)]})
 	}
 	sort.Sort(SortCfCatalog(cfCategory))
@@ -124,7 +124,7 @@ func getImageDimension(imagePath string) (int, int) {
 
 type ParamType struct {
 	X, Y, Width, Height int64
-	Bg_path string
+	Bg_path             string
 }
 
 func KeyToImg(key, resultPath string, userId int64, timeFormat string, param ParamType) (*bytes.Buffer, error) {
@@ -150,14 +150,14 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
 	white := image.NewUniform(color.White)
 	black := image.NewUniform(color.Black)
-	draw.Draw(dst, dst.Bounds(), src, image.Point{0,0}, draw.Src)
+	draw.Draw(dst, dst.Bounds(), src, image.Point{0, 0}, draw.Src)
 
-	x :=param.X
+	x := param.X
 	y := param.Y
 	var color *image.Uniform
-	for i:=0; i < len(keyBin); i++ {
-		b:= fmt.Sprintf("%08b ", keyBin[i])
-		for j:=0; j < 8; j++{
+	for i := 0; i < len(keyBin); i++ {
+		b := fmt.Sprintf("%08b ", keyBin[i])
+		for j := 0; j < 8; j++ {
 			if b[j:j+1] == "0" {
 				color = black
 			} else {
@@ -165,7 +165,7 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 			}
 			dst.Set(int(x), int(y), color)
 			x++
-			if (x + 1 - param.X) % param.Width == 0 {
+			if (x+1-param.X)%param.Width == 0 {
 				x = param.X
 				y++
 			}
@@ -176,7 +176,7 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	x = 0
 	// теперь пишем инфу, где искать квадрат
 	info := fmt.Sprintf("%016s", strconv.FormatInt(param.X, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Y, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Width, 2)) + fmt.Sprintf("%016s", strconv.FormatInt(param.Height, 2))
-	for i:=0; i < len(info); i++ {
+	for i := 0; i < len(info); i++ {
 		if info[i:i+1] == "0" {
 			color = black
 		} else {
@@ -238,18 +238,18 @@ func KeyToImg(key, resultPath string, userId int64, timeFormat string, param Par
 	return buffer, nil
 }
 
-func  ParseBlockHeader(binaryBlock *[]byte) (*BlockData) {
+func ParseBlockHeader(binaryBlock *[]byte) *BlockData {
 	result := new(BlockData)
 	// распарсим заголовок блока
 	/*
-	Заголовок (от 143 до 527 байт )
-	TYPE (0-блок, 1-тр-я)        1
-	BLOCK_ID   				       4
-	TIME       					       4
-	USER_ID                         5
-	LEVEL                              1
-	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-	Далее - тело блока (Тр-ии)
+		Заголовок (от 143 до 527 байт )
+		TYPE (0-блок, 1-тр-я)        1
+		BLOCK_ID   				       4
+		TIME       					       4
+		USER_ID                         5
+		LEVEL                              1
+		SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+		Далее - тело блока (Тр-ии)
 	*/
 	result.BlockId = BinToDecBytesShift(binaryBlock, 4)
 	result.Time = BinToDecBytesShift(binaryBlock, 4)
@@ -272,42 +272,41 @@ func Round(f float64, places int) (float64) {
 }
 */
 
-
 // ищем ближайшее время в $points_status_array или $max_promised_amount_array
 // $type - status для $points_status_array / amount - для $max_promised_amount_array
-func  findMinPointsStatus(needTime int64, pointsStatusArray []map[int64]string, pType string) ([]map[string]string, []map[int64]string) {
+func findMinPointsStatus(needTime int64, pointsStatusArray []map[int64]string, pType string) ([]map[string]string, []map[int64]string) {
 	var findTime []int64
 	newPointsStatusArray := pointsStatusArray
 	var timeStatusArr []map[string]string
 BR:
-	for i:=0; i<len(pointsStatusArray); i++ {
+	for i := 0; i < len(pointsStatusArray); i++ {
 		for time, _ := range pointsStatusArray[i] {
 			if time > needTime {
 				break BR
 			}
 			findTime = append(findTime, time)
-			start:=i+1
+			start := i + 1
 			if i+1 > len(pointsStatusArray) {
-				start=len(pointsStatusArray)
+				start = len(pointsStatusArray)
 			}
 			newPointsStatusArray = pointsStatusArray[start:]
 		}
 	}
 	if len(findTime) > 0 {
-		for i:=0; i<len(findTime); i++ {
+		for i := 0; i < len(findTime); i++ {
 			for _, status := range pointsStatusArray[i] {
-				timeStatusArr = append(timeStatusArr, map[string]string{"time" : Int64ToStr(findTime[i]), pType : status})
+				timeStatusArr = append(timeStatusArr, map[string]string{"time": Int64ToStr(findTime[i]), pType: status})
 			}
 		}
 	}
 	return timeStatusArr, newPointsStatusArray
 }
 
-func findMinPct (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
+func findMinPct(needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
 	var findTime int64 = -1
 	var pct float64 = 0
 BR:
-	for i:=0; i<len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, _ := range pctArray[i] {
 			if time > needTime {
 				break BR
@@ -315,7 +314,7 @@ BR:
 			findTime = int64(i)
 		}
 	}
-	if findTime >=0 {
+	if findTime >= 0 {
 		for _, arr := range pctArray[findTime] {
 			pct = arr[status]
 		}
@@ -323,12 +322,11 @@ BR:
 	return pct
 }
 
-
-func findMinPct1 (needTime int64, pctArray []map[int64]float64) float64 {
+func findMinPct1(needTime int64, pctArray []map[int64]float64) float64 {
 	var findTime int64 = -1
 	var pct float64 = 0
 BR:
-	for i:=0; i<len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, _ := range pctArray[i] {
 			if time > needTime {
 				break BR
@@ -336,7 +334,7 @@ BR:
 			findTime = int64(i)
 		}
 	}
-	if findTime >=0 {
+	if findTime >= 0 {
 		for _, pct0 := range pctArray[findTime] {
 			pct = pct0
 		}
@@ -344,31 +342,30 @@ BR:
 	return pct
 }
 
-func  getMaxPromisedAmountCalcProfit(amount, repaidAmount, maxPromisedAmount float64, currencyId int64) float64 {
+func getMaxPromisedAmountCalcProfit(amount, repaidAmount, maxPromisedAmount float64, currencyId int64) float64 {
 	// для WOC $repaid_amount всегда = 0, т.к. cash_request на WOC послать невозможно
 	// если наша сумма больше, чем максимально допустимая ($find_min_array[$i]['amount'])
 	var result float64
-	if (amount+repaidAmount > maxPromisedAmount) {
-		result = maxPromisedAmount-repaidAmount;
-	} else if (amount < maxPromisedAmount && currencyId==1) { // для WOC разрешено брать maxPromisedAmount вместо promisedAmount, если promisedAmount < maxPromisedAmount
+	if amount+repaidAmount > maxPromisedAmount {
+		result = maxPromisedAmount - repaidAmount
+	} else if amount < maxPromisedAmount && currencyId == 1 { // для WOC разрешено брать maxPromisedAmount вместо promisedAmount, если promisedAmount < maxPromisedAmount
 		result = maxPromisedAmount
 	} else {
-		result = amount;
+		result = amount
 	}
 	return result
 }
 
 type resultArrType struct {
 	num_sec int64
-	pct float64
-	amount float64
+	pct     float64
+	amount  float64
 }
 
 type pctAmount struct {
-	pct float64
+	pct    float64
 	amount float64
 }
-
 
 func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []map[int64]map[string]float64, pointsStatusArray []map[int64]string, holidaysArray [][]int64, maxPromisedAmountArray []map[int64]string, currencyId int64, repaidAmount float64) (float64, error) {
 
@@ -382,7 +379,6 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	log.Debug("currencyId", currencyId)
 	log.Debug("repaidAmount", repaidAmount)
 
-
 	var lastStatus string = ""
 	var findMinArray []map[string]string
 	var newArr []map[int64]float64
@@ -390,8 +386,8 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
 
 	findTime := func(key int64, arr []map[int64]float64) bool {
-		for i:=0; i< len(arr); i++ {
-			if arr[i][key]!=0 {
+		for i := 0; i < len(arr); i++ {
+			if arr[i][key] != 0 {
 				return true
 			}
 		}
@@ -399,7 +395,7 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	}
 
 	log.Debug("pctArray", pctArray)
-	for i:=0; i < len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, statusPctArray := range pctArray[i] {
 			log.Debug("i=", i, "pctArray[i]=", pctArray[i])
 			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
@@ -409,12 +405,12 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 			log.Debug("pointsStatusArray", pointsStatusArray)
 			for j := 0; j < len(findMinArray); j++ {
 				if StrToInt64(findMinArray[j]["time"]) < time {
-					findMinPct := findMinPct_24946(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
+					findMinPct := findMinPct_24946(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"])
 					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
-						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
+						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]): findMinPct})
 						log.Debug("findMinPct", findMinPct)
 					}
-					lastStatus = findMinArray[j]["status"];
+					lastStatus = findMinArray[j]["status"]
 				}
 			}
 			if len(findMinArray) == 0 && len(lastStatus) == 0 {
@@ -423,18 +419,18 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 				findMinArray = append(findMinArray, map[string]string{"status": "miner"})
 			}
 			if !findTime(time, newArr) {
-				newArr = append(newArr, map[int64]float64{time : statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
+				newArr = append(newArr, map[int64]float64{time: statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
 			}
-			statusPctArray_ = statusPctArray;
+			statusPctArray_ = statusPctArray
 		}
 	}
 
 	// если в points больше чем в pct
-	if len(pointsStatusArray)>0 {
-		for i:=0; i < len(pointsStatusArray); i++ {
+	if len(pointsStatusArray) > 0 {
+		for i := 0; i < len(pointsStatusArray); i++ {
 			for time, status := range pointsStatusArray[i] {
 				if !findTime(time, newArr) {
-					newArr = append(newArr, map[int64]float64{time : statusPctArray_[status]})
+					newArr = append(newArr, map[int64]float64{time: statusPctArray_[status]})
 				}
 			}
 		}
@@ -442,38 +438,37 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 
 	log.Debug("newArr", newArr)
 
-
 	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
 
 	// $max_promised_amount_array + $pct_array
 	/*
-	 * в $pct_array сейчас
-			[1394308000] =>  0,05
-			[1394308100] =>  0,1
+		 * в $pct_array сейчас
+				[1394308000] =>  0,05
+				[1394308100] =>  0,1
 
-		после обработки станет
+			после обработки станет
 
-			[1394308000] => Array
-				(
-					[pct] => 0,05
-					[amount] => 1000
-				)
-			[1394308005] => Array
-				(
-					[pct] => 0,05
-					[amount] => 100
-				)
-			[1394308100] => Array
-				(
-					[pct] => 0,1
-					[amount] => 100
-				)
+				[1394308000] => Array
+					(
+						[pct] => 0,05
+						[amount] => 1000
+					)
+				[1394308005] => Array
+					(
+						[pct] => 0,05
+						[amount] => 100
+					)
+				[1394308100] => Array
+					(
+						[pct] => 0,1
+						[amount] => 100
+					)
 
-	 * */
+		 * */
 
 	findTime2 := func(key int64, arr []map[int64]pctAmount) bool {
-		for i:=0; i< len(arr); i++ {
-			if arr[i][key].pct!=0 {
+		for i := 0; i < len(arr); i++ {
+			if arr[i][key].pct != 0 {
 				return true
 			}
 		}
@@ -484,44 +479,43 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	var lastAmount float64
 	var amount_ float64
 	var pct_ float64
-	if len(maxPromisedAmountArray)==0{
+	if len(maxPromisedAmountArray) == 0 {
 		lastAmount = amount
 	}
 
 	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
-	for i:=0; i < len(newArr); i++ {
+	for i := 0; i < len(newArr); i++ {
 		log.Debug("i ", i)
 		for time, pct := range newArr[i] {
 			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
-			for j:=0; j < len(findMinArray); j++ {
+			for j := 0; j < len(findMinArray); j++ {
 				if amount+repaidAmount > StrToFloat64(findMinArray[j]["amount"]) {
 					amount_ = StrToFloat64(findMinArray[j]["amount"]) - repaidAmount
-				} else if amount < StrToFloat64(findMinArray[j]["amount"]) && currencyId==1 {
+				} else if amount < StrToFloat64(findMinArray[j]["amount"]) && currencyId == 1 {
 					amount_ = StrToFloat64(findMinArray[j]["amount"])
 				} else {
 					amount_ = amount
 				}
 				if StrToInt64(findMinArray[j]["time"]) <= time {
-					minPct := findMinPct1_24946(StrToInt64(findMinArray[j]["time"]), newArr);
+					minPct := findMinPct1_24946(StrToInt64(findMinArray[j]["time"]), newArr)
 					if !findTime2(StrToInt64(findMinArray[j]["time"]), newArr2) {
-						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]):{pct:minPct, amount:amount_}})
+						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]): {pct: minPct, amount: amount_}})
 					}
-					lastAmount = amount_;
+					lastAmount = amount_
 
 				}
 			}
 			if !findTime2(time, newArr2) {
-				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
+				newArr2 = append(newArr2, map[int64]pctAmount{time: {pct: pct, amount: lastAmount}})
 			}
 			pct_ = pct
 		}
 	}
 
-
 	log.Debug("newArr2", newArr2)
 
 	if !findTime2(timeFinish, newArr2) {
-		newArr2 = append(newArr2, map[int64]pctAmount{timeFinish:{pct:pct_, amount:0}})
+		newArr2 = append(newArr2, map[int64]pctAmount{timeFinish: {pct: pct_, amount: 0}})
 	}
 
 	var workTime, oldTime int64
@@ -530,13 +524,13 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	var startHolidays bool
 	var finishHolidaysElement int64
 	//START:
-	for i:=0; i < len(newArr2); i++ {
+	for i := 0; i < len(newArr2); i++ {
 
 		for time, pctAndAmount := range newArr2[i] {
 
 			log.Debug("pctAndAmount", pctAndAmount)
 
-			if (time > timeStart) {
+			if time > timeStart {
 				workTime = time
 				for j := 0; j < len(holidaysArray); j++ {
 
@@ -547,40 +541,40 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 					log.Debug("holidaysArray[j]", holidaysArray[j])
 
 					// полные каникулы в промежутке между time и old_time
-					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
-						time = holidaysArray[j][0];
+					if holidaysArray[j][0] != -1 && workTime >= holidaysArray[j][0] && holidaysArray[j][1] != -1 && workTime >= holidaysArray[j][1] {
+						time = holidaysArray[j][0]
 						holidaysArray[j][0] = -1
-						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+						resultArr = append(resultArr, resultArrType{num_sec: (time - oldTime), pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
 						log.Debug("resultArr append")
-						oldTime = holidaysArray[j][1];
+						oldTime = holidaysArray[j][1]
 						holidaysArray[j][1] = -1
 					}
-					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] {
-						startHolidays = true; // есть начало каникул, но есть ли конец?
-						finishHolidaysElement = holidaysArray[j][1]; // для записи в лог
-						time = holidaysArray[j][0];
+					if holidaysArray[j][0] != -1 && workTime >= holidaysArray[j][0] {
+						startHolidays = true                        // есть начало каникул, но есть ли конец?
+						finishHolidaysElement = holidaysArray[j][1] // для записи в лог
+						time = holidaysArray[j][0]
 						if time < timeStart {
 							time = timeStart
 						}
 						holidaysArray[j][0] = -1
-					} else if holidaysArray[j][1]!=-1 && workTime < holidaysArray[j][1] && holidaysArray[j][0]==-1 {
+					} else if holidaysArray[j][1] != -1 && workTime < holidaysArray[j][1] && holidaysArray[j][0] == -1 {
 						// конец каникул заканчивается после $work_time
 						time = oldTime
 						continue
-					} else if holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+					} else if holidaysArray[j][1] != -1 && workTime >= holidaysArray[j][1] {
 						oldTime = holidaysArray[j][1]
 						holidaysArray[j][1] = -1
-						startHolidays = false; // конец каникул есть
+						startHolidays = false // конец каникул есть
 					} else if j == len(holidaysArray)-1 && !startHolidays {
 						// если это последний полный внутрений холидей, то time должен быть равен текущему workTime
 						time = workTime
 					}
 				}
-				if (time > timeFinish) {
+				if time > timeFinish {
 					time = timeFinish
 				}
-				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-				log.Debug("new", (time-oldTime))
+				resultArr = append(resultArr, resultArrType{num_sec: (time - oldTime), pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
+				log.Debug("new", (time - oldTime))
 				oldTime = time
 			} else {
 				oldTime = timeStart
@@ -591,23 +585,22 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 
 	log.Debug("resultArr", resultArr)
 
-	if (startHolidays && finishHolidaysElement>0) {
+	if startHolidays && finishHolidaysElement > 0 {
 		log.Debug("finishHolidaysElement:", finishHolidaysElement)
 	}
 
 	// время в процентах меньше, чем нужное нам конечное время
-	if (oldTime < timeFinish && !startHolidays) {
+	if oldTime < timeFinish && !startHolidays {
 		// просто берем последний процент и добиваем его до нужного $time_finish
-		sec := timeFinish - oldTime;
-		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+		sec := timeFinish - oldTime
+		resultArr = append(resultArr, resultArrType{num_sec: sec, pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
 	}
 
-
 	var profit, amountAndProfit float64
-	for i:=0; i < len(resultArr); i++ {
-		pct := 1+resultArr[i].pct
+	for i := 0; i < len(resultArr); i++ {
+		pct := 1 + resultArr[i].pct
 		num := resultArr[i].num_sec
-		amountAndProfit = profit +resultArr[i].amount
+		amountAndProfit = profit + resultArr[i].amount
 		//$profit = ( floor( round( $amount_and_profit*pow($pct, $num), 3)*100 ) / 100 ) - $new[$i]['amount'];
 		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
@@ -617,13 +610,12 @@ func CalcProfit_24946(amount float64, timeStart, timeFinish int64, pctArray []ma
 	return profit, nil
 }
 
-
 // только для блоков до 24946
 func findMinPct1_24946(needTime int64, pctArray []map[int64]float64) float64 {
 	var findTime int64 = 0
 	var pct float64 = 0
 BR:
-	for i:=0; i<len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, _ := range pctArray[i] {
 			if time > needTime {
 				break BR
@@ -631,7 +623,7 @@ BR:
 			findTime = int64(i)
 		}
 	}
-	if findTime >=0 {
+	if findTime >= 0 {
 		for _, pct0 := range pctArray[findTime] {
 			pct = pct0
 		}
@@ -639,14 +631,13 @@ BR:
 	return pct
 }
 
-
 // только для блоков до 24946
-func findMinPct_24946 (needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
+func findMinPct_24946(needTime int64, pctArray []map[int64]map[string]float64, status string) float64 {
 	var findTime int64 = 0
 	var pct float64 = 0
 	log.Debug("pctArray findMinPct_24946", pctArray)
 BR:
-	for i:=0; i<len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, _ := range pctArray[i] {
 			log.Debug("%v", time, ">", needTime, "?")
 			if time > needTime {
@@ -657,7 +648,7 @@ BR:
 		}
 	}
 	log.Debug("findTime", findTime)
-	if findTime >0 {
+	if findTime > 0 {
 		for _, arr := range pctArray[findTime] {
 			pct = arr[status]
 		}
@@ -698,8 +689,8 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	// нужно получить массив вида time=>pct, совместив $pct_array и $points_status_array
 
 	findTime := func(key int64, arr []map[int64]float64) bool {
-		for i:=0; i< len(arr); i++ {
-			if arr[i][key]!=0 {
+		for i := 0; i < len(arr); i++ {
+			if arr[i][key] != 0 {
 				return true
 			}
 		}
@@ -707,7 +698,7 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	}
 
 	log.Debug("pctArray", pctArray)
-	for i:=0; i < len(pctArray); i++ {
+	for i := 0; i < len(pctArray); i++ {
 		for time, statusPctArray := range pctArray[i] {
 			log.Debug("i=", i, "pctArray[i]=", pctArray[i])
 			findMinArray, pointsStatusArray = findMinPointsStatus(time, pointsStatusArray, "status")
@@ -717,12 +708,12 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 			log.Debug("pointsStatusArray", pointsStatusArray)
 			for j := 0; j < len(findMinArray); j++ {
 				if StrToInt64(findMinArray[j]["time"]) <= time {
-					findMinPct := findMinPct(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"]);
+					findMinPct := findMinPct(StrToInt64(findMinArray[j]["time"]), pctArray, findMinArray[j]["status"])
 					if !findTime(StrToInt64(findMinArray[j]["time"]), newArr) {
-						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]) : findMinPct})
+						newArr = append(newArr, map[int64]float64{StrToInt64(findMinArray[j]["time"]): findMinPct})
 						log.Debug("findMinPct", findMinPct)
 					}
-					lastStatus = findMinArray[j]["status"];
+					lastStatus = findMinArray[j]["status"]
 				}
 			}
 			if len(findMinArray) == 0 && len(lastStatus) == 0 {
@@ -731,18 +722,18 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 				findMinArray = append(findMinArray, map[string]string{"status": lastStatus})
 			}
 			if !findTime(time, newArr) {
-				newArr = append(newArr, map[int64]float64{time : statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
+				newArr = append(newArr, map[int64]float64{time: statusPctArray[findMinArray[len(findMinArray)-1]["status"]]})
 			}
-			statusPctArray_ = statusPctArray;
+			statusPctArray_ = statusPctArray
 		}
 	}
 
 	// если в points больше чем в pct
-	if len(pointsStatusArray)>0 {
-		for i:=0; i < len(pointsStatusArray); i++ {
+	if len(pointsStatusArray) > 0 {
+		for i := 0; i < len(pointsStatusArray); i++ {
 			for time, status := range pointsStatusArray[i] {
 				if !findTime(time, newArr) {
-					newArr = append(newArr, map[int64]float64{time : statusPctArray_[status]})
+					newArr = append(newArr, map[int64]float64{time: statusPctArray_[status]})
 				}
 			}
 		}
@@ -750,38 +741,37 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 
 	log.Debug("newArr", newArr)
 
-
 	// newArr - массив, где ключи - это время из pct и points_status, а значения - проценты.
 
 	// $max_promised_amount_array + $pct_array
 	/*
-	 * в $pct_array сейчас
-			[1394308000] =>  0,05
-			[1394308100] =>  0,1
+		 * в $pct_array сейчас
+				[1394308000] =>  0,05
+				[1394308100] =>  0,1
 
-		после обработки станет
+			после обработки станет
 
-			[1394308000] => Array
-				(
-					[pct] => 0,05
-					[amount] => 1000
-				)
-			[1394308005] => Array
-				(
-					[pct] => 0,05
-					[amount] => 100
-				)
-			[1394308100] => Array
-				(
-					[pct] => 0,1
-					[amount] => 100
-				)
+				[1394308000] => Array
+					(
+						[pct] => 0,05
+						[amount] => 1000
+					)
+				[1394308005] => Array
+					(
+						[pct] => 0,05
+						[amount] => 100
+					)
+				[1394308100] => Array
+					(
+						[pct] => 0,1
+						[amount] => 100
+					)
 
-	 * */
+		 * */
 
 	findTime2 := func(key int64, arr []map[int64]pctAmount) bool {
-		for i:=0; i< len(arr); i++ {
-			if arr[i][key].pct!=0 {
+		for i := 0; i < len(arr); i++ {
+			if arr[i][key].pct != 0 {
 				return true
 			}
 		}
@@ -792,33 +782,33 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	var lastAmount float64
 	var amount_ float64
 	var pct_ float64
-	if len(maxPromisedAmountArray)==0{
+	if len(maxPromisedAmountArray) == 0 {
 		lastAmount = amount
 	}
 
 	log.Debug("newArr201", newArr)
 
 	// нужно получить массив вида time=>pct, совместив newArr и $max_promised_amount_array
-	for i:=0; i < len(newArr); i++ {
+	for i := 0; i < len(newArr); i++ {
 		log.Debug("i ", i)
 		for time, pct := range newArr[i] {
 			findMinArray, maxPromisedAmountArray = findMinPointsStatus(time, maxPromisedAmountArray, "amount")
-			for j:=0; j < len(findMinArray); j++ {
+			for j := 0; j < len(findMinArray); j++ {
 				amount_ = getMaxPromisedAmountCalcProfit(amount, repaidAmount, StrToFloat64(findMinArray[j]["amount"]), currencyId)
 				if StrToInt64(findMinArray[j]["time"]) <= time {
-					minPct := findMinPct1(StrToInt64(findMinArray[j]["time"]), newArr);
+					minPct := findMinPct1(StrToInt64(findMinArray[j]["time"]), newArr)
 					if !findTime2(StrToInt64(findMinArray[j]["time"]), newArr2) {
-						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]):{pct:minPct, amount:amount_}})
+						newArr2 = append(newArr2, map[int64]pctAmount{StrToInt64(findMinArray[j]["time"]): {pct: minPct, amount: amount_}})
 					}
-					lastAmount = amount_;
+					lastAmount = amount_
 
 				}
 			}
 			if !findTime2(time, newArr2) {
-				newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct, amount:lastAmount}})
+				newArr2 = append(newArr2, map[int64]pctAmount{time: {pct: pct, amount: lastAmount}})
 				log.Debug("findTime2", time, pct)
 			}
-			pct_ = pct;
+			pct_ = pct
 		}
 	}
 
@@ -828,21 +818,20 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	if len(maxPromisedAmountArray) > 0 {
 		log.Debug("maxPromisedAmountArray", maxPromisedAmountArray)
 
-		for i:=0; i<len(maxPromisedAmountArray); i++ {
+		for i := 0; i < len(maxPromisedAmountArray); i++ {
 			for time, maxPromisedAmount := range maxPromisedAmountArray[i] {
-				MaxPromisedAmountCalcProfit := getMaxPromisedAmountCalcProfit(amount, repaidAmount, StrToFloat64(maxPromisedAmount), currencyId);
+				MaxPromisedAmountCalcProfit := getMaxPromisedAmountCalcProfit(amount, repaidAmount, StrToFloat64(maxPromisedAmount), currencyId)
 				amount_ = MaxPromisedAmountCalcProfit
 				if !findTime2(time, newArr2) {
-					newArr2 = append(newArr2, map[int64]pctAmount{time:{pct:pct_, amount:MaxPromisedAmountCalcProfit}})
+					newArr2 = append(newArr2, map[int64]pctAmount{time: {pct: pct_, amount: MaxPromisedAmountCalcProfit}})
 				}
 			}
 		}
 	}
 
-
 	maxTimeInNewArr2 := func(newArr2 []map[int64]pctAmount) int64 {
 		var max int64
-		for i:=0; i < len(newArr2); i++ {
+		for i := 0; i < len(newArr2); i++ {
 			for time, _ := range newArr2[i] {
 				if time > max {
 					max = time
@@ -856,7 +845,7 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 		// добавим сразу время окончания
 		//newArr2[timeFinish] = pct;
 		if !findTime2(timeFinish, newArr2) {
-			newArr2 = append(newArr2, map[int64]pctAmount{timeFinish:{pct:pct_, amount:0}})
+			newArr2 = append(newArr2, map[int64]pctAmount{timeFinish: {pct: pct_, amount: 0}})
 		}
 	}
 
@@ -867,17 +856,17 @@ func CalcProfit(amount float64, timeStart, timeFinish int64, pctArray []map[int6
 	var finishHolidaysElement int64
 	log.Debug("newArr2", newArr2)
 START:
-	for i:=0; i < len(newArr2); i++ {
+	for i := 0; i < len(newArr2); i++ {
 
 		for time, pctAndAmount := range newArr2[i] {
 
 			log.Debug("%v", time, timeFinish)
 			log.Debug("pctAndAmount", pctAndAmount)
-			if (time > timeFinish) {
+			if time > timeFinish {
 				log.Debug("continue START", time, timeFinish)
 				continue START
 			}
-			if (time > timeStart) {
+			if time > timeStart {
 				workTime = time
 				for j := 0; j < len(holidaysArray); j++ {
 
@@ -888,40 +877,40 @@ START:
 					log.Debug("holidaysArray[j]", holidaysArray[j])
 
 					// полные каникулы в промежутке между time и old_time
-					if holidaysArray[j][0]!=-1 && oldTime <= holidaysArray[j][0] && holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
-						time = holidaysArray[j][0];
+					if holidaysArray[j][0] != -1 && oldTime <= holidaysArray[j][0] && holidaysArray[j][1] != -1 && workTime >= holidaysArray[j][1] {
+						time = holidaysArray[j][0]
 						holidaysArray[j][0] = -1
-						resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+						resultArr = append(resultArr, resultArrType{num_sec: (time - oldTime), pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
 						log.Debug("resultArr append")
-						oldTime = holidaysArray[j][1];
+						oldTime = holidaysArray[j][1]
 						holidaysArray[j][1] = -1
 					}
-					if holidaysArray[j][0]!=-1 && workTime >= holidaysArray[j][0] {
-						startHolidays = true; // есть начало каникул, но есть ли конец?
-						finishHolidaysElement = holidaysArray[j][1]; // для записи в лог
-						time = holidaysArray[j][0];
+					if holidaysArray[j][0] != -1 && workTime >= holidaysArray[j][0] {
+						startHolidays = true                        // есть начало каникул, но есть ли конец?
+						finishHolidaysElement = holidaysArray[j][1] // для записи в лог
+						time = holidaysArray[j][0]
 						if time < timeStart {
 							time = timeStart
 						}
 						holidaysArray[j][0] = -1
-					} else if holidaysArray[j][1]!=-1 && workTime < holidaysArray[j][1] && holidaysArray[j][0]==-1 {
+					} else if holidaysArray[j][1] != -1 && workTime < holidaysArray[j][1] && holidaysArray[j][0] == -1 {
 						// конец каникул заканчивается после $work_time
 						time = oldTime
 						continue
-					} else if holidaysArray[j][1]!=-1 && workTime >= holidaysArray[j][1] {
+					} else if holidaysArray[j][1] != -1 && workTime >= holidaysArray[j][1] {
 						oldTime = holidaysArray[j][1]
 						holidaysArray[j][1] = -1
-						startHolidays = false; // конец каникул есть
+						startHolidays = false // конец каникул есть
 					} else if j == len(holidaysArray)-1 && !startHolidays {
 						// если это последний полный внутрений холидей, то time должен быть равен текущему workTime
 						time = workTime
 					}
 				}
-				if (time > timeFinish) {
+				if time > timeFinish {
 					time = timeFinish
 				}
-				resultArr = append(resultArr, resultArrType{num_sec : (time-oldTime), pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
-				log.Debug("new", (time-oldTime))
+				resultArr = append(resultArr, resultArrType{num_sec: (time - oldTime), pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
+				log.Debug("new", (time - oldTime))
 				oldTime = time
 			} else {
 				oldTime = timeStart
@@ -935,25 +924,25 @@ START:
 
 	log.Debug("resultArr", resultArr)
 
-	if (startHolidays && finishHolidaysElement>0) {
+	if startHolidays && finishHolidaysElement > 0 {
 		log.Debug("finishHolidaysElement:", finishHolidaysElement)
 	}
 
 	// время в процентах меньше, чем нужное нам конечное время
-	if (oldTime < timeFinish && !startHolidays) {
+	if oldTime < timeFinish && !startHolidays {
 		log.Debug("oldTime < timeFinish")
 		// просто берем последний процент и добиваем его до нужного $time_finish
-		sec := timeFinish - oldTime;
-		resultArr = append(resultArr, resultArrType{num_sec : sec, pct : oldPctAndAmount.pct, amount : oldPctAndAmount.amount})
+		sec := timeFinish - oldTime
+		resultArr = append(resultArr, resultArrType{num_sec: sec, pct: oldPctAndAmount.pct, amount: oldPctAndAmount.amount})
 	}
 
 	log.Debug("resultArr", resultArr)
 
 	var profit, amountAndProfit float64
-	for i:=0; i < len(resultArr); i++ {
-		pct := 1+resultArr[i].pct
+	for i := 0; i < len(resultArr); i++ {
+		pct := 1 + resultArr[i].pct
 		num := resultArr[i].num_sec
-		amountAndProfit = profit +resultArr[i].amount
+		amountAndProfit = profit + resultArr[i].amount
 		//$profit = ( floor( round( $amount_and_profit*pow($pct, $num), 3)*100 ) / 100 ) - $new[$i]['amount'];
 		// из-за того, что в front был подсчет без обновления points, а в рабочем методе уже с обновлением points, выходило, что в рабочем методе было больше мелких временных промежуток, и получалось profit <0.01, из-за этого было расхождение в front и попадание минуса в БД
 		profit = amountAndProfit*math.Pow(pct, float64(num)) - resultArr[i].amount
@@ -980,12 +969,12 @@ func Round(num float64, precision int) float64 {
 	log.Debug("float64(precision)", float64(precision))
 	output := math.Pow(10, float64(precision))
 	log.Debug("output", output)
-	return float64(round(num * output)) / output
+	return float64(round(num*output)) / output
 }
 
 func RandSlice(min, max, count int64) []string {
 	var result []string
-	for i:=0; i<int(count); i++ {
+	for i := 0; i < int(count); i++ {
 		result = append(result, IntToStr(RandInt(int(min), int(max))))
 	}
 	return result
@@ -1005,6 +994,7 @@ func PpLenght(p1, p2 [2]int) float64 {
 func CheckInputData(data_ interface{}, dataType string) bool {
 	return CheckInputData_(data_, dataType, "")
 }
+
 // функция проверки входящих данных
 func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	var data string
@@ -1020,232 +1010,232 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case []byte:
 		data = string(data_.([]byte))
 	}
-	log.Debug("CheckInputData_:"+data)
+	log.Debug("CheckInputData_:" + data)
 	switch dataType {
 	case "arbitration_trust_list":
-		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok{
+		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok {
 			return true
 		}
 	case "private_key":
-		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]+$`, data); ok{
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]+$`, data); ok {
 			if len(data) > 256 && len(data) < 3072 {
 				return true
 			}
 		}
 	case "votes_comment", "cf_comment":
-		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[\pL0-9\,\s\.\-\:\=\;\?\!\%\)\(\@\/\n\r]{1,140}$`, data); ok {
 			return true
 		}
 	case "type":
-		if ok, _ := regexp.MatchString(`^[\w]+$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[\w]+$`, data); ok {
 			if StrToInt(data) <= 30 {
 				return true
 			}
 		}
 	case "referral":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,2}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,2}$`, data); ok {
 			if StrToInt(data) <= 30 {
 				return true
 			}
 		}
 	case "currency_id":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok {
 			if StrToInt(data) <= 255 {
 				return true
 			}
 		}
 	case "tinyint":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok {
 			if StrToInt(data) <= 127 {
 				return true
 			}
 		}
 	case "smallint":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,5}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,5}$`, data); ok {
 			if StrToInt(data) <= 65535 {
 				return true
 			}
 		}
 	case "reduction_type":
-		if ok, _ := regexp.MatchString(`^(manual|promised_amount)$`, data); ok{
+		if ok, _ := regexp.MatchString(`^(manual|promised_amount)$`, data); ok {
 			if StrToInt(data) <= 30 {
 				return true
 			}
 		}
 	case "img_url":
-		regex := `https?\:\/\/`; // SCHEME
-		regex += `[\w-.]*\.[a-z]{2,4}`; // Host or IP
-		regex += `(\:[0-9]{2,5})?`; // Port
-		regex += `(\/[\w_-]+)*\/?`; // Path
-		regex += `\.(png|jpg)`; // Img
-		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
+		regex := `https?\:\/\/`        // SCHEME
+		regex += `[\w-.]*\.[a-z]{2,4}` // Host or IP
+		regex += `(\:[0-9]{2,5})?`     // Port
+		regex += `(\/[\w_-]+)*\/?`     // Path
+		regex += `\.(png|jpg)`         // Img
+		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok {
 			if len(data) < 50 {
 				return true
 			}
 		}
 	case "ca_url", "arbitrator_url":
-		regex := `https?\:\/\/`; // SCHEME
-		regex += `[\w-.]*\.[a-z]{2,4}`; // Host or IP
-		regex += `(\:[0-9]{2,5})?`; // Port
-		regex += `(\/[\w_-]+)*\/?`; // Path
-		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok{
+		regex := `https?\:\/\/`        // SCHEME
+		regex += `[\w-.]*\.[a-z]{2,4}` // Host or IP
+		regex += `(\:[0-9]{2,5})?`     // Port
+		regex += `(\/[\w_-]+)*\/?`     // Path
+		if ok, _ := regexp.MatchString(`^`+regex+`$`, data); ok {
 			if len(data) <= 30 {
 				return true
 			}
 		}
 	case "credit_pct", "pct":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,3}(\.[0-9]{2})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}(\.[0-9]{2})?$`, data); ok {
 			return true
 		}
 	case "user_name":
-		if ok, _ := regexp.MatchString(`^[\w\s]{1,30}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[\w\s]{1,30}$`, data); ok {
 			return true
 		}
 	case "admin_currency_list":
-		if ok, _ := regexp.MatchString(`^((\d{1,3}\,){0,9}\d{1,3}|ALL)$`, data); ok{
+		if ok, _ := regexp.MatchString(`^((\d{1,3}\,){0,9}\d{1,3}|ALL)$`, data); ok {
 			return true
 		}
 	case "cf_currency_name":
-		if ok, _ := regexp.MatchString(`^[A-Z0-9]{7}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[A-Z0-9]{7}$`, data); ok {
 			return true
 		}
 	case "users_ids":
-		if ok, _ := regexp.MatchString(`^([0-9]{1,12},){0,1000}[0-9]{1,12}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^([0-9]{1,12},){0,1000}[0-9]{1,12}$`, data); ok {
 			return true
 		}
 	case "version":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}([a-z]{1,2}[0-9]{1,2})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}([a-z]{1,2}[0-9]{1,2})?$`, data); ok {
 			return true
 		}
 	case "soft_type":
-		if ok, _ := regexp.MatchString(`^[a-z]{3,10}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[a-z]{3,10}$`, data); ok {
 			return true
 		}
 	case "currency_name":
-		if ok, _ := regexp.MatchString(`^[A-Z]{3}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[A-Z]{3}$`, data); ok {
 			return true
 		}
 	case "currency_full_name":
-		if ok, _ := regexp.MatchString(`^[a-zA-Z\s]{3,50}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[a-zA-Z\s]{3,50}$`, data); ok {
 			return true
 		}
 	case "currency_commission":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,7}(\.[0-9]{1,2})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,7}(\.[0-9]{1,2})?$`, data); ok {
 			return true
 		}
 	case "sell_rate":
-		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,10})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,10})?$`, data); ok {
 			return true
 		}
 	case "amount":
-		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, data); ok {
 			return true
 		}
 	case "tpl_name":
-		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok{
+		if ok, _ := regexp.MatchString("^[\\w]{1,30}$", data); ok {
 			return true
 		}
 	case "example_spots":
 		r1 := `"\d{1,2}":\["\d{1,3}","\d{1,3}",(\[("[a-z_]{1,30}",?){0,20}\]|""),"\d{1,2}","\d{1,2}"\]`
-		reg := `^\{(\"(face|profile)\":\{(`+r1+`,?){1,20}\},?){2}}$`
-		if ok, _ := regexp.MatchString(reg, data); ok{
+		reg := `^\{(\"(face|profile)\":\{(` + r1 + `,?){1,20}\},?){2}}$`
+		if ok, _ := regexp.MatchString(reg, data); ok {
 			return true
 		}
 	case "segments":
 		r1 := `"\d{1,2}":\["\d{1,2}","\d{1,2}"\]`
-		face := `"face":\{(`+r1+`\,){1,20}`+r1+`\}`
-		profile := `"profile":\{(`+r1+`\,){1,20}`+r1+`\}`
-		reg := `^\{`+face+`,`+profile+`\}$`
-		if ok, _ := regexp.MatchString(reg, data); ok{
+		face := `"face":\{(` + r1 + `\,){1,20}` + r1 + `\}`
+		profile := `"profile":\{(` + r1 + `\,){1,20}` + r1 + `\}`
+		reg := `^\{` + face + `,` + profile + `\}$`
+		if ok, _ := regexp.MatchString(reg, data); ok {
 			return true
 		}
 	case "tolerances":
 		r1 := `"\d{1,2}":"0\.\d{1,2}"`
-		face := `"face":\{(`+r1+`\,){1,50}`+r1+`\}`
-		profile := `"profile":\{(`+r1+`\,){1,50}`+r1+`\}`
-		reg := `^\{`+face+`,`+profile+`\}$`
-		if ok, _ := regexp.MatchString(reg, data); ok{
+		face := `"face":\{(` + r1 + `\,){1,50}` + r1 + `\}`
+		profile := `"profile":\{(` + r1 + `\,){1,50}` + r1 + `\}`
+		reg := `^\{` + face + `,` + profile + `\}$`
+		if ok, _ := regexp.MatchString(reg, data); ok {
 			return true
 		}
 	case "compatibility":
-		if ok, _ := regexp.MatchString(`^\[(\d{1,5},)*\d{1,5}\]$`, data); ok{
+		if ok, _ := regexp.MatchString(`^\[(\d{1,5},)*\d{1,5}\]$`, data); ok {
 			return true
 		}
 	case "race":
-		if ok, _ := regexp.MatchString("^[1-3]$", data); ok{
+		if ok, _ := regexp.MatchString("^[1-3]$", data); ok {
 			return true
 		}
 	case "country":
-		if ok, _ := regexp.MatchString("^[0-9]{1,3}$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9]{1,3}$", data); ok {
 			return true
 		}
 	case "vote", "boolean":
-		if ok, _ := regexp.MatchString(`^0|1$`, data); ok{
+		if ok, _ := regexp.MatchString(`^0|1$`, data); ok {
 			return true
 		}
 	case "coordinate":
-		if ok, _ := regexp.MatchString(`^\-?[0-9]{1,3}(\.[0-9]{1,5})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^\-?[0-9]{1,3}(\.[0-9]{1,5})?$`, data); ok {
 			return true
 		}
 	case "cf_links":
 		regex := `\["https?\:\/\/(goo\.gl|bit\.ly|t\.co)\/[\w-]+",[0-9]+,[0-9]+,[0-9]+,[0-9]+\]`
-		if ok, _ := regexp.MatchString(`^\[`+regex+`(\,`+regex+`)*\]$`, data); ok{
+		if ok, _ := regexp.MatchString(`^\[`+regex+`(\,`+regex+`)*\]$`, data); ok {
 			if len(data) < 512 {
 				return true
 			}
 		}
 	case "http_host":
-		if ok, _ := regexp.MatchString(`^https?:\/\/[0-9a-z\_\.\-\/:]{1,100}[\/]$`, data); ok{
+		if ok, _ := regexp.MatchString(`^https?:\/\/[0-9a-z\_\.\-\/:]{1,100}[\/]$`, data); ok {
 			return true
 		}
 	case "tcp_host":
-		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, data); ok{
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, data); ok {
 			return true
 		}
 	case "coords":
-		xy := `\[\d{1,3}\,\d{1,3}\]`;
-		r := `^\[(`+xy+`\,){`+info+`}`+xy+`\]$`;
-		if ok, _ := regexp.MatchString(r, data); ok{
+		xy := `\[\d{1,3}\,\d{1,3}\]`
+		r := `^\[(` + xy + `\,){` + info + `}` + xy + `\]$`
+		if ok, _ := regexp.MatchString(r, data); ok {
 			return true
 		}
 	case "lang":
-		if ok, _ := regexp.MatchString("^(en|ru)$", data); ok{
+		if ok, _ := regexp.MatchString("^(en|ru)$", data); ok {
 			return true
 		}
 	case "payment_systems_ids":
-		if ok, _ := regexp.MatchString("^([0-9]{1,4},){0,4}[0-9]{1,4}$", data); ok{
+		if ok, _ := regexp.MatchString("^([0-9]{1,4},){0,4}[0-9]{1,4}$", data); ok {
 			return true
 		}
 	case "video_type":
-		if ok, _ := regexp.MatchString("^(youtube|vimeo|youku|null)$", data); ok{
+		if ok, _ := regexp.MatchString("^(youtube|vimeo|youku|null)$", data); ok {
 			return true
 		}
 	case "video_url_id":
-		if ok, _ := regexp.MatchString("^(?i)([0-9a-z_-]{5,32}|null)$", data); ok{
+		if ok, _ := regexp.MatchString("^(?i)([0-9a-z_-]{5,32}|null)$", data); ok {
 			return true
 		}
 	case "photo_hash", "sha256":
-		if ok, _ := regexp.MatchString("^[0-9a-z]{64}$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9a-z]{64}$", data); ok {
 			return true
 		}
 	case "alert":
-		if ok, _ := regexp.MatchString("^[\\pL0-9\\,\\s\\.\\-\\:\\=\\;\\?\\!\\%\\)\\(\\@\\/]{1,512}$", data); ok{
+		if ok, _ := regexp.MatchString("^[\\pL0-9\\,\\s\\.\\-\\:\\=\\;\\?\\!\\%\\)\\(\\@\\/]{1,512}$", data); ok {
 			return true
 		}
 	case "int":
-		if ok, _ := regexp.MatchString("^[0-9]{1,10}$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9]{1,10}$", data); ok {
 			return true
 		}
 	case "float":
-		if ok, _ := regexp.MatchString(`^[0-9]{1,5}(\.[0-9]{1,5})?$`, data); ok{
+		if ok, _ := regexp.MatchString(`^[0-9]{1,5}(\.[0-9]{1,5})?$`, data); ok {
 			return true
 		}
 	case "sleep_var":
-		if ok, _ := regexp.MatchString(`^\{\"is_ready\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\],\"generator\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\]\}$`, data); ok{
+		if ok, _ := regexp.MatchString(`^\{\"is_ready\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\],\"generator\"\:\[([0-9]{1,5},){1,100}[0-9]{1,5}\]\}$`, data); ok {
 			return true
 		}
 	case "int64", "bigint", "user_id":
-		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9]{1,15}$", data); ok {
 			return true
 		}
 	case "level":
@@ -1257,7 +1247,7 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 			return true
 		}
 	case "hex_sign", "hex", "public_key":
-		if ok, _ := regexp.MatchString("^[0-9a-z]+$", data); ok{
+		if ok, _ := regexp.MatchString("^[0-9a-z]+$", data); ok {
 			if len(data) < 2048 {
 				return true
 			}
@@ -1295,7 +1285,7 @@ func GetHttpTextAnswer(url string) (string, error) {
 }
 
 func RemoteAddrFix(addr string) string {
-	if ok, _ := regexp.MatchString(`(\:\:)|(127\.0\.0\.1)`, addr); ok{
+	if ok, _ := regexp.MatchString(`(\:\:)|(127\.0\.0\.1)`, addr); ok {
 		return ""
 	} else {
 		return addr
@@ -1303,7 +1293,7 @@ func RemoteAddrFix(addr string) string {
 }
 
 func SendSms(sms_http_get_request, text string) (string, error) {
-	html, err := GetHttpTextAnswer(sms_http_get_request+text)
+	html, err := GetHttpTextAnswer(sms_http_get_request + text)
 	if err != nil {
 		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
 		return string(result), nil
@@ -1312,13 +1302,11 @@ func SendSms(sms_http_get_request, text string) (string, error) {
 	return string(result), nil
 }
 
-
-
 func sendMail(message, subject string, To string, mailData map[string]string) error {
 
 	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
 		e := email.NewEmail()
-		e.From = "Dcoin <"+mailData["smtp_username"]+">"
+		e.From = "Dcoin <" + mailData["smtp_username"] + ">"
 		e.To = []string{To}
 		e.Subject = subject
 		e.HTML = []byte(`<table width="100%" cellspacing="0" cellpadding="0" border="0">
@@ -1333,7 +1321,7 @@ func sendMail(message, subject string, To string, mailData map[string]string) er
 															<table width="100%" bgcolor="ffffff" style="border: 1px solid #eeeeee; margin-bottom: 10px; padding: 30px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.07); line-height: 1.4;" cellspacing="0" cellpadding="0" border="0">
 															<tr>
 																<td>
-																<table width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td valign="middle" align="center" height="200" style="font-size: 20px; text-decoration: none; color: #111111;">`+message+`</td></tr></table>
+																<table width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td valign="middle" align="center" height="200" style="font-size: 20px; text-decoration: none; color: #111111;">` + message + `</td></tr></table>
 																</td>
 															</tr>
 															</table>
@@ -1376,13 +1364,13 @@ func StrToInt(s string) int {
 	return int_
 }
 func Float64ToStr(f float64) string {
-	return strconv.FormatFloat(f,'f', 13, 64)
+	return strconv.FormatFloat(f, 'f', 13, 64)
 }
 func Float64ToStrGeo(f float64) string {
-	return strconv.FormatFloat(f,'f', 5, 64)
+	return strconv.FormatFloat(f, 'f', 5, 64)
 }
 func Float64ToBytes(f float64) []byte {
-	return []byte(strconv.FormatFloat(f,'f', 13, 64))
+	return []byte(strconv.FormatFloat(f, 'f', 13, 64))
 }
 func Float64ToStrPct(f float64) string {
 	if f == 0 {
@@ -1404,14 +1392,14 @@ func BytesToInt(s []byte) int {
 	return int_
 }
 func StrToMoney(str string) float64 {
-	ind:=strings.Index(str, ".")
-	new:=""
-	if ind!=-1 {
+	ind := strings.Index(str, ".")
+	new := ""
+	if ind != -1 {
 		end := 2
-		if len(str[ind + 1 : ]) > 1 {
+		if len(str[ind+1:]) > 1 {
 			end = 3
 		}
-		new = str[ : ind] + "." + str[ind + 1 : ind + end]
+		new = str[:ind] + "." + str[ind+1:ind+end]
 	} else {
 		new = str
 	}
@@ -1420,11 +1408,11 @@ func StrToMoney(str string) float64 {
 
 func GetEndBlockId() (int64, error) {
 
-	if _, err := os.Stat(*Dir+"/public/blockchain"); os.IsNotExist(err) {
+	if _, err := os.Stat(*Dir + "/public/blockchain"); os.IsNotExist(err) {
 		return 0, nil
 	} else {
 		// размер блока, записанный в 5-и последних байтах файла blockchain
-		fname := *Dir+"/public/blockchain"
+		fname := *Dir + "/public/blockchain"
 		file, err := os.Open(fname)
 		if err != nil {
 			return 0, ErrInfo(err)
@@ -1441,9 +1429,9 @@ func GetEndBlockId() (int64, error) {
 		if err != nil {
 			return 0, ErrInfo(err)
 		}
-		size:=BinToDec(buf)
+		size := BinToDec(buf)
 		// сам блок
-		_, err = file.Seek(-(size+5), 2)
+		_, err = file.Seek(-(size + 5), 2)
 		if err != nil {
 			return 0, ErrInfo(err)
 		}
@@ -1481,7 +1469,7 @@ func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh
 
 	var offset int64
 	for {
-		if DaemonCh !=nil {
+		if DaemonCh != nil {
 			select {
 			case <-DaemonCh:
 				AnswerDaemonCh <- true
@@ -1494,7 +1482,7 @@ func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh
 			return offset, ErrInfo(err)
 		}
 		f.WriteAt(data, offset)
-		offset+=int64(len(data))
+		offset += int64(len(data))
 		if len(data) == 0 {
 			break
 		}
@@ -1513,7 +1501,7 @@ func ErrInfoFmt(err string, a ...interface{}) error {
 	return fmt.Errorf("%s (%s)", err_, Caller(1))
 }
 
-func ErrInfo(err_ interface {}, additionally...string) error {
+func ErrInfo(err_ interface{}, additionally ...string) error {
 	var err error
 	switch err_.(type) {
 	case error:
@@ -1560,7 +1548,7 @@ func CallMethod(i interface{}, methodName string) interface{} {
 		finalMethod = method
 	}
 
-	if (finalMethod.IsValid()) {
+	if finalMethod.IsValid() {
 		return finalMethod.Call([]reflect.Value{})[0].Interface()
 	}
 
@@ -1578,12 +1566,12 @@ func Caller(steps int) string {
 }
 
 func GetEntropy(hash string) int64 {
-	if len(hash)>=6 {
+	if len(hash) >= 6 {
 		result, err := strconv.ParseInt(hash[0:6], 16, 0)
 		CheckErr(err)
-		return result;
+		return result
 	} else {
-		return 0;
+		return 0
 	}
 }
 
@@ -1596,18 +1584,19 @@ func GetEntropy(hash string) int64 {
  */
 func GetBlockGeneratorMinerId(maxMinerId, ctx int64) int64 {
 	var x, hi, lo float64
-	hi = float64(ctx) / 127773;
-	lo = float64(ctx % 127773);
-	x = 16807 * lo - 2836 * hi;
-	if (x <= 0) {
-		x += 0x7fffffff;
+	hi = float64(ctx) / 127773
+	lo = float64(ctx % 127773)
+	x = 16807*lo - 2836*hi
+	if x <= 0 {
+		x += 0x7fffffff
 	}
-	rez := int64(x) % (maxMinerId + 1);
+	rez := int64(x) % (maxMinerId + 1)
 	if rez == 0 {
-		rez = 1;
+		rez = 1
 	}
-	return rez;
+	return rez
 }
+
 /*
 new
 static function get_block_generator_miner_id ($max_miner_id, $ctx)
@@ -1624,9 +1613,7 @@ static function get_block_generator_miner_id ($max_miner_id, $ctx)
 }
 */
 
-
-
-func SliceInt64ToString(int64 []int64) []string  {
+func SliceInt64ToString(int64 []int64) []string {
 	result := make([]string, len(int64))
 	for i, v := range int64 {
 		result[i] = strconv.FormatInt(v, 10)
@@ -1642,12 +1629,10 @@ func RemoveInt64Slice(slice *[]int64, pos int) {
 func DelUserIdFromArray(array *[]int64, userId int64) {
 	for i, v := range *array {
 		if v == userId {
-			RemoveInt64Slice(&*array, i);
+			RemoveInt64Slice(&*array, i)
 		}
 	}
 }
-
-
 
 func InSliceInt64(search int64, slice []int64) bool {
 	for _, v := range slice {
@@ -1673,7 +1658,7 @@ func GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId int64) [][][]int64
 	minus1Ok := 0
 	minusStop := false
 	//var result [][][2]int64{1, 2, 3}
-	result:= [][][]int64{{{currentMinerId, currentMinerId}}}
+	result := [][][]int64{{{currentMinerId, currentMinerId}}}
 	// на верхнем уровне тот, кто генерит блок первым
 	var i float64 = 1
 	for {
@@ -1691,49 +1676,48 @@ func GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId int64) [][][]int64
 		}
 		//fmt.Println("begin", begin)
 		if begin == maxMinerId+1 && !minusStop && currentMinerId > 1 && begin != 2 {
-			begin = 1;
+			begin = 1
 			//fmt.Println("begin ", begin)
 			minusStop = true
 		} else {
 			if begin == currentMinerId || end == currentMinerId || begin > maxMinerId {
-				break;
+				break
 			}
 		}
 
 		end = begin + int64(needUsers) - 1
 		if end > currentMinerId && minus1Ok > 0 {
 			//fmt.Println("$end > $cur_miner_id && $minus_1_ok ")
-			end = currentMinerId - 1;
+			end = currentMinerId - 1
 		}
 
-
-		end_p := end;
-		if end_p > maxMinerId  {
+		end_p := end
+		if end_p > maxMinerId {
 			//fmt.Println("$end_p > $max_miner_id")
 			end_p = maxMinerId
 		}
 
 		if end_p == maxMinerId && end_p == currentMinerId {
 			//fmt.Println("$end_p == $max_miner_id && $end_p == $cur_miner_id")
-			end_p =currentMinerId - 1;
+			end_p = currentMinerId - 1
 		}
 
-		result = append(result, [][]int64{{begin, end_p}});
+		result = append(result, [][]int64{{begin, end_p}})
 		var minus int64 = 0
 		if end > maxMinerId && !minusStop {
 			//fmt.Println("$end > $max_miner_id && !$minus_stop")
-			minus = maxMinerId  - end;
-			if int64(math.Abs(float64(minus)))>=currentMinerId {
-				minus = - (currentMinerId - 1)
+			minus = maxMinerId - end
+			if int64(math.Abs(float64(minus))) >= currentMinerId {
+				minus = -(currentMinerId - 1)
 			}
-			end = int64(math.Abs(float64(minus)));
+			end = int64(math.Abs(float64(minus)))
 			minus1Ok = 1
 		}
 
-		if minus!=0 {
-			result[int(i)] = append(result[int(i)], []int64{1, int64(math.Abs(float64(minus)))});
+		if minus != 0 {
+			result[int(i)] = append(result[int(i)], []int64{1, int64(math.Abs(float64(minus)))})
 		}
-		i++;
+		i++
 	}
 	return result
 }
@@ -1742,7 +1726,7 @@ func FindMinerIdLevel(minersIds []int64, levelsRange [][][]int64) (int64, int64)
 	for _, minerId := range minersIds {
 		for level, ranges := range levelsRange {
 			if minerId >= ranges[0][0] && minerId <= ranges[0][1] {
-				return minerId, int64(level);
+				return minerId, int64(level)
 			}
 			if len(ranges) == 2 {
 				if minerId >= ranges[1][0] && minerId <= ranges[1][1] {
@@ -1766,42 +1750,43 @@ func GetOurLevelNodes(level int64, levelsRange [][][]int64) []int64 {
 	var result []int64
 	if level != -1 {
 		for i := levelsRange[level][0][0]; i <= levelsRange[level][0][1]; i++ {
-			result = append(result, i);
+			result = append(result, i)
 		}
 		if len(levelsRange[level]) == 2 {
 			for i := levelsRange[level][1][0]; i <= levelsRange[level][1][1]; i++ {
-				result = append(result, i);
+				result = append(result, i)
 			}
 		}
 	}
 	return result
 }
+
 // на 0-м уровне всегда большее значение, чтобы успели набраться тр-ии
 // на остальных уровнях - это время, за которое нужно успеть получить новый блок и занести его в БД
 func GetGeneratorSleep(level int64, data []int64) int64 {
-	var sleep int64;
+	var sleep int64
 	if int64(len(data)) > level {
 		// суммируем время со всех уровней, которые не успели сгенерить блок до нас
 		for i := 0; i <= int(level); i++ {
-			sleep+=data[i];
+			sleep += data[i]
 		}
 	}
-	return sleep;
+	return sleep
 }
 
 // сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
 func GetIsReadySleepSum(level int64, data []int64) int64 {
-	var sum int64;
+	var sum int64
 	if len(data) <= int(level) {
 		log.Error("data: %v / level: %d", data, level)
 	}
 	for i := 0; i < int(level); i++ {
-		sum += data[i];
+		sum += data[i]
 	}
-	return sum;
+	return sum
 }
 
-func EncodeLengthPlusData(data_ interface {}) []byte {
+func EncodeLengthPlusData(data_ interface{}) []byte {
 	var data []byte
 	switch data_.(type) {
 	case string:
@@ -1811,12 +1796,12 @@ func EncodeLengthPlusData(data_ interface {}) []byte {
 	}
 	log.Debug("data: %x", data)
 	log.Debug("len data: %d", len(data))
-	return append(EncodeLength(int64(len(data))) , data...)
+	return append(EncodeLength(int64(len(data))), data...)
 }
 
-func EncodeLength(len0 int64) []byte  {
+func EncodeLength(len0 int64) []byte {
 	log.Debug("len0: %v", len0)
-	if len0<=127 {
+	if len0 <= 127 {
 		if len0 < 16 {
 			result := HexToBin([]byte(fmt.Sprintf("0%x", len0)))
 			log.Debug("%x", result)
@@ -1828,15 +1813,15 @@ func EncodeLength(len0 int64) []byte  {
 		log.Debug("%x", result)
 		return result
 	}
-	temphex:= fmt.Sprintf("%x", len0)
+	temphex := fmt.Sprintf("%x", len0)
 	if len(temphex)%2 > 0 {
-		temphex = "0"+temphex;
+		temphex = "0" + temphex
 	}
 	str, _ := hex.DecodeString(temphex)
 	temp := string(str)
 	t1 := (0x80 | len(temp))
-	t1hex:= fmt.Sprintf("%x", t1)
-	len_and_t1 := t1hex+temphex
+	t1hex := fmt.Sprintf("%x", t1)
+	len_and_t1 := t1hex + temphex
 	len_and_t1_bin, _ := hex.DecodeString(len_and_t1)
 	//fmt.Println("len_and_t1_bin", len_and_t1_bin)
 	//fmt.Printf("len_and_t1_bin %x\n", len_and_t1_bin)
@@ -1862,8 +1847,8 @@ func DecToHexBig(hex string) string {
 	i := new(big.Int)
 	i.SetString(hex, 10)
 	hex = fmt.Sprintf("%x", i)
-	if len(hex)%2 >0{
-		hex = "0"+hex
+	if len(hex)%2 > 0 {
+		hex = "0" + hex
 	}
 	return hex
 }
@@ -1879,7 +1864,7 @@ func IntToStr(num int) string {
 	return strconv.Itoa(num)
 }
 
-func DecToBin(dec_ interface {}, sizeBytes int64) []byte {
+func DecToBin(dec_ interface{}, sizeBytes int64) []byte {
 	var dec int64
 	switch dec_.(type) {
 	case int:
@@ -1893,7 +1878,7 @@ func DecToBin(dec_ interface {}, sizeBytes int64) []byte {
 	//fmt.Println("Hex", Hex)
 	return HexToBin([]byte(Hex))
 }
-func BinToHex(bin_ interface {}) []byte {
+func BinToHex(bin_ interface{}) []byte {
 	var bin []byte
 	switch bin_.(type) {
 	case []byte:
@@ -1906,32 +1891,29 @@ func BinToHex(bin_ interface {}) []byte {
 	return []byte(fmt.Sprintf("%x", bin))
 }
 
-func HexToBin(hexdata_ interface {}) []byte {
+func HexToBin(hexdata_ interface{}) []byte {
 	var hexdata string
 	switch hexdata_.(type) {
-		case []byte:
+	case []byte:
 		hexdata = string(hexdata_.([]byte))
-		case int64:
+	case int64:
 		hexdata = Int64ToStr(hexdata_.(int64))
-		case string:
+	case string:
 		hexdata = hexdata_.(string)
 	}
 	var str []byte
 	str, err := hex.DecodeString(hexdata)
-	if err!=nil {
+	if err != nil {
 		log.Error("%v / %v", err, GetParent())
 	}
 	return str
 }
 
-
-
-
 func BinToDec(bin []byte) int64 {
 	var a uint64
 	l := len(bin)
 	for i, b := range bin {
-		shift := uint64((l-i-1) * 8)
+		shift := uint64((l - i - 1) * 8)
 		a |= uint64(b) << shift
 	}
 	return int64(a)
@@ -1955,23 +1937,23 @@ func BytesShift(str *[]byte, index int64) []byte {
 	return substr
 }
 
-func InterfaceToStr(v interface {}) string {
+func InterfaceToStr(v interface{}) string {
 	var str string
 	switch v.(type) {
-		case int:
-			str = IntToStr(v.(int))
-		case float64:
-			str = Float64ToStr(v.(float64))
-		case int64:
-			str = Int64ToStr(v.(int64))
-		case string:
-			str = v.(string)
-		case []byte:
-			str = string(v.([]byte))
+	case int:
+		str = IntToStr(v.(int))
+	case float64:
+		str = Float64ToStr(v.(float64))
+	case int64:
+		str = Int64ToStr(v.(int64))
+	case string:
+		str = v.(string)
+	case []byte:
+		str = string(v.([]byte))
 	}
 	return str
 }
-func InterfaceSliceToStr(i []interface {}) []string {
+func InterfaceSliceToStr(i []interface{}) []string {
 	var str []string
 	for _, v := range i {
 		switch v.(type) {
@@ -1990,20 +1972,20 @@ func InterfaceSliceToStr(i []interface {}) []string {
 	return str
 }
 
-func InterfaceToFloat64(i interface {}) float64 {
+func InterfaceToFloat64(i interface{}) float64 {
 	var result float64
-		switch i.(type) {
-		case int:
-			result = float64(i.(int))
-		case float64:
-			result = i.(float64)
-		case int64:
-			result = float64(i.(int64))
-		case string:
-			result = StrToFloat64(i.(string))
-		case []byte:
-			result = BytesToFloat64(i.([]byte))
-		}
+	switch i.(type) {
+	case int:
+		result = float64(i.(int))
+	case float64:
+		result = i.(float64)
+	case int64:
+		result = float64(i.(int64))
+	case string:
+		result = StrToFloat64(i.(string))
+	case []byte:
+		result = BytesToFloat64(i.([]byte))
+	}
 	return result
 }
 
@@ -2025,17 +2007,16 @@ func BytesShiftReverse(str *[]byte, index_ interface{}) []byte {
 	if int64(len(str_)) < int64(len(str_))-index {
 		return []byte("")
 	}
-	str_ = str_[0:int64(len(str_))-index]
+	str_ = str_[0 : int64(len(str_))-index]
 	*str = str_
 	//fmt.Println(utils.BinToHex(str_))
 	return substr
 }
 
-
 func DecodeLength(str *[]byte) int64 {
 	var str_ []byte
 	str_ = *str
-	if len(str_)== 0 {
+	if len(str_) == 0 {
 		return 0
 	}
 	length_ := []byte(BytesShift(&str_, 1))
@@ -2044,9 +2025,9 @@ func DecodeLength(str *[]byte) int64 {
 	//fmt.Println(length)
 	t1 := (length & 0x80)
 	//fmt.Printf("length&0x80 %x", t1)
-	if t1>0 {
+	if t1 > 0 {
 		//fmt.Println("1")
-		length &= 0x7F;
+		length &= 0x7F
 		//fmt.Printf("length %x\n", length)
 		temp := BytesShift(&str_, length)
 		*str = str_
@@ -2063,13 +2044,11 @@ func DecodeLength(str *[]byte) int64 {
 func SleepDiff(sleep *int64, diff int64) {
 	// вычитаем уже прошедшее время
 	if *sleep > diff {
-		*sleep = *sleep - diff;
+		*sleep = *sleep - diff
 	} else {
-		*sleep = 0;
+		*sleep = 0
 	}
 }
-
-
 
 func CopyFileContents(src, dst string) error {
 	in, err := os.Open(src)
@@ -2123,7 +2102,7 @@ func GetPublicFromPrivate(key string) ([]byte, error) {
 	}
 	log.Debug("%v", block)
 	if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-		return nil, errors.New("unknown key type "+got+", want "+want)
+		return nil, errors.New("unknown key type " + got + ", want " + want)
 	}
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	log.Debug("privateKey %v", privateKey)
@@ -2132,7 +2111,7 @@ func GetPublicFromPrivate(key string) ([]byte, error) {
 	}
 	e := fmt.Sprintf("%x", privateKey.PublicKey.E)
 	if len(e)%2 > 0 {
-		e = "0"+e
+		e = "0" + e
 	}
 	n := BinToHex(privateKey.PublicKey.N.Bytes())
 	n = append([]byte("00"), n...)
@@ -2151,7 +2130,7 @@ func MakeAsn1(hex_n, hex_e []byte) []byte {
 	e_ := append([]byte("02"), BinToHex(EncodeLength(int64(len(HexToBin(hex_e)))))...)
 	e_ = append(e_, hex_e...)
 	//log.Debug("e_", string(e_))
-	length := BinToHex(EncodeLength(int64(len(HexToBin(append(n_,e_...))))))
+	length := BinToHex(EncodeLength(int64(len(HexToBin(append(n_, e_...))))))
 	//log.Debug("length", string(length))
 	rez := append([]byte("30"), length...)
 	rez = append(rez, n_...)
@@ -2178,11 +2157,9 @@ func MakeAsn1(hex_n, hex_e []byte) []byte {
 	//fmt.Println(b64)
 }
 
-
-
 func BinToRsaPubKey(publicKey []byte) (*rsa.PublicKey, error) {
 	key := base64.StdEncoding.EncodeToString(publicKey)
-	key = "-----BEGIN PUBLIC KEY-----\n"+key+"\n-----END PUBLIC KEY-----"
+	key = "-----BEGIN PUBLIC KEY-----\n" + key + "\n-----END PUBLIC KEY-----"
 	//fmt.Printf("%x\n", publicKeys[i])
 	log.Debug("key", key)
 	block, _ := pem.Decode([]byte(key))
@@ -2200,7 +2177,7 @@ func BinToRsaPubKey(publicKey []byte) (*rsa.PublicKey, error) {
 	return pub, nil
 }
 
-func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool ) (bool, error) {
+func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin bool) (bool, error) {
 
 	log.Debug("forSign", forSign)
 	//fmt.Println("publicKeys", publicKeys)
@@ -2211,7 +2188,7 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 	} else {
 		// в 1 signs может быть от 1 до 3-х подписей
 		for {
-			if len(signs)==0 {
+			if len(signs) == 0 {
 				break
 			}
 			length := DecodeLength(&signs)
@@ -2222,16 +2199,16 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 		if len(publicKeys) != len(signsSlice) {
 			log.Debug("signsSlice", signsSlice)
 			log.Debug("publicKeys", publicKeys)
-			return false, fmt.Errorf("sign error %d!=%d", len(publicKeys), len(signsSlice) )
+			return false, fmt.Errorf("sign error %d!=%d", len(publicKeys), len(signsSlice))
 		}
 	}
 
-	for i:=0; i<len(publicKeys); i++ {
+	for i := 0; i < len(publicKeys); i++ {
 		pub, err := BinToRsaPubKey(publicKeys[i])
 		if err != nil {
-			return false,  ErrInfo(err)
+			return false, ErrInfo(err)
 		}
-		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1,  HashSha1(forSign), signsSlice[i])
+		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1, HashSha1(forSign), signsSlice[i])
 		if err != nil {
 			log.Error("pub %v", pub)
 			log.Error("publicKeys[i] %x", publicKeys[i])
@@ -2240,7 +2217,7 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			log.Error("HashSha1(forSign)", string(HashSha1(forSign)))
 			log.Error("forSign", forSign)
 			log.Error("sign: %x\n", signsSlice[i])
-			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v",  HashSha1(forSign), forSign)
+			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v", HashSha1(forSign), forSign)
 		}
 	}
 	return true, nil
@@ -2253,7 +2230,7 @@ func HashSha1(msg string) []byte {
 	return hash
 }
 
-func Md5(msg_ interface {}) []byte {
+func Md5(msg_ interface{}) []byte {
 	var msg []byte
 	switch msg_.(type) {
 	case string:
@@ -2277,7 +2254,7 @@ func DSha256(data_ interface{}) []byte {
 	}
 	sha256_ := sha256.New()
 	sha256_.Write(data)
-	hashSha256:=fmt.Sprintf("%x", sha256_.Sum(nil))
+	hashSha256 := fmt.Sprintf("%x", sha256_.Sum(nil))
 	sha256_ = sha256.New()
 	sha256_.Write([]byte(hashSha256))
 	return []byte(fmt.Sprintf("%x", sha256_.Sum(nil)))
@@ -2297,13 +2274,13 @@ func Sha256(data_ interface{}) []byte {
 
 func DeleteHeader(binaryData []byte) []byte {
 	/*
-	TYPE (0-блок, 1-тр-я)     1
-	BLOCK_ID   				       4
-	TIME       					       4
-	USER_ID                         5
-	LEVEL                              1
-	SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-	Далее - тело блока (Тр-ии)
+		TYPE (0-блок, 1-тр-я)     1
+		BLOCK_ID   				       4
+		TIME       					       4
+		USER_ID                         5
+		LEVEL                              1
+		SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+		Далее - тело блока (Тр-ии)
 	*/
 	BytesShift(&binaryData, 15)
 	size := DecodeLength(&binaryData)
@@ -2351,7 +2328,7 @@ func GetMrklroot(binaryData []byte, variables *Variables, first bool) ([]byte, e
 	}
 	log.Debug("mrklSlice: %s", mrklSlice)
 	if len(mrklSlice) == 0 {
-		mrklSlice = append(mrklSlice,  []byte("0"))
+		mrklSlice = append(mrklSlice, []byte("0"))
 	}
 	log.Debug("mrklSlice: %s", mrklSlice)
 	return MerkleTreeRoot(mrklSlice), nil
@@ -2375,15 +2352,15 @@ func MerkleTreeRoot(dataArray [][]byte) []byte {
 	var j int32
 	for len(result[j]) > 1 {
 		for i := 0; i < len(result[j]); i = i + 2 {
-			if len(result[j]) <= (i+1) {
+			if len(result[j]) <= (i + 1) {
 				if _, ok := result[j+1]; !ok {
-					result[j+1] = [][]byte {result[j][i]}
+					result[j+1] = [][]byte{result[j][i]}
 				} else {
 					result[j+1] = append(result[j+1], result[j][i])
 				}
 			} else {
 				if _, ok := result[j+1]; !ok {
-					result[j+1] = [][]byte {DSha256(append(result[j][i], result[j][i+1]...))}
+					result[j+1] = [][]byte{DSha256(append(result[j][i], result[j][i+1]...))}
 				} else {
 					result[j+1] = append(result[j+1], DSha256([]byte(append(result[j][i], result[j][i+1]...))))
 				}
@@ -2393,10 +2370,11 @@ func MerkleTreeRoot(dataArray [][]byte) []byte {
 	}
 
 	log.Debug("result: %s", result)
-	result_ := result[int32(len(result)-1)];
+	result_ := result[int32(len(result)-1)]
 	log.Debug("result_: %s", result_)
 	return []byte(result_[0])
 }
+
 /*
 func DbConnect(configIni map[string]string) *DCDB {
 	for {
@@ -2420,7 +2398,7 @@ func DbClose(c *DCDB) {
 func GetAllMaxPromisedAmount() []int64 {
 	var arr []int64
 	var iEnd int64
-	for i := int64(1); i < 1000000000; i=i*10 {
+	for i := int64(1); i < 1000000000; i = i * 10 {
 		if i == 10 {
 			continue
 		}
@@ -2429,22 +2407,21 @@ func GetAllMaxPromisedAmount() []int64 {
 		} else {
 			iEnd = 90
 		}
-		for j:=int64(0); j<iEnd; j++ {
-			if i<100 {
-				arr = append(arr, int64(i + j))
+		for j := int64(0); j < iEnd; j++ {
+			if i < 100 {
+				arr = append(arr, int64(i+j))
 			} else {
-				arr = append(arr, int64(i + j*i/10))
+				arr = append(arr, int64(i+j*i/10))
 			}
 		}
 	}
 	return arr
 }
 
-
 func MaxInMap(m map[int64]int64) (int64, int64) {
 	var max int64
 	var maxK int64
-	for k, v := range(m) {
+	for k, v := range m {
 		if max == 0 {
 			max = v
 			maxK = k
@@ -2461,8 +2438,8 @@ func GetMaxVote(array []map[int64]int64, min, max, step int64) int64 {
 
 	// если <=10 то тупо берем максимальное кол-во голосов
 	var maxPct int64
-	if len(array)<=10 {
-		if len(array)>0 {
+	if len(array) <= 10 {
+		if len(array) > 0 {
 			_, maxPct = MaxInSliceMap(array)
 			//fmt.Println("0maxPct", maxPct)
 		} else {
@@ -2478,23 +2455,23 @@ func GetMaxVote(array []map[int64]int64, min, max, step int64) int64 {
 
 	var sums []map[int64]int64
 	dataBank := make(map[int64][]map[int64]int64)
-	for i:=min; i<max; i=i+step/10 {
+	for i := min; i < max; i = i + step/10 {
 		//dataBank[i] = make(map[int64]int64)
 		min0 := i
 		max0 := i + step
 		//fmt.Println("min0", min0)
 		//fmt.Println("max0", max0)
 		// берем из массива те данные, которые попадают в данную секцию
-		for i0:=0; i0<len(array); i0++ {
+		for i0 := 0; i0 < len(array); i0++ {
 			for number, votes := range array[i0] {
 				if number >= min0 && number < max0 {
-					dataBank[i] = append(dataBank[i], map[int64]int64{number:votes})
+					dataBank[i] = append(dataBank[i], map[int64]int64{number: votes})
 					//fmt.Println("i", i, "number", number, "votes", votes)
 				}
 			}
 		}
-		if len(dataBank[i])>0 {
-			sums = append(sums, map[int64]int64{i:arraySum(dataBank[i])})
+		if len(dataBank[i]) > 0 {
+			sums = append(sums, map[int64]int64{i: arraySum(dataBank[i])})
 			//fmt.Println("i", i, dataBank[i])
 		}
 	}
@@ -2517,9 +2494,9 @@ func GetMaxVote(array []map[int64]int64, min, max, step int64) int64 {
 
 func arraySum(m []map[int64]int64) int64 {
 	var sum int64
-	for i:=0; i<len(m); i++ {
-		for _, v :=range m[i] {
-			sum+=v
+	for i := 0; i < len(m); i++ {
+		for _, v := range m[i] {
+			sum += v
 		}
 	}
 	return sum
@@ -2528,8 +2505,8 @@ func arraySum(m []map[int64]int64) int64 {
 func MaxInSliceMap(m []map[int64]int64) (int64, int64) {
 	var max int64
 	var maxK int64
-	for i:=0; i<len(m); i++ {
-		for k, v := range (m[i]) {
+	for i := 0; i < len(m); i++ {
+		for k, v := range m[i] {
 			if max == 0 {
 				max = v
 				maxK = k
@@ -2544,13 +2521,13 @@ func MaxInSliceMap(m []map[int64]int64) (int64, int64) {
 
 func TypesToIds(arr []string) []int64 {
 	var result []int64
-	for _, v := range(arr) {
+	for _, v := range arr {
 		result = append(result, TypeInt(v))
 	}
 	return result
 }
 
-func TypeInt (txType string) int64 {
+func TypeInt(txType string) int64 {
 	for k, v := range consts.TxTypes {
 		if v == txType {
 			return int64(k)
@@ -2565,7 +2542,7 @@ func MakePrivateKey(key string) (*rsa.PrivateKey, error) {
 		return nil, errors.New("bad key data")
 	}
 	if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-		return nil, errors.New("unknown key type "+got+", want "+want)
+		return nil, errors.New("unknown key type " + got + ", want " + want)
 	}
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
@@ -2582,31 +2559,31 @@ func TimeLeft(sec int64, lang map[string]string) string {
 	result := ""
 	if sec > 0 {
 		days := int64(math.Floor(float64(sec / 86400)))
-		sec -= days*86400
+		sec -= days * 86400
 		result += fmt.Sprintf(`%d %s `, days, lang["time_days"])
 	}
 	if sec > 0 {
 		hours := int64(math.Floor(float64(sec / 3600)))
-		sec -= hours*3600
+		sec -= hours * 3600
 		result += fmt.Sprintf(`%d %s `, hours, lang["time_hours"])
 	}
 	if sec > 0 {
 		minutes := int64(math.Floor(float64(sec / 60)))
-		sec -= minutes*3600
+		sec -= minutes * 3600
 		result += fmt.Sprintf(`%d %s `, minutes, lang["time_minutes"])
 	}
 	return result
 }
 
 func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[int]int {
-	ctx:=StrToInt(ctx0)
-	maxMinerId:=StrToInt(maxMinerId0)
-	minersKeepers:=StrToInt(minersKeepers0)
+	ctx := StrToInt(ctx0)
+	maxMinerId := StrToInt(maxMinerId0)
+	minersKeepers := StrToInt(minersKeepers0)
 	result := make(map[int]int)
 	newResult := make(map[int]int)
 	var ctx_ float64
 	ctx_ = float64(ctx)
-	for i:=0; i<minersKeepers; i++ {
+	for i := 0; i < minersKeepers; i++ {
 		//log.Debug("ctx", ctx)
 		//var hi float34
 		hi := ctx_ / float64(127773)
@@ -2619,7 +2596,7 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 			x += 0x7fffffff
 		}
 		ctx_ = x
-		rez := int(ctx_) % (maxMinerId+1)
+		rez := int(ctx_) % (maxMinerId + 1)
 		//log.Debug("rez", rez)
 		if rez == 0 {
 			rez = 1
@@ -2627,7 +2604,7 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 		result[rez] = 1
 	}
 	if arr0 {
-		i:=0
+		i := 0
 		for k, _ := range result {
 			newResult[i] = k
 			i++
@@ -2640,37 +2617,36 @@ func GetMinersKeepers(ctx0, maxMinerId0, minersKeepers0 string, arr0 bool) map[i
 
 func MakeLastTx(lastTx []map[string]string, lng map[string]string) (string, map[int64]int64) {
 	pendingTx := make(map[int64]int64)
-	result := `<h3>`+lng["transactions"]+`</h3><table class="table" style="width:500px;">`
-	result+=`<tr><th>`+lng["time"]+`</th><th>`+lng["result"]+`</th></tr>`
-	for _, data := range(lastTx) {
-		result+="<tr>"
-		result+="<td class='unixtime'>"+data["time_int"]+"</td>"
+	result := `<h3>` + lng["transactions"] + `</h3><table class="table" style="width:500px;">`
+	result += `<tr><th>` + lng["time"] + `</th><th>` + lng["result"] + `</th></tr>`
+	for _, data := range lastTx {
+		result += "<tr>"
+		result += "<td class='unixtime'>" + data["time_int"] + "</td>"
 		if len(data["block_id"]) > 0 {
-			result+="<td>"+lng["in_the_block"]+" "+data["block_id"]+"</td>"
+			result += "<td>" + lng["in_the_block"] + " " + data["block_id"] + "</td>"
 		} else if len(data["error"]) > 0 {
-			result+="<td>Error: "+data["error"]+"</td>"
-		} else if (len(data["queue_tx"]) == 0 && len(data["tx"]) == 0) || time.Now().Unix() - StrToInt64(data["time_int"]) > 7200  {
-			result+="<td>"+lng["lost"]+"</td>"
+			result += "<td>Error: " + data["error"] + "</td>"
+		} else if (len(data["queue_tx"]) == 0 && len(data["tx"]) == 0) || time.Now().Unix()-StrToInt64(data["time_int"]) > 7200 {
+			result += "<td>" + lng["lost"] + "</td>"
 		} else {
-			result+="<td>"+lng["status_pending"]+"</td>"
+			result += "<td>" + lng["status_pending"] + "</td>"
 			pendingTx[StrToInt64(data["type"])] = 1
 		}
-		result+="</tr>"
+		result += "</tr>"
 	}
-	result+="</table>"
+	result += "</table>"
 	return result, pendingTx
 }
 
-
 func GenKeys() (string, string) {
 	privatekey, _ := rsa.GenerateKey(crand.Reader, 2048)
-	var pemkey = &pem.Block{Type : "RSA PRIVATE KEY", Bytes : x509.MarshalPKCS1PrivateKey(privatekey)}
-	PrivBytes0 := pem.EncodeToMemory(&pem.Block{Type:  "RSA PRIVATE KEY", Bytes: pemkey.Bytes})
+	var pemkey = &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)}
+	PrivBytes0 := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pemkey.Bytes})
 
 	PubASN1, _ := x509.MarshalPKIXPublicKey(&privatekey.PublicKey)
-	pubBytes := pem.EncodeToMemory(&pem.Block{Type:  "RSA PUBLIC KEY", Bytes: PubASN1})
-	s := strings.Replace(string(pubBytes),"-----BEGIN RSA PUBLIC KEY-----","",-1)
-	s = strings.Replace(s,"-----END RSA PUBLIC KEY-----","",-1)
+	pubBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: PubASN1})
+	s := strings.Replace(string(pubBytes), "-----BEGIN RSA PUBLIC KEY-----", "", -1)
+	s = strings.Replace(s, "-----END RSA PUBLIC KEY-----", "", -1)
 	sDec, _ := base64.StdEncoding.DecodeString(s)
 
 	return string(PrivBytes0), fmt.Sprintf("%x", sDec)
@@ -2689,25 +2665,24 @@ func Encrypt(key, text []byte) ([]byte, error) {
 	EncPrivateKeyBin = append(iv, EncPrivateKeyBin...)
 	//EncPrivateKeyB64 := base64.StdEncoding.EncodeToString(EncPrivateKeyBin)
 	return EncPrivateKeyBin, nil
-/*
-	plaintext := []byte(strpad(string(text)))
-	ivtext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ivtext[:aes.BlockSize]
-	iv = []byte("1111111111111111")
-	c, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	cfbdec := cipher.NewCBCEncrypter(c, iv)
-	ciphertext := make([]byte, len(plaintext))
-	cfbdec.CryptBlocks(ciphertext, plaintext)
-	//crypt1 := base64.StdEncoding.EncodeToString((ciphertext))
-	return ciphertext, nil*/
+	/*
+		plaintext := []byte(strpad(string(text)))
+		ivtext := make([]byte, aes.BlockSize+len(plaintext))
+		iv := ivtext[:aes.BlockSize]
+		iv = []byte("1111111111111111")
+		c, err := aes.NewCipher(key)
+		if err != nil {
+			return nil, err
+		}
+		cfbdec := cipher.NewCBCEncrypter(c, iv)
+		ciphertext := make([]byte, len(plaintext))
+		cfbdec.CryptBlocks(ciphertext, plaintext)
+		//crypt1 := base64.StdEncoding.EncodeToString((ciphertext))
+		return ciphertext, nil*/
 }
 
-
-func EncryptCFB(text, key, iv []byte) ([]byte,[]byte, error) {
-	block,err := aes.NewCipher(key)
+func EncryptCFB(text, key, iv []byte) ([]byte, []byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, nil, ErrInfo(err)
 	}
@@ -2723,9 +2698,8 @@ func EncryptCFB(text, key, iv []byte) ([]byte,[]byte, error) {
 	return append(iv, encrypted...), iv, nil
 }
 
-
 func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
-	block,err := aes.NewCipher(key)
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -2739,7 +2713,7 @@ func DecryptCFB(iv, encrypted, key []byte) ([]byte, error) {
 func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, []byte, []byte, error) {
 
 	// генерим ключ
-	key := Md5(DSha256([]byte(RandSeq(32)+randTestblockHash)))
+	key := Md5(DSha256([]byte(RandSeq(32) + randTestblockHash)))
 
 	// шифруем ключ публичным ключем получателя
 	pub, err := BinToRsaPubKey(publicKey)
@@ -2762,7 +2736,6 @@ func EncryptData(data, publicKey []byte, randTestblockHash string) ([]byte, []by
 	return append(EncodeLengthPlusData(encKey), encData...), key, iv, nil
 }
 
-
 func strpad(text string) string {
 	length := aes.BlockSize - (len(text) % aes.BlockSize)
 	for i := 0; i < length; i++ {
@@ -2770,7 +2743,6 @@ func strpad(text string) string {
 	}
 	return text
 }
-
 
 // http://stackoverflow.com/a/18411978
 func VersionOrdinal(version string) string {
@@ -2802,11 +2774,10 @@ func VersionOrdinal(version string) string {
 	return string(vo)
 }
 
-
 func GetNetworkTime() (*time.Time, error) {
 
 	ntpAddr := []string{"0.pool.ntp.org", "europe.pool.ntp.org", "asia.pool.ntp.org", "oceania.pool.ntp.org", "north-america.pool.ntp.org", "south-america.pool.ntp.org", "africa.pool.ntp.org"}
-	for i:=0; i < len(ntpAddr); i++ {
+	for i := 0; i < len(ntpAddr); i++ {
 		host := ntpAddr[i]
 		raddr, err := net.ResolveUDPAddr("udp", host+":123")
 		if err != nil {
@@ -2814,7 +2785,7 @@ func GetNetworkTime() (*time.Time, error) {
 		}
 
 		data := make([]byte, 48)
-		data[0] = 3<<3|3
+		data[0] = 3<<3 | 3
 
 		con, err := net.DialUDP("udp", nil, raddr)
 		if err != nil {
@@ -2836,11 +2807,11 @@ func GetNetworkTime() (*time.Time, error) {
 		}
 
 		var sec, frac uint64
-		sec = uint64(data[43])|uint64(data[42])<<8|uint64(data[41])<<16|uint64(data[40])<<24
-		frac = uint64(data[47])|uint64(data[46])<<8|uint64(data[45])<<16|uint64(data[44])<<24
+		sec = uint64(data[43]) | uint64(data[42])<<8 | uint64(data[41])<<16 | uint64(data[40])<<24
+		frac = uint64(data[47]) | uint64(data[46])<<8 | uint64(data[45])<<16 | uint64(data[44])<<24
 
 		nsec := sec * 1e9
-		nsec += (frac*1e9)>>32
+		nsec += (frac * 1e9) >> 32
 
 		t := time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(nsec)).Local()
 		return &t, nil
@@ -2851,7 +2822,7 @@ func GetNetworkTime() (*time.Time, error) {
 
 func MakeUpgradeMenu(cur int) string {
 	result := ""
-	for i:=0; i <=7; i++ {
+	for i := 0; i <= 7; i++ {
 		active := ""
 		if i <= cur {
 			active = `complete`
@@ -2859,11 +2830,11 @@ func MakeUpgradeMenu(cur int) string {
 			active = `disabled`
 		}
 		result += `
-			<div class="col-md-1 bs-wizard-step `+active+`">
-				<div class="text-center bs-wizard-stepnum">`+IntToStr(i+1)+`</div>
+			<div class="col-md-1 bs-wizard-step ` + active + `">
+				<div class="text-center bs-wizard-stepnum">` + IntToStr(i+1) + `</div>
 				<div class="progress"><div class="progress-bar"></div></div>
-				<a href="#upgrade`+IntToStr(i)+`" class="bs-wizard-dot"></a>
-			</div>`;
+				<a href="#upgrade` + IntToStr(i) + `" class="bs-wizard-dot"></a>
+			</div>`
 	}
 	return result
 }
@@ -2877,7 +2848,7 @@ func SortMap(m map[int64]string) []map[int64]string {
 	sort.Ints(keys)
 	var result []map[int64]string
 	for _, k := range keys {
-		result = append(result, map[int64]string {int64(k) : m[int64(k)]})
+		result = append(result, map[int64]string{int64(k): m[int64(k)]})
 	}
 	return result
 }
@@ -2891,13 +2862,10 @@ func RSortMap(m map[int64]string) []map[int64]string {
 	sort.Sort(sort.Reverse(sort.IntSlice(keys)))
 	var result []map[int64]string
 	for _, k := range keys {
-		result = append(result, map[int64]string {int64(k) : m[int64(k)]})
+		result = append(result, map[int64]string{int64(k): m[int64(k)]})
 	}
 	return result
 }
-
-
-
 
 func TcpConn(Addr string) (net.Conn, error) {
 	// шлем данные указанному хосту
@@ -2906,7 +2874,7 @@ func TcpConn(Addr string) (net.Conn, error) {
 		return nil, ErrInfo(err)
 	}
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)*/
-	conn, err := net.DialTimeout("tcp", Addr, 5 * time.Second)
+	conn, err := net.DialTimeout("tcp", Addr, 5*time.Second)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
@@ -2916,7 +2884,7 @@ func TcpConn(Addr string) (net.Conn, error) {
 }
 
 func ProtectedCheckRemoteAddrAndGetHost(binaryData *[]byte, conn net.Conn) (string, error) {
-	if ok, _ := regexp.MatchString(`^192\.168`, conn.RemoteAddr().String()); !ok{
+	if ok, _ := regexp.MatchString(`^192\.168`, conn.RemoteAddr().String()); !ok {
 		return "", ErrInfo("not local")
 	}
 	size := DecodeLength(&*binaryData)
@@ -2924,8 +2892,8 @@ func ProtectedCheckRemoteAddrAndGetHost(binaryData *[]byte, conn net.Conn) (stri
 		return "", ErrInfo("int64(len(binaryData)) < size")
 	}
 	host := string(BytesShift(&*binaryData, size))
-	if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, host); !ok{
-		return "", ErrInfo("incorrect host "+host)
+	if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\_\.\-\]{1,100}:[0-9]+$`, host); !ok {
+		return "", ErrInfo("incorrect host " + host)
 	}
 	return host, nil
 
@@ -3039,10 +3007,10 @@ func GetBlockBody(host string, blockId int64, dataTypeBlockBody int64, nodeHost 
 
 }
 
-
 type jsonAnswer struct {
 	err error
 }
+
 func (r *jsonAnswer) String() string {
 	return fmt.Sprintf("%s", r.err)
 }
@@ -3052,10 +3020,10 @@ func (r *jsonAnswer) Error() error {
 func JsonAnswer(err interface{}, answType string) *jsonAnswer {
 	var error_ string
 	switch err.(type) {
-		case string:
+	case string:
 		error_ = err.(string)
-		case error:
-		error_ =  fmt.Sprintf("%v", err)
+	case error:
+		error_ = fmt.Sprintf("%v", err)
 	}
 	result, _ := json.Marshal(map[string]string{answType: fmt.Sprintf("%v", error_)})
 	return &jsonAnswer{errors.New(string(result))}

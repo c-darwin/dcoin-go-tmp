@@ -1,19 +1,20 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type PointsPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
-	UserId int64
-	Lang map[string]string
+	UserId       int64
+	Lang         map[string]string
 	CountSignArr []int
 	PointsStatus []map[string]string
-	VotesOk string
-	MyPoints int64
-	Mean float64
+	VotesOk      string
+	MyPoints     int64
+	Mean         float64
 }
 
 func (c *Controller) Points() (string, error) {
@@ -34,7 +35,7 @@ func (c *Controller) Points() (string, error) {
 	mean = utils.Round(mean*c.Variables.Float64["points_factor"], 0)
 
 	// есть ли тр-ия с голосованием votes_complex за послдение 4 недели
-	count, err := c.Single("SELECT count(user_id) FROM votes_miner_pct WHERE user_id  =  ? AND time > ?", c.SessUserId, utils.Time() - c.Variables.Int64["limit_votes_complex_period"]*2).Int64()
+	count, err := c.Single("SELECT count(user_id) FROM votes_miner_pct WHERE user_id  =  ? AND time > ?", c.SessUserId, utils.Time()-c.Variables.Int64["limit_votes_complex_period"]*2).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -44,19 +45,18 @@ func (c *Controller) Points() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("points", "points", &PointsPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		SignData: "",
-		VotesOk: votesOk,
-		MyPoints: myPoints,
+		UserId:       c.SessUserId,
+		SignData:     "",
+		VotesOk:      votesOk,
+		MyPoints:     myPoints,
 		PointsStatus: pointsStatus,
-		Mean: mean})
+		Mean:         mean})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

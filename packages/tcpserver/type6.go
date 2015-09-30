@@ -1,21 +1,21 @@
 package tcpserver
 
 import (
+	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io"
-	"fmt"
 	"math/big"
 )
 
 func (t *TcpServer) Type6() {
 	/**
-		- проверяем, находится ли отправитель на одном с нами уровне
-		- получаем  block_id, user_id, mrkl_root, signature
-		- если хэш блока меньше того, что есть у нас в табле testblock, то смотртим, есть ли такой же хэш тр-ий,
-		- если отличается, то загружаем блок от отправителя
-		- если не отличается, то просто обновляем хэш блока у себя
-		данные присылает демон testblockDisseminator
-		 */
+	- проверяем, находится ли отправитель на одном с нами уровне
+	- получаем  block_id, user_id, mrkl_root, signature
+	- если хэш блока меньше того, что есть у нас в табле testblock, то смотртим, есть ли такой же хэш тр-ий,
+	- если отличается, то загружаем блок от отправителя
+	- если не отличается, то просто обновляем хэш блока у себя
+	данные присылает демон testblockDisseminator
+	*/
 	currentBlockId, err := t.GetBlockId()
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
@@ -31,7 +31,7 @@ func (t *TcpServer) Type6() {
 		log.Error("%v", utils.ErrInfo(err))
 		return
 	}
-	size:=utils.BinToDec(buf)
+	size := utils.BinToDec(buf)
 	log.Debug("size: %v", size)
 	if size < 10485760 {
 		binaryData := make([]byte, size)
@@ -69,8 +69,8 @@ func (t *TcpServer) Type6() {
 			return
 		}
 		/*
-	 * Проблема одновременных попыток локнуть. Надо попробовать без локов
-	 * */
+		 * Проблема одновременных попыток локнуть. Надо попробовать без локов
+		 * */
 		//t.DbLockGate("6")
 		exists, err := t.Single(`
 				SELECT block_id
@@ -118,12 +118,12 @@ func (t *TcpServer) Type6() {
 		maxErrorTime := t.variables.Int64["error_time"]
 		// получим значения для сна
 		sleep, err := t.GetGenSleep(prevBlock, level)
-		if err!=nil {
+		if err != nil {
 			t.PrintSleep(utils.ErrInfo(err), 0)
 			return
 		}
 		// исключим тех, кто сгенерил блок слишком рано
-		if prevBlock.Time + sleep - newTestblockTime > maxErrorTime {
+		if prevBlock.Time+sleep-newTestblockTime > maxErrorTime {
 			t.PrintSleep(utils.ErrInfo("prevBlock.Time + sleep - newTestblockTime > maxErrorTime"), 0)
 			return
 		}
@@ -143,7 +143,7 @@ func (t *TcpServer) Type6() {
 				WHERE status = "active"
 				`).String()
 		if len(myTestblock) > 0 {
-			if err!=nil {
+			if err != nil {
 				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
 			}
@@ -180,7 +180,7 @@ func (t *TcpServer) Type6() {
 				return
 			}
 			for hash, _ := range txArray {
-				sendData+=hash
+				sendData += hash
 			}
 			err = utils.WriteSizeAndData([]byte(sendData), t.Conn)
 			if err != nil {
@@ -188,16 +188,16 @@ func (t *TcpServer) Type6() {
 				return
 			}
 			/*
-			в ответ получаем:
-			BLOCK_ID   				       4
-			TIME       					       4
-			USER_ID                         5
-			SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-			Размер всех тр-ий, размер 1 тр-ии, тело тр-ии.
-			Хэши три-ий (порядок тр-ий)
+				в ответ получаем:
+				BLOCK_ID   				       4
+				TIME       					       4
+				USER_ID                         5
+				SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+				Размер всех тр-ий, размер 1 тр-ии, тело тр-ии.
+				Хэши три-ий (порядок тр-ий)
 			*/
 			buf := make([]byte, 4)
-			_, err =t.Conn.Read(buf)
+			_, err = t.Conn.Read(buf)
 			if err != nil {
 				t.PrintSleep(utils.ErrInfo(err), 0)
 				return
@@ -251,14 +251,14 @@ func (t *TcpServer) Type6() {
 				}
 				// формируем блок, который далее будем тщательно проверять
 				/*
-				Заголовок (от 143 до 527 байт )
-				TYPE (0-блок, 1-тр-я)     1
-				BLOCK_ID   				       4
-				TIME       					       4
-				USER_ID                         5
-				LEVEL                              1
-				SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
-				Далее - тело блока (Тр-ии)
+					Заголовок (от 143 до 527 байт )
+					TYPE (0-блок, 1-тр-я)     1
+					BLOCK_ID   				       4
+					TIME       					       4
+					USER_ID                         5
+					LEVEL                              1
+					SIGN                               от 128 до 512 байт. Подпись от TYPE, BLOCK_ID, PREV_BLOCK_HASH, TIME, USER_ID, LEVEL, MRKL_ROOT
+					Далее - тело блока (Тр-ии)
 				*/
 				newBlockIdBinary := utils.DecToBin(newTestblockBlockId, 4)
 				timeBinary := utils.DecToBin(newTestblockTime, 4)

@@ -1,22 +1,22 @@
 package controllers
+
 import (
-    "encoding/json"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"fmt"
-	"os"
-	"regexp"
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"time"
-	"crypto/x509"
-	"crypto/rsa"
-	"crypto/rand"
-	"crypto"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io/ioutil"
+	"os"
+	"regexp"
+	"time"
 )
 
 func (c *Controller) SaveQueue() (string, error) {
-
 
 	var err error
 	c.r.ParseForm()
@@ -54,12 +54,12 @@ func (c *Controller) SaveQueue() (string, error) {
 		publicKeyHex := c.r.FormValue("public_key")
 		publicKey := utils.HexToBin([]byte(publicKeyHex))
 		privateKey := c.r.FormValue("private_key")
-		verifyData := map[string]string {publicKeyHex: "public_key", privateKey: "private_key"}
+		verifyData := map[string]string{publicKeyHex: "public_key", privateKey: "private_key"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if c.SessRestricted==0 {
+		if c.SessRestricted == 0 {
 			err = c.ExecSql(`
 					INSERT INTO  `+c.MyPrefix+`my_new_users (
 						public_key,
@@ -80,9 +80,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(publicKey))...)
 		data = append(data, binSignatures...)
 
-	case "DelCfProject" :
+	case "DelCfProject":
 
-		projectId := []byte(c.r.FormValue("project_id"));
+		projectId := []byte(c.r.FormValue("project_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -90,13 +90,11 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(projectId)...)
 		data = append(data, binSignatures...)
 
+	case "CfComment":
 
-
-	case "CfComment" :
-
-		projectId := []byte(c.r.FormValue("project_id"));
-		langId := []byte(c.r.FormValue("lang_id"));
-		comment := []byte(c.r.FormValue("comment"));
+		projectId := []byte(c.r.FormValue("project_id"))
+		langId := []byte(c.r.FormValue("lang_id"))
+		comment := []byte(c.r.FormValue("comment"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -106,10 +104,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
 
-
-
-
-	case "NewCredit" :
+	case "NewCredit":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -120,10 +115,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("pct")))...)
 		data = append(data, binSignatures...)
 
-
-
-
-	case "DelCredit" :
+	case "DelCredit":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -131,9 +123,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("credit_id")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "RepaymentCredit" :
+	case "RepaymentCredit":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -142,9 +132,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("amount")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeCreditor" :
+	case "ChangeCreditor":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -153,9 +141,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("credit_id")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeCreditPart" :
+	case "ChangeCreditPart":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -163,12 +149,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("pct")))...)
 		data = append(data, binSignatures...)
 
+	case "UserAvatar":
 
-
-	case "UserAvatar" :
-
-		name := []byte(c.r.FormValue("name"));
-		avatar := []byte(c.r.FormValue("avatar"));
+		name := []byte(c.r.FormValue("name"))
+		avatar := []byte(c.r.FormValue("avatar"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -177,11 +161,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(avatar)...)
 		data = append(data, binSignatures...)
 
+	case "DelCfFunding":
 
-
-	case "DelCfFunding" :
-
-		fundingId := []byte(c.r.FormValue("funding_id"));
+		fundingId := []byte(c.r.FormValue("funding_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -189,12 +171,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(fundingId)...)
 		data = append(data, binSignatures...)
 
+	case "CfProjectChangeCategory":
 
-
-	case "CfProjectChangeCategory" :
-
-		projectId := []byte(c.r.FormValue("project_id"));
-		categoryId := []byte(c.r.FormValue("category_id"));
+		projectId := []byte(c.r.FormValue("project_id"))
+		categoryId := []byte(c.r.FormValue("category_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -203,17 +183,15 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(categoryId)...)
 		data = append(data, binSignatures...)
 
+	case "NewCfProject":
 
-
-	case "NewCfProject" :
-
-		currencyId := []byte(c.r.FormValue("currency_id"));
-		amount := []byte(c.r.FormValue("amount"));
-		endTime := []byte(c.r.FormValue("end_time"));
-		latitude := []byte(c.r.FormValue("latitude"));
-		longitude := []byte(c.r.FormValue("longitude"));
-		categoryId := []byte(c.r.FormValue("category_id"));
-		currencyName := []byte(c.r.FormValue("currency_name"));
+		currencyId := []byte(c.r.FormValue("currency_id"))
+		amount := []byte(c.r.FormValue("amount"))
+		endTime := []byte(c.r.FormValue("end_time"))
+		latitude := []byte(c.r.FormValue("latitude"))
+		longitude := []byte(c.r.FormValue("longitude"))
+		categoryId := []byte(c.r.FormValue("category_id"))
+		currencyName := []byte(c.r.FormValue("currency_name"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -227,21 +205,19 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(currencyName)...)
 		data = append(data, binSignatures...)
 
+	case "CfProjectData":
 
-
-	case "CfProjectData" :
-
-		projectId := []byte(c.r.FormValue("project_id"));
-		langId := []byte(c.r.FormValue("lang_id"));
-		blurbImg := []byte(c.r.FormValue("blurb_img"));
-		headImg := []byte(c.r.FormValue("head_img"));
-		descriptionImg := []byte(c.r.FormValue("description_img"));
-		picture := []byte(c.r.FormValue("picture"));
-		videoType := []byte(c.r.FormValue("video_type"));
-		videoUrlId := []byte(c.r.FormValue("video_url_id"));
-		newsImg := []byte(c.r.FormValue("news_img"));
-		links := []byte(c.r.FormValue("links"));
-		hide := []byte(c.r.FormValue("hide"));
+		projectId := []byte(c.r.FormValue("project_id"))
+		langId := []byte(c.r.FormValue("lang_id"))
+		blurbImg := []byte(c.r.FormValue("blurb_img"))
+		headImg := []byte(c.r.FormValue("head_img"))
+		descriptionImg := []byte(c.r.FormValue("description_img"))
+		picture := []byte(c.r.FormValue("picture"))
+		videoType := []byte(c.r.FormValue("video_type"))
+		videoUrlId := []byte(c.r.FormValue("video_url_id"))
+		newsImg := []byte(c.r.FormValue("news_img"))
+		links := []byte(c.r.FormValue("links"))
+		hide := []byte(c.r.FormValue("hide"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -259,33 +235,31 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(hide)...)
 		data = append(data, binSignatures...)
 
+	case "NewMiner":
 
-
-	case "NewMiner" :
-
-		race := []byte(c.r.FormValue("race"));
-		country := []byte(c.r.FormValue("country"));
-		latitude := []byte(c.r.FormValue("latitude"));
-		longitude := []byte(c.r.FormValue("longitude"));
-		http_host := []byte(c.r.FormValue("http_host"));
-		tcp_host := []byte(c.r.FormValue("tcp_host"));
-		faceHash := []byte(c.r.FormValue("face_hash"));
-		profileHash := []byte(c.r.FormValue("profile_hash"));
-		faceCoords := []byte(c.r.FormValue("face_coords"));
-		profileCoords := []byte(c.r.FormValue("profile_coords"));
-		videoType := []byte(c.r.FormValue("video_type"));
-		videoUrlId := []byte(c.r.FormValue("video_url_id"));
-		nodePublicKey := []byte(c.r.FormValue("node_public_key"));
+		race := []byte(c.r.FormValue("race"))
+		country := []byte(c.r.FormValue("country"))
+		latitude := []byte(c.r.FormValue("latitude"))
+		longitude := []byte(c.r.FormValue("longitude"))
+		http_host := []byte(c.r.FormValue("http_host"))
+		tcp_host := []byte(c.r.FormValue("tcp_host"))
+		faceHash := []byte(c.r.FormValue("face_hash"))
+		profileHash := []byte(c.r.FormValue("profile_hash"))
+		faceCoords := []byte(c.r.FormValue("face_coords"))
+		profileCoords := []byte(c.r.FormValue("profile_coords"))
+		videoType := []byte(c.r.FormValue("video_type"))
+		videoUrlId := []byte(c.r.FormValue("video_url_id"))
+		nodePublicKey := []byte(c.r.FormValue("node_public_key"))
 
 		if len(race) == 0 || len(country) == 0 || len(latitude) == 0 || len(longitude) == 0 || len(http_host) == 0 || len(tcp_host) == 0 || len(faceHash) == 0 || len(profileHash) == 0 || len(faceCoords) == 0 || len(profileCoords) == 0 || len(videoType) == 0 || len(videoUrlId) == 0 || len(nodePublicKey) == 0 {
 			return "empty", nil
 		}
 		if string(videoType) == "null" || string(videoUrlId) == "null" {
-			if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.mp4"); os.IsNotExist(err) {
+			if _, err := os.Stat(*utils.Dir + "/public/" + utils.Int64ToStr(c.SessUserId) + "_user_video.mp4"); os.IsNotExist(err) {
 				return "empty video", nil
 			}
 		}
-		nodePublicKey = utils.HexToBin(nodePublicKey);
+		nodePublicKey = utils.HexToBin(nodePublicKey)
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
@@ -312,11 +286,11 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-	case "VotesMiner" : // голос за юзера, который хочет стать майнером
+	case "VotesMiner": // голос за юзера, который хочет стать майнером
 
-		voteId := []byte(c.r.FormValue("vote_id"));
-		result := []byte(c.r.FormValue("result"));
-		comment := []byte(c.r.FormValue("comment"));
+		voteId := []byte(c.r.FormValue("vote_id"))
+		result := []byte(c.r.FormValue("result"))
+		comment := []byte(c.r.FormValue("comment"))
 
 		if c.SessRestricted == 0 {
 			err := c.ExecSql(`INSERT INTO  `+c.MyPrefix+`my_tasks (
@@ -342,18 +316,15 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
 
+	case "NewPromisedAmount":
 
+		currencyId := []byte(c.r.FormValue("currency_id"))
+		amount := []byte(c.r.FormValue("amount"))
+		videoType := []byte(c.r.FormValue("video_type"))
+		videoUrlId := []byte(c.r.FormValue("video_url_id"))
+		paymentSystemsIds := []byte(c.r.FormValue("payment_systems_ids"))
 
-
-	case "NewPromisedAmount" :
-
-		currencyId := []byte(c.r.FormValue("currency_id"));
-		amount := []byte(c.r.FormValue("amount"));
-		videoType := []byte(c.r.FormValue("video_type"));
-		videoUrlId := []byte(c.r.FormValue("video_url_id"));
-		paymentSystemsIds := []byte(c.r.FormValue("payment_systems_ids"));
-
-		verifyData := map[string]string {c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("payment_systems_ids"): "payment_systems_ids"}
+		verifyData := map[string]string{c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("payment_systems_ids"): "payment_systems_ids"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -384,12 +355,10 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
+	case "ChangePromisedAmount":
 
-
-	case "ChangePromisedAmount" :
-
-		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
-		amount := []byte(c.r.FormValue("amount"));
+		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"))
+		amount := []byte(c.r.FormValue("amount"))
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
@@ -397,26 +366,22 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(amount)...)
 		data = append(data, binSignatures...)
 
+	case "Mining":
 
-
-	case "Mining" :
-
-		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
-		amount := []byte(c.r.FormValue("amount"));
+		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"))
+		amount := []byte(c.r.FormValue("amount"))
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
 		data = append(data, utils.EncodeLengthPlusData(amount)...)
 		data = append(data, binSignatures...)
-
-
 
 	case "VotesPromisedAmount":
 
-		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
-		result := []byte(c.r.FormValue("result"));
-		comment := []byte(c.r.FormValue("comment"));
+		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"))
+		result := []byte(c.r.FormValue("result"))
+		comment := []byte(c.r.FormValue("comment"))
 
 		if c.SessRestricted == 0 {
 			err := c.ExecSql(`INSERT INTO  `+c.MyPrefix+`my_tasks (
@@ -442,14 +407,13 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
 
+	case "ChangeGeolocation":
 
-	case "ChangeGeolocation" :
+		latitude := []byte(c.r.FormValue("latitude"))
+		longitude := []byte(c.r.FormValue("longitude"))
+		country := []byte(c.r.FormValue("country"))
 
-		latitude := []byte(c.r.FormValue("latitude"));
-		longitude := []byte(c.r.FormValue("longitude"));
-		country := []byte(c.r.FormValue("country"));
-
-		verifyData := map[string]string {c.r.FormValue("latitude"): "coordinate", c.r.FormValue("longitude"): "coordinate", c.r.FormValue("country"): "int"}
+		verifyData := map[string]string{c.r.FormValue("latitude"): "coordinate", c.r.FormValue("longitude"): "coordinate", c.r.FormValue("country"): "int"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -473,11 +437,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(country)...)
 		data = append(data, binSignatures...)
 
+	case "DelPromisedAmount":
 
-
-	case "DelPromisedAmount" :
-
-		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"));
+		promisedAmountId := []byte(c.r.FormValue("promised_amount_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -485,10 +447,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(promisedAmountId)...)
 		data = append(data, binSignatures...)
 
+	case "DelForexOrder":
 
-	case "DelForexOrder" :
-
-		orderId := []byte(c.r.FormValue("order_id"));
+		orderId := []byte(c.r.FormValue("order_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -496,15 +457,12 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(orderId)...)
 		data = append(data, binSignatures...)
 
+	case "SendDc":
 
-
-
-	case "SendDc" :
-
-		toUserId := []byte(c.r.FormValue("to_id"));
-		currencyId := []byte(c.r.FormValue("currency_id"));
-		amount := []byte(c.r.FormValue("amount"));
-		commission := utils.StrToFloat64(c.r.FormValue("commission"));
+		toUserId := []byte(c.r.FormValue("to_id"))
+		currencyId := []byte(c.r.FormValue("currency_id"))
+		amount := []byte(c.r.FormValue("amount"))
+		commission := utils.StrToFloat64(c.r.FormValue("commission"))
 
 		var arbitrators_ []string
 		err := json.Unmarshal([]byte(c.r.PostFormValue("arbitrators")), &arbitrators_)
@@ -512,7 +470,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			return fmt.Sprintf("%q", err), err
 		}
 		arbitrators := make(map[int]string)
-		for i:=0; i<len(arbitrators_); i++ {
+		for i := 0; i < len(arbitrators_); i++ {
 			arbitrators[i] = arbitrators_[i]
 		}
 
@@ -522,17 +480,17 @@ func (c *Controller) SaveQueue() (string, error) {
 			return fmt.Sprintf("%q", err), err
 		}
 		arbitrators_commissions := make(map[int]float64)
-		for i:=0; i<len(arbitrators_commissions_); i++ {
+		for i := 0; i < len(arbitrators_commissions_); i++ {
 			arbitrators_commissions[i] = arbitrators_commissions_[i]
 		}
 
 		var arbitrators_commissions_sum float64
-		for i:=0; i < 5; i++ {
+		for i := 0; i < 5; i++ {
 			if len(arbitrators[i]) > 0 {
 				if !utils.CheckInputData(arbitrators[i], "int") {
 					return "incorrect arbitrators", nil
 				}
-				if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, utils.Float64ToStrPct(arbitrators_commissions[i])); !ok{
+				if ok, _ := regexp.MatchString(`^[0-9]{0,10}(\.[0-9]{0,2})?$`, utils.Float64ToStrPct(arbitrators_commissions[i])); !ok {
 					return "incorrect arbitrator_commission", nil
 				}
 			} else {
@@ -542,16 +500,16 @@ func (c *Controller) SaveQueue() (string, error) {
 			arbitrators_commissions_sum += arbitrators_commissions[i]
 		}
 
-		comment := []byte(c.r.FormValue("comment"));
-		commentText := []byte(c.r.FormValue("comment_text"));
+		comment := []byte(c.r.FormValue("comment"))
+		commentText := []byte(c.r.FormValue("comment_text"))
 
-		verifyData := map[string]string {c.r.FormValue("to_id"): "int", c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("commission"): "amount"}
+		verifyData := map[string]string{c.r.FormValue("to_id"): "int", c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("commission"): "amount"}
 		err = CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 
-		total_commission := commission + arbitrators_commissions_sum;
+		total_commission := commission + arbitrators_commissions_sum
 		if c.SessRestricted == 0 {
 			// пишем транзакцкцию к себе в таблу
 			err = c.ExecSql(`INSERT INTO
@@ -583,9 +541,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		}
 
 		if len(comment) == 0 {
-			comment = []byte("null");
+			comment = []byte("null")
 		} else {
-			comment = utils.HexToBin(comment);
+			comment = utils.HexToBin(comment)
 		}
 
 		log.Debug("commission: %v", []byte(c.r.FormValue("commission")))
@@ -594,7 +552,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		log.Debug("commission: %v", utils.EncodeLengthPlusData([]byte(c.r.FormValue("commission"))))
 		log.Debug("commission: %x", utils.EncodeLengthPlusData([]byte(c.r.FormValue("commission"))))
 		log.Debug("%x", utils.EncodeLengthPlusData(comment))
-		log.Debug("%x",binSignatures)
+		log.Debug("%x", binSignatures)
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
@@ -616,16 +574,15 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, binSignatures...)
 		log.Debug("%x", data)
 
+	case "CfSendDc":
 
-	case "CfSendDc" :
+		projectId := []byte(c.r.FormValue("to_id"))
+		amount := []byte(c.r.FormValue("amount"))
+		commission := []byte(c.r.FormValue("commission"))
+		comment := []byte(c.r.FormValue("comment"))
+		commentText := []byte(c.r.FormValue("comment_text"))
 
-		projectId := []byte(c.r.FormValue("to_id"));
-		amount := []byte(c.r.FormValue("amount"));
-		commission := []byte(c.r.FormValue("commission"));
-		comment := []byte(c.r.FormValue("comment"));
-		commentText := []byte(c.r.FormValue("comment_text"));
-
-		verifyData := map[string]string {c.r.FormValue("to_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("commission"): "amount"}
+		verifyData := map[string]string{c.r.FormValue("to_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("commission"): "amount"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -667,9 +624,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		}
 
 		if len(comment) == 0 {
-			comment = []byte("null");
+			comment = []byte("null")
 		} else {
-			comment = utils.HexToBin(comment);
+			comment = utils.HexToBin(comment)
 		}
 
 		data = utils.DecToBin(txType, 1)
@@ -681,18 +638,17 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(comment)...)
 		data = append(data, binSignatures...)
 
-	case "CashRequestOut" :
+	case "CashRequestOut":
 
-		toUserId := []byte(c.r.FormValue("to_user_id"));
-		currencyId := []byte(c.r.FormValue("currency_id"));
-		amount := []byte(c.r.FormValue("amount"));
-		comment := utils.HexToBin([]byte(c.r.FormValue("comment")));
-		commentText := []byte(c.r.FormValue("comment_text"));
-		hashCode := []byte(c.r.FormValue("hash_code"));
-		code := []byte(c.r.FormValue("code"));
+		toUserId := []byte(c.r.FormValue("to_user_id"))
+		currencyId := []byte(c.r.FormValue("currency_id"))
+		amount := []byte(c.r.FormValue("amount"))
+		comment := utils.HexToBin([]byte(c.r.FormValue("comment")))
+		commentText := []byte(c.r.FormValue("comment_text"))
+		hashCode := []byte(c.r.FormValue("hash_code"))
+		code := []byte(c.r.FormValue("code"))
 
-
-		verifyData := map[string]string {c.r.FormValue("to_user_id"): "int", c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("code"): "cash_code"}
+		verifyData := map[string]string{c.r.FormValue("to_user_id"): "int", c.r.FormValue("currency_id"): "int", c.r.FormValue("amount"): "amount", c.r.FormValue("code"): "cash_code"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -754,11 +710,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(hashCode)...)
 		data = append(data, binSignatures...)
 
+	case "CashRequestIn":
 
-	case "CashRequestIn" :
-
-		cashRequestId := []byte(c.r.FormValue("cash_request_id"));
-		code := []byte(c.r.FormValue("code"));
+		cashRequestId := []byte(c.r.FormValue("cash_request_id"))
+		code := []byte(c.r.FormValue("code"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -767,11 +722,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(code)...)
 		data = append(data, binSignatures...)
 
+	case "Abuses":
 
-
-	case "Abuses" :
-
-		abuses := []byte(c.r.FormValue("abuses"));
+		abuses := []byte(c.r.FormValue("abuses"))
 
 		// проверим, не делал слал ли юзер абузы за последние сутки.
 		// если слал - то выходим.
@@ -782,7 +735,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if ( num > 0 ) {
+		if num > 0 {
 			return "", utils.ErrInfo(err)
 		}
 		data = utils.DecToBin(txType, 1)
@@ -791,22 +744,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(abuses)...)
 		data = append(data, binSignatures...)
 
+	case "AdminBanMiners":
 
-	case "AdminBanMiners" :
-
-		usersIds := []byte(c.r.FormValue("users_ids"));
-
-		data = utils.DecToBin(txType, 1)
-		data = append(data, utils.DecToBin(txTime, 4)...)
-		data = append(data, utils.EncodeLengthPlusData(userId)...)
-		data = append(data, utils.EncodeLengthPlusData(usersIds)...)
-		data = append(data, binSignatures...)
-
-
-
-	case "AdminUnbanMiners" :
-
-		usersIds := []byte(c.r.FormValue("users_ids"));
+		usersIds := []byte(c.r.FormValue("users_ids"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -814,11 +754,19 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(usersIds)...)
 		data = append(data, binSignatures...)
 
+	case "AdminUnbanMiners":
 
+		usersIds := []byte(c.r.FormValue("users_ids"))
 
-	case "AdminVariables" :  // админ изменил variables
+		data = utils.DecToBin(txType, 1)
+		data = append(data, utils.DecToBin(txTime, 4)...)
+		data = append(data, utils.EncodeLengthPlusData(userId)...)
+		data = append(data, utils.EncodeLengthPlusData(usersIds)...)
+		data = append(data, binSignatures...)
 
-		variables := []byte(c.r.FormValue("variables"));
+	case "AdminVariables": // админ изменил variables
+
+		variables := []byte(c.r.FormValue("variables"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -826,14 +774,12 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(variables)...)
 		data = append(data, binSignatures...)
 
+	case "AdminSpots": // админ обновил набор точек для проверки лиц
 
-
-	case "AdminSpots" : // админ обновил набор точек для проверки лиц
-
-		exampleSpots := []byte(c.r.FormValue("example_spots"));
-		segments := []byte(c.r.FormValue("segments"));
-		tolerances := []byte(c.r.FormValue("tolerances"));
-		compatibility := []byte(c.r.FormValue("compatibility"));
+		exampleSpots := []byte(c.r.FormValue("example_spots"))
+		segments := []byte(c.r.FormValue("segments"))
+		tolerances := []byte(c.r.FormValue("tolerances"))
+		compatibility := []byte(c.r.FormValue("compatibility"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -844,12 +790,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(compatibility)...)
 		data = append(data, binSignatures...)
 
+	case "AdminMessage": // админ отправил alert message
 
-
-	case "AdminMessage" : // админ отправил alert message
-
-		message := []byte(c.r.FormValue("message"));
-		currencyList := []byte(c.r.FormValue("currency_list"));
+		message := []byte(c.r.FormValue("message"))
+		currencyList := []byte(c.r.FormValue("currency_list"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -858,30 +802,27 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(currencyList)...)
 		data = append(data, binSignatures...)
 
+	case "ChangePrimaryKey":
 
-
-	case "ChangePrimaryKey" :
-
-		publicKey1 := []byte(c.r.FormValue("public_key_1"));
-		publicKey2 := []byte(c.r.FormValue("public_key_2"));
-		publicKey3 := []byte(c.r.FormValue("public_key_3"));
-		privateKey := []byte(c.r.FormValue("private_key"));
-		passwordHash := []byte(c.r.FormValue("password_hash"));
+		publicKey1 := []byte(c.r.FormValue("public_key_1"))
+		publicKey2 := []byte(c.r.FormValue("public_key_2"))
+		publicKey3 := []byte(c.r.FormValue("public_key_3"))
+		privateKey := []byte(c.r.FormValue("private_key"))
+		passwordHash := []byte(c.r.FormValue("password_hash"))
 		savePrivateKey := utils.StrToInt(c.r.FormValue("save_private_key"))
 
-
-		verifyData := map[string]string {c.r.FormValue("public_key_1"): "public_key", c.r.FormValue("password_hash"): "sha256"}
+		verifyData := map[string]string{c.r.FormValue("public_key_1"): "public_key", c.r.FormValue("password_hash"): "sha256"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 
-		if len(privateKey)>1 && !utils.CheckInputData(privateKey, "private_key") {
+		if len(privateKey) > 1 && !utils.CheckInputData(privateKey, "private_key") {
 			return `incorrect private_key`, nil
 		}
 
 		if c.SessRestricted == 0 {
-			if (savePrivateKey == 1 && c.Community == false) {
+			if savePrivateKey == 1 && c.Community == false {
 				err = c.ExecSql(`INSERT INTO  `+c.MyPrefix+`my_keys (
 										public_key,
 										private_key,
@@ -908,10 +849,10 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		bin_public_key_1 := utils.HexToBin(publicKey1);
-		bin_public_key_2 := utils.HexToBin(publicKey2);
-		bin_public_key_3 := utils.HexToBin(publicKey3);
-		binPublicKeyPack :=  utils.EncodeLengthPlusData(bin_public_key_1)
+		bin_public_key_1 := utils.HexToBin(publicKey1)
+		bin_public_key_2 := utils.HexToBin(publicKey2)
+		bin_public_key_3 := utils.HexToBin(publicKey3)
+		binPublicKeyPack := utils.EncodeLengthPlusData(bin_public_key_1)
 		binPublicKeyPack = append(binPublicKeyPack, utils.EncodeLengthPlusData(bin_public_key_2)...)
 		binPublicKeyPack = append(binPublicKeyPack, utils.EncodeLengthPlusData(bin_public_key_3)...)
 
@@ -921,13 +862,12 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(binPublicKeyPack)...)
 		data = append(data, binSignatures...)
 
+	case "ChangeNodeKey":
 
-	case "ChangeNodeKey" :
+		publicKey := []byte(c.r.FormValue("public_key"))
+		privateKey := []byte(c.r.FormValue("private_key"))
 
-		publicKey := []byte(c.r.FormValue("public_key"));
-		privateKey := []byte(c.r.FormValue("private_key"));
-
-		verifyData := map[string]string {c.r.FormValue("public_key"): "public_key", c.r.FormValue("private_key"): "private_key"}
+		verifyData := map[string]string{c.r.FormValue("public_key"): "public_key", c.r.FormValue("private_key"): "private_key"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -953,11 +893,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin(publicKey))...)
 		data = append(data, binSignatures...)
 
+	case "VotesComplex":
 
-
-	case "VotesComplex" :
-
-		jsonData := []byte(c.r.FormValue("json_data"));
+		jsonData := []byte(c.r.FormValue("json_data"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -965,14 +903,12 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(jsonData)...)
 		data = append(data, binSignatures...)
 
+	case "NewHolidays":
 
+		startTime := []byte(c.r.FormValue("start_time"))
+		endTime := []byte(c.r.FormValue("end_time"))
 
-	case "NewHolidays" :
-
-		startTime := []byte(c.r.FormValue("start_time"));
-		endTime := []byte(c.r.FormValue("end_time"));
-
-		verifyData := map[string]string {c.r.FormValue("start_time"): "int", c.r.FormValue("end_time"): "int"}
+		verifyData := map[string]string{c.r.FormValue("start_time"): "int", c.r.FormValue("end_time"): "int"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -1000,8 +936,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(endTime)...)
 		data = append(data, binSignatures...)
 
-
-	case "NewMinerUpdate" :
+	case "NewMinerUpdate":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1016,14 +951,12 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
+	case "AdminAddCurrency":
 
-
-	case "AdminAddCurrency" :
-
-		currencyName := []byte(c.r.FormValue("currency_name"));
-		currencyFullName := []byte(c.r.FormValue("currency_full_name"));
-		maxPromisedAmount := []byte(c.r.FormValue("max_promised_amount"));
-		maxOtherCurrencies := []byte(c.r.FormValue("max_other_currencies"));
+		currencyName := []byte(c.r.FormValue("currency_name"))
+		currencyFullName := []byte(c.r.FormValue("currency_full_name"))
+		maxPromisedAmount := []byte(c.r.FormValue("max_promised_amount"))
+		maxOtherCurrencies := []byte(c.r.FormValue("max_other_currencies"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1034,15 +967,13 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(maxOtherCurrencies)...)
 		data = append(data, binSignatures...)
 
+	case "AdminNewVersion":
 
+		softType := []byte(c.r.FormValue("soft_type"))
+		version := []byte(c.r.FormValue("version"))
+		format := []byte(c.r.FormValue("format"))
 
-	case "AdminNewVersion" :
-
-		softType := []byte(c.r.FormValue("soft_type"));
-		version := []byte(c.r.FormValue("version"));
-		format := []byte(c.r.FormValue("format"));
-
-		newFile, err := ioutil.ReadFile(*utils.Dir+"/public/new.zip")
+		newFile, err := ioutil.ReadFile(*utils.Dir + "/public/new.zip")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -1056,12 +987,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(format)...)
 		data = append(data, binSignatures...)
 
+	case "AdminNewVersionAlert":
 
-
-	case "AdminNewVersionAlert" :
-
-		softType := []byte(c.r.FormValue("soft_type"));
-		version := []byte(c.r.FormValue("version"));
+		softType := []byte(c.r.FormValue("soft_type"))
+		version := []byte(c.r.FormValue("version"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1070,12 +999,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(version)...)
 		data = append(data, binSignatures...)
 
+	case "AdminBlog":
 
-
-	case "AdminBlog" :
-
-		title := []byte(c.r.FormValue("title"));
-		message := []byte(c.r.FormValue("message"));
+		title := []byte(c.r.FormValue("title"))
+		message := []byte(c.r.FormValue("message"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1084,20 +1011,17 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(message)...)
 		data = append(data, binSignatures...)
 
+	case "MessageToAdmin":
 
-	case "MessageToAdmin" :
-
-
-
-		messageId := []byte(c.r.FormValue("message_id"));
+		messageId := []byte(c.r.FormValue("message_id"))
 		//parentId := []byte(c.r.FormValue("parent_id"));
 		//subject := []byte(c.r.FormValue("subject"));
 		//message := []byte(c.r.FormValue("message"));
 		//messageType := []byte(c.r.FormValue("message_type"));
 		//messageSubtype := []byte(c.r.FormValue("message_subtype"));
-		encryptedMessage := []byte(c.r.FormValue("encrypted_message"));
+		encryptedMessage := []byte(c.r.FormValue("encrypted_message"))
 
-		verifyData := map[string]string {c.r.FormValue("message_id"): "int", c.r.FormValue("encrypted_message"): "hex_message"}
+		verifyData := map[string]string{c.r.FormValue("message_id"): "int", c.r.FormValue("encrypted_message"): "hex_message"}
 		err := CheckInputData(verifyData)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -1113,7 +1037,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 		}
 
-		encryptedMessage = utils.HexToBin(encryptedMessage);
+		encryptedMessage = utils.HexToBin(encryptedMessage)
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1121,17 +1045,14 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(encryptedMessage)...)
 		data = append(data, binSignatures...)
 
-
-
-
-	case "AdminAnswer" :
+	case "AdminAnswer":
 
 		//parentId := []byte(c.r.FormValue("parent_id"));
 		//message := []byte(c.r.FormValue("message"));
-		encryptedMessage := []byte(c.r.FormValue("encrypted_message"));
-		toUserId := []byte(c.r.FormValue("to_user_id"));
+		encryptedMessage := []byte(c.r.FormValue("encrypted_message"))
+		toUserId := []byte(c.r.FormValue("to_user_id"))
 
-		encryptedMessage = utils.HexToBin(encryptedMessage);
+		encryptedMessage = utils.HexToBin(encryptedMessage)
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1140,11 +1061,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(encryptedMessage)...)
 		data = append(data, binSignatures...)
 
+	case "ChangeHost":
 
-	case "ChangeHost" :
-
-		http_host := []byte(c.r.FormValue("http_host"));
-		tcp_host := []byte(c.r.FormValue("tcp_host"));
+		http_host := []byte(c.r.FormValue("http_host"))
+		tcp_host := []byte(c.r.FormValue("tcp_host"))
 
 		if !utils.CheckInputData(c.r.FormValue("http_host"), "http_host") {
 			return `incorrect http_host`, nil
@@ -1161,7 +1081,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 			if c.Community && node_admin_access {
-				community, err = c.GetCommunityUsers();
+				community, err = c.GetCommunityUsers()
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -1170,9 +1090,9 @@ func (c *Controller) SaveQueue() (string, error) {
 			}
 
 			var myPrefix string
-			for i:=0; i < len(community); i++ {
+			for i := 0; i < len(community); i++ {
 				if c.Community && node_admin_access {
-					myPrefix = utils.Int64ToStr(community[i])+"_"
+					myPrefix = utils.Int64ToStr(community[i]) + "_"
 				} else if c.Community {
 					myPrefix = c.MyPrefix
 				} else {
@@ -1188,8 +1108,8 @@ func (c *Controller) SaveQueue() (string, error) {
 				}
 				nodePrivateKey, err := c.Single(`
 							SELECT private_key
-							FROM `+myPrefix+`my_node_keys
-							WHERE block_id = (SELECT max(block_id) FROM `+myPrefix+`my_node_keys )`).Bytes()
+							FROM ` + myPrefix + `my_node_keys
+							WHERE block_id = (SELECT max(block_id) FROM ` + myPrefix + `my_node_keys )`).Bytes()
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
@@ -1214,7 +1134,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				}
 				forSign := fmt.Sprintf("%d,%d,%d,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
-				pubKey_,_ := utils.GetPublicFromPrivate(string(nodePrivateKey));
+				pubKey_, _ := utils.GetPublicFromPrivate(string(nodePrivateKey))
 				log.Debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>forSign:%s / binSignature:%x / txType_:%s / timeNow:%s / uId:%s / http_host:%s / tcp_host:%s / GetPublicFromPrivate:%s", forSign, binSignature, utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, pubKey_)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
@@ -1239,13 +1159,13 @@ func (c *Controller) SaveQueue() (string, error) {
 			return "access error", nil
 		}
 
-	case "NewForexOrder" :
+	case "NewForexOrder":
 
-		sellCurrencyId := []byte(c.r.FormValue("sell_currency_id"));
-		sellRate := []byte(c.r.FormValue("sell_rate"));
-		amount := []byte(c.r.FormValue("amount"));
-		buyCurrencyId := []byte(c.r.FormValue("buy_currency_id"));
-		commission := []byte(c.r.FormValue("commission"));
+		sellCurrencyId := []byte(c.r.FormValue("sell_currency_id"))
+		sellRate := []byte(c.r.FormValue("sell_rate"))
+		amount := []byte(c.r.FormValue("amount"))
+		buyCurrencyId := []byte(c.r.FormValue("buy_currency_id"))
+		commission := []byte(c.r.FormValue("commission"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1257,27 +1177,23 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(commission)...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ForRepaidFix" :
+	case "ForRepaidFix":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ActualizationPromisedAmounts" :
+	case "ActualizationPromisedAmounts":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
 
-	case "ChangeCommission" :
+	case "ChangeCommission":
 
-		commission := []byte(c.r.FormValue("commission"));
+		commission := []byte(c.r.FormValue("commission"))
 		commissionDecode := make(map[string][3]float64)
 		err = json.Unmarshal(commission, &commissionDecode)
 		if err != nil {
@@ -1302,7 +1218,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				return "", errors.New("incorrect currencyId")
 			}
 			// % от 0 до 10
-			if !utils.CheckInputData(data[0], "currency_commission")  || data[0] > 10{
+			if !utils.CheckInputData(data[0], "currency_commission") || data[0] > 10 {
 				return "", errors.New("incorrect pct")
 			}
 			// минимальная комиссия от 0. При 0% будет = 0
@@ -1313,7 +1229,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			if !utils.CheckInputData(data[2], "currency_commission") {
 				return "", errors.New("incorrect currency_max_commission")
 			}
-			if data[1] > data[2] && data[2]>0 {
+			if data[1] > data[2] && data[2] > 0 {
 				return "", errors.New("incorrect currency_max_commission")
 			}
 			// и если в пуле, то
@@ -1356,10 +1272,9 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(commission)...)
 		data = append(data, binSignatures...)
 
+	case "ChangeKeyActive":
 
-	case "ChangeKeyActive" :
-
-		secret := utils.HexToBin([]byte(c.r.FormValue("secret")));
+		secret := utils.HexToBin([]byte(c.r.FormValue("secret")))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1367,20 +1282,16 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(secret)...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeKeyClose" :
+	case "ChangeKeyClose":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
 		data = append(data, utils.EncodeLengthPlusData(userId)...)
 		data = append(data, binSignatures...)
 
+	case "ChangeKeyRequest":
 
-
-	case "ChangeKeyRequest" :
-
-		toUserId := []byte(c.r.FormValue("to_user_id"));
+		toUserId := []byte(c.r.FormValue("to_user_id"))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1388,12 +1299,10 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(toUserId)...)
 		data = append(data, binSignatures...)
 
+	case "AdminChangePrimaryKey":
 
-
-	case "AdminChangePrimaryKey" :
-
-		forUserId := []byte(c.r.FormValue("for_user_id"));
-		newPublicKey := utils.HexToBin([]byte(c.r.FormValue("new_public_key")));
+		forUserId := []byte(c.r.FormValue("for_user_id"))
+		newPublicKey := utils.HexToBin([]byte(c.r.FormValue("new_public_key")))
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1402,9 +1311,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(newPublicKey)...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeArbitratorList" :
+	case "ChangeArbitratorList":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1412,9 +1319,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("arbitration_trust_list")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "MoneyBackRequest" :
+	case "MoneyBackRequest":
 
 		var arbitratorEncText [5]string
 		err := json.Unmarshal([]byte(c.r.PostFormValue("arbitrator_enc_text")), &arbitratorEncText)
@@ -1434,9 +1339,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(c.r.FormValue("seller_enc_text"))))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeSellerHoldBack" :
+	case "ChangeSellerHoldBack":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1445,9 +1348,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("hold_back_pct")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "MoneyBack" :
+	case "MoneyBack":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1456,9 +1357,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("amount")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeArbitratorConditions" :
+	case "ChangeArbitratorConditions":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1467,9 +1366,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("url")))...)
 		data = append(data, binSignatures...)
 
-
-
-	case "ChangeMoneyBackTime" :
+	case "ChangeMoneyBackTime":
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1477,7 +1374,6 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("order_id")))...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("days")))...)
 		data = append(data, binSignatures...)
-
 
 	}
 
@@ -1507,10 +1403,10 @@ func (c *Controller) SaveQueue() (string, error) {
 	return `{"error":"null"}`, nil
 }
 
-func CheckInputData(data map[string]string) (error) {
+func CheckInputData(data map[string]string) error {
 	for k, v := range data {
 		if !utils.CheckInputData(k, v) {
-			return utils.ErrInfo(fmt.Errorf("incorrect "+v))
+			return utils.ErrInfo(fmt.Errorf("incorrect " + v))
 		}
 	}
 	return nil

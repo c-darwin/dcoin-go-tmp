@@ -1,24 +1,23 @@
 package dcparser
 
 import (
-	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"encoding/json"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"math"
 	"database/sql"
-
+	"encoding/json"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"math"
 )
 
-func (p *Parser) SendDcInit() (error) {
+func (p *Parser) SendDcInit() error {
 	var fields []map[string]string
 	if p.BlockData != nil && p.BlockData.BlockId <= consts.ARBITRATION_BLOCK_START {
-		fields = []map[string]string {{"to_user_id":"int64"},{"currency_id":"int64"}, {"amount":"float64"}, {"commission":"float64"}, {"comment":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"to_user_id": "int64"}, {"currency_id": "int64"}, {"amount": "float64"}, {"commission": "float64"}, {"comment": "string"}, {"sign": "bytes"}}
 	} else {
-		fields = []map[string]string {{"to_user_id":"int64"},{"currency_id":"int64"}, {"amount":"float64"}, {"commission":"float64"}, {"arbitrator0":"int64"}, {"arbitrator1":"int64"}, {"arbitrator2":"int64"}, {"arbitrator3":"int64"}, {"arbitrator4":"int64"}, {"arbitrator0_commission":"float64"}, {"arbitrator1_commission":"float64"}, {"arbitrator2_commission":"float64"}, {"arbitrator3_commission":"float64"}, {"arbitrator4_commission":"float64"}, {"comment":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"to_user_id": "int64"}, {"currency_id": "int64"}, {"amount": "float64"}, {"commission": "float64"}, {"arbitrator0": "int64"}, {"arbitrator1": "int64"}, {"arbitrator2": "int64"}, {"arbitrator3": "int64"}, {"arbitrator4": "int64"}, {"arbitrator0_commission": "float64"}, {"arbitrator1_commission": "float64"}, {"arbitrator2_commission": "float64"}, {"arbitrator3_commission": "float64"}, {"arbitrator4_commission": "float64"}, {"comment": "string"}, {"sign": "bytes"}}
 	}
 
-	err := p.GetTxMaps(fields);
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -33,20 +32,20 @@ func (p *Parser) SendDcInit() (error) {
 	return nil
 }
 
-func (p *Parser) SendDcFront() (error) {
+func (p *Parser) SendDcFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"from_user_id":"bigint", "to_user_id":"bigint", "currency_id":"bigint", "amount":"amount", "commission":"amount", "comment":"comment"}
+	verifyData := map[string]string{"from_user_id": "bigint", "to_user_id": "bigint", "currency_id": "bigint", "amount": "amount", "commission": "amount", "comment": "comment"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	if p.TxMaps.Float64["amount"] < 0.01 {// 0.01 - минимальная сумма
+	if p.TxMaps.Float64["amount"] < 0.01 { // 0.01 - минимальная сумма
 		return p.ErrInfo("amount")
 	}
 
@@ -74,11 +73,11 @@ func (p *Parser) SendDcFront() (error) {
 	}
 
 	if p.BlockData != nil && p.BlockData.BlockId <= consts.ARBITRATION_BLOCK_START {
-		for i:=0; i<5; i++ {
+		for i := 0; i < 5; i++ {
 			p.TxMaps.Float64["arbitrator"+utils.IntToStr(i)+"_commission"] = 0 // для check_sender_money
 		}
 		forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"], p.TxMap["amount"], p.TxMap["commission"], utils.BinToHex(p.TxMap["comment"]), p.TxMap["currency_id"])
-		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -87,9 +86,9 @@ func (p *Parser) SendDcFront() (error) {
 		}
 	} else {
 		dupArray := make(map[int64]int64)
-		for i:=0; i<5; i++ {
-			arbitrator__commission := "arbitrator"+utils.IntToStr(i)+"_commission"
-			arbitrator_ := "arbitrator"+utils.IntToStr(i)
+		for i := 0; i < 5; i++ {
+			arbitrator__commission := "arbitrator" + utils.IntToStr(i) + "_commission"
+			arbitrator_ := "arbitrator" + utils.IntToStr(i)
 			if !utils.CheckInputData(p.TxMap[arbitrator__commission], "amount") {
 				return p.ErrInfo("arbitrator_commission")
 			}
@@ -97,7 +96,7 @@ func (p *Parser) SendDcFront() (error) {
 				return p.ErrInfo("arbitrator")
 			}
 			// если указал ID арбитра, то должна быть комиссия для него
-			if p.TxMaps.Int64[arbitrator_]>0 && p.TxMaps.Float64[arbitrator__commission] < 0.01 {
+			if p.TxMaps.Int64[arbitrator_] > 0 && p.TxMaps.Float64[arbitrator__commission] < 0.01 {
 				return p.ErrInfo("arbitrator_commission")
 			}
 
@@ -106,13 +105,13 @@ func (p *Parser) SendDcFront() (error) {
 				return p.ErrInfo("arbitrator = user_id")
 			}
 
-			if p.TxMaps.Int64[arbitrator_]>0 {
+			if p.TxMaps.Int64[arbitrator_] > 0 {
 				dupArray[utils.BytesToInt64(p.TxMap[arbitrator_])]++
 				if dupArray[utils.BytesToInt64(p.TxMap[arbitrator_])] > 1 {
 					return p.ErrInfo("doubles")
 				}
 			}
-			if p.TxMaps.Int64[arbitrator_]>0 {
+			if p.TxMaps.Int64[arbitrator_] > 0 {
 
 				arbitrator := p.TxMap[arbitrator_]
 				// проверим, является ли арбитром указанный user_id
@@ -124,13 +123,13 @@ func (p *Parser) SendDcFront() (error) {
 				err = json.Unmarshal(arbitratorConditionsJson, &arbitratorConditionsMap)
 				// арбитр к этому моменту мог передумать и убрать свои условия, уйдя из арбитров для новых сделок поставив [0] что вызовет тут ошибку
 				if err != nil {
-					log.Debug("arbitratorConditionsJson",arbitratorConditionsJson)
+					log.Debug("arbitratorConditionsJson", arbitratorConditionsJson)
 					return p.ErrInfo(err)
 				}
 				// проверим, работает ли выбранный арбитр с валютой данной сделки
 				var checkCurrency int64
 				if p.TxMaps.Int64["currency_id"] > 1000 {
-					checkCurrency = 1000;
+					checkCurrency = 1000
 				} else {
 					checkCurrency = p.TxMaps.Int64["currency_id"]
 				}
@@ -164,11 +163,11 @@ func (p *Parser) SendDcFront() (error) {
 				// готов ли арбитр рассматривать такую сумму сделки
 				currencyIdStr := utils.Int64ToStr(p.TxMaps.Int64["currency_id"])
 				if p.TxMaps.Float64["amount"] < utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][0]) ||
-						(p.TxMaps.Float64["amount"] > utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][1]) && utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][1]) > 0) {
+					(p.TxMaps.Float64["amount"] > utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][1]) && utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][1]) > 0) {
 					return p.ErrInfo("amount")
 				}
 				// мин. комиссия, на которую согласен арбитр
-				minArbitratorCommission := utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][4]) / 100 * p.TxMaps.Float64["amount"];
+				minArbitratorCommission := utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][4]) / 100 * p.TxMaps.Float64["amount"]
 				if minArbitratorCommission > utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][3]) && utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][3]) > 0 {
 					minArbitratorCommission = utils.StrToFloat64(arbitratorConditionsMap[currencyIdStr][3])
 				}
@@ -181,8 +180,8 @@ func (p *Parser) SendDcFront() (error) {
 			}
 		}
 
-		forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"], p.TxMap["amount"], p.TxMap["commission"], p.TxMap["arbitrator0"], p.TxMap["arbitrator1"], p.TxMap["arbitrator2"], p.TxMap["arbitrator3"], p.TxMap["arbitrator4"], p.TxMap["arbitrator0_commission"], p.TxMap["arbitrator1_commission"], p.TxMap["arbitrator2_commission"], p.TxMap["arbitrator3_commission"], p.TxMap["arbitrator4_commission"], utils.BinToHex(p.TxMap["comment"]),  p.TxMap["currency_id"])
-		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+		forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["to_user_id"], p.TxMap["amount"], p.TxMap["commission"], p.TxMap["arbitrator0"], p.TxMap["arbitrator1"], p.TxMap["arbitrator2"], p.TxMap["arbitrator3"], p.TxMap["arbitrator4"], p.TxMap["arbitrator0_commission"], p.TxMap["arbitrator1_commission"], p.TxMap["arbitrator2_commission"], p.TxMap["arbitrator3_commission"], p.TxMap["arbitrator4_commission"], utils.BinToHex(p.TxMap["comment"]), p.TxMap["currency_id"])
+		CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -192,13 +191,13 @@ func (p *Parser) SendDcFront() (error) {
 	}
 
 	/*
-		wallets_buffer сделан не для защиты от двойной траты, а для того, чтобы нода, которая генерит блок не записала
-		двойное списание в свой блок, который будет отправлен другим нодам и будет ими отвергнут.
-	   Для тр-ий типа new_forex_order используется простой запрет на запись в блок тр-ии new_forex_order+new_forex_order или
-	   new_forex_order+send_dc и пр.
-	   защита от двойного списания на основе даннных из блока, полученного из сети заключается в постепенной обработке
-	   тр-ий путем проверки front_ и занесения данных в БД (ParseDataFull).
-	 */
+			wallets_buffer сделан не для защиты от двойной траты, а для того, чтобы нода, которая генерит блок не записала
+			двойное списание в свой блок, который будет отправлен другим нодам и будет ими отвергнут.
+		   Для тр-ий типа new_forex_order используется простой запрет на запись в блок тр-ии new_forex_order+new_forex_order или
+		   new_forex_order+send_dc и пр.
+		   защита от двойного списания на основе даннных из блока, полученного из сети заключается в постепенной обработке
+		   тр-ий путем проверки front_ и занесения данных в БД (ParseDataFull).
+	*/
 	amountAndCommission, err := p.checkSenderMoney(p.TxMaps.Int64["currency_id"], p.TxMaps.Int64["from_user_id"], p.TxMaps.Float64["amount"], p.TxMaps.Float64["commission"], p.TxMaps.Float64["arbitrator0_commission"], p.TxMaps.Float64["arbitrator1_commission"], p.TxMaps.Float64["arbitrator2_commission"], p.TxMaps.Float64["arbitrator3_commission"], p.TxMaps.Float64["arbitrator4_commission"])
 	if err != nil {
 		return p.ErrInfo(err)
@@ -225,7 +224,7 @@ func (p *Parser) SendDcFront() (error) {
 	return nil
 }
 
-func (p *Parser) SendDc() (error) {
+func (p *Parser) SendDc() error {
 	// нужно отметить в log_time_money_orders, что тр-ия прошла в блок
 	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = ? WHERE hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
@@ -253,13 +252,13 @@ func (p *Parser) SendDc() (error) {
 	if p.BlockData.BlockId > consts.ARBITRATION_BLOCK_START {
 		// на какой период манибека согласен продавец
 		err := p.QueryRow(p.FormatQuery("SELECT arbitration_days_refund, seller_hold_back_pct FROM users WHERE user_id  =  ?"), p.TxMaps.Int64["to_user_id"]).Scan(&arbitration_days_refund, &seller_hold_back_pct)
-		if err != nil && err!=sql.ErrNoRows {
+		if err != nil && err != sql.ErrNoRows {
 			return p.ErrInfo(err)
 		}
 		if arbitration_days_refund > 0 {
-			for i:=0; i < 5; i++ {
-				iStr:=utils.IntToStr(i);
-				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >=0.01 {
+			for i := 0; i < 5; i++ {
+				iStr := utils.IntToStr(i)
+				if p.TxMaps.Int64["arbitrator"+iStr] > 0 && p.TxMaps.Float64["arbitrator"+iStr+"_commission"] >= 0.01 {
 					// нужно учесть комиссию арбитра
 					commission += p.TxMaps.Float64["arbitrator"+iStr+"_commission"]
 					arbitrators = true
@@ -275,14 +274,14 @@ func (p *Parser) SendDc() (error) {
 
 	log.Debug("SendDC updateRecipientWallet")
 	// обновим сумму на кошельке получателю
-	err = p.updateRecipientWallet( p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], "from_user", p.TxMaps.Int64["from_user_id"], p.TxMaps.String["comment"], "encrypted", true )
+	err = p.updateRecipientWallet(p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], "from_user", p.TxMaps.Int64["from_user_id"], p.TxMaps.String["comment"], "encrypted", true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// теперь начисляем комиссию майнеру, который этот блок сгенерил
 	if p.TxMaps.Float64["commission"] >= 0.01 {
-		err = p.updateRecipientWallet( p.BlockData.UserId, p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["commission"], "node_commission", p.BlockData.BlockId, "", "encrypted", true )
+		err = p.updateRecipientWallet(p.BlockData.UserId, p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["commission"], "node_commission", p.BlockData.BlockId, "", "encrypted", true)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -295,12 +294,12 @@ func (p *Parser) SendDc() (error) {
 
 		log.Debug("arbitration_days_refund", arbitration_days_refund)
 		log.Debug("arbitrators", arbitrators)
-		if (arbitration_days_refund > 0 && arbitrators) {
-			holdBackAmount := math.Floor(utils.Round(p.TxMaps.Float64["amount"]*(seller_hold_back_pct/100), 3) * 100) / 100;
+		if arbitration_days_refund > 0 && arbitrators {
+			holdBackAmount := math.Floor(utils.Round(p.TxMaps.Float64["amount"]*(seller_hold_back_pct/100), 3)*100) / 100
 			if holdBackAmount < 0.01 {
 				holdBackAmount = 0.01
 			}
-			orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO orders ( time, buyer, seller, arbitrator0, arbitrator1, arbitrator2, arbitrator3, arbitrator4, amount, hold_back_amount, currency_id, block_id, end_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", "id", p.BlockData.Time, p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["arbitrator0"], p.TxMaps.Int64["arbitrator1"], p.TxMaps.Int64["arbitrator2"], p.TxMaps.Int64["arbitrator3"], p.TxMaps.Int64["arbitrator4"], p.TxMaps.Float64["amount"], holdBackAmount, p.TxMaps.Int64["currency_id"], p.BlockData.BlockId, (p.BlockData.Time+arbitration_days_refund*86400))
+			orderId, err := p.ExecSqlGetLastInsertId("INSERT INTO orders ( time, buyer, seller, arbitrator0, arbitrator1, arbitrator2, arbitrator3, arbitrator4, amount, hold_back_amount, currency_id, block_id, end_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )", "id", p.BlockData.Time, p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["arbitrator0"], p.TxMaps.Int64["arbitrator1"], p.TxMaps.Int64["arbitrator2"], p.TxMaps.Int64["arbitrator3"], p.TxMaps.Int64["arbitrator4"], p.TxMaps.Float64["amount"], holdBackAmount, p.TxMaps.Int64["currency_id"], p.BlockData.BlockId, (p.BlockData.Time + arbitration_days_refund*86400))
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -324,11 +323,10 @@ func (p *Parser) SendDc() (error) {
 		return p.ErrInfo(err)
 	}
 
-
 	return nil
 }
 
-func (p *Parser) SendDcRollback() (error) {
+func (p *Parser) SendDcRollback() error {
 	// нужно отметить в log_time_money_orders, что тр-ия НЕ прошла в блок
 	err := p.ExecSql("UPDATE log_time_money_orders SET del_block_id = 0 WHERE hex(tx_hash) = ?", p.TxHash)
 	if err != nil {
@@ -371,7 +369,7 @@ func (p *Parser) SendDcRollback() (error) {
 					if err != nil {
 						return p.ErrInfo(err)
 					}
-					if (!delOrder) {
+					if !delOrder {
 						err = p.ExecSql("DELETE FROM orders WHERE block_id = ? AND buyer = ? AND seller = ? AND currency_id = ? AND amount = ?", p.BlockData.BlockId, p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"])
 						if err != nil {
 							return p.ErrInfo(err)

@@ -6,24 +6,24 @@ import (
 	"strings"
 )
 
-func (p *Parser) AdminBanMinersInit() (error) {
+func (p *Parser) AdminBanMinersInit() error {
 
-	fields := []map[string]string {{"users_ids":"string"},{"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"users_ids": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) AdminBanMinersFront() (error) {
+func (p *Parser) AdminBanMinersFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"users_ids":"users_ids"}
+	verifyData := map[string]string{"users_ids": "users_ids"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -31,12 +31,12 @@ func (p *Parser) AdminBanMinersFront() (error) {
 
 	// проверим, точно ли были жалобы на тех, кого банит админ
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 		num, err := p.Single("SELECT user_id FROM abuses WHERE user_id  =  ?, 'num_rows'", users_ids[i]).Int64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if num==0 {
+		if num == 0 {
 			return p.ErrInfo("no abuses")
 		}
 
@@ -45,13 +45,13 @@ func (p *Parser) AdminBanMinersFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if status!="miner" {
+		if status != "miner" {
 			return p.ErrInfo("bad miner")
 		}
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["users_ids"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -62,10 +62,10 @@ func (p *Parser) AdminBanMinersFront() (error) {
 	return nil
 }
 
-func (p *Parser) AdminBanMiners() (error) {
+func (p *Parser) AdminBanMiners() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 		userId := utils.StrToInt64(users_ids[i])
 		// возможно нужно обновить таблицу points_status
 		err := p.pointsUpdateMain(userId)
@@ -86,12 +86,12 @@ func (p *Parser) AdminBanMiners() (error) {
 			return p.ErrInfo(err)
 		}
 		// проверим, не наш ли это user_id
-		myUserId, myBlockId, myPrefix, _ , err := p.GetMyUserId(userId)
+		myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		if userId == myUserId && myBlockId <= p.BlockData.BlockId {
-			err = p.ExecSql("UPDATE "+myPrefix+"my_table SET status = 'user', miner_id = 0, notification_status = 0 WHERE status != 'bad_key'")
+			err = p.ExecSql("UPDATE " + myPrefix + "my_table SET status = 'user', miner_id = 0, notification_status = 0 WHERE status != 'bad_key'")
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -120,8 +120,8 @@ func (p *Parser) AdminBanMiners() (error) {
 		var newTdc float64
 		for rows.Next() {
 			var id int64
-			var amount,currency_id, tdc_amount,	tdc_amount_update,	start_time, status, log_id string
-			err = rows.Scan(&id, &amount, &currency_id,	&tdc_amount, &tdc_amount_update, &start_time, &status, &log_id)
+			var amount, currency_id, tdc_amount, tdc_amount_update, start_time, status, log_id string
+			err = rows.Scan(&id, &amount, &currency_id, &tdc_amount, &tdc_amount_update, &start_time, &status, &log_id)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -129,8 +129,8 @@ func (p *Parser) AdminBanMiners() (error) {
 			if err != nil {
 				return p.ErrInfo(err)
 			}
-			addSql := "";
-			if (status == "repaid" || status == "mining") {
+			addSql := ""
+			if status == "repaid" || status == "mining" {
 				addSql = fmt.Sprintf("tdcAmount = %f, tdcAmountUpdate = %d, ", utils.Round(newTdc, 2), p.BlockData.Time)
 			}
 
@@ -151,10 +151,10 @@ func (p *Parser) AdminBanMiners() (error) {
 	return nil
 }
 
-func (p *Parser) AdminBanMinersRollback() (error) {
+func (p *Parser) AdminBanMinersRollback() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
-	for i:=0; i<len(users_ids); i++ {
+	for i := 0; i < len(users_ids); i++ {
 
 		userId := utils.StrToInt64(users_ids[i])
 		// возможно нужно обновить таблицу points_status
@@ -182,7 +182,7 @@ func (p *Parser) AdminBanMinersRollback() (error) {
 		}
 
 		// проверим, не наш ли это user_id
-		myUserId, _, myPrefix, _ , err := p.GetMyUserId(userId)
+		myUserId, _, myPrefix, _, err := p.GetMyUserId(userId)
 		if err != nil {
 			return p.ErrInfo(err)
 		}

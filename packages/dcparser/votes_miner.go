@@ -9,16 +9,16 @@ import (
  * Майнер голосует за то, чтобы юзер мог стать или не стать майнером
  * */
 
-func (p *Parser) VotesMinerInit() (error) {
-	fields := []map[string]string {{"vote_id":"int64"}, {"result":"int64"},  {"comment":"string"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) VotesMinerInit() error {
+	fields := []map[string]string{{"vote_id": "int64"}, {"result": "int64"}, {"comment": "string"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) VotesMinerFront() (error) {
+func (p *Parser) VotesMinerFront() error {
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -59,7 +59,7 @@ func (p *Parser) VotesMinerFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["vote_id"], p.TxMap["result"], p.TxMap["comment"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -72,11 +72,11 @@ func (p *Parser) VotesMinerFront() (error) {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	
+
 	return nil
 }
 
-func (p *Parser) VotesMiner() (error) {
+func (p *Parser) VotesMiner() error {
 	// начисляем баллы
 	p.points(p.Variables.Int64["miner_points"])
 
@@ -123,7 +123,7 @@ func (p *Parser) VotesMiner() (error) {
 				return p.ErrInfo(err)
 			}
 			// проверим, не наш ли это user_id
-			myUserId, _, myPrefix, _ , err:= p.GetMyUserId(minersData["user_id"])
+			myUserId, _, myPrefix, _, err := p.GetMyUserId(minersData["user_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -171,7 +171,7 @@ func (p *Parser) VotesMiner() (error) {
 	}
 
 	// возможно вместе с голосом есть и коммент
-	myUserId, _, myPrefix, _ , err:= p.GetMyUserId(minersData["user_id"])
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(minersData["user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -185,7 +185,7 @@ func (p *Parser) VotesMiner() (error) {
 	return nil
 }
 
-func (p *Parser) VotesMinerRollback() (error) {
+func (p *Parser) VotesMinerRollback() error {
 	userId, err := p.Single("SELECT user_id FROM votes_miners WHERE id  =  ?", p.TxMaps.Int64["vote_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -210,7 +210,7 @@ func (p *Parser) VotesMinerRollback() (error) {
 	}
 
 	// сделал ли голос из юзера майнера?
-	if utils.StrToInt(data["miner_id"])!=0 {
+	if utils.StrToInt(data["miner_id"]) != 0 {
 		err = p.insOrUpdMinersRollback(utils.StrToInt64(data["miner_id"]))
 		if err != nil {
 			return p.ErrInfo(err)
@@ -231,14 +231,14 @@ func (p *Parser) VotesMinerRollback() (error) {
 		// обновлять faces не нужно, т.к. статус там и так = used
 
 		// проверим, не наш ли это user_id
-		myUserId, _, myPrefix, _ , err:= p.GetMyUserId(utils.StrToInt64(data["user_id"]))
+		myUserId, _, myPrefix, _, err := p.GetMyUserId(utils.StrToInt64(data["user_id"]))
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 		if utils.StrToInt64(data["user_id"]) == myUserId {
 			// обновим статус в нашей локальной табле.
 			// sms/email не трогаем, т.к. смена из-за отката маловажна, и в большинстве случаев статус всё равно сменится.
-			err = p.ExecSql("UPDATE "+myPrefix+"my_table SET status = 'user', miner_id = 0, host_status = 'my_pending' WHERE status != 'bad_key'")
+			err = p.ExecSql("UPDATE " + myPrefix + "my_table SET status = 'user', miner_id = 0, host_status = 'my_pending' WHERE status != 'bad_key'")
 			if err != nil {
 				return p.ErrInfo(err)
 			}

@@ -1,8 +1,9 @@
 package controllers
+
 import (
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"regexp"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func Tools(w http.ResponseWriter, r *http.Request) {
@@ -14,8 +15,8 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	c := new(Controller)
 	c.r = r
 	c.w = w
-	dbInit := false;
-	if len(configIni["db_user"]) > 0 || configIni["db_type"]=="sqlite" {
+	dbInit := false
+	if len(configIni["db_user"]) > 0 || configIni["db_type"] == "sqlite" {
 		dbInit = true
 	}
 
@@ -31,7 +32,7 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	controllerName := r.FormValue("controllerName")
-	log.Debug("controllerName=",controllerName)
+	log.Debug("controllerName=", controllerName)
 
 	html := ""
 	if ok, _ := regexp.MatchString(`^(?i)GetBlock|AvailableKeys$`, controllerName); !ok {
@@ -45,5 +46,3 @@ func Tools(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(html))
 }
-
-

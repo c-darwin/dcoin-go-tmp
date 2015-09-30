@@ -3,33 +3,33 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-//	"encoding/json"
+	//	"encoding/json"
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	"database/sql"
 )
 
-func (p *Parser) ChangePromisedAmountInit() (error) {
-	fields := []map[string]string {{"promised_amount_id":"int64"}, {"amount":"money"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+func (p *Parser) ChangePromisedAmountInit() error {
+	fields := []map[string]string{{"promised_amount_id": "int64"}, {"amount": "money"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) ChangePromisedAmountFront() (error) {
+func (p *Parser) ChangePromisedAmountFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"promised_amount_id":"int", "amount":"amount"}
+	verifyData := map[string]string{"promised_amount_id": "int", "amount": "amount"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -41,14 +41,13 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-
 	// верный ли id. менять сумму можно, только когда статус mining
 	// нельзя изменить woc (currency_id=1)
 	promisedAmountData, err := p.OneRow("SELECT id, currency_id FROM promised_amount WHERE id  =  ? AND status  =  'mining' AND currency_id > 1 AND del_block_id  =  0 AND del_mining_block_id  =  0", p.TxMaps.Int64["promised_amount_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if promisedAmountData["id"]==0 {
+	if promisedAmountData["id"] == 0 {
 		return p.ErrInfo("incorrect promised_amount_id")
 	}
 
@@ -58,11 +57,11 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 	}
 	// т.к. можно перевести из mining в repaid, где нет лимитов, и так проделать много раз, то
 	// нужно жестко лимитировать ОБЩУЮ сумму по всем promised_amount данной валюты
-	repaidAmount, err := p.GetRepaidAmount(promisedAmountData["currency_id"], p.TxUserID);
+	repaidAmount, err := p.GetRepaidAmount(promisedAmountData["currency_id"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if p.TxMaps.Money["amount"] + repaidAmount > maxPromisedAmount {
+	if p.TxMaps.Money["amount"]+repaidAmount > maxPromisedAmount {
 		return p.ErrInfo("incorrect amount")
 	}
 
@@ -72,7 +71,7 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["promised_amount_id"], p.TxMap["amount"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -87,7 +86,7 @@ func (p *Parser) ChangePromisedAmountFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangePromisedAmount() (error) {
+func (p *Parser) ChangePromisedAmount() error {
 
 	// возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateMain(p.TxUserID)
@@ -109,7 +108,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	var prevLogId, currencyId, tdcAmountUpdate int64
 	var amount, tdcAmount float64
 	err = p.QueryRow(p.FormatQuery("SELECT log_id, currency_id, amount, tdc_amount, tdc_amount_update FROM promised_amount WHERE id  =  ?"), p.TxMaps.Int64["promised_amount_id"]).Scan(&prevLogId, &currencyId, &amount, &tdcAmount, &tdcAmountUpdate)
-	if err != nil  && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
@@ -128,7 +127,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	}
 
 	// то, от чего будем вычислять набежавшие %
-	tdcSum := amount+tdcAmount;
+	tdcSum := amount + tdcAmount
 
 	// то, что успело набежать
 	repaidAmount, err := p.GetRepaidAmount(currencyId, p.TxUserID)
@@ -146,7 +145,7 @@ func (p *Parser) ChangePromisedAmount() (error) {
 	return nil
 }
 
-func (p *Parser) ChangePromisedAmountRollback() (error) {
+func (p *Parser) ChangePromisedAmountRollback() error {
 	// возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateRollbackMain(p.TxUserID)
 	if err != nil {

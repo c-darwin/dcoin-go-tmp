@@ -6,8 +6,8 @@ import (
 
 func (t *TcpServer) Type7() {
 	/* Выдаем тело указанного блока
-		 * запрос шлет демон blocksCollection и queue_parser_blocks через p.GetBlocks()
-		 */
+	 * запрос шлет демон blocksCollection и queue_parser_blocks через p.GetBlocks()
+	 */
 	buf := make([]byte, 4)
 	_, err := t.Conn.Read(buf)
 	if err != nil {

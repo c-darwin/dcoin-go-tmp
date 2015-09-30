@@ -1,38 +1,39 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 )
 
 type creditsPage struct {
-	SignData string
+	SignData     string
 	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
+	TxType       string
+	TxTypeId     int64
+	TimeNow      int64
+	UserId       int64
+	Alert        string
+	Lang         map[string]string
 	CountSignArr []int
-	I_debtor []*credit
-	I_creditor []*credit
+	I_debtor     []*credit
+	I_creditor   []*credit
 	CurrencyList map[int64]string
-	CreditPart float64
+	CreditPart   float64
 }
 
 type credit struct {
-	Id int64
-	Pct float64
-	Time int64
-	Amount float64
-	Currency_id int64
-	To_user_id int64
+	Id           int64
+	Pct          float64
+	Time         int64
+	Amount       float64
+	Currency_id  int64
+	To_user_id   int64
 	From_user_id int64
 }
 
 func (c *Controller) Credits() (string, error) {
 
-	txType := "ChangeCreditPart";
+	txType := "ChangeCreditPart"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -50,7 +51,7 @@ func (c *Controller) Credits() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		credit_:=&credit{Id: id, Pct:pct, Time:txtime, Amount:amount, Currency_id:currency_id, From_user_id:from_user_id, To_user_id:to_user_id}
+		credit_ := &credit{Id: id, Pct: pct, Time: txtime, Amount: amount, Currency_id: currency_id, From_user_id: from_user_id, To_user_id: to_user_id}
 		if c.SessUserId == from_user_id {
 			I_debtor = append(I_debtor, credit_)
 		} else {
@@ -64,19 +65,19 @@ func (c *Controller) Credits() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("credits", "credits", &creditsPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,
 		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
+		UserId:       c.SessUserId,
+		TimeNow:      timeNow,
+		TxType:       txType,
+		TxTypeId:     txTypeId,
+		SignData:     "",
 		CurrencyList: c.CurrencyListCf,
-		CreditPart: creditPart,
-		I_debtor: I_debtor,
-		I_creditor: I_creditor})
+		CreditPart:   creditPart,
+		I_debtor:     I_debtor,
+		I_creditor:   I_creditor})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

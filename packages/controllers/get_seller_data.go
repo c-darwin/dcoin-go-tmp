@@ -1,6 +1,7 @@
 package controllers
+
 import (
-    "encoding/json"
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
 	"time"
@@ -107,10 +108,10 @@ func (c *Controller) GetSellerData() (string, error) {
 	}
 	sellerHoldBackPct := utils.StrToFloat64(sellerData["seller_hold_back_pct"])
 	arbitrationDaysRefund := utils.StrToInt64(sellerData["arbitrationDaysRefund"])
-	buyersCount = buyersCount - buyersMinersCount;
-	buyersCountM = buyersCountM - buyersMinersCountM;
+	buyersCount = buyersCount - buyersMinersCount
+	buyersCountM = buyersCountM - buyersMinersCountM
 
-	rez := selleData{Trust_list: arbitrationTrustList, Seller_hold_back_pct: sellerHoldBackPct,  Arbitration_days_refund: arbitrationDaysRefund, Buyers_miners_count_m: buyersMinersCountM, Buyers_miners_count: buyersMinersCount, Buyers_count: buyersCount ,Buyers_count_m: buyersCountM ,Seller_turnover_m: sellerTurnoverM, Seller_turnover: sellerTurnover, Hold_amount: holdAmount}
+	rez := selleData{Trust_list: arbitrationTrustList, Seller_hold_back_pct: sellerHoldBackPct, Arbitration_days_refund: arbitrationDaysRefund, Buyers_miners_count_m: buyersMinersCountM, Buyers_miners_count: buyersMinersCount, Buyers_count: buyersCount, Buyers_count_m: buyersCountM, Seller_turnover_m: sellerTurnoverM, Seller_turnover: sellerTurnover, Hold_amount: holdAmount}
 	log.Debug("%v", rez)
 	log.Debug("%v", arbitrationTrustList)
 	result, err := json.Marshal(rez)
@@ -124,14 +125,14 @@ func (c *Controller) GetSellerData() (string, error) {
 }
 
 type selleData struct {
-	Trust_list []int64 `json:"trust_list"`
-	Seller_hold_back_pct float64 `json:"seller_hold_back_pct"`
-	Arbitration_days_refund int64 `json:"arbitration_days_refund"`
-	Buyers_miners_count_m int64 `json:"buyers_miners_count_m"`
-	Buyers_miners_count int64 `json:"buyers_miners_count"`
-	Buyers_count int64 `json:"buyers_count"`
-	Buyers_count_m int64 `json:"buyers_count_m"`
-	Seller_turnover_m float64 `json:"seller_turnover_m"`
-	Seller_turnover float64 `json:"seller_turnover"`
-	Hold_amount float64 `json:"hold_amount"`
+	Trust_list              []int64 `json:"trust_list"`
+	Seller_hold_back_pct    float64 `json:"seller_hold_back_pct"`
+	Arbitration_days_refund int64   `json:"arbitration_days_refund"`
+	Buyers_miners_count_m   int64   `json:"buyers_miners_count_m"`
+	Buyers_miners_count     int64   `json:"buyers_miners_count"`
+	Buyers_count            int64   `json:"buyers_count"`
+	Buyers_count_m          int64   `json:"buyers_count_m"`
+	Seller_turnover_m       float64 `json:"seller_turnover_m"`
+	Seller_turnover         float64 `json:"seller_turnover"`
+	Hold_amount             float64 `json:"hold_amount"`
 }

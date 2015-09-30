@@ -1,20 +1,21 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type BlockExplorerPage struct {
-	Lang map[string]string
-	UserId int64
-	Data string
-	MyNotice map[string]string
-	BlockId int64
-	PoolAdmin bool
+	Lang           map[string]string
+	UserId         int64
+	Data           string
+	MyNotice       map[string]string
+	BlockId        int64
+	PoolAdmin      bool
 	SessRestricted int64
-	Start int64
-	CurrencyList map[int64]string
+	Start          int64
+	CurrencyList   map[int64]string
 }
 
 func (c *Controller) BlockExplorer() (string, error) {
@@ -25,8 +26,8 @@ func (c *Controller) BlockExplorer() (string, error) {
 	start := int64(utils.StrToFloat64(c.Parameters["start"]))
 
 	var data, sql string
-	if start > 0 || (start==0 && blockId==0) {
-		if start==0 && blockId==0 {
+	if start > 0 || (start == 0 && blockId == 0) {
+		if start == 0 && blockId == 0 {
 			data += "<h3>Latest Blocks</h3>"
 			sql = `	SELECT data,  hash
 						FROM block_chain
@@ -36,7 +37,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 			sql = `	SELECT data,  hash
 						FROM block_chain
 						ORDER BY id ASC
-						LIMIT `+utils.Int64ToStr(start-1)+`, 100`
+						LIMIT ` + utils.Int64ToStr(start-1) + `, 100`
 		}
 		data += `<table class="table"><tr><th>Block</th><th>Hash</th><th>Time</th><th><nobr>User id</nobr></th><th>Level</th><th>Transactions</th></tr>`
 		blocksChain, err := c.GetAll(sql, -1)
@@ -48,16 +49,16 @@ func (c *Controller) BlockExplorer() (string, error) {
 			binaryData := []byte(blockData["data"])
 			parser := new(dcparser.Parser)
 			parser.DCDB = c.DCDB
-			parser.BinaryData = binaryData;
+			parser.BinaryData = binaryData
 			err = parser.ParseDataLite()
 			parser.BlockData.Sign = utils.BinToHex(parser.BlockData.Sign)
-			data += fmt.Sprintf(`<tr><td><a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId,  parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, parser.BlockData.Level);
+			data += fmt.Sprintf(`<tr><td><a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId, parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, parser.BlockData.Level)
 			data += utils.IntToStr(len(parser.TxMapArr))
 			data += "</td></tr>"
 		}
 		data += "</table>"
 	} else if blockId > 0 {
-		data += `<table class="table">`;
+		data += `<table class="table">`
 		blockChain, err := c.OneRow("SELECT data, hash FROM block_chain WHERE id = ?", blockId).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -67,7 +68,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 		binaryData := blockChain["data"]
 		parser := new(dcparser.Parser)
 		parser.DCDB = c.DCDB
-		parser.BinaryData = []byte(binaryData);
+		parser.BinaryData = []byte(binaryData)
 		err = parser.ParseDataLite()
 		parser.BlockData.Sign = utils.BinToHex(parser.BlockData.Sign)
 		previous := parser.BlockData.BlockId - 1
@@ -81,13 +82,13 @@ func (c *Controller) BlockExplorer() (string, error) {
 		data += fmt.Sprintf(`<tr><td><strong>Sign</strong></td><td>%s</td></tr>`, parser.BlockData.Sign)
 		if len(parser.TxMapArr) > 0 {
 			data += `<tr><td><strong>Transactions</strong></td><td><div><pre style='width: 700px'>`
-			for i:=0; i < len(parser.TxMapArr); i++ {
+			for i := 0; i < len(parser.TxMapArr); i++ {
 				for k, data_ := range parser.TxMapArr[i] {
 					if utils.InSliceString(k, binToHexArray) {
 						parser.TxMapArr[i][k] = utils.BinToHex(data_)
 					}
 					if k == "file" {
-						parser.TxMapArr[i][k] = []byte("file size: "+utils.IntToStr(len(data_)))
+						parser.TxMapArr[i][k] = []byte("file size: " + utils.IntToStr(len(data_)))
 					}
 					if k == "code" {
 						parser.TxMapArr[i][k] = utils.DSha256(data_)
@@ -108,20 +109,18 @@ func (c *Controller) BlockExplorer() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	TemplateStr, err := makeTemplate("block_explorer", "blockExplorer", &BlockExplorerPage {
-		Lang: c.Lang,
-		CurrencyList: c.CurrencyListCf,
-		MyNotice: myNotice,
-		Data: data,
-		Start: start,
-		BlockId: blockId,
-		PoolAdmin: c.PoolAdmin,
+	TemplateStr, err := makeTemplate("block_explorer", "blockExplorer", &BlockExplorerPage{
+		Lang:           c.Lang,
+		CurrencyList:   c.CurrencyListCf,
+		MyNotice:       myNotice,
+		Data:           data,
+		Start:          start,
+		BlockId:        blockId,
+		PoolAdmin:      c.PoolAdmin,
 		SessRestricted: c.SessRestricted,
-		UserId: c.SessUserId})
+		UserId:         c.SessUserId})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-
-

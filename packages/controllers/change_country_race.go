@@ -1,32 +1,32 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type ChangeCountryRacePage struct {
-	Alert string
-	Lang map[string]string
+	Alert     string
+	Lang      map[string]string
 	Countries []string
-	Country string
-	Race string
+	Country   string
+	Race      string
 }
 
 func (c *Controller) ChangeCountryRace() (string, error) {
 
-	data, err := c.OneRow("SELECT race, country FROM "+c.MyPrefix+"my_table").String()
+	data, err := c.OneRow("SELECT race, country FROM " + c.MyPrefix + "my_table").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	TemplateStr, err := makeTemplate("change_country_race", "changeCountryRace", &ChangeCountryRacePage {
-		Alert: c.Alert,
-		Lang: c.Lang,
+	TemplateStr, err := makeTemplate("change_country_race", "changeCountryRace", &ChangeCountryRacePage{
+		Alert:     c.Alert,
+		Lang:      c.Lang,
 		Countries: consts.Countries,
-		Country: data["country"],
-		Race: data["race"]})
+		Country:   data["country"],
+		Race:      data["race"]})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

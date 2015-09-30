@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
@@ -12,7 +13,7 @@ func (c *Controller) SaveHost() (string, error) {
 
 	c.r.ParseForm()
 	http_host := c.r.FormValue("http_host")
-	if len(http_host) >0 && http_host[len(http_host)-1:] != "/" {
+	if len(http_host) > 0 && http_host[len(http_host)-1:] != "/" {
 		http_host += "/"
 	}
 	tcp_host := c.r.FormValue("tcp_host")

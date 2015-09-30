@@ -1,10 +1,11 @@
 package controllers
-import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
-	"encoding/json"
 
+import (
+	"encoding/json"
+	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
+
 func (c *Controller) SaveNotifications() (string, error) {
 
 	if c.SessRestricted != 0 {
@@ -13,14 +14,14 @@ func (c *Controller) SaveNotifications() (string, error) {
 
 	c.r.ParseForm()
 
-	var data []map[string]interface {}
+	var data []map[string]interface{}
 	err := json.Unmarshal([]byte(c.r.PostFormValue("data")), &data)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	log.Debug("data:",data)
+	log.Debug("data:", data)
 
-	for k, _ :=  range data {
+	for k, _ := range data {
 		err := c.ExecSql(`
 				UPDATE `+c.MyPrefix+`my_notifications
 				SET  email = ?,
@@ -35,4 +36,3 @@ func (c *Controller) SaveNotifications() (string, error) {
 	return `{"error":0}`, nil
 
 }
-

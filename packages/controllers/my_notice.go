@@ -1,8 +1,9 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
 	"errors"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func (c *Controller) MyNoticeData() (string, error) {
@@ -34,17 +35,16 @@ func (c *Controller) MyNoticeData() (string, error) {
 	}
 
 	result, err := json.Marshal(map[string]string{
-		"main_status": myNotice["main_status"],
+		"main_status":          myNotice["main_status"],
 		"main_status_complete": myNotice["main_status_complete"],
-		"account_status": myNotice["account_status"],
-		"cur_block_id": myNotice["cur_block_id"],
-		"connections": myNotice["connections"],
-		"time_last_block": myNotice["time_last_block"],
-		"time_last_block_int": myNotice["time_last_block_int"],
-		"inbox": utils.Int64ToStr(cashRequests)	})
+		"account_status":       myNotice["account_status"],
+		"cur_block_id":         myNotice["cur_block_id"],
+		"connections":          myNotice["connections"],
+		"time_last_block":      myNotice["time_last_block"],
+		"time_last_block_int":  myNotice["time_last_block_int"],
+		"inbox":                utils.Int64ToStr(cashRequests)})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return string(result), nil
 }
-

@@ -1,19 +1,19 @@
 package daemons
 
 import (
+	"flag"
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
-	"flag"
 	"time"
 )
 
 var (
-	log = logging.MustGetLogger("daemons")
-	DaemonCh chan bool
-	AnswerDaemonCh chan bool
+	log             = logging.MustGetLogger("daemons")
+	DaemonCh        chan bool
+	AnswerDaemonCh  chan bool
 	MonitorDaemonCh chan []string = make(chan []string, 100)
-	configIni map[string]string
+	configIni       map[string]string
 )
 
 type daemon struct {
@@ -34,7 +34,7 @@ func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
 	if err != nil {
 		log.Error("%v", err)
 	}
-	err = d.DbUnlock(d.goRoutineName);
+	err = d.DbUnlock(d.goRoutineName)
 	if err != nil {
 		log.Error("%v", err)
 	}
@@ -45,13 +45,12 @@ func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
 	if err != nil {
 		log.Error("%v", err)
 	}
-	err = d.DbUnlock(d.goRoutineName);
+	err = d.DbUnlock(d.goRoutineName)
 	if err != nil {
 		log.Error("%v", err)
 	}
 	utils.Sleep(sleep)
 }
-
 
 func ConfigInit() {
 	// мониторим config.ini на наличие изменений
@@ -80,7 +79,7 @@ func init() {
 func CheckDaemonsRestart() bool {
 	select {
 	case <-DaemonCh:
-		AnswerDaemonCh<-true
+		AnswerDaemonCh <- true
 		return true
 	default:
 	}

@@ -8,35 +8,34 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
-//	"time"
+	//	"os"
+	//	"time"
 	//"strings"
 	//"bytes"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-//	"math"
-//	"database/sql"
-//	"bytes"
+	//	"math"
+	//	"database/sql"
+	//	"bytes"
 )
 
-func (p *Parser) DelPromisedAmountInit() (error) {
+func (p *Parser) DelPromisedAmountInit() error {
 
-	fields := []map[string]string {{"promised_amount_id":"int64"}, {"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"promised_amount_id": "int64"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-
-func (p *Parser) DelPromisedAmountFront() (error) {
+func (p *Parser) DelPromisedAmountFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"promised_amount_id":"bigint"}
+	verifyData := map[string]string{"promised_amount_id": "bigint"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -59,7 +58,7 @@ func (p *Parser) DelPromisedAmountFront() (error) {
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["promised_amount_id"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -74,7 +73,7 @@ func (p *Parser) DelPromisedAmountFront() (error) {
 	return nil
 }
 
-func (p *Parser) DelPromisedAmount() (error) {
+func (p *Parser) DelPromisedAmount() error {
 	err := p.ExecSql("UPDATE promised_amount SET del_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
@@ -95,7 +94,7 @@ func (p *Parser) DelPromisedAmount() (error) {
 	return nil
 }
 
-func (p *Parser) DelPromisedAmountRollback() (error) {
+func (p *Parser) DelPromisedAmountRollback() error {
 	delMiningBlockId, err := p.Single("SELECT del_mining_block_id FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)

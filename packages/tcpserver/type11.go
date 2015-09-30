@@ -2,9 +2,9 @@ package tcpserver
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"io"
 	"io/ioutil"
 	"os"
-	"io"
 )
 
 func (t *TcpServer) Type11() {
@@ -35,7 +35,7 @@ func (t *TcpServer) Type11() {
 		log.Debug("userId %d", userId)
 		// проверим, есть ли такой юзер на пуле
 		inPool, err := t.Single(`SELECT user_id FROM community WHERE user_id=?`, userId).Int64()
-		if inPool<=0 {
+		if inPool <= 0 {
 			log.Error("%v", utils.ErrInfo("inPool<=0"))
 			_, err = t.Conn.Write(utils.DecToBin(0, 1))
 			return
@@ -45,7 +45,7 @@ func (t *TcpServer) Type11() {
 		log.Debug("filesSign %x", filesSign)
 		forSign := ""
 		var files []string
-		for i:=0; i < 3; i++ {
+		for i := 0; i < 3; i++ {
 			size := utils.DecodeLength(&binaryData)
 			log.Debug("size %d", size)
 			data := utils.BytesShift(&binaryData, size)
@@ -55,17 +55,17 @@ func (t *TcpServer) Type11() {
 			var name string
 			switch fileType {
 			case 0:
-				name = utils.Int64ToStr(userId)+"_user_face.jpg"
+				name = utils.Int64ToStr(userId) + "_user_face.jpg"
 			case 1:
-				name = utils.Int64ToStr(userId)+"_user_profile.jpg"
+				name = utils.Int64ToStr(userId) + "_user_profile.jpg"
 			case 2:
-				name = utils.Int64ToStr(userId)+"_user_video.mp4"
-			/*case 3:
-				name = utils.Int64ToStr(userId)+"_user_video.webm"
-			case 4:
-				name = utils.Int64ToStr(userId)+"_user_video.ogv"*/
+				name = utils.Int64ToStr(userId) + "_user_video.mp4"
+				/*case 3:
+					name = utils.Int64ToStr(userId)+"_user_video.webm"
+				case 4:
+					name = utils.Int64ToStr(userId)+"_user_video.ogv"*/
 			}
-			forSign = forSign+string(utils.DSha256((data)))+","
+			forSign = forSign + string(utils.DSha256((data))) + ","
 			log.Debug("forSign %s", forSign)
 			err = ioutil.WriteFile(os.TempDir()+"/"+name, data, 0644)
 			if err != nil {
@@ -74,11 +74,10 @@ func (t *TcpServer) Type11() {
 			}
 			files = append(files, name)
 			log.Debug("files %d", files)
-			if len(binaryData)==0 {
+			if len(binaryData) == 0 {
 				break
 			}
 		}
-
 
 		if len(forSign) == 0 {
 			log.Error("%v", utils.ErrInfo("len(forSign) == 0"))
@@ -89,14 +88,14 @@ func (t *TcpServer) Type11() {
 
 		// проверим подпись
 		publicKey, err := t.GetUserPublicKey(userId)
-		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(filesSign), true);
+		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(filesSign), true)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			_, err = t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		if resultCheckSign {
-			for i:=0; i < len(files); i++ {
+			for i := 0; i < len(files); i++ {
 				utils.CopyFileContents(os.TempDir()+"/"+files[i], *utils.Dir+"/public/"+files[i])
 			}
 		}

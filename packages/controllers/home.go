@@ -1,56 +1,59 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"math"
 	"strings"
 	"time"
-	"math"
 )
 
 type homePage struct {
-	Lang map[string]string
-	Title string
-	Msg string
-	Alert string
-	MyNotice map[string]string
-	PoolAdmin bool
-	UserId int64
-	CashRequests int64
-	ShowMap bool
-	BlockId int64
-	ConfirmedBlockId int64
-	CurrencyList map[int64]string
-	Assignments int64
-	SumPromisedAmount map[string]string
-	RandMiners []int64
-	Points int64
-	SessRestricted int64
+	Lang                  map[string]string
+	Title                 string
+	Msg                   string
+	Alert                 string
+	MyNotice              map[string]string
+	PoolAdmin             bool
+	UserId                int64
+	CashRequests          int64
+	ShowMap               bool
+	BlockId               int64
+	ConfirmedBlockId      int64
+	CurrencyList          map[int64]string
+	Assignments           int64
+	SumPromisedAmount     map[string]string
+	RandMiners            []int64
+	Points                int64
+	SessRestricted        int64
 	PromisedAmountListGen map[int]utils.DCAmounts
-	Wallets map[int]utils.DCAmounts
-	SumWallets map[int]float64
-	CurrencyPct map[int]CurrencyPct
-	Admin bool
-	CalcTotal float64
-	CountSign int
-	CountSignArr []int
-	SignData string
-	ShowSignData bool
+	Wallets               map[int]utils.DCAmounts
+	SumWallets            map[int]float64
+	CurrencyPct           map[int]CurrencyPct
+	Admin                 bool
+	CalcTotal             float64
+	CountSign             int
+	CountSignArr          []int
+	SignData              string
+	ShowSignData          bool
+	IOS                   bool
+	Token                 string
 }
 
 type CurrencyPct struct {
-	Name string
-	Miner float64
-	User float64
+	Name       string
+	Miner      float64
+	User       float64
 	MinerBlock float64
-	UserBlock float64
-	MinerSec float64
-	UserSec float64
+	UserBlock  float64
+	MinerSec   float64
+	UserSec    float64
 }
 
 func (c *Controller) Home() (string, error) {
 
 	log.Debug("first_select: %v", c.Parameters["first_select"])
 	if c.Parameters["first_select"] == "1" {
-		c.ExecSql(`UPDATE `+c.MyPrefix+`my_table SET first_select=1`)
+		c.ExecSql(`UPDATE ` + c.MyPrefix + `my_table SET first_select=1`)
 	}
 
 	var publicKey []byte
@@ -68,7 +71,7 @@ func (c *Controller) Home() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		show, err := c.Single("SELECT show_map FROM "+c.MyPrefix+"my_table").Int64()
+		show, err := c.Single("SELECT show_map FROM " + c.MyPrefix + "my_table").Int64()
 		if err != nil {
 			return "", err
 		}
@@ -91,7 +94,7 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 	//var walletsByCurrency map[string]map[string]string
-	walletsByCurrency:=make(map[int]utils.DCAmounts)
+	walletsByCurrency := make(map[int]utils.DCAmounts)
 	for _, data := range wallets {
 		walletsByCurrency[int(data.CurrencyId)] = data
 	}
@@ -107,6 +110,10 @@ func (c *Controller) Home() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	for k, v := range currencyList {
+		currencyList[k] = "d"+v
+	}
+	currencyList[1001] = "USD"
 
 	// задания
 	var assignments int64
@@ -114,7 +121,7 @@ func (c *Controller) Home() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	assignments+=count
+	assignments += count
 
 	// вначале получим ID валют, которые мы можем проверять.
 	currencyIds, err := c.GetList("SELECT currency_id FROM promised_amount WHERE status IN ('mining', 'repaid') AND user_id  =  ?", c.SessUserId).String()
@@ -123,13 +130,13 @@ func (c *Controller) Home() (string, error) {
 		if c.SessUserId == 1 {
 			addSql = ""
 		} else {
-			addSql = "AND currency_id IN ("+strings.Join(currencyIds, ",")+")"
+			addSql = "AND currency_id IN (" + strings.Join(currencyIds, ",") + ")"
 		}
-		count, err := c.Single("SELECT count(id) FROM promised_amount WHERE status  =  'pending' AND del_block_id  =  0 "+addSql).Int64()
+		count, err := c.Single("SELECT count(id) FROM promised_amount WHERE status  =  'pending' AND del_block_id  =  0 " + addSql).Int64()
 		if err != nil {
 			return "", err
 		}
-		assignments+=count
+		assignments += count
 	}
 
 	if c.SessRestricted == 0 {
@@ -137,7 +144,7 @@ func (c *Controller) Home() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		assignments-=count
+		assignments -= count
 		if assignments < 0 {
 			assignments = 0
 		}
@@ -152,19 +159,19 @@ func (c *Controller) Home() (string, error) {
 	currency_pct := make(map[int]CurrencyPct)
 	// проценты
 	listPct, err := c.GetMap("SELECT * FROM currency", "id", "name")
-	for id, name := range(listPct) {
+	for id, name := range listPct {
 		pct, err := c.OneRow("SELECT * FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC", id).Float64()
 		if err != nil {
 			return "", err
 		}
-		currency_pct[utils.StrToInt(id)] = CurrencyPct{Name:name, Miner:(utils.Round((math.Pow(1+pct["miner"], 3600*24*365)-1)*100, 2)), User:(utils.Round((math.Pow(1+pct["user"], 3600*24*365)-1)*100, 2)), MinerBlock:(utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 4)), UserBlock:(utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 4)), MinerSec:(pct["miner"]), UserSec:(pct["user"])}
+		currency_pct[utils.StrToInt(id)] = CurrencyPct{Name: name, Miner: (utils.Round((math.Pow(1+pct["miner"], 3600*24*365)-1)*100, 2)), User: (utils.Round((math.Pow(1+pct["user"], 3600*24*365)-1)*100, 2)), MinerBlock: (utils.Round((math.Pow(1+pct["miner"], 120)-1)*100, 4)), UserBlock: (utils.Round((math.Pow(1+pct["user"], 120)-1)*100, 4)), MinerSec: (pct["miner"]), UserSec: (pct["user"])}
 	}
 	// случайне майнеры для нанесения на карту
 	maxMinerId, err := c.Single("SELECT max(miner_id) FROM miners_data").Int64()
 	if err != nil {
 		return "", err
 	}
-	randMiners, err := c.GetList("SELECT user_id FROM miners_data WHERE status  =  'miner' AND user_id > 7 AND user_id != 106 AND longitude > 0 AND miner_id IN ("+strings.Join(utils.RandSlice(1, maxMinerId, 3), ",")+") LIMIT 3").Int64()
+	randMiners, err := c.GetList("SELECT user_id FROM miners_data WHERE status  =  'miner' AND user_id > 7 AND user_id != 106 AND longitude > 0 AND miner_id IN (" + strings.Join(utils.RandSlice(1, maxMinerId, 3), ",") + ") LIMIT 3").Int64()
 	if err != nil {
 		return "", err
 	}
@@ -175,7 +182,7 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 	sumWallets := make(map[int]float64)
-	for currencyId, amount := range(sumWallets_) {
+	for currencyId, amount := range sumWallets_ {
 		sumWallets[utils.StrToInt(currencyId)] = utils.StrToFloat64(amount)
 	}
 
@@ -185,17 +192,17 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 
-	for currencyId, amount := range(sumTdc) {
+	for currencyId, amount := range sumTdc {
 		currencyIdInt := utils.StrToInt(currencyId)
 		if sumWallets[currencyIdInt] == 0 {
-			sumWallets[currencyIdInt] =  utils.StrToFloat64(amount)
+			sumWallets[currencyIdInt] = utils.StrToFloat64(amount)
 		} else {
 			sumWallets[currencyIdInt] += utils.StrToFloat64(amount)
 		}
 	}
 
 	// получаем суммы обещанных сумм
-	sumPromisedAmount, err := c.GetMap("SELECT currency_id, sum(amount) as sum_amount FROM promised_amount WHERE status = 'mining' AND del_block_id = 0 AND (cash_request_out_time = 0 OR cash_request_out_time > ?) GROUP BY currency_id", "currency_id", "sum_amount", time.Now().Unix() - c.Variables.Int64["cash_request_time"])
+	sumPromisedAmount, err := c.GetMap("SELECT currency_id, sum(amount) as sum_amount FROM promised_amount WHERE status = 'mining' AND del_block_id = 0 AND (cash_request_out_time = 0 OR cash_request_out_time > ?) GROUP BY currency_id", "currency_id", "sum_amount", time.Now().Unix()-c.Variables.Int64["cash_request_time"])
 	if err != nil {
 		return "", err
 	}
@@ -204,7 +211,41 @@ func (c *Controller) Home() (string, error) {
 
 	calcTotal := utils.Round(100*math.Pow(1+currency_pct[72].MinerSec, 3600*24*30)-100, 0)
 
-	TemplateStr, err := makeTemplate("home", "home", &homePage{CountSignArr: c.CountSignArr, CountSign: c.CountSign, CalcTotal:calcTotal, Admin: c.Admin, CurrencyPct:currency_pct, SumWallets:sumWallets, Wallets: walletsByCurrency, PromisedAmountListGen: promisedAmountListGen, SessRestricted: c.SessRestricted, SumPromisedAmount: sumPromisedAmount, RandMiners: randMiners, Points: points, Assignments:assignments, CurrencyList:currencyList, ConfirmedBlockId: confirmedBlockId, CashRequests: cashRequests, ShowMap: showMap, BlockId: blockId, UserId: c.SessUserId, PoolAdmin: poolAdmin, Alert: c.Alert, MyNotice: c.MyNotice, Lang:  c.Lang, Title: c.Lang["geolocation"], ShowSignData: c.ShowSignData, SignData: ""})
+	// токен для запроса инфы с биржи
+	token, err := c.Single(`SELECT token FROM ` + c.MyPrefix + `my_tokens ORDER BY time DESC LIMIT 1`).String()
+	if err != nil {
+		return "", err
+	}
+
+	TemplateStr, err := makeTemplate("home", "home", &homePage{
+		CountSignArr:          c.CountSignArr,
+		CountSign:             c.CountSign,
+		CalcTotal:             calcTotal,
+		Admin:                 c.Admin,
+		CurrencyPct:           currency_pct,
+		SumWallets:            sumWallets,
+		Wallets:               walletsByCurrency,
+		PromisedAmountListGen: promisedAmountListGen,
+		SessRestricted:        c.SessRestricted,
+		SumPromisedAmount:     sumPromisedAmount,
+		RandMiners:            randMiners,
+		Points:                points,
+		Assignments:           assignments,
+		CurrencyList:          currencyList,
+		ConfirmedBlockId:      confirmedBlockId,
+		CashRequests:          cashRequests,
+		ShowMap:               showMap,
+		BlockId:               blockId,
+		UserId:                c.SessUserId,
+		PoolAdmin:             poolAdmin,
+		Alert:                 c.Alert,
+		MyNotice:              c.MyNotice,
+		Lang:                  c.Lang,
+		Title:                 c.Lang["geolocation"],
+		ShowSignData:          c.ShowSignData,
+		SignData:              "",
+		IOS:                   utils.IOS(),
+		Token:                 token})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

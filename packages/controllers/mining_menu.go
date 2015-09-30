@@ -1,28 +1,28 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-
 )
 
 type miningMenuPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	CreditId float64
-	CurrencyList map[int64]string
-	LastTxFormatted string
-	MyComments []map[string]string
+	SignData          string
+	ShowSignData      bool
+	TxType            string
+	TxTypeId          int64
+	TimeNow           int64
+	UserId            int64
+	Alert             string
+	Lang              map[string]string
+	CountSignArr      []int
+	CreditId          float64
+	CurrencyList      map[int64]string
+	LastTxFormatted   string
+	MyComments        []map[string]string
 	MinerVotesAttempt int64
-	Host string
-	Result string
-	NodePrivateKey string
+	Host              string
+	Result            string
+	NodePrivateKey    string
 }
 
 func (c *Controller) MiningMenu() (string, error) {
@@ -30,13 +30,13 @@ func (c *Controller) MiningMenu() (string, error) {
 	var err error
 
 	if len(c.Parameters["skip_promised_amount"]) > 0 {
-		err = c.ExecSql("UPDATE "+c.MyPrefix+"my_table SET hide_first_promised_amount = 1")
+		err = c.ExecSql("UPDATE " + c.MyPrefix + "my_table SET hide_first_promised_amount = 1")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
 	}
 	if len(c.Parameters["skip_commission"]) > 0 {
-		err = c.ExecSql("UPDATE "+c.MyPrefix+"my_table SET hide_first_commission = 1")
+		err = c.ExecSql("UPDATE " + c.MyPrefix + "my_table SET hide_first_commission = 1")
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -53,14 +53,14 @@ func (c *Controller) MiningMenu() (string, error) {
 			// возможно юзер уже отправил запрос на добавление комиссии
 			last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_commission"}), 1, c.TimeFormat)
 			if err != nil {
-				return  utils.ErrInfo(err)
+				return utils.ErrInfo(err)
 			}
-			if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0))  {
+			if len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0) {
 				// авансом выдаем полное майнерское меню
 				result = "full_mining_menu"
 			} else {
 				// возможно юзер нажал кнопку "пропустить"
-				hideFirstCommission, err := c.Single("SELECT hide_first_commission FROM "+c.MyPrefix+"my_table").Int64()
+				hideFirstCommission, err := c.Single("SELECT hide_first_commission FROM " + c.MyPrefix + "my_table").Int64()
 				if err != nil {
 					return utils.ErrInfo(err)
 				}
@@ -88,14 +88,14 @@ func (c *Controller) MiningMenu() (string, error) {
 		}
 		if myMinerId == 0 {
 			// проверим, послали ли мы запрос в DC-сеть
-			data, err := c.OneRow("SELECT node_voting_send_request, http_host as host FROM "+c.MyPrefix+"my_table").String()
+			data, err := c.OneRow("SELECT node_voting_send_request, http_host as host FROM " + c.MyPrefix + "my_table").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
 			node_voting_send_request := utils.StrToInt64(data["node_voting_send_request"])
 			host := data["host"]
 			// если прошло менее 1 часа
-			if time.Now().Unix() - node_voting_send_request < 3600 {
+			if time.Now().Unix()-node_voting_send_request < 3600 {
 				result = "pending"
 			} else if node_voting_send_request > 0 {
 				// голосование нодов
@@ -116,15 +116,15 @@ func (c *Controller) MiningMenu() (string, error) {
 						result = "bad_photos_hash"
 						hostTpl = host
 					}
-				} else if nodeVotesEnd == "0" && time.Now().Unix() - node_voting_send_request < 86400 { // голосование нодов началось, ждем.
+				} else if nodeVotesEnd == "0" && time.Now().Unix()-node_voting_send_request < 86400 { // голосование нодов началось, ждем.
 					result = "nodes_pending"
-				} else if nodeVotesEnd == "0" && time.Now().Unix() - node_voting_send_request >= 86400 { // голосование нодов удет более суток и еще не завершилось
+				} else if nodeVotesEnd == "0" && time.Now().Unix()-node_voting_send_request >= 86400 { // голосование нодов удет более суток и еще не завершилось
 					result = "resend"
 				} else { // запрос в DC-сеть еще не дошел и голосования не начались
 					// если прошло менее 1 часа
-					if time.Now().Unix() - node_voting_send_request < 3600 {
+					if time.Now().Unix()-node_voting_send_request < 3600 {
 						result = "pending"
-					} else {  // где-то проблема и запрос не ушел.
+					} else { // где-то проблема и запрос не ушел.
 						result = "resend"
 					}
 				}
@@ -140,7 +140,7 @@ func (c *Controller) MiningMenu() (string, error) {
 			if promisedAmount == 0 {
 				// возможно юзер уже отправил запрос на добавление обещенной суммы
 				last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount"}), 1, c.TimeFormat)
-				if (len(last_tx)>0 && (len(last_tx[0]["queue_tx"])>0 || len(last_tx[0]["tx"])>0))  {
+				if len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0) {
 					// установлена ли комиссия
 					err = checkCommission()
 					if err != nil {
@@ -148,7 +148,7 @@ func (c *Controller) MiningMenu() (string, error) {
 					}
 				} else {
 					// возможно юзер нажал кнопку "пропустить"
-					hideFirstPromisedAmount, err := c.Single("SELECT hide_first_promised_amount FROM "+c.MyPrefix+"my_table").Int64()
+					hideFirstPromisedAmount, err := c.Single("SELECT hide_first_promised_amount FROM " + c.MyPrefix + "my_table").Int64()
 					if err != nil {
 						return "", utils.ErrInfo(err)
 					}
@@ -181,24 +181,24 @@ func (c *Controller) MiningMenu() (string, error) {
 	var nodePrivateKey string
 	if result == "null" {
 		tplName = "upgrade_0"
-		tplTitle= "upgrade0"
+		tplTitle = "upgrade0"
 		return c.Upgrade0()
 	} else if result == "need_email" {
 		tplName = "sign_up_in_the_pool"
-		tplTitle= "signUpInThePool"
+		tplTitle = "signUpInThePool"
 		//  сгенерим ключ для нода
 		nodePrivateKey, _ = utils.GenKeys()
 	} else if result == "need_promised_amount" {
 		tplName = "promised_amount_add"
-		tplTitle= "upgrade"
+		tplTitle = "upgrade"
 		return c.NewPromisedAmount()
 	} else if result == "need_commission" {
 		tplName = "change_commission"
-		tplTitle= "changeCommission"
+		tplTitle = "changeCommission"
 		return c.ChangeCommission()
 	} else if result == "full_mining_menu" {
 		tplName = "mining_menu"
-		tplTitle= "miningMenu"
+		tplTitle = "miningMenu"
 		last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_user", "new_miner", "new_promised_amount", "change_promised_amount", "votes_miner", "change_geolocation", "votes_promised_amount", "del_promised_amount", "cash_request_out", "cash_request_in", "votes_complex", "for_repaid_fix", "new_holidays", "actualization_promised_amounts", "mining", "new_miner_update", "change_host", "change_commission"}), 3, c.TimeFormat)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -222,22 +222,21 @@ func (c *Controller) MiningMenu() (string, error) {
 
 	log.Debug("tplName, tplTitle %v, %v", tplName, tplTitle)
 	TemplateStr, err := makeTemplate(tplName, tplTitle, &miningMenuPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		SignData: "",
-		CurrencyList: c.CurrencyList,
-		LastTxFormatted: lastTxFormatted,
-		MyComments: myComments,
-		Result: result,
-		NodePrivateKey: nodePrivateKey,
+		Alert:             c.Alert,
+		Lang:              c.Lang,
+		CountSignArr:      c.CountSignArr,
+		ShowSignData:      c.ShowSignData,
+		UserId:            c.SessUserId,
+		SignData:          "",
+		CurrencyList:      c.CurrencyList,
+		LastTxFormatted:   lastTxFormatted,
+		MyComments:        myComments,
+		Result:            result,
+		NodePrivateKey:    nodePrivateKey,
 		MinerVotesAttempt: minerVotesAttempt,
-		Host: hostTpl})
+		Host:              hostTpl})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

@@ -1,8 +1,8 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 func CfProjects() {
@@ -28,7 +28,7 @@ func CfProjects() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -56,7 +56,7 @@ func CfProjects() {
 				WHERE geo_checked= 0
 				`, -1)
 		for _, cf_projects := range all {
-			gmapData, err := utils.GetHttpTextAnswer("http://maps.googleapis.com/maps/api/geocode/json?latlng="+cf_projects["latitude"]+","+cf_projects["longitude"]+"&sensor=true_or_false")
+			gmapData, err := utils.GetHttpTextAnswer("http://maps.googleapis.com/maps/api/geocode/json?latlng=" + cf_projects["latitude"] + "," + cf_projects["longitude"] + "&sensor=true_or_false")
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
@@ -113,7 +113,7 @@ func CfProjects() {
 
 		d.dbUnlock()
 
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {

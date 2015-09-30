@@ -1,9 +1,9 @@
 package daemons
 
 import (
+	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"runtime"
-	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 )
 
 /*
@@ -37,7 +37,7 @@ func QueueParserTx() {
 
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -87,6 +87,5 @@ func QueueParserTx() {
 
 		log.Info("%v", "Happy end")
 	}
-
 
 }

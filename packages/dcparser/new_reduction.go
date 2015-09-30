@@ -7,32 +7,30 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	//"sort"
-//	"time"
+	//	"time"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-
 )
 
-
-func (p *Parser) NewReductionInit() (error) {
+func (p *Parser) NewReductionInit() error {
 	var err error
 	var fields []map[string]string
-	if p.BlockData!=nil && p.BlockData.BlockId < 85849 {
-		fields = []map[string]string {{"currency_id":"int64"}, {"pct":"string"}, {"sign":"bytes"}}
+	if p.BlockData != nil && p.BlockData.BlockId < 85849 {
+		fields = []map[string]string{{"currency_id": "int64"}, {"pct": "string"}, {"sign": "bytes"}}
 	} else {
-		fields = []map[string]string {{"currency_id":"int64"}, {"pct":"string"}, {"reduction_type":"string"}, {"sign":"bytes"}}
+		fields = []map[string]string{{"currency_id": "int64"}, {"pct": "string"}, {"reduction_type": "string"}, {"sign": "bytes"}}
 	}
-	err = p.GetTxMaps(fields);
+	err = p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
-func (p *Parser) NewReductionFront() (error) {
+func (p *Parser) NewReductionFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -45,7 +43,7 @@ func (p *Parser) NewReductionFront() (error) {
 		return p.ErrInfo(err)
 	}
 
-	verifyData := map[string]string {"currency_id":"int", "pct":"int"}
+	verifyData := map[string]string{"currency_id": "int", "pct": "int"}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -55,11 +53,11 @@ func (p *Parser) NewReductionFront() (error) {
 		return p.ErrInfo("incorrect pct")
 	}
 
-	if p.BlockData!=nil && p.BlockData.BlockId < 85849 {
+	if p.BlockData != nil && p.BlockData.BlockId < 85849 {
 		// для всех тр-ий из старых блоков просто присваем manual, т.к. там не было других типов
-		p.TxMaps.String["reduction_type"]	= "manual"
+		p.TxMaps.String["reduction_type"] = "manual"
 	} else {
-		verifyData := map[string]string {"reduction_type":"reduction_type"}
+		verifyData := map[string]string{"reduction_type": "reduction_type"}
 		err = p.CheckInputData(verifyData)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -82,13 +80,13 @@ func (p *Parser) NewReductionFront() (error) {
 		return p.ErrInfo("incorrect currency_id")
 	}
 
-	forSign:=""
-	if p.BlockData!=nil && p.BlockData.BlockId < 85849 {
+	forSign := ""
+	if p.BlockData != nil && p.BlockData.BlockId < 85849 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["pct"])
 	} else {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["currency_id"], p.TxMap["pct"], p.TxMap["reduction_type"])
 	}
-	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true);
+	CheckSignResult, err := utils.CheckSign([][]byte{nodePublicKey}, forSign, p.TxMap["sign"], true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -101,7 +99,7 @@ func (p *Parser) NewReductionFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if p.TxTime - reductionTime <= p.Variables.Int64["reduction_period"] {
+		if p.TxTime-reductionTime <= p.Variables.Int64["reduction_period"] {
 			return p.ErrInfo("reduction_period error")
 		}
 	} else {
@@ -110,7 +108,7 @@ func (p *Parser) NewReductionFront() (error) {
 			return p.ErrInfo(err)
 		}
 		// или 48 часов, если это авто-урезание
-		if p.TxTime - reductionTime <= consts.AUTO_REDUCTION_PERIOD {
+		if p.TxTime-reductionTime <= consts.AUTO_REDUCTION_PERIOD {
 			return p.ErrInfo("reduction_period error")
 		}
 	}
@@ -141,7 +139,7 @@ func (p *Parser) NewReductionFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		if countVotes < utils.StrToInt64(promisedAmount[utils.Int64ToStr(p.TxMaps.Int64["currency_id"])]) / 2 {
+		if countVotes < utils.StrToInt64(promisedAmount[utils.Int64ToStr(p.TxMaps.Int64["currency_id"])])/2 {
 			return p.ErrInfo("incorrect count_votes")
 		}
 	} else if p.TxMaps.String["reduction_type"] == "promised_amount" {
@@ -156,7 +154,7 @@ func (p *Parser) NewReductionFront() (error) {
 			return p.ErrInfo(err)
 		}
 		if countUsers < consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN {
-			return p.ErrInfo(fmt.Sprintf("AUTO_REDUCTION_PROMISED_AMOUNT_MIN %v < %v", countUsers, consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN ))
+			return p.ErrInfo(fmt.Sprintf("AUTO_REDUCTION_PROMISED_AMOUNT_MIN %v < %v", countUsers, consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN))
 		}
 
 		// получаем кол-во DC на кошельках
@@ -170,7 +168,7 @@ func (p *Parser) NewReductionFront() (error) {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		sumWallets += sumPromisedAmountTdc;
+		sumWallets += sumPromisedAmountTdc
 
 		// получаем суммы обещанных сумм. при этом не берем те, что имеют просроченные cash_request_out
 		sumPromisedAmount, err := p.Single("SELECT sum(amount) FROM promised_amount WHERE status  =  'mining' AND del_block_id  =  0 AND del_mining_block_id  =  0 AND currency_id  =  ? AND (cash_request_out_time  =  0 OR cash_request_out_time > ?)", p.TxMaps.Int64["currency_id"], (p.TxTime - p.Variables.Int64["cash_request_time"])).Float64()
@@ -179,7 +177,7 @@ func (p *Parser) NewReductionFront() (error) {
 		}
 		log.Debug("sumPromisedAmount", sumPromisedAmount)
 		// если обещанных сумм менее чем 100% от объема DC на кошельках, то всё норм, если нет - ошибка
-		if sumPromisedAmount >= sumWallets * float64(consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT) {
+		if sumPromisedAmount >= sumWallets*float64(consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT) {
 			return p.ErrInfo(fmt.Sprintf("error reduction $sum_promised_amount %v >= %v * %v", sumPromisedAmount, sumWallets, consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT))
 		}
 	}
@@ -187,7 +185,7 @@ func (p *Parser) NewReductionFront() (error) {
 	return nil
 }
 
-func (p *Parser) NewReduction() (error) {
+func (p *Parser) NewReduction() error {
 	d := (100 - utils.StrToFloat64(p.TxMaps.String["pct"])) / 100
 	if utils.StrToFloat64(p.TxMaps.String["pct"]) > 0 {
 
@@ -242,8 +240,8 @@ func (p *Parser) NewReduction() (error) {
 	return nil
 }
 
-func (p *Parser) NewReductionRollback() (error) {
-	if utils.StrToInt64(p.TxMaps.String["pct"])>0 {
+func (p *Parser) NewReductionRollback() error {
+	if utils.StrToInt64(p.TxMaps.String["pct"]) > 0 {
 		// крауд-фандинг
 		err := p.ExecSql("UPDATE cf_funding SET amount = amount_backup, amount_backup = 0 WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {

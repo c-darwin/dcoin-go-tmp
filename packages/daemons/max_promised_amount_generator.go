@@ -1,10 +1,10 @@
 package daemons
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 /*
@@ -35,7 +35,7 @@ func MaxPromisedAmountGenerator() {
 		return
 	}
 
-	BEGIN:
+BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -64,7 +64,7 @@ func MaxPromisedAmountGenerator() {
 			continue BEGIN
 		}
 
-		_, _, myMinerId, _, _, _, err := d.TestBlock();
+		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
@@ -88,7 +88,7 @@ func MaxPromisedAmountGenerator() {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
-		if curTime - pctTime <= variables.Int64["new_max_promised_amount"] {
+		if curTime-pctTime <= variables.Int64["new_max_promised_amount"] {
 			d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1)
 			continue BEGIN
 		}
@@ -104,11 +104,11 @@ func MaxPromisedAmountGenerator() {
 		for rows.Next() {
 			var currency_id, amount, votes int64
 			err = rows.Scan(&currency_id, &amount, &votes)
-			if err!= nil {
+			if err != nil {
 				d.unlockPrintSleep(utils.ErrInfo(err), 1)
 				continue BEGIN
 			}
-			maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount:votes})
+			maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount: votes})
 			//fmt.Println("currency_id", currency_id)
 		}
 
@@ -118,15 +118,15 @@ func MaxPromisedAmountGenerator() {
 		}
 
 		jsonData, err := json.Marshal(NewMaxPromisedAmountsVotes)
-		if err!= nil {
+		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
 
-		_, myUserId, _, _, _, _, err := d.TestBlock();
+		_, myUserId, _, _, _, _, err := d.TestBlock()
 		forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewMaxPromisedAmounts"), curTime, myUserId, jsonData)
 		binSign, err := d.GetBinSign(forSign, myUserId)
-		if err!= nil {
+		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
@@ -137,7 +137,7 @@ func MaxPromisedAmountGenerator() {
 		data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 
 		err = d.InsertReplaceTxInQueue(data)
-		if err!= nil {
+		if err != nil {
 			d.unlockPrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN
 		}
@@ -151,7 +151,7 @@ func MaxPromisedAmountGenerator() {
 		}
 
 		d.dbUnlock()
-		for i:=0; i < 60; i++ {
+		for i := 0; i < 60; i++ {
 			utils.Sleep(1)
 			// проверим, не нужно ли нам выйти из цикла
 			if CheckDaemonsRestart() {
@@ -161,5 +161,3 @@ func MaxPromisedAmountGenerator() {
 	}
 
 }
-
-

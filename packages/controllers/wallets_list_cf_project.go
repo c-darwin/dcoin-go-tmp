@@ -1,10 +1,11 @@
 package controllers
+
 import (
-    "encoding/json"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"encoding/json"
 	"errors"
-	"time"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math"
+	"time"
 )
 
 func (c *Controller) WalletsListCfProject() (string, error) {
@@ -38,8 +39,8 @@ func (c *Controller) WalletsListCfProject() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		amount+=profit
-		amount = math.Floor(utils.Round(amount, 3)*100)/100
+		amount += profit
+		amount = math.Floor(utils.Round(amount, 3)*100) / 100
 		forexOrdersAmount, err := c.Single("SELECT sum(amount) FROM forex_orders WHERE user_id  =  ? AND sell_currency_id  =  ? AND del_block_id  =  0", c.SessUserId, wallet["currency_id"]).Float64()
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -52,8 +53,8 @@ func (c *Controller) WalletsListCfProject() (string, error) {
 
 	cfProject["currency"] = c.CurrencyList[utils.StrToInt64(cfProject["currency_id"])]
 
-	newmap := make(map[string]interface {})
-	for k, v := range(cfProject) {
+	newmap := make(map[string]interface{})
+	for k, v := range cfProject {
 		newmap[k] = v
 	}
 

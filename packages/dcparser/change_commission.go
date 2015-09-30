@@ -8,7 +8,7 @@ import (
 	//"regexp"
 	//"math"
 	//"strings"
-//	"os"
+	//	"os"
 	//"time"
 	//"strings"
 	//"bytes"
@@ -18,17 +18,17 @@ import (
 	"strings"
 )
 
-func (p *Parser) ChangeCommissionInit() (error) {
+func (p *Parser) ChangeCommissionInit() error {
 
-	fields := []map[string]string {{"commission":"bytes"},{"sign":"bytes"}}
-	err := p.GetTxMaps(fields);
+	fields := []map[string]string{{"commission": "bytes"}, {"sign": "bytes"}}
+	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	return nil
 }
 
-func (p *Parser) ChangeCommissionFront() (error) {
+func (p *Parser) ChangeCommissionFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
@@ -50,11 +50,11 @@ func (p *Parser) ChangeCommissionFront() (error) {
 		return p.ErrInfo(err)
 	}
 	var currencyArray []int64
-	minusCf:=0
+	minusCf := 0
 	for currencyId_, data := range commissionMap {
 
 		currencyId := utils.StrToInt64(currencyId_)
-		if len(data) !=3 {
+		if len(data) != 3 {
 			return p.ErrInfo("len(data) !=3")
 		}
 		if !utils.CheckInputData(currencyId, "int") {
@@ -72,7 +72,7 @@ func (p *Parser) ChangeCommissionFront() (error) {
 		if !utils.CheckInputData(utils.Float64ToStrPct(data[2]), "currency_commission") {
 			return p.ErrInfo("currency_max_commission")
 		}
-		if data[1] > data[2] && data[2]>0 {
+		if data[1] > data[2] && data[2] > 0 {
 			return p.ErrInfo("currency_max_commission")
 		}
 		// проверим, существует ли такая валюта в таблице DC-валют
@@ -82,23 +82,23 @@ func (p *Parser) ChangeCommissionFront() (error) {
 				return p.ErrInfo(err)
 			}
 		}
-		if currencyId!=1000 {
+		if currencyId != 1000 {
 			currencyArray = append(currencyArray, currencyId)
 		} else {
 			minusCf = 1
 		}
 	}
 
-	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN ("+strings.Join(utils.SliceInt64ToString(currencyArray), ",")+")").Int()
+	count, err := p.Single("SELECT count(id) FROM currency WHERE id IN (" + strings.Join(utils.SliceInt64ToString(currencyArray), ",") + ")").Int()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	if count != len(commissionMap) - minusCf {
+	if count != len(commissionMap)-minusCf {
 		return p.ErrInfo("count != len(commissionMap) - minusCf")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["commission"])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil || !CheckSignResult {
 		return p.ErrInfo("incorrect sign")
 	}
@@ -111,7 +111,7 @@ func (p *Parser) ChangeCommissionFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeCommission() (error) {
+func (p *Parser) ChangeCommission() error {
 
 	logData, err := p.OneRow("SELECT * FROM commission WHERE user_id  =  ?", p.TxUserID).String()
 	if err != nil {
@@ -137,7 +137,7 @@ func (p *Parser) ChangeCommission() (error) {
 	return nil
 }
 
-func (p *Parser) ChangeCommissionRollback() (error) {
+func (p *Parser) ChangeCommissionRollback() error {
 	return p.generalRollback("commission", p.TxUserID, "", false)
 }
 

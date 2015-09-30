@@ -1,45 +1,47 @@
 package utils
+
 import (
-	 "fmt"
-	 _ "github.com/lib/pq"
-     _ "github.com/go-sql-driver/mysql"
-	 "database/sql"
-	"strings"
-	"regexp"
-	"time"
-	"strconv"
-	"encoding/json"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-	"sync"
-	"math"
-	"errors"
-	"crypto/rsa"
-	crand "crypto/rand"
-	"encoding/pem"
-	"crypto/x509"
 	"crypto"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"database/sql"
+	"encoding/json"
+	"encoding/pem"
+	"errors"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	"github.com/op/go-logging"
-	"runtime"
+	"math"
 	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 var Mutex = &sync.Mutex{}
 var log = logging.MustGetLogger("daemons")
 var DB *DCDB
+
 type DCDB struct {
-	 *sql.DB
-	ConfigIni map[string]string
+	*sql.DB
+	ConfigIni     map[string]string
 	GoroutineName string
 }
 
 func ReplQ(q string) string {
-	q1:=strings.Split(q, "?")
-	result:=""
-	for i:=0; i < len(q1); i++ {
+	q1 := strings.Split(q, "?")
+	result := ""
+	for i := 0; i < len(q1); i++ {
 		if i != len(q1)-1 {
-			result+=q1[i]+"$"+IntToStr(i+1)
+			result += q1[i] + "$" + IntToStr(i+1)
 		} else {
-			result+=q1[i]
+			result += q1[i]
 		}
 	}
 	log.Debug("%v", result)
@@ -55,7 +57,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 		log.Debug("sqlite connect")
 		db, err = sql.Open("sqlite3", *Dir+"/litedb.db")
 		log.Debug("%v", db)
-		if err!=nil {
+		if err != nil {
 			log.Debug("%v", err)
 			return &DCDB{}, err
 		}
@@ -65,7 +67,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 				PRAGMA encoding = "UTF-8";
 				`
 		log.Debug("Exec ddl0")
-		_, err = db.Exec(ddl);
+		_, err = db.Exec(ddl)
 		log.Debug("Exec ddl")
 		if err != nil {
 			log.Debug("%v", ErrInfo(err))
@@ -95,6 +97,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	log.Debug("return")
 	return &DCDB{db, ConfigIni, ""}, err
 }
+
 /*
 func (db *DCDB) DbConnect() {
 	dbInfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
@@ -127,12 +130,12 @@ func (db *DCDB) SendMail(message, subject, To string, mailData map[string]string
 		}
 	} else if community {
 		// в пуле пробуем послать с смтп-ешника админа пула
-		prefix := Int64ToStr(poolAdminUserId)+"_"
-		mailData, err := db.OneRow("SELECT * FROM "+prefix+"my_table").String()
+		prefix := Int64ToStr(poolAdminUserId) + "_"
+		mailData, err := db.OneRow("SELECT * FROM " + prefix + "my_table").String()
 		if err != nil {
 			return ErrInfo(err)
 		}
-		err = sendMail(message, subject,To, mailData)
+		err = sendMail(message, subject, To, mailData)
 		if err != nil {
 			return ErrInfo(err)
 		}
@@ -146,11 +149,11 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 	var result []string
 	var sql string
 	switch db.ConfigIni["db_type"] {
-	case "sqlite" :
+	case "sqlite":
 		sql = "SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'"
-	case "postgresql" :
+	case "postgresql":
 		sql = "SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND    table_schema NOT IN ('pg_catalog', 'information_schema')"
-	case "mysql" :
+	case "mysql":
 		sql = "SHOW TABLES"
 	}
 	result, err := db.GetList(sql).String()
@@ -161,10 +164,11 @@ func (db *DCDB) GetAllTables() ([]string, error) {
 }
 
 type Variables struct {
-	Int64 map[string]int64
-	String map[string]string
+	Int64   map[string]int64
+	String  map[string]string
 	Float64 map[string]float64
 }
+
 func (db *DCDB) GetAllVariables() (*Variables, error) {
 	result := new(Variables)
 	result.Int64 = make(map[string]int64)
@@ -179,14 +183,15 @@ func (db *DCDB) GetAllVariables() (*Variables, error) {
 		switch v["name"] {
 		case "alert_error_time", "error_time", "promised_amount_points", "promised_amount_votes_0", "promised_amount_votes_1", "promised_amount_votes_period", "holidays_max", "limit_abuses", "limit_abuses_period", "limit_promised_amount", "limit_promised_amount_period", "limit_cash_requests_out", "limit_cash_requests_out_period", "limit_change_geolocation", "limit_change_geolocation_period", "limit_holidays", "limit_holidays_period", "limit_message_to_admin", "limit_message_to_admin_period", "limit_mining", "limit_mining_period", "limit_node_key", "limit_node_key_period", "limit_primary_key", "limit_primary_key_period", "limit_votes_miners", "limit_votes_miners_period", "limit_votes_complex", "limit_votes_complex_period", "limit_commission", "limit_commission_period", "limit_new_miner", "limit_new_miner_period", "limit_new_user", "limit_new_user_period", "max_block_size", "max_block_user_transactions", "max_day_votes", "max_tx_count", "max_tx_size", "max_user_transactions", "miners_keepers", "miner_points", "miner_votes_0", "miner_votes_1", "miner_votes_attempt", "miner_votes_period", "mining_votes_0", "mining_votes_1", "mining_votes_period", "min_miners_keepers", "node_voting", "node_voting_period", "rollback_blocks_1", "rollback_blocks_2", "limit_change_host", "limit_change_host_period", "min_miners_of_voting", "min_hold_time_promise_amount", "min_promised_amount", "points_update_time", "reduction_period", "new_pct_period", "new_max_promised_amount", "new_max_other_currencies", "cash_request_time", "limit_for_repaid_fix", "limit_for_repaid_fix_period", "miner_newbie_time", "system_commission":
 			result.Int64[v["name"]] = StrToInt64(v["value"])
-		case "points_factor" :
+		case "points_factor":
 			result.Float64[v["name"]] = StrToFloat64(v["value"])
-		case "sleep" :
+		case "sleep":
 			result.String[v["name"]] = v["value"]
 		}
 	}
 	return result, err
 }
+
 /*
 func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
 	result, err := db.Single(query, args...)
@@ -199,17 +204,17 @@ func (db *DCDB) SingleInt64(query string, args ...interface{}) (int64, error) {
 
 type singleResult struct {
 	result []byte
-	err error
+	err    error
 }
 
 type listResult struct {
 	result []string
-	err error
+	err    error
 }
 
 type oneRow struct {
 	result map[string]string
-	err error
+	err    error
 }
 
 func (r *listResult) Int64() ([]int64, error) {
@@ -243,7 +248,6 @@ func (r *listResult) String() ([]string, error) {
 	return r.result, nil
 }
 
-
 func (r *oneRow) String() (map[string]string, error) {
 	if r.err != nil {
 		return r.result, r.err
@@ -273,7 +277,6 @@ func (r *oneRow) Int64() (map[string]int64, error) {
 	return result, nil
 }
 
-
 func (r *oneRow) Float64() (map[string]float64, error) {
 	result := make(map[string]float64)
 	if r.err != nil {
@@ -284,7 +287,6 @@ func (r *oneRow) Float64() (map[string]float64, error) {
 	}
 	return result, nil
 }
-
 
 func (r *oneRow) Int() (map[string]int, error) {
 	result := make(map[string]int)
@@ -298,39 +300,38 @@ func (r *oneRow) Int() (map[string]int, error) {
 }
 
 func (r *singleResult) Int64() (int64, error) {
-	if r.err!=nil {
+	if r.err != nil {
 		return 0, r.err
 	}
 	return BytesToInt64(r.result), nil
 }
 func (r *singleResult) Int() (int, error) {
-	if r.err!=nil {
+	if r.err != nil {
 		return 0, r.err
 	}
 	return BytesToInt(r.result), nil
 }
 
 func (r *singleResult) Float64() (float64, error) {
-	if r.err!=nil {
+	if r.err != nil {
 		return 0, r.err
 	}
 	return StrToFloat64(string(r.result)), nil
 }
 
 func (r *singleResult) String() (string, error) {
-	if r.err!=nil {
+	if r.err != nil {
 		return "", r.err
 	}
 	return string(r.result), nil
 }
 
 func (r *singleResult) Bytes() ([]byte, error) {
-	if r.err!=nil {
+	if r.err != nil {
 		return []byte(""), r.err
 	}
 	return r.result, nil
 }
-
 
 func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 
@@ -342,9 +343,9 @@ func (db *DCDB) Single(query string, args ...interface{}) *singleResult {
 	case err == sql.ErrNoRows:
 		return &singleResult{[]byte(""), nil}
 	case err != nil:
-		return  &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
+		return &singleResult{[]byte(""), fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)}
 	}
-	if db.ConfigIni["sql_log"]=="1" {
+	if db.ConfigIni["sql_log"] == "1" {
 		/*parent := ""
 		for i:=2;;i++{
 			name := ""
@@ -400,7 +401,7 @@ func (db *DCDB) GetAllCfLng() (map[string]string, error) {
 
 func (db *DCDB) GetMap(query string, name, value string, args ...interface{}) (map[string]string, error) {
 	result := make(map[string]string)
-	all, err := db.GetAll(query, -1, args ...)
+	all, err := db.GetAll(query, -1, args...)
 	if err != nil {
 		return result, err
 	}
@@ -426,7 +427,7 @@ func (db *DCDB) GetList(query string, args ...interface{}) *listResult {
 
 func GetParent() string {
 	parent := ""
-	for i:=2;;i++{
+	for i := 2; ; i++ {
 		name := ""
 		if pc, _, num, ok := runtime.Caller(i); ok {
 			name = filepath.Base(runtime.FuncForPC(pc).Name())
@@ -457,7 +458,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 	}
 	defer rows.Close()
 
-	if db.ConfigIni["sql_log"]=="1" {
+	if db.ConfigIni["sql_log"] == "1" {
 		/*parent := ""
 		for i:=2;;i++{
 			name := ""
@@ -506,7 +507,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 		// Now do something with the data.
 		// Here we just print each column as a string.
 		var value string
-		rez:=make(map[string]string)
+		rez := make(map[string]string)
 		for i, col := range values {
 			// Here we can check if the value is nil (NULL value)
 			if col == nil {
@@ -519,7 +520,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 		}
 		result = append(result, rez)
 		r++
-		if countRows!=-1 && r >= countRows {
+		if countRows != -1 && r >= countRows {
 			break
 		}
 	}
@@ -533,7 +534,7 @@ func (db *DCDB) GetAll(query string, countRows int, args ...interface{}) ([]map[
 func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 	result := make(map[string]string)
 	//log.Debug("%v", query, args)
-	all, err := db.GetAll(query, 1, args ...)
+	all, err := db.GetAll(query, 1, args...)
 	//log.Debug("%v", all)
 	if err != nil {
 		return &oneRow{result, fmt.Errorf("%s in query %s %s", err, query, args)}
@@ -583,7 +584,7 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	result["blurb_img"] = data["blurb_img"]
 	result["lang_id"] = data["lang_id"]
 	if len(result["blurb_img"]) == 0 {
-		result["blurb_img"] = levelUp+"img/cf_blurb_img.png"
+		result["blurb_img"] = levelUp + "img/cf_blurb_img.png"
 	}
 	// сколько собрано
 	funding_amount, err := db.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", id).Float64()
@@ -595,14 +596,14 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	log.Debug("%v", "funding_amount", funding_amount)
 	log.Debug("%v", "amount", amount)
 	if amount > 0 {
-		result["pct"] = Float64ToStrPct(Round((funding_amount/amount*100), 0))
+		result["pct"] = Float64ToStrPct(Round((funding_amount / amount * 100), 0))
 	} else {
 		result["pct"] = "0"
 	}
 	result["funding_amount"] = Float64ToStrPct(Round(funding_amount, 1))
 
 	// дней до окончания
-	days_ := int64(Round(float64(endTime - time.Now().Unix()) / 86400, 0))
+	days_ := int64(Round(float64(endTime-time.Now().Unix())/86400, 0))
 	if days_ < 0 {
 		result["days"] = "0"
 	} else {
@@ -611,10 +612,8 @@ func (db *DCDB) GetCfProjectData(id, endTime, langId int64, amount float64, leve
 	return result, nil
 }
 
-
-
 func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) {
-	if sessRestricted!=0 || sessUserId<=0 {
+	if sessRestricted != 0 || sessUserId <= 0 {
 		log.Debug("%v", "NodeAdminAccess1")
 		return false, nil
 	}
@@ -645,7 +644,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 	var lastId int64
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	if db.ConfigIni["db_type"] == "postgresql" {
-		newQuery = newQuery+" RETURNING "+returning
+		newQuery = newQuery + " RETURNING " + returning
 		err := db.QueryRow(newQuery, newArgs...).Scan(&lastId)
 		if err != nil {
 			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
@@ -675,36 +674,36 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 }
 
 type exampleSpots struct {
-	Face map[string][]interface {} `json:"face"`
-	Profile map[string][]interface {} `json:"profile"`
+	Face    map[string][]interface{} `json:"face"`
+	Profile map[string][]interface{} `json:"profile"`
 }
 
 func (db *DCDB) GetPoints(lng map[string]string) (map[string]string, error) {
 
 	result := make(map[string]string)
-	result["face"] = "";
-	result["profile"] = "";
+	result["face"] = ""
+	result["profile"] = ""
 
 	exampleSpots_, err := db.Single("SELECT example_spots FROM spots_compatibility").String()
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
-	exampleSpots := make(map[string]map[string][]interface {})
+	exampleSpots := make(map[string]map[string][]interface{})
 	err = json.Unmarshal([]byte(exampleSpots_), &exampleSpots)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
 	for pType, data := range exampleSpots {
-		for i:=1; i <= len(data); i++ {
+		for i := 1; i <= len(data); i++ {
 			arr := data[IntToStr(i)]
 			id := IntToStr(i)
-			result[pType] += fmt.Sprintf(`[%v, %v, '%v. %s'`, arr[0], arr[1], id, lng["points-"+pType+"-"+id]);
+			result[pType] += fmt.Sprintf(`[%v, %v, '%v. %s'`, arr[0], arr[1], id, lng["points-"+pType+"-"+id])
 			switch arr[2].(type) {
-			case []interface {}:
+			case []interface{}:
 				result[pType] += fmt.Sprintf(`, [%v, %v,`, StrToInt(arr[3].(string))-1, StrToInt(arr[4].(string))-1)
-				for j:=0; j < len(arr[2].([]interface {})); j++ {
-					result[pType] += fmt.Sprintf(`'%v'`, arr[2].([]interface {})[j])
-					if j != len(arr[2].([]interface {}))-1 {
+				for j := 0; j < len(arr[2].([]interface{})); j++ {
+					result[pType] += fmt.Sprintf(`'%v'`, arr[2].([]interface{})[j])
+					if j != len(arr[2].([]interface{}))-1 {
 						result[pType] += ","
 					}
 				}
@@ -714,13 +713,13 @@ func (db *DCDB) GetPoints(lng map[string]string) (map[string]string, error) {
 			}
 			result[pType] += ",\n"
 		}
-		result[pType] = result[pType][0:len(result[pType])-2]
+		result[pType] = result[pType][0 : len(result[pType])-2]
 	}
 	return result, nil
 }
 
-func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface {}) {
-	var newArgs []interface {}
+func FormatQueryArgs(q, dbType string, args ...interface{}) (string, []interface{}) {
+	var newArgs []interface{}
 	newQ := q
 	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok {
 		switch dbType {
@@ -732,19 +731,19 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 			for i := 0; i < len(indexArr); i++ {
 				str := q[indexArr[i][0]:indexArr[i][1]]
 				//log.Debug("i: %v, len: %v str: %v, q: %v", i, len(args), str, q)
-				if str!="[hex]" {
+				if str != "[hex]" {
 					switch args[i].(type) {
-						case []byte:
+					case []byte:
 						newArgs = append(newArgs, string(args[i].([]byte)))
-						default:
+					default:
 						newArgs = append(newArgs, args[i])
 					}
 				} else {
 					switch args[i].(type) {
-						case string:
-						newQ =strings.Replace(newQ, "[hex]", "x'"+args[i].(string)+"'", 1)
-						case []byte:
-						newQ =strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
+					case string:
+						newQ = strings.Replace(newQ, "[hex]", "x'"+args[i].(string)+"'", 1)
+					case []byte:
+						newQ = strings.Replace(newQ, "[hex]", "x'"+string(args[i].([]byte))+"'", 1)
 					}
 				}
 			}
@@ -763,24 +762,23 @@ func FormatQueryArgs(q, dbType string, args...interface {}) (string, []interface
 	if dbType == "postgresql" || dbType == "sqlite" {
 		r, _ := regexp.Compile(`\s*([0-9]+_[\w]+)(?:\.|\s|\)|$)`)
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
-		for i := len(indexArr)-1; i >= 0; i-- {
-			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
+		for i := len(indexArr) - 1; i >= 0; i-- {
+			newQ = newQ[:indexArr[i][2]] + `"` + newQ[indexArr[i][2]:indexArr[i][3]] + `"` + newQ[indexArr[i][3]:]
 		}
 	}
 
 	r, _ := regexp.Compile(`hex\(([\w]+)\)`)
 	indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
-	for i := len(indexArr)-1; i >= 0; i-- {
+	for i := len(indexArr) - 1; i >= 0; i-- {
 		if dbType == "mysql" || dbType == "sqlite" {
-			newQ = newQ[:indexArr[i][0]]+`LOWER(HEX(`+newQ[indexArr[i][2]:indexArr[i][3]]+`))`+newQ[indexArr[i][1]:]
+			newQ = newQ[:indexArr[i][0]] + `LOWER(HEX(` + newQ[indexArr[i][2]:indexArr[i][3]] + `))` + newQ[indexArr[i][1]:]
 		} else {
-			newQ = newQ[:indexArr[i][0]]+`LOWER(encode(`+newQ[indexArr[i][2]:indexArr[i][3]]+`, 'hex'))`+newQ[indexArr[i][1]:]
+			newQ = newQ[:indexArr[i][0]] + `LOWER(encode(` + newQ[indexArr[i][2]:indexArr[i][3]] + `, 'hex'))` + newQ[indexArr[i][1]:]
 		}
 	}
 
 	return newQ, newArgs
 }
-
 
 func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 	// Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
@@ -788,19 +786,19 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 		select {
 		case <-DaemonCh:
 			log.Debug("Restart from CheckInstall")
-			AnswerDaemonCh<-true
+			AnswerDaemonCh <- true
 			return false
 		default:
 		}
 		progress, err := db.Single("SELECT progress FROM install").String()
 		if err != nil || progress != "complete" {
 			if ok, _ := regexp.MatchString(`database is closed`, fmt.Sprintf("%s", err)); ok {
-				if DB != nil{
+				if DB != nil {
 					db = DB
 				}
 			}
 			log.Debug("%v", `progress != "complete"`, db.GoroutineName)
-			if err!=nil {
+			if err != nil {
 				log.Error("%v", ErrInfo(err))
 			}
 			Sleep(1)
@@ -813,39 +811,39 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 
 func (db *DCDB) GetTcpHost() string {
 	// Слушать TCP нужно только майнерам
- 	for {
+	for {
 		community, err := db.GetCommunityUsers()
-		if err!=nil {
+		if err != nil {
 			log.Error("%v", ErrInfo(err))
 		}
 		myPrefix := ""
 		var myUserId int64
 		if len(community) > 0 {
 			myUserId, err = db.GetPoolAdminUserId()
-			if err!=nil {
+			if err != nil {
 				log.Error("%v", ErrInfo(err))
 			}
-			myPrefix = Int64ToStr(myUserId)+"_"
+			myPrefix = Int64ToStr(myUserId) + "_"
 		} else {
 			myUserId, err = db.GetMyUserId("")
-			if err!=nil {
+			if err != nil {
 				log.Error("%v", ErrInfo(err))
 			}
 		}
 
-		data, err := db.OneRow("SELECT tcp_host, tcp_listening FROM "+myPrefix+"my_table").String()
-		if err!=nil {
+		data, err := db.OneRow("SELECT tcp_host, tcp_listening FROM " + myPrefix + "my_table").String()
+		if err != nil {
 			log.Error("%v", ErrInfo(err))
 		}
 		// чтобы листинг не включался у тех, кто зарегался на пуле удаленно и стал майнером
 		if data["tcp_listening"] != "1" {
 			Sleep(5)
-			continue;
+			continue
 		}
 		tcpHost := data["tcp_host"]
 		if len(tcpHost) == 0 {
 			tcpHost, err = db.Single("SELECT tcp_host FROM miners_data WHERE user_id = ?", myUserId).String()
-			if err!=nil {
+			if err != nil {
 				log.Error("%v", ErrInfo(err))
 			}
 		}
@@ -860,7 +858,6 @@ func (db *DCDB) GetTcpHost() string {
 	return ""
 }
 
-
 func (db *DCDB) GetHttpHost() (string, string, string) {
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
@@ -868,21 +865,21 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 	// Если первый запуск, то будет висеть на 8089
 	community, err := db.GetCommunityUsers()
 	log.Debug("community:%v", community)
-	if err!=nil {
+	if err != nil {
 		log.Error("%v", ErrInfo(err))
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
 	//myPrefix := ""
 	//if len(community) > 0 {
-		//myUserId, err := db.GetPoolAdminUserId()
+	//myUserId, err := db.GetPoolAdminUserId()
 	//	if err!=nil {
 	//		log.Error("%v", ErrInfo(err))
 	//		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	//	}
-		//myPrefix = Int64ToStr(myUserId)+"_"
+	//myPrefix = Int64ToStr(myUserId)+"_"
 	//}
 	httpHost, err := db.Single("SELECT http_host FROM config").String()
-	if err!=nil {
+	if err != nil {
 		log.Error("%v", ErrInfo(err))
 		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 	}
@@ -892,11 +889,11 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 		if len(match) != 0 {
 			port := ""
 			// если ":" нету, значит порт не указан, а если ":" есть, значит в match[1] и в ListenHttpHost уже будет порт
-			if ok, _ := regexp.MatchString(`:`, match[1]); !ok{
-				port = ":80";
+			if ok, _ := regexp.MatchString(`:`, match[1]); !ok {
+				port = ":80"
 			}
 			HandleHttpHost = match[1]
-			ListenHttpHost = match[1]+port
+			ListenHttpHost = match[1] + port
 		}
 		BrowserHttpHost = httpHost
 	}
@@ -904,21 +901,21 @@ func (db *DCDB) GetHttpHost() (string, string, string) {
 }
 
 func (db *DCDB) GetQuotes() string {
-	dq := `"`;
+	dq := `"`
 	if db.ConfigIni["db_type"] == "mysql" {
 		dq = ``
 	}
 	return dq
 }
 
-func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
+func (db *DCDB) ExecSql(query string, args ...interface{}) error {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	var res sql.Result
 	var err error
 	for {
 		res, err = db.Exec(newQuery, newArgs...)
 		if err != nil {
-			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok{
+			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok {
 				log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
 				time.Sleep(250 * time.Millisecond)
 				continue
@@ -931,14 +928,12 @@ func (db *DCDB) ExecSql(query string, args ...interface{}) (error) {
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
-	if db.ConfigIni["sql_log"]=="1" {
+	if db.ConfigIni["sql_log"] == "1" {
 		parent := GetParent()
 		log.Debug("SQL: %v / RowsAffected=%d / LastInsertId=%d / %s / %s", newQuery, affect, lastId, newArgs, parent)
 	}
 	return nil
 }
-
-
 
 func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, error) {
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
@@ -947,7 +942,7 @@ func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, erro
 	for {
 		res, err = db.Exec(newQuery, newArgs...)
 		if err != nil {
-			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok{
+			if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok {
 				log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
 				time.Sleep(250 * time.Millisecond)
 				continue
@@ -960,12 +955,11 @@ func (db *DCDB) ExecSqlGetAffect(query string, args ...interface{}) (int64, erro
 	}
 	affect, err := res.RowsAffected()
 	lastId, err := res.LastInsertId()
-	if db.ConfigIni["sql_log"]=="1" {
+	if db.ConfigIni["sql_log"] == "1" {
 		log.Debug("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 	}
 	return affect, nil
 }
-
 
 // для юнит-тестов. снимок всех данных в БД
 func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
@@ -991,7 +985,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		}
 	}*/
 	if len(orderBy) > 0 {
-		orderBy = " ORDER BY "+orderBy;
+		orderBy = " ORDER BY " + orderBy
 	}
 
 	// это у всех разное, а значит и хэши будут разные, а это будет вызывать путаницу
@@ -1000,12 +994,12 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		db.ConfigIni["sql_log"] = "0"
 		logOff = true
 	}
-	q:=""
+	q := ""
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
-		q="SELECT md5(CAST((array_agg(t.* "+orderBy+")) AS text)) FROM \""+table+"\" t "+where
+		q = "SELECT md5(CAST((array_agg(t.* " + orderBy + ")) AS text)) FROM \"" + table + "\" t " + where
 	case "postgresql":
-		q="SELECT md5(CAST((array_agg(t.* "+orderBy+")) AS text)) FROM \""+table+"\" t "+where
+		q = "SELECT md5(CAST((array_agg(t.* " + orderBy + ")) AS text)) FROM \"" + table + "\" t " + where
 	case "mysql":
 		err := db.ExecSql("SET GLOBAL group_concat_max_len=18446744073709551615")
 		if err != nil {
@@ -1015,11 +1009,11 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 		if err != nil {
 			return "", ErrInfo(err)
 		}
-		columns = strings.Replace(columns,",`status_backup`","",-1)
-		columns = strings.Replace(columns,"`status_backup`,","",-1)
-		columns = strings.Replace(columns,",`cash_request_in_block_id`","",-1)
-		columns = strings.Replace(columns,"`cash_request_in_block_id`,","",-1)
-		q="SELECT MD5(GROUP_CONCAT( CONCAT_WS( '#', `"+columns+"`)  "+orderBy+" )) FROM `"+table+"` "+where
+		columns = strings.Replace(columns, ",`status_backup`", "", -1)
+		columns = strings.Replace(columns, "`status_backup`,", "", -1)
+		columns = strings.Replace(columns, ",`cash_request_in_block_id`", "", -1)
+		columns = strings.Replace(columns, "`cash_request_in_block_id`,", "", -1)
+		q = "SELECT MD5(GROUP_CONCAT( CONCAT_WS( '#', `" + columns + "`)  " + orderBy + " )) FROM `" + table + "` " + where
 		log.Debug("%v", q)
 	}
 	//fmt.Println(q)
@@ -1044,8 +1038,6 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	return hash, nil
 }
 
-
-
 func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	result := make(map[string]int64)
 	confirmedBlockId, err := db.GetConfirmedBlockId()
@@ -1058,7 +1050,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	log.Debug("%v", "confirmedBlockId", confirmedBlockId)
 	// получим время из последнего подвержденного блока
 	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId).Bytes()
-	if err != nil || len(lastBlockBin)==0 {
+	if err != nil || len(lastBlockBin) == 0 {
 		return result, ErrInfo(err)
 	}
 	// ID блока
@@ -1071,7 +1063,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 func (db *DCDB) GetMyNoticeData(sessRestricted int64, sessUserId int64, myPrefix string, lang map[string]string) (map[string]string, error) {
 	result := make(map[string]string)
 	if sessRestricted == 0 {
-		my_table, err := db.OneRow("SELECT user_id, miner_id, status FROM "+myPrefix+"my_table").String()
+		my_table, err := db.OneRow("SELECT user_id, miner_id, status FROM " + myPrefix + "my_table").String()
 		if err != nil {
 			return result, ErrInfo(err)
 		}
@@ -1114,7 +1106,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int64, sessUserId int64, myPrefix
 		return result, ErrInfo(err)
 	}
 
-	if time.Now().Unix() - blockData["lastBlockTime"] > 1800 {
+	if time.Now().Unix()-blockData["lastBlockTime"] > 1800 {
 		result["main_status"] = lang["downloading_blocks"]
 		result["main_status_complete"] = "0"
 	} else {
@@ -1125,7 +1117,7 @@ func (db *DCDB) GetMyNoticeData(sessRestricted int64, sessUserId int64, myPrefix
 	return result, nil
 }
 
-func (db *DCDB) GetPoolAdminUserId() (int64, error)  {
+func (db *DCDB) GetPoolAdminUserId() (int64, error) {
 	result, err := db.Single("SELECT pool_admin_user_id FROM config").Int64()
 	if err != nil {
 		return 0, ErrInfo(err)
@@ -1144,8 +1136,8 @@ func (db *DCDB) CalcProfitGen(currencyId int64, amount float64, userId int64, la
 	var maxPromisedAmounts map[int64][]map[int64]string
 	var repaidAmount float64
 	if calcType == "wallet" {
-		pointsStatus = []map[int64]string {{0:"user"}}
-	} else if (calcType == "mining") { // обычная обещанная сумма
+		pointsStatus = []map[int64]string{{0: "user"}}
+	} else if calcType == "mining" { // обычная обещанная сумма
 		pointsStatus, err = db.GetPointsStatus(userId, 0, nil)
 		if err != nil {
 			return 0, err
@@ -1169,8 +1161,8 @@ func (db *DCDB) CalcProfitGen(currencyId int64, amount float64, userId int64, la
 		}
 	}
 	var profit float64
-	if (calcType == "mining" || calcType == "repaid" && db.CheckCashRequests(userId)==nil) || calcType == "wallet" {
-		profit, err = CalcProfit(amount, lastUpdate, endTime, pct[currencyId], pointsStatus, userHolidays, maxPromisedAmounts[currencyId], currencyId, repaidAmount);
+	if (calcType == "mining" || calcType == "repaid" && db.CheckCashRequests(userId) == nil) || calcType == "wallet" {
+		profit, err = CalcProfit(amount, lastUpdate, endTime, pct[currencyId], pointsStatus, userHolidays, maxPromisedAmounts[currencyId], currencyId, repaidAmount)
 	}
 	return profit, nil
 }
@@ -1202,7 +1194,7 @@ func (db *DCDB) GetCurrencyList(cf bool) (map[int64]string, error) {
 		if err != nil {
 			return result, err
 		}
-		for id, name := range(result0) {
+		for id, name := range result0 {
 			result_[id] = name
 		}
 	}
@@ -1214,14 +1206,14 @@ func (db *DCDB) GetCurrencyList(cf bool) (map[int64]string, error) {
 
 func (db *DCDB) SendTxChangePkey(userId int64) error {
 	txTime := Time()
-	myPrefix:=""
+	myPrefix := ""
 	community, err := db.GetCommunityUsers()
 	if len(community) > 0 {
-		myPrefix = Int64ToStr(userId)+"_"
+		myPrefix = Int64ToStr(userId) + "_"
 	}
-	PendingPublicKey, err := db.Single(`SELECT public_key FROM `+myPrefix+`my_keys WHERE status='my_pending'`).String()
-	bin_public_key_1 := PendingPublicKey;
-	binPublicKeyPack :=  EncodeLengthPlusData(bin_public_key_1)
+	PendingPublicKey, err := db.Single(`SELECT public_key FROM ` + myPrefix + `my_keys WHERE status='my_pending'`).String()
+	bin_public_key_1 := PendingPublicKey
+	binPublicKeyPack := EncodeLengthPlusData(bin_public_key_1)
 	// генерируем тр-ию и шлем в DC-сеть
 	forSign := fmt.Sprintf("%d,%d,%d,%s,%s,%s", TypeInt("ChangePrimaryKey"), txTime, userId, BinToHex(PendingPublicKey), "", "")
 	currentPrivateKey, err := db.GetMyPrivateKey(myPrefix)
@@ -1246,7 +1238,7 @@ func (db *DCDB) SendTxChangePkey(userId int64) error {
 	data = append(data, EncodeLengthPlusData(binPublicKeyPack)...)
 	data = append(data, binSignatures...)
 	err = db.InsertReplaceTxInQueue(data)
-	if err!= nil {
+	if err != nil {
 		return ErrInfo(err)
 	}
 	md5 := Md5(data)
@@ -1298,13 +1290,13 @@ func (db *DCDB) GetLastTx(userId int64, types []int64, limit int64, timeFormat s
 		if err != nil {
 			return result, ErrInfo(err)
 		}
-		if len(tx)>0 || len(queue_tx)>0 {
+		if len(tx) > 0 || len(queue_tx) > 0 {
 			txerror = []byte("")
 		}
 		timeInt := StrToInt64(string(txTime))
 		t := time.Unix(timeInt, 0)
 		txTimeFormat := []byte(t.Format(timeFormat))
-		result = append(result, map[string]string{"hash": string(hash), "time": string(txTimeFormat),"time_int": string(txTime), "type": string(txType), "user_id": string(user_id), "block_id": string(block_id), "error": string(txerror), "queue_tx": string(queue_tx), "tx": string(tx)})
+		result = append(result, map[string]string{"hash": string(hash), "time": string(txTimeFormat), "time_int": string(txTime), "type": string(txType), "user_id": string(user_id), "block_id": string(block_id), "error": string(txerror), "queue_tx": string(queue_tx), "tx": string(tx)})
 	}
 	return result, nil
 }
@@ -1327,19 +1319,19 @@ func (db *DCDB) GetBalances(userId int64) ([]DCAmounts, error) {
 		if err != nil {
 			return result, err
 		}
-		amount+=profit
+		amount += profit
 		amount = Round(amount, 8)
 		forexOrdersAmount, err := db.Single("SELECT sum(amount) FROM forex_orders WHERE user_id  =  ? AND sell_currency_id  =  ? AND del_block_id  =  0", userId, currency_id).Float64()
 		if err != nil {
 			return result, err
 		}
-		amount+=forexOrdersAmount
+		amount += forexOrdersAmount
 		pctSec, err := db.Single("SELECT user FROM pct WHERE currency_id  =  ? ORDER BY block_id DESC", currency_id).Float64()
 		if err != nil {
 			return result, err
 		}
-		pct := Round( (math.Pow(1+pctSec, 3600*24*365)-1)*100, 2 )
-		result = append(result, DCAmounts{CurrencyId:(currency_id), Amount:amount, Pct:pct, PctSec:pctSec})
+		pct := Round((math.Pow(1+pctSec, 3600*24*365)-1)*100, 2)
+		result = append(result, DCAmounts{CurrencyId: (currency_id), Amount: amount, Pct: pct, PctSec: pctSec})
 	}
 	return result, err
 }
@@ -1358,30 +1350,30 @@ func (db *DCDB) GetPointsStatus(userId, pointsUpdateTime int64, BlockData *Block
 		var time_start int64
 		var status string
 		err = rows.Scan(&time_start, &status)
-		if err!= nil {
+		if err != nil {
 			return result, err
 		}
-		result = append(result, map[int64]string{time_start:status})
+		result = append(result, map[int64]string{time_start: status})
 	}
 
 	// НО! При фронтальной проверке может получиться, что последний элемент miner и прошло более 30-и дней.
 	// поэтому нужно добавлять последний элемент = user, если вызов происходит не в блоке
-	if BlockData!=nil && len(result)>0 {
+	if BlockData != nil && len(result) > 0 {
 		for time_start, _ := range result[len(result)-1] {
-			if time_start < time.Now().Unix() - pointsUpdateTime {
-				result = append(result, map[int64]string{time_start+pointsUpdateTime:"user"})
+			if time_start < time.Now().Unix()-pointsUpdateTime {
+				result = append(result, map[int64]string{time_start + pointsUpdateTime: "user"})
 			}
 		}
 	}
 	// для майнеров, которые не получили ни одного балла, а уже шлют кому-то DC, или для всех юзеров
 	if len(result) == 0 {
-		result = append(result, map[int64]string{0:"user"})
+		result = append(result, map[int64]string{0: "user"})
 	}
 	return result, nil
 }
 
 func (db *DCDB) GetMyPublicKey(myPrefix string) ([]byte, error) {
-	result, err := db.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").Bytes()
+	result, err := db.Single("SELECT public_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").Bytes()
 	if err != nil {
 		return []byte(""), ErrInfo(err)
 	}
@@ -1414,14 +1406,13 @@ func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
 	return result, nil
 }
 
-
 func (db *DCDB) GetMyPrivateKey(myPrefix string) (string, error) {
-	return db.Single("SELECT private_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").String()
+	return db.Single("SELECT private_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").String()
 }
 
 func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
 	var key string
-	key, err := db.Single("SELECT private_key FROM "+myPrefix+"my_node_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_node_keys)").String()
+	key, err := db.Single("SELECT private_key FROM " + myPrefix + "my_node_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_node_keys)").String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -1436,9 +1427,8 @@ func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
 	return result, nil
 }
 
-
 func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]string, error) {
-	result:=make(map[int64][]map[int64]string)
+	result := make(map[int64][]map[int64]string)
 	rows, err := db.Query("SELECT currency_id, time, amount  FROM max_promised_amounts ORDER BY time ASC")
 	if err != nil {
 		return result, err
@@ -1448,20 +1438,17 @@ func (db *DCDB) GetMaxPromisedAmounts() (map[int64][]map[int64]string, error) {
 		var currency_id, time int64
 		var amount string
 		err = rows.Scan(&currency_id, &time, &amount)
-		if err!= nil {
+		if err != nil {
 			return result, err
 		}
-		result[currency_id] = append(result[currency_id], map[int64]string{time:amount})
+		result[currency_id] = append(result[currency_id], map[int64]string{time: amount})
 	}
 	return result, nil
 }
 
-
-
-
 func (db *DCDB) GetPrivateKey(myPrefix string) (string, error) {
 	var key string
-	key, err := db.Single("SELECT private_key FROM "+myPrefix+"my_keys WHERE block_id = (SELECT max(block_id) FROM "+myPrefix+"my_keys)").String()
+	key, err := db.Single("SELECT private_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").String()
 	if err != nil {
 		return "", ErrInfo(err)
 	}
@@ -1469,10 +1456,10 @@ func (db *DCDB) GetPrivateKey(myPrefix string) (string, error) {
 }
 
 func (db *DCDB) GetNodeConfig() (map[string]string, error) {
-	return  db.OneRow("SELECT * FROM config").String()
+	return db.OneRow("SELECT * FROM config").String()
 }
 
-func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]int64, error) {
+func (db *DCDB) TestBlock() (*prevBlockType, int64, int64, int64, int64, [][][]int64, error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -1481,15 +1468,15 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		}
 	}()
 
-	var minerId, userId, level, i, currentMinerId, currentUserId int64;
+	var minerId, userId, level, i, currentMinerId, currentUserId int64
 	prevBlock := new(prevBlockType)
 	var levelsRange [][][]int64
 	// последний успешно записанный блок
 	rows, err := db.Query(db.FormatQuery(`SELECT hex(hash), hex(head_hash), block_id, time, level FROM info_block`))
 	defer rows.Close()
-	if  ok := rows.Next(); ok {
+	if ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)
-		if err!= nil {
+		if err != nil {
 			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
 	}
@@ -1507,15 +1494,15 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		// если майнера заморозили то у него исчезает miner_id, чтобы не попасть на такой пустой miner_id
 		// нужно пербирать энтропию, пока не дойдем до существующего miner_id
 		var entropy int64
-		if (i == 0) {
-			entropy = GetEntropy(prevBlock.HeadHash);
+		if i == 0 {
+			entropy = GetEntropy(prevBlock.HeadHash)
 			log.Debug("entropy: %v (%v)", entropy, GetParent())
 		} else {
 			time.Sleep(1000 * time.Millisecond)
 
-			blockId := prevBlock.BlockId - i;
-			if (blockId < 1) {
-				break;
+			blockId := prevBlock.BlockId - i
+			if blockId < 1 {
+				break
 			}
 
 			newHeadHash, err := db.Single("SELECT hex(head_hash) FROM block_chain  WHERE id = ?", blockId).String()
@@ -1523,9 +1510,9 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 			if err != nil {
 				return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 			}
-			entropy = GetEntropy(newHeadHash);
+			entropy = GetEntropy(newHeadHash)
 		}
-		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy);
+		currentMinerId = GetBlockGeneratorMinerId(maxMinerId, entropy)
 		log.Debug("currentMinerId: %v (%v)", currentMinerId, GetParent())
 
 		// получим ID юзера по его miner_id
@@ -1533,7 +1520,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 		if err != nil {
 			return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 		}
-		i++;
+		i++
 	}
 
 	collective, err := db.GetMyUsersIds(true, true)
@@ -1543,7 +1530,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	log.Debug("collective: %v (%v)", collective, GetParent())
 
 	// в сингл-моде будет только $my_miners_ids[0]
-	myMinersIds, err := db.GetMyMinersIds(collective);
+	myMinersIds, err := db.GetMyMinersIds(collective)
 	if err != nil {
 		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
 	}
@@ -1551,18 +1538,18 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 
 	// есть ли кто-то из нашего пула (или сингл-мода), кто находится на 0-м уровне
 	if InSliceInt64(currentMinerId, myMinersIds) {
-		level = 0;
-		levelsRange = append(levelsRange, [][]int64 {{1,1}});
-		minerId = currentMinerId;
+		level = 0
+		levelsRange = append(levelsRange, [][]int64{{1, 1}})
+		minerId = currentMinerId
 	} else {
-		levelsRange = GetBlockGeneratorMinerIdRange (currentMinerId, maxMinerId);
+		levelsRange = GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId)
 		log.Debug("levelsRange %v (%v)", levelsRange, GetParent())
 		log.Debug("myMinersIds %v (%v)", myMinersIds, GetParent())
-		if len(myMinersIds)>0 {
-			minerId, level = FindMinerIdLevel(myMinersIds,levelsRange);
+		if len(myMinersIds) > 0 {
+			minerId, level = FindMinerIdLevel(myMinersIds, levelsRange)
 		} else {
-			level = -1; // у нас нет уровня, т.к. пуст $my_miners_ids, т.е. на сервере нет майнеров
-			minerId = 0;
+			level = -1 // у нас нет уровня, т.к. пуст $my_miners_ids, т.е. на сервере нет майнеров
+			minerId = 0
 		}
 	}
 
@@ -1580,7 +1567,7 @@ func (db *DCDB) TestBlock () (*prevBlockType, int64, int64, int64, int64, [][][]
 	return prevBlock, userId, minerId, currentUserId, level, levelsRange, nil
 }
 
-func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
+func (db *DCDB) GetSleepData() (map[string][]int64, error) {
 	sleepDataMap := make(map[string][]int64)
 	var sleepDataJson []byte
 	sleepDataJson, err := db.Single("SELECT value FROM variables WHERE name = 'sleep'").Bytes()
@@ -1594,13 +1581,13 @@ func  (db *DCDB) GetSleepData() (map[string][]int64, error) {
 		}
 	}
 	log.Debug("sleepDataMap: %v", sleepDataMap)
-	return sleepDataMap, nil;
+	return sleepDataMap, nil
 }
 
 func (db *DCDB) FormatQuery(q string) string {
 
 	newQ := q
-	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok{
+	if ok, _ := regexp.MatchString(`CREATE TABLE`, newQ); !ok {
 		switch db.ConfigIni["db_type"] {
 		case "sqlite":
 			newQ = strings.Replace(newQ, "[hex]", "?", -1)
@@ -1618,18 +1605,18 @@ func (db *DCDB) FormatQuery(q string) string {
 	if db.ConfigIni["db_type"] == "postgresql" || db.ConfigIni["db_type"] == "sqlite" {
 		r, _ := regexp.Compile(`\s*([0-9]+_[\w]+)(?:\.|\s|\)|$)`)
 		indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
-		for i := len(indexArr)-1; i >= 0; i-- {
-			newQ = newQ[:indexArr[i][2]] +`"`+ newQ[indexArr[i][2]:indexArr[i][3]] +`"`+ newQ[indexArr[i][3]:]
+		for i := len(indexArr) - 1; i >= 0; i-- {
+			newQ = newQ[:indexArr[i][2]] + `"` + newQ[indexArr[i][2]:indexArr[i][3]] + `"` + newQ[indexArr[i][3]:]
 		}
 	}
 
 	r, _ := regexp.Compile(`hex\(([\w]+)\)`)
 	indexArr := r.FindAllStringSubmatchIndex(newQ, -1)
-	for i := len(indexArr)-1; i >= 0; i-- {
+	for i := len(indexArr) - 1; i >= 0; i-- {
 		if db.ConfigIni["db_type"] == "mysql" || db.ConfigIni["db_type"] == "sqlite" {
-			newQ = newQ[:indexArr[i][0]]+`LOWER(HEX(`+newQ[indexArr[i][2]:indexArr[i][3]]+`))`+newQ[indexArr[i][1]:]
+			newQ = newQ[:indexArr[i][0]] + `LOWER(HEX(` + newQ[indexArr[i][2]:indexArr[i][3]] + `))` + newQ[indexArr[i][1]:]
 		} else {
-			newQ = newQ[:indexArr[i][0]]+`LOWER(encode(`+newQ[indexArr[i][2]:indexArr[i][3]]+`, 'hex'))`+newQ[indexArr[i][1]:]
+			newQ = newQ[:indexArr[i][0]] + `LOWER(encode(` + newQ[indexArr[i][2]:indexArr[i][3]] + `, 'hex'))` + newQ[indexArr[i][1]:]
 		}
 	}
 
@@ -1638,25 +1625,25 @@ func (db *DCDB) FormatQuery(q string) string {
 }
 
 type DCAmounts struct {
-	Tdc float64
-	Amount float64
-	PctSec float64
+	Tdc        float64
+	Amount     float64
+	PctSec     float64
 	CurrencyId int64
-	Pct float64
+	Pct        float64
 }
 
 type PromisedAmounts struct {
-	Id int64
-	Pct float64
-	PctSec float64
-	CurrencyId int64
-	Amount float64
-	MaxAmount float64
+	Id                 int64
+	Pct                float64
+	PctSec             float64
+	CurrencyId         int64
+	Amount             float64
+	MaxAmount          float64
 	MaxOtherCurrencies int64
-	StatusText string
-	Tdc float64
-	TdcAmount float64
-	Status string
+	StatusText         string
+	Tdc                float64
+	TdcAmount          float64
+	Status             string
 }
 
 func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []PromisedAmounts, map[int]DCAmounts, error) {
@@ -1679,14 +1666,14 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		}
 		log.Debug("%v", "GetPromisedAmounts: ", currency_id, status, tdc_amount, amount, del_block_id, tdc_amount_update)
 		// есть ли просроченные запросы
-		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix() - cash_request_time).String()
+		cashRequestPending, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id = ? AND del_block_id = 0 AND for_repaid_del_block_id = 0 AND time < ? AND status = 'pending'", userId, time.Now().Unix()-cash_request_time).String()
 		if err != nil {
 			return 0, nil, nil, err
 		}
 		if len(cashRequestPending) > 0 && currency_id > 1 && status == "mining" {
 			status = "for_repaid"
 			// и заодно проверим, можно ли делать актуализацию обещанных сумм
-			actualizationPromisedAmounts, err = db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix() - cash_request_time).Int64()
+			actualizationPromisedAmounts, err = db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix()-cash_request_time).Int64()
 			if err != nil {
 				return 0, nil, nil, err
 			}
@@ -1702,7 +1689,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 			if err != nil {
 				return 0, nil, nil, err
 			}
-			tdc+=profit
+			tdc += profit
 			log.Debug("%v", "tdc", tdc)
 			tdc = Round(tdc, 9)
 			log.Debug("%v", "tdc", tdc)
@@ -1711,7 +1698,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 			if err != nil {
 				return 0, nil, nil, err
 			}
-			tdc+=profit
+			tdc += profit
 			tdc = Round(tdc, 9)
 		} else {
 			tdc = tdc_amount
@@ -1753,9 +1740,9 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		pct_sec := pct
 		pct = Round((math.Pow(1+pct, 3600*24*365)-1)*100, 2)
 		// тут accepted значит просто попало в блок
-		promisedAmountListAccepted = append(promisedAmountListAccepted, PromisedAmounts{Id: id, Pct:pct, PctSec:pct_sec, CurrencyId:currency_id, Amount:amount, MaxAmount:maxAmount, MaxOtherCurrencies:maxOtherCurrencies, StatusText:status_text, Tdc:tdc, TdcAmount:tdc_amount, Status:status})
+		promisedAmountListAccepted = append(promisedAmountListAccepted, PromisedAmounts{Id: id, Pct: pct, PctSec: pct_sec, CurrencyId: currency_id, Amount: amount, MaxAmount: maxAmount, MaxOtherCurrencies: maxOtherCurrencies, StatusText: status_text, Tdc: tdc, TdcAmount: tdc_amount, Status: status})
 		// для вывода на главную общей инфы
-		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc:tdc, Amount:amount, PctSec:pct_sec, CurrencyId:(currency_id)}
+		promisedAmountListGen[int(currency_id)] = DCAmounts{Tdc: tdc, Amount: amount, PctSec: pct_sec, CurrencyId: (currency_id)}
 	}
 	return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, nil
 }
@@ -1764,9 +1751,9 @@ func (db *DCDB) GetMyMinerId(userId int64) (int64, error) {
 	return db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", userId).Int64()
 }
 
-func  (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
+func (db *DCDB) GetMyMinersIds(collective []int64) ([]int64, error) {
 	log.Debug("user_id IN %v", strings.Join(SliceInt64ToString(collective), ","))
-	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN ("+strings.Join(SliceInt64ToString(collective), ",")+") AND miner_id > 0").Int64()
+	return db.GetList("SELECT miner_id FROM miners_data WHERE user_id IN (" + strings.Join(SliceInt64ToString(collective), ",") + ") AND miner_id > 0").Int64()
 }
 
 func (db *DCDB) GetConfirmedBlockId() (int64, error) {
@@ -1774,7 +1761,7 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if localGateIp!="" {
+	if localGateIp != "" {
 		blockId, err := db.GetBlockId()
 		if err != nil {
 			return 0, err
@@ -1790,8 +1777,7 @@ func (db *DCDB) GetConfirmedBlockId() (int64, error) {
 	}
 }
 
-
-func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
+func (db *DCDB) GetCommunityUsers() ([]int64, error) {
 	var users []int64
 	rows, err := db.Query("SELECT user_id FROM community")
 	if err != nil {
@@ -1801,16 +1787,16 @@ func (db *DCDB)  GetCommunityUsers() ([]int64, error) {
 	for rows.Next() {
 		var userId int64
 		err = rows.Scan(&userId)
-		if err != nil{
+		if err != nil {
 			return users, ErrInfo(err)
 		}
-		users = append(users, userId);
+		users = append(users, userId)
 	}
-	return users, err;
+	return users, err
 }
 
 func (db *DCDB) GetMyUserId(myPrefix string) (int64, error) {
-	userId, err := db.Single("SELECT user_id FROM "+myPrefix+"my_table").Int64()
+	userId, err := db.Single("SELECT user_id FROM " + myPrefix + "my_table").Int64()
 	if err != nil {
 		return 0, err
 	}
@@ -1819,7 +1805,7 @@ func (db *DCDB) GetMyUserId(myPrefix string) (int64, error) {
 
 func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, error) {
 	var usersIds []int64
-	usersIds, err := db.GetCommunityUsers();
+	usersIds, err := db.GetCommunityUsers()
 	if err != nil {
 		return usersIds, err
 	}
@@ -1829,15 +1815,15 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 			return usersIds, err
 		}
 		defer rows.Close()
-		if  ok := rows.Next(); ok {
-			var x int64;
+		if ok := rows.Next(); ok {
+			var x int64
 			err = rows.Scan(&x)
 			if err != nil {
 				return usersIds, err
 			}
 			usersIds = append(usersIds, x)
 		}
-	} else{
+	} else {
 		// нельзя допустить, чтобы блок подписал майнер, у которого комиссия больше той, что разрешана в пуле,
 		// т.к. это приведет к попаднию в блок некорректной тр-ии, что приведет к сбою пула
 		if checkCommission {
@@ -1848,7 +1834,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 			}
 			defer rows.Close()
 			for rows.Next() {
-				var commissionJson []byte;
+				var commissionJson []byte
 				err = rows.Scan(&commissionJson)
 				if err != nil {
 					return usersIds, err
@@ -1860,14 +1846,14 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 					return usersIds, err
 				}
 
-				rows2, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
+				rows2, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN (" + strings.Join(SliceInt64ToString(usersIds), ",") + ")")
 				if err != nil {
 					return usersIds, err
 				}
 				defer rows2.Close()
 				for rows2.Next() {
-					var uid int64;
-					var commJson []byte;
+					var uid int64
+					var commJson []byte
 					err = rows2.Scan(&uid, &commJson)
 					if err != nil {
 						return usersIds, err
@@ -1883,7 +1869,7 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 							if len(commissionPoolMap[currencyId]) > 0 {
 								if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
 									log.Debug("DelUserIdFromArray %v > %v || %v > %v / %v", Commissions[0], commissionPoolMap[currencyId][0], Commissions[1], commissionPoolMap[currencyId][1], uid)
-									DelUserIdFromArray(&usersIds, uid);
+									DelUserIdFromArray(&usersIds, uid)
 								}
 							}
 						}
@@ -1896,29 +1882,29 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 		// т.к. это приведет к ступору в testBlockIsReady в проверке подписи
 		if checkNodeKey {
 
-			rows, err := db.Query("SELECT user_id, node_public_key FROM miners_data WHERE user_id IN ("+strings.Join(SliceInt64ToString(usersIds), ",")+")")
+			rows, err := db.Query("SELECT user_id, node_public_key FROM miners_data WHERE user_id IN (" + strings.Join(SliceInt64ToString(usersIds), ",") + ")")
 			if err != nil {
 				return usersIds, err
 			}
 			defer rows.Close()
 			for rows.Next() {
-				var uid, nodePublicKey string;
+				var uid, nodePublicKey string
 				err = rows.Scan(&uid, &nodePublicKey)
 				if err != nil {
 					return usersIds, err
 				}
-				publicKey, err := db.Single("SELECT public_key FROM "+uid+"_my_node_keys").String()
+				publicKey, err := db.Single("SELECT public_key FROM " + uid + "_my_node_keys").String()
 				if err != nil {
 					return usersIds, err
 				}
 				if publicKey != nodePublicKey {
-					DelUserIdFromArray(&usersIds, StrToInt64(uid));
+					DelUserIdFromArray(&usersIds, StrToInt64(uid))
 					//log.Debug("DelUserIdFromArray publicKey != nodePublicKey (%x != %x) %v / %v", publicKey, nodePublicKey, uid, usersIds)
 				}
 			}
 		}
 	}
-	return usersIds, nil;
+	return usersIds, nil
 }
 
 func (db *DCDB) GetBlockId() (int64, error) {
@@ -1930,7 +1916,7 @@ func (db *DCDB) GetMyBlockId() (int64, error) {
 }
 
 // наличие cash_requests с pending означает, что у юзера все обещанные суммы в for_repaid. Возможно, временно, если это свежий запрос и юзер еще не успел послать cash_requests_in
-func (db *DCDB) CheckCashRequests(userId int64) (error) {
+func (db *DCDB) CheckCashRequests(userId int64) error {
 	cashRequestStatus, err := db.Single("SELECT status FROM cash_requests WHERE to_user_id  =  ? AND del_block_id  =  0 AND for_repaid_del_block_id  =  0 AND status  =  'pending'", userId).String()
 	if err != nil {
 		return err
@@ -1942,24 +1928,23 @@ func (db *DCDB) CheckCashRequests(userId int64) (error) {
 	return nil
 }
 
-
-func(db *DCDB) CheckUser(userId int64) (error) {
+func (db *DCDB) CheckUser(userId int64) error {
 	user_id, err := db.Single("SELECT user_id FROM users WHERE user_id = ?", userId).Int64()
 	if err != nil {
 		return err
 	}
 	if user_id > 0 {
-		return  nil
+		return nil
 	} else {
-		return  fmt.Errorf("user_id is null")
+		return fmt.Errorf("user_id is null")
 	}
 }
 
-func(db *DCDB) GetLastBlockId() (int64, error) {
+func (db *DCDB) GetLastBlockId() (int64, error) {
 	return db.Single("SELECT block_id FROM info_block").Int64()
 }
 
-func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
+func (db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 	result := make(map[int64][]map[int64]map[string]float64)
 	var q string
 	if db.ConfigIni["db_type"] == "postgresql" {
@@ -1976,10 +1961,10 @@ func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 		var currency_id, time int64
 		var user, miner float64
 		err = rows.Scan(&currency_id, &time, &user, &miner)
-		if err!= nil {
+		if err != nil {
 			return result, err
 		}
-		result[currency_id] = append(result[currency_id], map[int64]map[string]float64{time:{"miner":miner, "user":user}})
+		result[currency_id] = append(result[currency_id], map[int64]map[string]float64{time: {"miner": miner, "user": user}})
 	}
 	return result, nil
 }
@@ -1987,14 +1972,15 @@ func(db *DCDB) GetPct() (map[int64][]map[int64]map[string]float64, error) {
 func (db *DCDB) CheckCurrencyId(id int64) (int64, error) {
 	return db.Single("SELECT id FROM currency WHERE id = ?", id).Int64()
 }
+
 /*
 func(db *DCDB) GetRepaidAmount(userId, currencyId int64) (float64, error) {
 	return db.Single("SELECT amount FROM promised_amount WHERE status = 'repaid' AND currency_id = ? AND user_id = ?", currencyId, userId).Float64()
 }
 */
-func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
+func (db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
-	sql :="SELECT start_time, end_time FROM holidays WHERE user_id = ? AND del = 0";
+	sql := "SELECT start_time, end_time FROM holidays WHERE user_id = ? AND del = 0"
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		return result, err
@@ -2003,14 +1989,13 @@ func(db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	for rows.Next() {
 		var start_time, end_time int64
 		err = rows.Scan(&start_time, &end_time)
-		if err!= nil {
+		if err != nil {
 			return result, err
 		}
 		result = append(result, []int64{start_time, end_time})
 	}
 	return result, nil
 }
-
 
 func (db *DCDB) GetRepaidAmount(currencyId, userId int64) (float64, error) {
 	amount, err := db.Single("SELECT amount FROM promised_amount WHERE status = 'repaid' AND currency_id = ? AND user_id = ? AND del_block_id = 0 AND del_mining_block_id = 0", currencyId, userId).Float64()
@@ -2043,7 +2028,6 @@ func (db *DCDB) CheckCurrencyCF(currency_id int64) (bool, error) {
 	}
 }
 
-
 func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 	userId, err := db.Single(`SELECT user_id FROM users WHERE hex(public_key_0) = ?`, publicKey).String()
 	if err != nil {
@@ -2053,13 +2037,12 @@ func (db *DCDB) GetUserIdByPublicKey(publicKey []byte) (string, error) {
 }
 
 func (db *DCDB) InsertIntoMyKey(prefix string, publicKey []byte, curBlockId string) error {
-	err := db.ExecSql( `INSERT INTO `+prefix+`my_keys (public_key, status, block_id) VALUES ([hex],'approved', ?)`, publicKey, curBlockId )
+	err := db.ExecSql(`INSERT INTO `+prefix+`my_keys (public_key, status, block_id) VALUES ([hex],'approved', ?)`, publicKey, curBlockId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-
 
 func (db *DCDB) GetPaymentSystems() (map[string]string, error) {
 	return db.GetMap(`SELECT id, name FROM payment_systems ORDER BY name`, "id", "name")
@@ -2067,10 +2050,10 @@ func (db *DCDB) GetPaymentSystems() (map[string]string, error) {
 func (db *DCDB) GetInfoBlock() (map[string]string, error) {
 	var result map[string]string
 	result, err := db.OneRow("SELECT * FROM info_block").String()
-	if err != nil{
+	if err != nil {
 		return result, ErrInfo(err)
 	}
-	if len(result)==0 {
+	if len(result) == 0 {
 		return result, fmt.Errorf("empty info_block")
 	}
 	return result, nil
@@ -2082,7 +2065,7 @@ func (db *DCDB) GetTestBlockId() (int64, error) {
 		return 0, err
 	}
 	defer rows.Close()
-	if  ok := rows.Next(); ok {
+	if ok := rows.Next(); ok {
 		var block_id int64
 		err = rows.Scan(&block_id)
 		if err != nil {
@@ -2109,10 +2092,9 @@ func (db *DCDB) GetMyPrefix(userId int64) (string, error) {
 				return "", fmt.Errorf("myUserId==0")
 			}
 		}*/
-		return Int64ToStr(userId)+"_", nil
+		return Int64ToStr(userId) + "_", nil
 	}
 }
-
 
 func (db *DCDB) GetMyLocalGateIp() (string, error) {
 	result, err := db.Single("SELECT local_gate_ip FROM config").String()
@@ -2158,7 +2140,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 		select {
 		case <-DaemonCh:
 			log.Debug("Restart from DbLock")
-			AnswerDaemonCh<-true
+			AnswerDaemonCh <- true
 			return ErrInfo("Restart from DbLock"), true
 		default:
 		}
@@ -2170,7 +2152,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			Mutex.Unlock()
 			return ErrInfo(err), false
 		}
-		if len(exists["script_name"])==0 {
+		if len(exists["script_name"]) == 0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?, ?)`, time.Now().Unix(), goRoutineName, Caller(2))
 			if err != nil {
 				Mutex.Unlock()
@@ -2179,8 +2161,8 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 			ok = true
 		} else {
 			t := StrToInt64(exists["lock_time"])
-			if Time() - t > 600 {
-				log.Error("%d %s %d", t, exists["script_name"], Time() - t)
+			if Time()-t > 600 {
+				log.Error("%d %s %d", t, exists["script_name"], Time()-t)
 				if Mobile() {
 					db.ExecSql(`DELETE FROM main_lock`)
 				}
@@ -2196,7 +2178,6 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 	return nil, false
 }
 
-
 func (db *DCDB) DbLockGate(name string) error {
 	var ok bool
 	for {
@@ -2206,7 +2187,7 @@ func (db *DCDB) DbLockGate(name string) error {
 			Mutex.Unlock()
 			return ErrInfo(err)
 		}
-		if len(exists["script_name"])==0 {
+		if len(exists["script_name"]) == 0 {
 			err = db.ExecSql(`INSERT INTO main_lock(lock_time, script_name, info) VALUES(?, ?, ?)`, time.Now().Unix(), name, Caller(1))
 			if err != nil {
 				Mutex.Unlock()
@@ -2236,16 +2217,16 @@ func (db *DCDB) SetAI(table string, AI int64) error {
 	}
 
 	if db.ConfigIni["db_type"] == "postgresql" {
-		pg_get_serial_sequence, err := db.Single("SELECT pg_get_serial_sequence('"+table+"', '"+AiId+"')").String()
+		pg_get_serial_sequence, err := db.Single("SELECT pg_get_serial_sequence('" + table + "', '" + AiId + "')").String()
 		if err != nil {
 			return ErrInfo(err)
 		}
-		err = db.ExecSql("ALTER SEQUENCE "+pg_get_serial_sequence+" RESTART WITH "+Int64ToStr(AI))
+		err = db.ExecSql("ALTER SEQUENCE " + pg_get_serial_sequence + " RESTART WITH " + Int64ToStr(AI))
 		if err != nil {
 			return ErrInfo(err)
 		}
 	} else if db.ConfigIni["db_type"] == "mysql" {
-		err := db.ExecSql("ALTER TABLE "+table+" AUTO_INCREMENT = "+Int64ToStr(AI))
+		err := db.ExecSql("ALTER TABLE " + table + " AUTO_INCREMENT = " + Int64ToStr(AI))
 		if err != nil {
 			return ErrInfo(err)
 		}
@@ -2258,31 +2239,29 @@ func (db *DCDB) SetAI(table string, AI int64) error {
 	return nil
 }
 
-func (db *DCDB) PrintSleep(err_ interface {}, sleep time.Duration) {
+func (db *DCDB) PrintSleep(err_ interface{}, sleep time.Duration) {
 	var err error
 	switch err_.(type) {
-		case string:
+	case string:
 		err = errors.New(err_.(string))
-		case error:
+	case error:
 		err = err_.(error)
 	}
 	log.Error("%v (%v)", err, GetParent())
 	Sleep(sleep)
 }
 
-func (db *DCDB) PrintSleepInfo(err_ interface {}, sleep time.Duration) {
+func (db *DCDB) PrintSleepInfo(err_ interface{}, sleep time.Duration) {
 	var err error
 	switch err_.(type) {
-		case string:
+	case string:
 		err = errors.New(err_.(string))
-		case error:
+	case error:
 		err = err_.(error)
 	}
 	log.Info("%v (%v)", err, GetParent())
 	Sleep(sleep)
 }
-
-
 
 func (db *DCDB) DbUnlock(goRoutineName string) error {
 	defer func() {
@@ -2303,7 +2282,7 @@ func (db *DCDB) DbUnlock(goRoutineName string) error {
 
 func (db *DCDB) DbUnlockGate(name string) error {
 	log.Debug("DbUnlockGate %v %v", Caller(2), name)
-	return  db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
+	return db.ExecSql("DELETE FROM main_lock WHERE script_name=?", name)
 }
 
 func (db *DCDB) GetIsReadySleep(level int64, data []int64) int64 {
@@ -2319,7 +2298,7 @@ func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) (int64, error
 	}
 
 	// узнаем время, которые было затрачено в ожидании is_ready предыдущим блоком
-	isReadySleep := db.GetIsReadySleep(prevBlock.Level , sleepData["is_ready"])
+	isReadySleep := db.GetIsReadySleep(prevBlock.Level, sleepData["is_ready"])
 	//fmt.Println("isReadySleep", isReadySleep)
 
 	// сколько сек должен ждать нод, перед тем, как начать генерить блок, если нашел себя в одном из уровней.
@@ -2327,12 +2306,12 @@ func (db *DCDB) GetGenSleep(prevBlock *prevBlockType, level int64) (int64, error
 	//fmt.Println("generatorSleep", generatorSleep)
 
 	// сумма is_ready всех предыдущих уровней, которые не успели сгенерить блок
-	isReadySleep2 := GetIsReadySleepSum(level , sleepData["is_ready"])
+	isReadySleep2 := GetIsReadySleepSum(level, sleepData["is_ready"])
 	//fmt.Println("isReadySleep2", isReadySleep2)
 
 	// узнаем, сколько нам нужно спать
-	sleep := isReadySleep + generatorSleep + isReadySleep2;
-	return sleep, nil;
+	sleep := isReadySleep + generatorSleep + isReadySleep2
+	return sleep, nil
 }
 
 func (db *DCDB) UpdDaemonTime(name string) {
@@ -2344,12 +2323,12 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 	column := "id"
 	switch db.ConfigIni["db_type"] {
 	case "sqlite":
-		err := db.QueryRow("SELECT id FROM "+table).Scan(&exists)
+		err := db.QueryRow("SELECT id FROM " + table).Scan(&exists)
 		if err != nil {
 			if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
-				err = db.QueryRow("SELECT log_id FROM "+table).Scan(&exists)
+				err = db.QueryRow("SELECT log_id FROM " + table).Scan(&exists)
 				if err != nil {
-					if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok{
+					if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
 						column = "log_id"
 					} else {
 						return "", ErrInfo(err)
@@ -2357,7 +2336,7 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 				}
 				column = "log_id"
 			} else {
-				if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok{
+				if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
 					column = "id"
 				} else {
 					return "", ErrInfo(err)
@@ -2367,7 +2346,7 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 	case "postgresql":
 		exists = ""
 		err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "id").Scan(&exists)
-		if err != nil && err!=sql.ErrNoRows {
+		if err != nil && err != sql.ErrNoRows {
 			return "", err
 		}
 		if len(exists) == 0 {
@@ -2383,7 +2362,7 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 	case "mysql":
 		exists = ""
 		err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "id").Scan(&exists)
-		if err != nil && err!=sql.ErrNoRows {
+		if err != nil && err != sql.ErrNoRows {
 			return "", err
 		}
 		if len(exists) == 0 {
@@ -2422,13 +2401,13 @@ func (db *DCDB) NodesBan(userId int64, info string) error {
 func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	BlockData := new(BlockData)
 	data, err := db.OneRow("SELECT * FROM block_chain WHERE id = ?", blockId).String()
-	if err!=nil {
+	if err != nil {
 		return BlockData, ErrInfo(err)
 	}
 	log.Debug("data: %x\n", data["data"])
 	if len(data["data"]) > 0 {
 		binaryData := []byte(data["data"])
-		BytesShift(&binaryData, 1)  // не нужно. 0 - блок, >0 - тр-ии
+		BytesShift(&binaryData, 1) // не нужно. 0 - блок, >0 - тр-ии
 		BlockData = ParseBlockHeader(&binaryData)
 		BlockData.Hash = BinToHex([]byte(data["hash"]))
 		BlockData.HeadHash = BinToHex([]byte(data["head_hash"]))
@@ -2436,9 +2415,7 @@ func (db *DCDB) GetBlockDataFromBlockChain(blockId int64) (*BlockData, error) {
 	return BlockData, nil
 }
 
-
-
-func (db *DCDB) ClearIncompatibleTxSql(whereType interface {},  userId int64, waitError *string) {
+func (db *DCDB) ClearIncompatibleTxSql(whereType interface{}, userId int64, waitError *string) {
 	var whereTypeID int64
 	switch whereType.(type) {
 	case string:
@@ -2448,7 +2425,7 @@ func (db *DCDB) ClearIncompatibleTxSql(whereType interface {},  userId int64, wa
 	}
 	addSql := ""
 	if userId > 0 {
-		addSql = "AND user_id = "+Int64ToStr(userId)
+		addSql = "AND user_id = " + Int64ToStr(userId)
 	}
 	num, err := db.Single(`
 					SELECT count(*)
@@ -2470,13 +2447,11 @@ func (db *DCDB) ClearIncompatibleTxSql(whereType interface {},  userId int64, wa
 		*waitError = fmt.Sprintf("%v", ErrInfo(err))
 	}
 	if num > 0 {
-		*waitError ="wait_error"
+		*waitError = "wait_error"
 	}
 }
 
-
-
-func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface {}, waitError *string, thirdVar_ interface {}) error {
+func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface{}, waitError *string, thirdVar_ interface{}) error {
 
 	var userId int64
 	switch userId_.(type) {
@@ -2496,18 +2471,18 @@ func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface {
 
 	var whereType string
 	for _, txType := range typesArr {
-		whereType += Int64ToStr(TypeInt(txType))+","
+		whereType += Int64ToStr(TypeInt(txType)) + ","
 	}
 	whereType = whereType[:len(whereType)-1]
 
 	addSql := ""
 	if userId > 0 {
-		addSql = "AND user_id = "+Int64ToStr(userId)
+		addSql = "AND user_id = " + Int64ToStr(userId)
 	}
 
 	addSql1 := ""
 	if len(thirdVar) > 0 {
-		addSql1 = "AND user_id = "+thirdVar
+		addSql1 = "AND user_id = " + thirdVar
 	}
 
 	num, err := db.Single(`
@@ -2531,7 +2506,7 @@ func (db *DCDB) ClearIncompatibleTxSqlSet(typesArr []string, userId_ interface {
 		*waitError = fmt.Sprintf("%v", ErrInfo(err))
 	}
 	if num > 0 {
-		*waitError ="wait_error"
+		*waitError = "wait_error"
 	}
 	return nil
 }
@@ -2569,7 +2544,6 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 	log.Debug("iv: %s", iv)
 	log.Debug("iv: %x", iv)
 
-
 	if len(encryptedKey) == 0 {
 		return nil, nil, nil, ErrInfo("len(encryptedKey) == 0")
 	}
@@ -2580,14 +2554,14 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 
 	myPrefix := ""
 	collective, err := db.GetCommunityUsers()
-	if err!=nil {
+	if err != nil {
 		return nil, nil, nil, err
 	}
 	if len(collective) > 0 {
 		if !InSliceInt64(myUserId, collective) {
 			return nil, nil, nil, ErrInfo("!InSliceInt64(myUserId, collective)")
 		}
-		myPrefix = Int64ToStr(myUserId)+"_"
+		myPrefix = Int64ToStr(myUserId) + "_"
 	}
 
 	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
@@ -2595,12 +2569,12 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 		return nil, nil, nil, ErrInfo("len(nodePrivateKey) == 0")
 	}
 
-	block, _ := pem.Decode([]byte(nodePrivateKey));
+	block, _ := pem.Decode([]byte(nodePrivateKey))
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
 		return nil, nil, nil, ErrInfo("No valid PEM data found")
 	}
 
-	private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes);
+	private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, nil, nil, ErrInfo(err)
 	}
@@ -2632,9 +2606,9 @@ func (db *DCDB) GetBinSign(forSign string, myUserId int64) ([]byte, error) {
 	}
 	myPrefix := ""
 	if len(community) > 0 {
-		myPrefix = Int64ToStr(myUserId)+"_"
+		myPrefix = Int64ToStr(myUserId) + "_"
 	}
-	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix);
+	nodePrivateKey, err := db.GetNodePrivateKey(myPrefix)
 	if err != nil {
 		return nil, ErrInfo(err)
 	}

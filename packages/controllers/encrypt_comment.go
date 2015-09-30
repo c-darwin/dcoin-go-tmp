@@ -1,11 +1,12 @@
 package controllers
+
 import (
-    "encoding/json"
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 
-	"errors"
-	"crypto/rsa"
 	"crypto/rand"
+	"crypto/rsa"
+	"errors"
 )
 
 func (c *Controller) EncryptComment() (string, error) {
@@ -18,7 +19,7 @@ func (c *Controller) EncryptComment() (string, error) {
 	var toId int64
 	var toIds []int64
 	toIds_ := c.r.FormValue("to_ids")
-	if len (toIds_) == 0 {
+	if len(toIds_) == 0 {
 		toId = utils.StrToInt64(c.r.FormValue("to_id"))
 	} else {
 		err = json.Unmarshal([]byte(toIds_), &toIds)
@@ -42,7 +43,7 @@ func (c *Controller) EncryptComment() (string, error) {
 		toUserId = toId
 	}
 
-	if len (toIds) == 0 {
+	if len(toIds) == 0 {
 		toIds = []int64{toUserId}
 	}
 
@@ -50,7 +51,7 @@ func (c *Controller) EncryptComment() (string, error) {
 	log.Debug("toIds:", toIds)
 	log.Debug("toUserId:", toUserId)
 	enc := make(map[int][]byte)
-	for i:=0; i < len(toIds); i++ {
+	for i := 0; i < len(toIds); i++ {
 		if toIds[i] == 0 {
 			enc[i] = []byte("0")
 			continue
@@ -61,7 +62,7 @@ func (c *Controller) EncryptComment() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		var publicKey string
-		if utils.StrToInt(minersData["miner_id"]) > 0 && txType!="cash_request" && txType!="bug_reporting" && txType!="project" && txType!="money_back" {
+		if utils.StrToInt(minersData["miner_id"]) > 0 && txType != "cash_request" && txType != "bug_reporting" && txType != "project" && txType != "money_back" {
 			publicKey = minersData["node_public_key"]
 		} else {
 			publicKey, err = c.Single("SELECT public_key_0 FROM users WHERE user_id  =  ?", toIds[i]).String()

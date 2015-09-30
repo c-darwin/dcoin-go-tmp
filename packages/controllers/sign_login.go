@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
@@ -19,9 +20,9 @@ func (c *Controller) SignLogin() (string, error) {
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 	log.Debug("RemoteAddr %s", RemoteAddr)
 	if configIni["sign_hash"] == "ip" {
-		hash = utils.Md5(RemoteAddr);
+		hash = utils.Md5(RemoteAddr)
 	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent")+RemoteAddr);
+		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	}
 	log.Debug("hash %s", hash)
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hex(hash) = ?`, hash)
@@ -33,5 +34,5 @@ func (c *Controller) SignLogin() (string, error) {
 		return "", err
 	}
 	log.Debug("loginCode %v", loginCode)
-	return "\""+loginCode+"\"", nil
+	return "\"" + loginCode + "\"", nil
 }

@@ -1,36 +1,37 @@
 package controllers
+
 import (
+	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
-	"encoding/json"
 )
 
 type changeArbitratorConditionsPage struct {
-	SignData string
-	ShowSignData bool
-	TxType string
-	TxTypeId int64
-	TimeNow int64
-	UserId int64
-	Alert string
-	Lang map[string]string
-	CountSignArr []int
-	CurrencyList map[int64]string
-	PendingTx int64
+	SignData        string
+	ShowSignData    bool
+	TxType          string
+	TxTypeId        int64
+	TimeNow         int64
+	UserId          int64
+	Alert           string
+	Lang            map[string]string
+	CountSignArr    []int
+	CurrencyList    map[int64]string
+	PendingTx       int64
 	LastTxFormatted string
-	Conditions map[int64][5]string
-	Commission map[int64][]float64
+	Conditions      map[int64][5]string
+	Commission      map[int64][]float64
 }
 
 func (c *Controller) ChangeArbitratorConditions() (string, error) {
 
-	txType := "ChangeArbitratorConditions";
+	txType := "ChangeArbitratorConditions"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
 	myCommission := make(map[int64][]float64)
 	if c.SessRestricted == 0 {
-		rows, err := c.Query(c.FormatQuery("SELECT currency_id, pct, min, max FROM "+c.MyPrefix+"my_commission"))
+		rows, err := c.Query(c.FormatQuery("SELECT currency_id, pct, min, max FROM " + c.MyPrefix + "my_commission"))
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -46,7 +47,7 @@ func (c *Controller) ChangeArbitratorConditions() (string, error) {
 		}
 	}
 
-	currencyList :=c .CurrencyList
+	currencyList := c.CurrencyList
 	commission := make(map[int64][]float64)
 	for currency_id, _ := range currencyList {
 		if len(myCommission[currency_id]) > 0 {
@@ -91,23 +92,22 @@ func (c *Controller) ChangeArbitratorConditions() (string, error) {
 	pendingTx := pendingTx_[txTypeId]
 
 	TemplateStr, err := makeTemplate("change_arbitrator_conditions", "changeArbitratorConditions", &changeArbitratorConditionsPage{
-		Alert: c.Alert,
-		Lang: c.Lang,
-		CountSignArr: c.CountSignArr,
-		ShowSignData: c.ShowSignData,
-		UserId: c.SessUserId,
-		TimeNow: timeNow,
-		TxType: txType,
-		TxTypeId: txTypeId,
-		SignData: "",
-		CurrencyList: c.CurrencyList,
-		PendingTx: pendingTx,
+		Alert:           c.Alert,
+		Lang:            c.Lang,
+		CountSignArr:    c.CountSignArr,
+		ShowSignData:    c.ShowSignData,
+		UserId:          c.SessUserId,
+		TimeNow:         timeNow,
+		TxType:          txType,
+		TxTypeId:        txTypeId,
+		SignData:        "",
+		CurrencyList:    c.CurrencyList,
+		PendingTx:       pendingTx,
 		LastTxFormatted: lastTxFormatted,
-		Conditions: arbitratorConditionsMap,
-		Commission: commission})
+		Conditions:      arbitratorConditionsMap,
+		Commission:      commission})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
 }
-

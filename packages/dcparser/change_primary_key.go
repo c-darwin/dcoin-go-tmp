@@ -1,26 +1,26 @@
 package dcparser
 
 import (
-	"fmt"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"bytes"
 	"database/sql"
+	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func (p *Parser) ChangePrimaryKeyInit() (error) {
+func (p *Parser) ChangePrimaryKeyInit() error {
 	var err error
-	fields := []string {"bin_public_keys", "sign"}
-	p.TxMap, err = p.GetTxMap(fields);
+	fields := []string{"bin_public_keys", "sign"}
+	p.TxMap, err = p.GetTxMap(fields)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	// в 1 new_public_keys может быть от 1 до 3-х ключей
 	i := 0
-	bin_public_keys:=p.TxMap["bin_public_keys"]
+	bin_public_keys := p.TxMap["bin_public_keys"]
 	for {
-		length:=utils.DecodeLength(&bin_public_keys)
-		pKey:=utils.BytesShift(&bin_public_keys, length)
+		length := utils.DecodeLength(&bin_public_keys)
+		pKey := utils.BytesShift(&bin_public_keys, length)
 		p.newPublicKeysHex[i] = utils.BinToHex(pKey)
 		if len(bin_public_keys) == 0 || i > 1 {
 			break
@@ -30,26 +30,25 @@ func (p *Parser) ChangePrimaryKeyInit() (error) {
 	return nil
 }
 
-func (p *Parser) ChangePrimaryKeyFront() (error) {
+func (p *Parser) ChangePrimaryKeyFront() error {
 
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-
 	if !utils.CheckInputData(p.newPublicKeysHex[0], "public_key") {
 		return p.ErrInfo("public_key")
 	}
-	if len(p.newPublicKeysHex[1]) >0 && !utils.CheckInputData(p.newPublicKeysHex[1], "public_key") {
+	if len(p.newPublicKeysHex[1]) > 0 && !utils.CheckInputData(p.newPublicKeysHex[1], "public_key") {
 		return p.ErrInfo("public_key 1")
 	}
-	if len(p.newPublicKeysHex[2]) >0 && !utils.CheckInputData(p.newPublicKeysHex[2], "public_key") {
+	if len(p.newPublicKeysHex[2]) > 0 && !utils.CheckInputData(p.newPublicKeysHex[2], "public_key") {
 		return p.ErrInfo("public_key 2")
 	}
 
 	forSign := fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.newPublicKeysHex[0], p.newPublicKeysHex[1], p.newPublicKeysHex[2])
-	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false);
+	CheckSignResult, err := utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -64,13 +63,13 @@ func (p *Parser) ChangePrimaryKeyFront() (error) {
 	return nil
 }
 
-func (p *Parser) ChangePrimaryKey() (error) {
+func (p *Parser) ChangePrimaryKey() error {
 
 	// Всегда есть, что логировать, т.к. это обновление ключа
 	var public_key_0, public_key_1, public_key_2 []byte
 	var log_id int64
 	err := p.QueryRow(p.FormatQuery("SELECT hex(public_key_0), hex(public_key_1), hex(public_key_2), log_id FROM users WHERE user_id  =  ?"), p.TxUserID).Scan(&public_key_0, &public_key_1, &public_key_2, &log_id)
-	if err != nil  && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 
@@ -84,7 +83,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	}
 
 	// проверим, не наш ли это user_id или не наш ли это паблик-ключ
-	myUserId, myBlockId, myPrefix, _ , err:= p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}
@@ -96,7 +95,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	if myUserId > 0 || len(community) == 0 {
 		var err error
 		// проверим, не наш ли это public_key, чтобы записать полученный user_id в my_table
-		myPublicKey, err = p.Single("SELECT public_key FROM "+myPrefix+"my_keys WHERE id  =  (SELECT max(id) FROM "+myPrefix+"my_keys )").Bytes()
+		myPublicKey, err = p.Single("SELECT public_key FROM " + myPrefix + "my_keys WHERE id  =  (SELECT max(id) FROM " + myPrefix + "my_keys )").Bytes()
 		myPublicKey = utils.BinToHex(myPublicKey)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -107,14 +106,14 @@ func (p *Parser) ChangePrimaryKey() (error) {
 	// возможна ситуация, когда юзер зарегался по уже занятому ключу. В этом случае тут будет новый ключ, а в my_keys не будет
 	// my_user_id он уже успел заполучить в предыдущих блоках
 	if p.TxUserID == myUserId && !bytes.Equal(myPublicKey, p.newPublicKeysHex[0]) && myBlockId <= p.BlockData.BlockId {
-		err = p.ExecSql("UPDATE "+myPrefix+"my_table SET status = 'bad_key'")
+		err = p.ExecSql("UPDATE " + myPrefix + "my_table SET status = 'bad_key'")
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 	} else if (p.TxUserID == myUserId || bytes.Equal(myPublicKey, p.newPublicKeysHex[0])) && myBlockId <= p.BlockData.BlockId {
 		// если есть user_id, значит уже точно нету bad_key и в прошлых блоках уже было соотвествие my_key с ключем в new_public_keys_hex
 
-		log.Debug("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'")
+		log.Debug("UPDATE " + myPrefix + "my_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'")
 		// обновим статус в нашей локальной табле.
 		err = p.ExecSql("UPDATE "+myPrefix+"my_keys SET status = 'approved', block_id = ?, time = ? WHERE hex(public_key) = ? AND status = 'my_pending'", p.BlockData.BlockId, p.BlockData.Time, p.newPublicKeysHex[0])
 		if err != nil {
@@ -122,7 +121,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 		}
 
 		// и если у нас в таблицах my_ ничего нет, т.к. мы только нашли соотвествие нашего ключа, то заносим все данные
-		if len(myPublicKey) >0 && myUserId == 0 {
+		if len(myPublicKey) > 0 && myUserId == 0 {
 			myUserId, err = p.Single("SELECT user_id FROM users WHERE hex(public_key_0) = ?", myPublicKey).Int64()
 			if err != nil {
 				return p.ErrInfo(err)
@@ -152,7 +151,7 @@ func (p *Parser) ChangePrimaryKey() (error) {
 			defer rows.Close()
 			for rows.Next() {
 				var to_user_id, currency_id, amount, status, id string
-				var hash_code[]byte
+				var hash_code []byte
 				err = rows.Scan(&to_user_id, &currency_id, &amount, &hash_code, &status, &id)
 				if err != nil {
 					return p.ErrInfo(err)
@@ -185,11 +184,10 @@ func (p *Parser) ChangePrimaryKey() (error) {
 
 	}
 
-
 	return nil
 }
 
-func (p *Parser) ChangePrimaryKeyRollback() (error) {
+func (p *Parser) ChangePrimaryKeyRollback() error {
 
 	// получим log_id, по которому можно найти данные, которые были до этого
 	// $log_id всегда больше нуля, т.к. это откат обновления ключа
@@ -202,7 +200,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	var public_key_0, public_key_1, public_key_2 []byte
 	var prev_log_id int64
 	err = p.QueryRow(p.FormatQuery("SELECT public_key_0, public_key_1, public_key_2, prev_log_id FROM log_users WHERE log_id  =  ?"), logId).Scan(&public_key_0, &public_key_1, &public_key_2, &prev_log_id)
-	if err != nil  && err!=sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return p.ErrInfo(err)
 	}
 	if len(public_key_0) > 0 {
@@ -227,7 +225,7 @@ func (p *Parser) ChangePrimaryKeyRollback() (error) {
 	p.rollbackAI("log_users", 1)
 
 	// проверим, не наш ли это user_id
-	myUserId, _, myPrefix, _ , err := p.GetMyUserId(p.TxUserID)
+	myUserId, _, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
 	if err != nil {
 		return err
 	}

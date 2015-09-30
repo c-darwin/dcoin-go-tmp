@@ -1,21 +1,21 @@
 package controllers
+
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
-
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
 type poolAdminPage struct {
-	Alert string
-	SignData string
+	Alert        string
+	SignData     string
 	ShowSignData bool
 	CountSignArr []int
-	Config map[string]string
-	WaitingList []map[string]string
-	UserId int64
-	Lang map[string]string
-	Users []map[int64]map[string]string
+	Config       map[string]string
+	WaitingList  []map[string]string
+	UserId       int64
+	Lang         map[string]string
+	Users        []map[int64]map[string]string
 }
 
 func (c *Controller) PoolAdminControl() (string, error) {
@@ -35,7 +35,7 @@ func (c *Controller) PoolAdminControl() (string, error) {
 
 		for _, table := range consts.MyTables {
 			if utils.InSliceString(utils.Int64ToStr(delId)+"_"+table, allTable) {
-				err = c.ExecSql("DROP TABLE "+utils.Int64ToStr(delId)+"_"+table)
+				err = c.ExecSql("DROP TABLE " + utils.Int64ToStr(delId) + "_" + table)
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -66,7 +66,7 @@ func (c *Controller) PoolAdminControl() (string, error) {
 	for _, uid := range community {
 		if uid != c.SessUserId {
 			if utils.InSliceString(utils.Int64ToStr(uid)+"_my_table", allTable) {
-				data, err := c.OneRow("SELECT miner_id, email FROM "+utils.Int64ToStr(uid)+"_my_table LIMIT 1").String()
+				data, err := c.OneRow("SELECT miner_id, email FROM " + utils.Int64ToStr(uid) + "_my_table LIMIT 1").String()
 				if err != nil {
 					return "", utils.ErrInfo(err)
 				}
@@ -80,15 +80,15 @@ func (c *Controller) PoolAdminControl() (string, error) {
 	waitingList, err := c.GetAll("SELECT * FROM pool_waiting_list", -1)
 
 	config, err := c.GetNodeConfig()
-	TemplateStr, err := makeTemplate("pool_admin", "poolAdmin", &poolAdminPage {
-		Alert: c.Alert,
-		Lang: c.Lang,
+	TemplateStr, err := makeTemplate("pool_admin", "poolAdmin", &poolAdminPage{
+		Alert:        c.Alert,
+		Lang:         c.Lang,
 		ShowSignData: c.ShowSignData,
-		SignData: "",
-		Config: config,
-		Users: users,
-		UserId: c.SessUserId,
-		WaitingList: waitingList,
+		SignData:     "",
+		Config:       config,
+		Users:        users,
+		UserId:       c.SessUserId,
+		WaitingList:  waitingList,
 		CountSignArr: c.CountSignArr})
 	if err != nil {
 		return "", utils.ErrInfo(err)

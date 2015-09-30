@@ -1,7 +1,8 @@
 package controllers
+
 import (
-	"errors"
 	"encoding/json"
+	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
