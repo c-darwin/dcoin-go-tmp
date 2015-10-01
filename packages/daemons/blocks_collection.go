@@ -13,8 +13,6 @@ import (
 	"os"
 )
 
-var startBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
-var endBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 
 func BlocksCollection() {
 	defer func() {
@@ -84,7 +82,7 @@ BEGIN:
 		parser := new(dcparser.Parser)
 		parser.DCDB = d.DCDB
 		parser.GoroutineName = GoroutineName
-		if currentBlockId == 0 || *startBlockId > 0 {
+		if currentBlockId == 0 || *utils.StartBlockId > 0 {
 			/*
 			   IsNotExistBlockChain := false
 			   if _, err := os.Stat(*utils.Dir+"/public/blockchain"); os.IsNotExist(err) {
@@ -155,7 +153,7 @@ BEGIN:
 						file.Read(data)
 						log.Debug("data %x\n", data)
 						blockId := utils.BinToDec(data[0:5])
-						if *endBlockId > 0 && blockId == *endBlockId {
+						if *utils.EndBlockId > 0 && blockId == *utils.EndBlockId {
 							d.PrintSleep(err, 1)
 							file.Close()
 							continue BEGIN
@@ -168,7 +166,7 @@ BEGIN:
 						blockBin := utils.BytesShift(&data2, length)
 						log.Debug("blockBin %x\n", blockBin)
 
-						if *startBlockId == 0 || (*startBlockId > 0 && blockId > *startBlockId) {
+						if *utils.StartBlockId == 0 || (*utils.StartBlockId > 0 && blockId > *utils.StartBlockId) {
 
 							// парсинг блока
 							parser.BinaryData = blockBin
