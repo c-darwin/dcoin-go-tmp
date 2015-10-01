@@ -44,7 +44,7 @@ func ReplQ(q string) string {
 			result += q1[i]
 		}
 	}
-	log.Debug("%v", result)
+	//log.Debug("%v", result)
 	return result
 }
 

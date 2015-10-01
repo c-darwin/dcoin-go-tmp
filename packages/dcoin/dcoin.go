@@ -84,7 +84,6 @@ nodes_ban_exit=0
 log_tables=
 log_fns=
 sign_hash=ip
-db_type=sqlite
 db_user=
 db_host=
 db_port=
