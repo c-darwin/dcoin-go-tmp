@@ -153,6 +153,9 @@
 	}
 	{{end}}
 
+	{{if .Mobile}}
+	.nav > li > a {padding: 5px 5px}
+	{{end}}}
 </style>
 </head>
 
@@ -525,5 +528,26 @@
 	//}
 
 </script>
+
+{{if .IOS}}
+<style>
+	.ico{font-size:1.5em; color: #A7A4A4;}
+	.icoDiv{padding-top: 5px; display: inline-block; line-height: 15px; text-align: center}
+	.icoDiv p{font-size: 8px; color: #A7A4A4;}
+	.icoPaddingRight{padding-right: 36px}
+	#page-wrapper{padding-bottom: 40px;}
+</style>
+<div class="navbar-fixed-bottom row-fluid" style="background-color: #F8F8F8; border-top:1px solid #E7E7E7; height: 35px">
+	<div class="navbar-inner" style="">
+		<div class="container" style="">
+			<div class="icoDiv icoPaddingRight" onclick="javascript:location.href='#home'"><i class="fa fa-home fa-lg ico"></i><p>Home</p></div>
+			<div class="icoDiv icoPaddingRight" onclick="javascript:location.href='#chat'"><i class="fa fa-wechat fa-lg ico"></i><p>Chat</p></div>
+			<div class="icoDiv icoPaddingRight" onclick="javascript:location.href='#walletsList'"><i class="fa fa-credit-card fa-lg ico"></i><p>Account</p></div>
+			<div class="icoDiv icoPaddingRight" onclick="javascript:location.href='#miningMenu'"><i class="fa fa-money fa-lg ico"></i><p>Mining</p></div>
+			<div class="icoDiv" onclick="javascript:location.href='#statistic'"><i class="fa fa-database fa-lg ico"></i><p>Statistic</p></div>
+		</div>
+	</div>
+</div>
+{{end}}
 
 </body></html>

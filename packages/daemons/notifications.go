@@ -166,7 +166,7 @@ BEGIN:
 						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					data, err := d.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", myPrefix, userId).String()
+					data, err := d.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", userId).String()
 					if err != nil {
 						d.PrintSleep(err, 1)
 						continue BEGIN

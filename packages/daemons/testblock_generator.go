@@ -147,7 +147,7 @@ BEGIN:
 			log.Debug("i %v", i)
 			log.Debug("sleep %v", sleep)
 			var newHeadHash string
-			err = d.QueryRow("SELECT hex(head_hash) FROM info_block").Scan(&newHeadHash)
+			err = d.QueryRow(d.FormatQuery("SELECT hex(head_hash) FROM info_block")).Scan(&newHeadHash)
 			utils.CheckErr(err)
 			log.Debug("newHeadHash %v", newHeadHash)
 			d.dbUnlock()
