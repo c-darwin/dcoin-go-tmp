@@ -105,8 +105,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		Lang: globalLangReadOnly[lang],
 		Key: key,
 		SetLang: setLang,
-		IOS: utils.IOS(),
-		Mobile: utils.Mobile()})
+		IOS: true,
+		Mobile: true})
 	if err != nil {
 		log.Error("%v", err)
 	}
