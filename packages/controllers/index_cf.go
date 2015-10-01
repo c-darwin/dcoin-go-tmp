@@ -65,7 +65,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 	if dbInit {
 		var err error
 		c.DCDB = utils.DB
-		if c.DCDB == nil {
+		if c.DCDB.DB == nil {
 			log.Error("utils.DB == nil")
 			dbInit = false
 		}

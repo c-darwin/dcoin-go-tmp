@@ -51,7 +51,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		var err error
 		//c.DCDB, err = utils.NewDbConnect(configIni)
 		c.DCDB = utils.DB
-		if c.DCDB == nil {
+		if c.DCDB.DB == nil {
 			log.Error("utils.DB == nil")
 			dbInit = false
 		}
@@ -159,7 +159,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	c.Periods = map[int64]string{86400: "1" + c.Lang["day"], 604800: "1" + c.Lang["week"], 31536000: "1" + c.Lang["year"], 2592000: "1" + c.Lang["month"], 1209600: "2" + c.Lang["weeks"]}
 
 	c.Races = map[int64]string{1: c.Lang["race_1"], 2: c.Lang["race_2"], 3: c.Lang["race_3"]}
-
+	var status string
 	var communityUsers []int64
 	if dbInit {
 		communityUsers, err = c.DCDB.GetCommunityUsers()
@@ -196,13 +196,14 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Error("%v", err)
 		}
+
+		status, err = c.DCDB.Single("SELECT status FROM " + c.MyPrefix + "my_table").String()
+		if err != nil {
+			log.Error("%v", err)
+		}
 	}
 	log.Debug("dbInit", dbInit)
 
-	status, err := c.DCDB.Single("SELECT status FROM " + c.MyPrefix + "my_table").String()
-	if err != nil {
-		log.Error("%v", err)
-	}
 	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName != "" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
@@ -230,7 +231,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	// идет загрузка блокчейна
 	wTime := int64(2)
-	if c.ConfigIni["test_mode"] == "1" {
+	if configIni != nil && configIni["test_mode"] == "1" {
 		wTime = 2 * 365 * 86400
 		log.Debug("%v", wTime)
 		log.Debug("%v", lastBlockTime)

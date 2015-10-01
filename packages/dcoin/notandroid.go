@@ -103,11 +103,13 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 func tcpListener(db *utils.DCDB) {
 	log.Debug("tcp")
 	go func() {
-		if db == nil {
+		if db == nil || db.DB == nil {
 			for {
 				db = utils.DB
-				if db != nil {
+				if db != nil && db.DB != nil {
 					break
+				} else {
+					utils.Sleep(3)
 				}
 			}
 		}

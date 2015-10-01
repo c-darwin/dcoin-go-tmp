@@ -56,7 +56,7 @@ BEGIN:
 		}
 
 		// берем данные, которые находятся на голосовании нодов
-		rows, err := d.Query(`
+		rows, err := d.Query(d.FormatQuery(`
 				SELECT miners_data.user_id,
 							 http_host as host,
 							 face_hash,
@@ -72,7 +72,7 @@ BEGIN:
 				WHERE cron_checked_time < ? AND
 							 votes_end = 0 AND
 							 type = 'node_voting'
-				`, utils.Time()-consts.CRON_CHECKED_TIME_SEC)
+				`), utils.Time()-consts.CRON_CHECKED_TIME_SEC)
 		if err != nil {
 			d.PrintSleep(utils.ErrInfo(err), 1)
 			continue BEGIN

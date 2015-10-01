@@ -123,7 +123,7 @@ BEGIN:
 
 			// Получаем инфу о входящих переводах и начисляем их на счета юзеров
 			dq := d.GetQuotes()
-			rows, err := d.Query(`
+			rows, err := d.Query(d.FormatQuery(`
 					SELECT id, block_id, type_id, currency_id, amount, to_user_id, comment_status, comment
 					FROM `+dq+myPrefix+`my_dc_transactions`+dq+`
 					WHERE type = 'from_user' AND
@@ -131,7 +131,7 @@ BEGIN:
 								 merchant_checked = 0 AND
 								 status = 'approved'
 					ORDER BY id DESC
-					`, blockId-confirmations)
+					`), blockId-confirmations)
 			if err != nil {
 				d.PrintSleep(utils.ErrInfo(err), 5)
 				continue BEGIN

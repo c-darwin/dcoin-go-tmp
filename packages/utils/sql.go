@@ -1981,7 +1981,7 @@ func(db *DCDB) GetRepaidAmount(userId, currencyId int64) (float64, error) {
 func (db *DCDB) GetHolidays(userId int64) ([][]int64, error) {
 	var result [][]int64
 	sql := "SELECT start_time, end_time FROM holidays WHERE user_id = ? AND del = 0"
-	rows, err := db.Query(sql, userId)
+	rows, err := db.Query(db.FormatQuery(sql), userId)
 	if err != nil {
 		return result, err
 	}

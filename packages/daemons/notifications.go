@@ -8,12 +8,12 @@ import (
 )
 
 func Notifications() {
-	defer func() {
+	/*defer func() {
 		if r := recover(); r != nil {
 			log.Error("daemon Recovered", r)
 			panic(r)
 		}
-	}()
+	}()*/
 
 	const GoroutineName = "Notifications"
 	d := new(daemon)

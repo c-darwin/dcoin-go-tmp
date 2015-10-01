@@ -88,6 +88,7 @@ func ConfigInit() {
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
+			log.Debug("ConfigInit monitor")
 			if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
 				utils.Sleep(1)
 				continue

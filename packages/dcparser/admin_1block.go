@@ -80,7 +80,7 @@ func (p *Parser) Admin1Block() error {
 		return p.ErrInfo(err)
 	}
 
-	err = p.ExecSql(`INSERT INTO miners (miner_id, active) VALUES (1,1)`)
+	err = p.ExecSql(`INSERT INTO miners (active) VALUES (1)`)
 	if err != nil {
 		return p.ErrInfo(err)
 	}

@@ -11,6 +11,9 @@ import (
 
 func (c *Controller) SynchronizationBlockchain() (string, error) {
 
+	if c.DCDB == nil || c.DCDB.DB == nil {
+		return "", nil
+	}
 	blockData, err := c.DCDB.GetInfoBlock()
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))

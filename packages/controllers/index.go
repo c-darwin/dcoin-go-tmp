@@ -44,7 +44,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	sessUserId := GetSessUserId(sess)
 
 	var key string
-	if utils.DB != nil {
+	if utils.DB != nil && utils.DB.DB != nil {
 
 		// чтобы нельзя было зайти по локалке
 		// :: - для маков

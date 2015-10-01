@@ -13,7 +13,7 @@ import (
 	"github.com/op/go-logging"
 	_ "image/png"
 	"io"
-	"io/ioutil"
+	//"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -72,7 +72,7 @@ func Start(dir string) {
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
 	// читаем config.ini
-	if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
+	/*if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
 		d1 := []byte(`
 error_log=1
 log=1
@@ -93,16 +93,15 @@ log_output=file
 db_name=`)
 		ioutil.WriteFile(*utils.Dir+"/config.ini", d1, 0644)
 		IosLog("config ok")
-	}
+	}*/
+	configIni := make(map[string]string)
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
 		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
-		os.Exit(1)
+	} else {
+		configIni, err = configIni_.GetSection("default")
 	}
-	configIni, err = configIni_.GetSection("default")
-
 	controllers.SessInit()
 	controllers.ConfigInit()
 	daemons.ConfigInit()
@@ -173,6 +172,7 @@ db_name=`)
 		daemonsStart = map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "QueueParserTx": daemons.QueueParserTx, "Notifications": daemons.Notifications, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "BlocksCollection": daemons.BlocksCollection}
 
 	}
+	daemonsStart = map[string]func(){"BlocksCollection": daemons.BlocksCollection}
 
 	countDaemons := 0
 	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {
@@ -215,7 +215,7 @@ db_name=`)
 	go func() {
 		var first bool
 		for {
-			if utils.DB == nil {
+			if utils.DB == nil || utils.DB.DB == nil {
 				utils.Sleep(3)
 				continue
 			}
@@ -256,7 +256,7 @@ db_name=`)
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
-	if db != nil && !utils.Mobile() {
+	if utils.DB != nil && utils.DB.DB != nil && !utils.Mobile() {
 		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
 	}
 	IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))

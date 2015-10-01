@@ -7,6 +7,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"os"
+	"io/ioutil"
 )
 
 type installStep1Struct struct {
@@ -39,7 +40,11 @@ func (c *Controller) InstallStep1() (string, error) {
 		}
 	}
 
+	if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
+		ioutil.WriteFile(*utils.Dir+"/config.ini", []byte(``), 0644)
+	}
 	confIni, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
+	confIni.Set("sql_log", "1")
 	confIni.Set("error_log", "1")
 	confIni.Set("log", "0")
 	confIni.Set("log_block_id_begin", "0")
@@ -54,6 +59,7 @@ func (c *Controller) InstallStep1() (string, error) {
 	}
 
 	if dbType == "sqlite" {
+		confIni.Set("db_type", "sqlite")
 		confIni.Set("db_user", "")
 		confIni.Set("db_host", "")
 		confIni.Set("db_port", "")
@@ -78,9 +84,12 @@ func (c *Controller) InstallStep1() (string, error) {
 		configIni, err = confIni.GetSection("default")
 
 		if dbType == "sqlite" && len(sqliteDbUrl) > 0 {
-			utils.DB.Close()
-			log.Debug("DB CLOSE")
+			if utils.DB != nil && utils.DB.DB != nil {
+				utils.DB.Close()
+				log.Debug("DB CLOSE")
+			}
 			for i := 0; i < 5; i++ {
+				log.Debug("sqliteDbUrl %v", sqliteDbUrl)
 				_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
@@ -101,10 +110,12 @@ func (c *Controller) InstallStep1() (string, error) {
 				panic(err)
 				os.Exit(1)
 			}
+		} else {
+			utils.DB, err = utils.NewDbConnect(configIni)
 		}
 
 		c.DCDB = utils.DB
-		if c.DCDB == nil {
+		if c.DCDB.DB == nil {
 			err = fmt.Errorf("utils.DB == nil")
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)

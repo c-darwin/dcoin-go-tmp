@@ -14,11 +14,11 @@ func (c *Controller) Profile() (string, error) {
 	userId := int64(utils.StrToFloat64(c.r.FormValue("user_id")))
 
 	// получаем кол-во TDC на обещанных суммах
-	rows, err := c.Query(`
+	rows, err := c.Query(c.FormatQuery(`
 			SELECT from_user_id, time, comment
 			FROM abuses
 			WHERE user_id = ?
-			`, userId)
+			`), userId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

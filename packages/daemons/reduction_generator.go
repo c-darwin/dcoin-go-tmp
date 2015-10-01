@@ -102,14 +102,14 @@ BEGIN:
 		log.Info("%v", "promisedAmount", promisedAmount)
 
 		// берем все голоса юзеров
-		rows, err := d.Query(`
+		rows, err := d.Query(d.FormatQuery(`
 				SELECT currency_id,
 				  		  pct,
 						  count(currency_id) as votes
 				FROM votes_reduction
 				WHERE time > ?
 				GROUP BY  currency_id, pct
-				`, curTime-variables.Int64["reduction_period"])
+				`), curTime-variables.Int64["reduction_period"])
 		if err != nil {
 			d.unlockPrintSleep(err, 1)
 			continue BEGIN

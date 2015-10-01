@@ -48,12 +48,13 @@ BEGIN:
 		if CheckDaemonsRestart() {
 			break BEGIN
 		}
-
+		log.Debug("0")
 		config, err := d.GetNodeConfig()
 		if err != nil {
 			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
+		log.Debug("1")
 
 		err, restart := d.dbLock()
 		if restart {
@@ -63,6 +64,7 @@ BEGIN:
 			d.PrintSleep(err, 1)
 			continue BEGIN
 		}
+		log.Debug("2")
 
 		// если это первый запуск во время инсталяции
 		currentBlockId, err := d.GetBlockId()

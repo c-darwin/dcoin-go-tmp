@@ -6,6 +6,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
 	"time"
+	"os"
 )
 
 var (
@@ -56,6 +57,11 @@ func ConfigInit() {
 	// мониторим config.ini на наличие изменений
 	go func() {
 		for {
+			log.Debug("ConfigInit monitor")
+			if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
+				utils.Sleep(1)
+				continue
+			}
 			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 			if err != nil {
 				log.Error("%v", utils.ErrInfo(err))
@@ -91,11 +97,13 @@ func DbConnect() *utils.DCDB {
 		if CheckDaemonsRestart() {
 			return nil
 		}
-		if utils.DB == nil {
+		if utils.DB == nil || utils.DB.DB == nil {
 			utils.Sleep(1)
 		} else {
+			//fmt.Println("utils.DB: ", utils.DB)
 			return utils.DB
 		}
 	}
+
 	return nil
 }
