@@ -3,7 +3,6 @@ package daemons
 import (
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
