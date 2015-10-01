@@ -142,7 +142,7 @@ db_name=`)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
 	logLevel, err := logging.LogLevel(configIni["log_level"])
 	if err != nil {
-		logLevel = logging.DEBUG
+		logLevel = logging.ERROR
 	}
 
 	log.Debug("logLevel: %v", logLevel)
@@ -172,7 +172,6 @@ db_name=`)
 		daemonsStart = map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "QueueParserTx": daemons.QueueParserTx, "Notifications": daemons.Notifications, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "BlocksCollection": daemons.BlocksCollection}
 
 	}
-	daemonsStart = map[string]func(){"BlocksCollection": daemons.BlocksCollection}
 
 	countDaemons := 0
 	if len(configIni["daemons"]) > 0 && configIni["daemons"] != "null" {

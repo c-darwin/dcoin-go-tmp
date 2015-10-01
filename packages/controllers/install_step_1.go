@@ -44,7 +44,7 @@ func (c *Controller) InstallStep1() (string, error) {
 		ioutil.WriteFile(*utils.Dir+"/config.ini", []byte(``), 0644)
 	}
 	confIni, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
-	confIni.Set("sql_log", "1")
+	//confIni.Set("sql_log", "1")
 	confIni.Set("error_log", "1")
 	confIni.Set("log", "0")
 	confIni.Set("log_block_id_begin", "0")
@@ -243,6 +243,7 @@ func (c *Controller) InstallStep1() (string, error) {
 		}
 	}()
 
+	utils.Sleep(3) // даем время обновиться config.ini, чтобы в content выдался yt installStep0, а updatingBlockchain
 	TemplateStr, err := makeTemplate("install_step_1", "installStep1", &installStep1Struct{
 		Lang: c.Lang})
 	if err != nil {

@@ -251,7 +251,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if tplName == "installStep0" && len(utils.SqliteDbUrl) > 0 {
+	if tplName == "installStep0" && len(configIni["dbtype"]) > 0 {
 		tplName = "updatingBlockchain"
 	}
 
