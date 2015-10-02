@@ -26,10 +26,13 @@
 </script>
 
 <h1 class="page-header">{{.Lang.upgrade_title}}</h1>
+
+{{if not .Mobile}}
 <ol class="breadcrumb">
-	{{if not .Mobile}}<li><a href="#miningMenu">{{.Lang.mining}}</a></li>{{end}}
+	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
 	<li class="active">{{.Lang.upgrade_title}}</li>
 </ol>
+{{end}}
 
 {{template "alertSuccess".}}
 
