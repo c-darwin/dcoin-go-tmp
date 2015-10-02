@@ -43,6 +43,21 @@ func (a *AvailablekeyStruct) checkAvailableKey(key string) (int64, string, error
 }
 
 func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
+
+	community, err := a.GetCommunityUsers()
+	if err != nil {
+		return 0, "", utils.ErrInfo(err)
+	}
+	// запрещено менять ключ таким методом если в my_table уже есть статус
+	if len(community) == 0 {
+		status, err := a.Single("SELECT status FROM my_table").String()
+		if err != nil {
+			return 0, "", utils.ErrInfo(err)
+		}
+		if status != "my_pending" {
+			return 0, "", utils.ErrInfo(errors.New("my_table not null"))
+		}
+	}
 	keysStr, err := utils.GetHttpTextAnswer("http://dcoin.club/keys")
 	if err != nil {
 		return 0, "", utils.ErrInfo(err)
@@ -54,10 +69,7 @@ func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
 		j := rand.Intn(i + 1)
 		keys[i], keys[j] = keys[j], keys[i]
 	}
-	community, err := a.GetCommunityUsers()
-	if err != nil {
-		return 0, "", utils.ErrInfo(err)
-	}
+
 	for _, key := range keys {
 		userId, pubKey, err := a.checkAvailableKey(key)
 		if err != nil {
