@@ -751,6 +751,7 @@ func FormatQueryArgs(q, dbType string, args ...interface{}) (string, []interface
 		//log.Debug("%v", "newQ", newQ)
 		case "postgresql":
 			newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
+			newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
 			newQ = strings.Replace(newQ, "user,", `"user",`, -1)
 			newQ = ReplQ(newQ)
 			newArgs = args
