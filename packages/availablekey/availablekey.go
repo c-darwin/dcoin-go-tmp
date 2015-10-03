@@ -79,6 +79,8 @@ func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
 		if userId > 0 {
 			// запишем приватный ключ в БД, чтобы можно было подписать тр-ию на смену ключа
 			myPref := ""
+
+			log.Debug("schema_ 0")
 			if len(community) > 0 {
 				schema_ := &schema.SchemaStruct{}
 				schema_.DCDB = a.DCDB
@@ -100,13 +102,16 @@ func (a *AvailablekeyStruct) GetAvailableKey() (int64, string, error) {
 					return 0, "", utils.ErrInfo(err)
 				}
 			}
+			log.Debug("schema_ 1")
 
 			// пишем приватный в my_keys т.к. им будем подписывать тр-ию на смену ключа
 			err = a.ExecSql("INSERT INTO "+myPref+"my_keys (private_key, public_key, status, block_id) VALUES (?, [hex], ?, ?)", key, pubKey, "approved", 1)
 			if err != nil {
 				return 0, "", utils.ErrInfo(err)
 			}
+			log.Debug("GenKeys 0")
 			newPrivKey, newPubKey := utils.GenKeys()
+			log.Debug("GenKeys 1")
 			// сразу генерируем новый ключ и пишем приватный временно в my_keys, чтобы можно было выдавать юзеру для скачивания
 			err = a.ExecSql("INSERT INTO "+myPref+"my_keys (private_key, public_key, status) VALUES (?, ?, ?)", newPrivKey, utils.HexToBin([]byte(newPubKey)), "my_pending")
 			if err != nil {
