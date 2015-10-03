@@ -282,6 +282,8 @@ db_name=`)
 
 	IosLog("Sleep")
 
+	fmt.Printf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
+
 	if *utils.Console == 0 && !utils.Mobile() {
 		openBrowser(BrowserHttpHost)
 	}
