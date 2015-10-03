@@ -17,11 +17,7 @@ func QueueParserTx() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 180
-	} else {
-		sleepTime = 1
-	}
+
 	const GoroutineName = "QueueParserTx"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -29,6 +25,11 @@ func QueueParserTx() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 180
+	} else {
+		d.sleepTime = 1
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -52,24 +53,24 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if blockId == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		// чистим зацикленные
 		err = d.ExecSql("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -77,13 +78,13 @@ BEGIN:
 		p.DCDB = d.DCDB
 		err = p.AllTxParser()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

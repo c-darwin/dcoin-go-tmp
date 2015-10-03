@@ -24,11 +24,7 @@ func TestblockGenerator() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 3600
-	} else {
-		sleepTime = 10
-	}
+
 	const GoroutineName = "TestblockGenerator"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -36,6 +32,11 @@ func TestblockGenerator() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 3600
+	} else {
+		d.sleepTime = 10
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -65,13 +66,13 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			if d.unlockPrintSleep(err, sleepTime)  {	break BEGIN }
+			if d.unlockPrintSleep(err, d.sleepTime)  {	break BEGIN }
 			continue BEGIN
 		}
 		newBlockId := blockId + 1
@@ -80,7 +81,7 @@ BEGIN:
 		if err != nil {
 			d.dbUnlock()
 			log.Error("%v", err)
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue BEGIN
@@ -94,7 +95,7 @@ BEGIN:
 			}
 			log.Info("%v", "continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue BEGIN
@@ -103,7 +104,7 @@ BEGIN:
 		if testBlockId == newBlockId {
 			d.dbUnlock()
 			log.Error("%v", err)
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -113,7 +114,7 @@ BEGIN:
 		if err != nil {
 			d.dbUnlock()
 			log.Error("%v", err)
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue BEGIN
@@ -122,7 +123,7 @@ BEGIN:
 
 		if myMinerId == 0 {
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -132,7 +133,7 @@ BEGIN:
 		if err != nil {
 			log.Error("%v", err)
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -164,7 +165,7 @@ BEGIN:
 				break BEGIN
 			}
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			log.Debug("i %v", i)
@@ -176,7 +177,7 @@ BEGIN:
 			d.dbUnlock()
 			if newHeadHash != prevHeadHash {
 				log.Debug("newHeadHash!=prevHeadHash  %v  %v", newHeadHash, prevHeadHash)
-				if d.dSleep(sleepTime) {
+				if d.dSleep(d.sleepTime) {
 					break BEGIN
 				}
 				continue BEGIN
@@ -198,7 +199,7 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -206,7 +207,7 @@ BEGIN:
 		if err != nil {
 			log.Error("%v", err)
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -222,7 +223,7 @@ BEGIN:
 		if sleep > 0 || prevBlock.HeadHash != prevHeadHash {
 			log.Debug("continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -232,7 +233,7 @@ BEGIN:
 		if blockId < 1 {
 			log.Debug("continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -244,7 +245,7 @@ BEGIN:
 		if err != nil {
 			log.Error("%v", err)
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -258,7 +259,7 @@ BEGIN:
 		if len(nodePrivateKey) < 1 {
 			log.Debug("continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -274,7 +275,7 @@ BEGIN:
 		if currentUserId < 1 {
 			log.Debug("continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -282,7 +283,7 @@ BEGIN:
 		if prevBlock.BlockId >= newBlockId {
 			log.Debug("continue")
 			d.dbUnlock()
-			if d.dSleep(sleepTime) {
+			if d.dSleep(d.sleepTime) {
 				break BEGIN
 			}
 			continue
@@ -297,7 +298,7 @@ BEGIN:
 		// переведем тр-ии в `verified` = 1
 		err = p.AllTxParser()
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 
@@ -307,7 +308,7 @@ BEGIN:
 		// берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
 		rows, err := d.Query(d.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1"))
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 		for rows.Next() {
@@ -318,7 +319,7 @@ BEGIN:
 			var thirdVar string
 			err = rows.Scan(&data, &hash, &txType, &txUserId, &thirdVar)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue
 			}
 			log.Debug("data %v", data)
@@ -337,14 +338,14 @@ BEGIN:
 
 			exists, err := d.Single("SELECT hash FROM transactions_testblock WHERE hex(hash) = ?", hashMd5).String()
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue
 			}
 			if len(exists) == 0 {
 				err = d.ExecSql(`INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)`,
 					hashMd5, dataHex, txType, txUserId, thirdVar)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue
 				}
 			}
@@ -381,12 +382,12 @@ BEGIN:
 			continue BEGIN
 		}
 		if got, want := block.Type, "RSA PRIVATE KEY"; got != want {
-			if d.dPrintSleep(fmt.Sprintf("unknown key type %v, want %v / %v ", got, want, utils.GetParent()), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(fmt.Sprintf("unknown key type %v, want %v / %v ", got, want, utils.GetParent()), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
-			if d.dPrintSleep(fmt.Sprintf("err %v %v", err, utils.GetParent()), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(fmt.Sprintf("err %v %v", err, utils.GetParent()), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		var forSign string
@@ -394,7 +395,7 @@ BEGIN:
 		log.Debug("forSign: %v", forSign)
 		bytes, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
 		if err != nil {
-			if d.dPrintSleep(fmt.Sprintf("err %v %v", err, utils.GetParent()), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(fmt.Sprintf("err %v %v", err, utils.GetParent()), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		signatureHex := fmt.Sprintf("%x", bytes)
@@ -403,14 +404,14 @@ BEGIN:
 		headerHash := utils.DSha256([]byte(fmt.Sprintf("%s,%s,%s", myUserId, newBlockId, prevHeadHash)))
 		err = d.ExecSql("DELETE FROM testblock WHERE block_id = ?", newBlockId)
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		err = d.ExecSql(`INSERT INTO testblock (block_id, time, level, user_id, header_hash, signature, mrkl_root) VALUES (?, ?, ?, ?, [hex], [hex], [hex])`,
 			newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
 		log.Debug("newBlockId: %v / Time: %v / level: %v / myUserId: %v / headerHash: %v / signatureHex: %v / mrklRoot: %v / ", newBlockId, Time, level, myUserId, string(headerHash), signatureHex, string(mrklRoot))
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -423,7 +424,7 @@ BEGIN:
 			log.Debug("usedTransactions %v", usedTransactions)
 			err = d.ExecSql("UPDATE transactions SET used=1 WHERE hash IN (" + usedTransactions + ")")
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			// для теста удаляем, т.к. она уже есть в transactions_testblock
@@ -436,7 +437,7 @@ BEGIN:
 
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

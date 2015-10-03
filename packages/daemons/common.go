@@ -16,7 +16,6 @@ var (
 	AnswerDaemonCh  chan bool
 	MonitorDaemonCh chan []string = make(chan []string, 100)
 	configIni       map[string]string
-	sleepTime int = 60
 )
 
 type daemon struct {
@@ -24,6 +23,7 @@ type daemon struct {
 	goRoutineName 	string
 	DaemonCh        chan bool
 	AnswerDaemonCh  chan bool
+	sleepTime int
 }
 
 func (d *daemon) dbLock() (error, bool) {
@@ -100,7 +100,7 @@ func (d *daemon) notMinerSetSleepTime(sleep int) error {
 		}
 		minerId, err := d.GetMyMinerId(userId)
 		if minerId == 0 {
-			sleepTime = sleep
+			d.sleepTime = sleep
 		}
 	}
 	return nil

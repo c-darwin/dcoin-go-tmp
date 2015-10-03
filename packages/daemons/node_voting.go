@@ -21,11 +21,7 @@ func NodeVoting() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 3600
-	} else {
-		sleepTime = 60
-	}
+
 	const GoroutineName = "NodeVoting"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -33,6 +29,11 @@ func NodeVoting() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 3600
+	} else {
+		d.sleepTime = 60
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -62,7 +63,7 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -85,7 +86,7 @@ BEGIN:
 							 type = 'node_voting'
 				`), utils.Time()-consts.CRON_CHECKED_TIME_SEC)
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		defer rows.Close()
@@ -94,7 +95,7 @@ BEGIN:
 			var user_id, host, row_face_hash, row_profile_hash, photo_block_id, photo_max_miner_id, miners_keepers string
 			err = rows.Scan(&user_id, &host, &row_face_hash, &row_profile_hash, &photo_block_id, &photo_max_miner_id, &miners_keepers, &vote_id, &miner_id)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
@@ -120,26 +121,26 @@ BEGIN:
 				profilePath := *utils.Dir + "/public/profile_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				facePath := *utils.Dir + "/public/face_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				// хэши скопированных фото
 				profileFile, err := ioutil.ReadFile(profilePath)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				profileHash := string(utils.DSha256(profileFile))
 				log.Info("%v", "profileHash", profileHash)
 				faceFile, err := ioutil.ReadFile(facePath)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				faceHash := string(utils.DSha256(faceFile))
@@ -159,7 +160,7 @@ BEGIN:
 
 					myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 					if err != nil {
-						if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 
@@ -168,7 +169,7 @@ BEGIN:
 					forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("VotesNodeNewMiner"), curTime, myUserId, vote_id, vote)
 					binSign, err := d.GetBinSign(forSign, myUserId)
 					if err != nil {
-						if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					data := utils.DecToBin(utils.TypeInt("VotesNodeNewMiner"), 1)
@@ -180,7 +181,7 @@ BEGIN:
 
 					err = d.InsertReplaceTxInQueue(data)
 					if err != nil {
-						if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 
@@ -190,13 +191,13 @@ BEGIN:
 			// отмечаем, чтобы больше не брать эту строку
 			err = d.ExecSql("UPDATE votes_miners SET cron_checked_time = ? WHERE id = ?", utils.Time(), vote_id)
 			if err != nil {
-				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

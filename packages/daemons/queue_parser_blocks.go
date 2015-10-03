@@ -28,11 +28,7 @@ func QueueParserBlocks() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 1800
-	} else {
-		sleepTime = 10
-	}
+
 	const GoroutineName = "QueueParserBlocks"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -40,6 +36,11 @@ func QueueParserBlocks() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 1800
+	} else {
+		d.sleepTime = 10
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -63,22 +64,22 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		prevBlockData, err := d.OneRow("SELECT * FROM info_block").String()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		newBlockData, err := d.OneRow("SELECT * FROM queue_blocks").String()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if len(newBlockData) == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		newBlockData["head_hash_hex"] = string(utils.BinToHex(newBlockData["head_hash"]))
@@ -88,7 +89,7 @@ BEGIN:
 
 		variables, err := d.GetAllVariables()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -147,7 +148,7 @@ BEGIN:
 		host, err := d.Single("SELECT tcp_host FROM miners_data WHERE user_id  =  ?", newBlockData["user_id"]).String()
 		if err != nil {
 			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		blockId := utils.StrToInt64(newBlockData["block_id"])
@@ -165,7 +166,7 @@ BEGIN:
 
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

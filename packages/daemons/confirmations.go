@@ -41,9 +41,9 @@ BEGIN:
 	for {
 
 		if utils.Mobile() {
-			sleepTime = 300
+			d.sleepTime = 300
 		} else {
-			sleepTime = 60
+			d.sleepTime = 60
 		}
 
 		log.Info(GoroutineName)
@@ -67,7 +67,7 @@ BEGIN:
 		}
 		if LastBlockId-ConfirmedBlockId > 5 {
 			startBlockId = ConfirmedBlockId + 1
-			sleepTime = 10
+			d.sleepTime = 10
 		}
 		if startBlockId == 0 {
 			startBlockId = LastBlockId
@@ -154,7 +154,7 @@ BEGIN:
 			}
 		}
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

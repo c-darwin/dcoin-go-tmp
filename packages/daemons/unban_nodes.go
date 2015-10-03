@@ -13,7 +13,6 @@ func UnbanNodes() {
 		}
 	}()
 
-	sleepTime := 3600
 	GoroutineName := "UnbanNodes"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -21,6 +20,7 @@ func UnbanNodes() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	d.sleepTime = 3600
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -41,13 +41,13 @@ BEGIN:
 
 		err = d.ExecSql("DELETE FROM nodes_ban")
 		if err != nil {
-			if (d.dPrintSleep(err, sleepTime)) {
+			if (d.dPrintSleep(err, d.sleepTime)) {
 				break BEGIN
 			}
 			continue BEGIN
 		}
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

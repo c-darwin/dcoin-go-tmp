@@ -15,11 +15,7 @@ func Notifications() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 300
-	} else {
-		sleepTime = 60
-	}
+
 	const GoroutineName = "Notifications"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -27,6 +23,11 @@ func Notifications() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 300
+	} else {
+		d.sleepTime = 60
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -50,7 +51,7 @@ BEGIN:
 		// валюты
 		currencyList, err := d.GetCurrencyList(false)
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		notificationsArray := make(map[string]map[int64]map[string]string)
@@ -58,7 +59,7 @@ BEGIN:
 
 		myUsersIds, err := d.GetCommunityUsers()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		var community bool
@@ -66,7 +67,7 @@ BEGIN:
 			community = false
 			myUserId, err := d.GetMyUserId("")
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			myUsersIds = append(myUsersIds, myUserId)
@@ -75,21 +76,21 @@ BEGIN:
 		}
 		/*myPrefix, err:= d.GetMyPrefix()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}*/
 		myBlockId, err := d.GetMyBlockId()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if myBlockId > blockId {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if len(myUsersIds) > 0 {
@@ -100,7 +101,7 @@ BEGIN:
 				}
 				myData, err := d.OneRow("SELECT * FROM " + myPrefix + "my_table").String()
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				// на пуле шлем уведомления только майнерам
@@ -109,7 +110,7 @@ BEGIN:
 				}
 				myNotifications, err := d.GetAll("SELECT * FROM "+myPrefix+"my_notifications", -1)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				for _, data := range myNotifications {
@@ -122,7 +123,7 @@ BEGIN:
 
 		poolAdminUserId, err := d.GetPoolAdminUserId()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		subj := "DCoin notifications"
@@ -131,17 +132,17 @@ BEGIN:
 			case "admin_messages":
 				data, err := d.OneRow("SELECT id, message FROM alert_messages WHERE notification  =  0").String()
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				if len(data) > 0 {
 					err = d.ExecSql("UPDATE alert_messages SET notification = 1 WHERE id = ?", data["id"])
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if myBlockId > blockId {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					for userId, emailSms := range notificationInfo {
@@ -151,14 +152,14 @@ BEGIN:
 						if emailSms["email"] == "1" {
 							err = d.SendMail("From Admin: "+data["message"], subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
 						if emailSms["sms"] == "1" {
 							_, err = utils.SendSms(userEmailSmsData[userId]["sms_http_get_request"], userEmailSmsData[userId]["text"])
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -173,7 +174,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					data, err := d.OneRow("SELECT id, amount, currency_id FROM "+myPrefix+"my_cash_requests WHERE to_user_id  =  ? AND notification  =  0 AND status  =  'pending'", userId).String()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if len(data) > 0 {
@@ -185,7 +186,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -194,7 +195,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE "+myPrefix+"my_cash_requests SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -209,7 +210,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					status, err := d.Single("SELECT status FROM " + myPrefix + "my_table WHERE notification_status = 0").String()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if len(status) > 0 {
@@ -221,7 +222,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -230,7 +231,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_status = 1")
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -255,7 +256,7 @@ BEGIN:
 									 	notification = 0 AND
 									 	status = 'approved'`, -1, userId)
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					for _, data := range myDcTransactions {
@@ -271,7 +272,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(`<br><span style="font-size:16px">`+text+`</span>`, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -280,7 +281,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -303,7 +304,7 @@ BEGIN:
 										 notification = 0 AND
 										 status = 'approved'`, -1, userId)
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					for _, data := range myDcTransactions {
@@ -316,7 +317,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -325,7 +326,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -340,7 +341,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					data, err := d.OneRow("SELECT id FROM " + myPrefix + "my_keys WHERE notification = 0 AND status = 'approved'").String()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if len(data) > 0 {
@@ -352,7 +353,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -361,7 +362,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE "+myPrefix+"my_keys SET notification = 1 WHERE id = ?", data["id"])
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -376,7 +377,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					myNewEmail, err := d.Single("SELECT status FROM " + myPrefix + "my_table WHERE notification_email  =  0").String()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if len(myNewEmail) > 0 {
@@ -388,7 +389,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -397,7 +398,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_email = 1")
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -412,7 +413,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					smsHttpGetRequest, err := d.Single("SELECT sms_http_get_request FROM " + myPrefix + "my_table WHERE notification_sms_http_get_request  =  0").String()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if len(smsHttpGetRequest) > 0 {
@@ -424,7 +425,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -433,7 +434,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE " + myPrefix + "my_table SET notification_sms_http_get_request = 1")
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -448,7 +449,7 @@ BEGIN:
 						FROM pct
 						WHERE notification = 0`, -1)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				text := ""
@@ -460,18 +461,18 @@ BEGIN:
 				if pctUpd {
 					err = d.ExecSql("UPDATE pct SET notification = 1 WHERE notification = 0")
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 				}
 				if myBlockId > blockId {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
 				// шлется что-то не то, потом поправлю, пока отключил
 				if community {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
@@ -484,7 +485,7 @@ BEGIN:
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -503,7 +504,7 @@ BEGIN:
 					userId := myUsersIds[i]
 					lastVoting, err := d.Single("SELECT last_voting FROM " + myPrefix + "my_complex_votes WHERE notification  =  0").Int64()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if lastVoting > 0 && utils.Time()-lastVoting > 86400*14 {
@@ -515,7 +516,7 @@ BEGIN:
 						if notificationsArray[name][userId]["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -524,7 +525,7 @@ BEGIN:
 						}
 						err = d.ExecSql("UPDATE " + myPrefix + "my_complex_votes SET notification = 1")
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 					}
@@ -534,24 +535,24 @@ BEGIN:
 
 				newVersion, err := d.Single("SELECT version FROM new_version WHERE notification  =  0 AND alert  =  1").String()
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
 				err = d.ExecSql("UPDATE new_version SET notification = 1 WHERE version = ?", newVersion)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
 				if myBlockId > blockId {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
 				// в пуле это лишняя инфа
 				if community {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				if len(newVersion) > 0 {
@@ -564,7 +565,7 @@ BEGIN:
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -584,11 +585,11 @@ BEGIN:
 					// проверим, нода ли мы
 					my_table, err := d.OneRow("SELECT user_id, miner_id FROM my_table").Int64()
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					if my_table["miner_id"] == 0 {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					} else {
 						adminUserId = my_table["user_id"]
@@ -598,7 +599,7 @@ BEGIN:
 					if len(myData) > 0 {
 						networkTime, err := utils.GetNetworkTime()
 						if err != nil {
-							if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 						diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
@@ -613,7 +614,7 @@ BEGIN:
 						if emailSms["email"] == "1" {
 							err = d.SendMail(text, subj, myData["email"], myData, community, poolAdminUserId)
 							if err != nil {
-								if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -625,7 +626,7 @@ BEGIN:
 			}
 		}
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

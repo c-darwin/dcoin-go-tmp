@@ -20,11 +20,7 @@ func QueueParserTestblock() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 1800
-	} else {
-		sleepTime = 1
-	}
+
 	const GoroutineName = "QueueParserTestblock"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -32,6 +28,11 @@ func QueueParserTestblock() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 1800
+	} else {
+		d.sleepTime = 1
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -61,17 +62,17 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		data, err := d.OneRow("SELECT * FROM queue_testblock ORDER BY head_hash ASC").String()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 		if len(data) == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), d.sleepTime) {	break BEGIN }
 			continue
 		}
 
@@ -82,7 +83,7 @@ BEGIN:
 		// сразу можно удалять данные из таблы-очереди
 		err = d.ExecSql("DELETE FROM queue_testblock WHERE hex(head_hash) = ?", newHeaderHash)
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), d.sleepTime) {	break BEGIN }
 			continue
 		}
 
@@ -104,7 +105,7 @@ BEGIN:
 				// проверим, нет ли несовместимых тр-ий
 				fatalError, waitError, _, _, _, _ := p.ClearIncompatibleTx(txBinaryData, false)
 				if len(fatalError) > 0 || len(waitError) > 0 {
-					if d.unlockPrintSleep(utils.ErrInfo(errors.New(" len(fatalError) > 0 || len(waitError) > 0")), sleepTime) {	break BEGIN }
+					if d.unlockPrintSleep(utils.ErrInfo(errors.New(" len(fatalError) > 0 || len(waitError) > 0")), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 
@@ -129,7 +130,7 @@ BEGIN:
 			var myTestBlockBody []byte
 			transactionsTestblock, err := d.GetAll("SELECT data FROM transactions_testblock ORDER BY id ASC", -1)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			for _, data := range transactionsTestblock {
@@ -140,7 +141,7 @@ BEGIN:
 				p.BinaryData = append(utils.DecToBin(0, 1), myTestBlockBody...)
 				err = p.ParseDataGate(true)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -148,12 +149,12 @@ BEGIN:
 			// наши тр-ии уже не актуальны, т.к. мы их откатили
 			err = d.ExecSql("DELETE FROM transactions_testblock")
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			exists, err := d.Single(`SELECT block_id FROM testblock`).Int64()
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				return
 			}
 			if exists > 0 {
@@ -167,7 +168,7 @@ BEGIN:
 						mrkl_root = [hex]
 				`, p.BlockData.Time, p.BlockData.UserId, newHeaderHash, utils.BinToHex(p.BlockData.Sign), p.MrklRoot)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -185,13 +186,13 @@ BEGIN:
 
 					err = d.ExecSql("DELETE FROM transactions_testblock")
 					if err != nil {
-						if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 
 					err = d.ExecSql("INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)", md5, dataHex, txType, userId, toUserId)
 					if err != nil {
-						if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 
@@ -204,7 +205,7 @@ BEGIN:
 			// удаляем всё, где хэш больше нашего
 			err = d.ExecSql("DELETE FROM queue_testblock WHERE hex(head_hash) > ?", newHeaderHash)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
@@ -216,14 +217,14 @@ BEGIN:
 			// и выйдет что попавшая в блок тр-я из transactions_testblock попала минуя запись  log_time_....
 			err = p.RollbackTransactions()
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
 
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

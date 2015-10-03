@@ -26,11 +26,7 @@ func Shop() {
 		}
 	}()
 	
-	if utils.Mobile() {
-		sleepTime = 3600
-	} else {
-		sleepTime = 120
-	}
+
 	const GoroutineName = "Shop"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -38,6 +34,11 @@ func Shop() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 3600
+	} else {
+		d.sleepTime = 120
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -59,18 +60,18 @@ BEGIN:
 		myBlockId, err := d.GetMyBlockId()
 		blockId, err := d.GetBlockId()
 		if myBlockId > blockId {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 		currencyList, err := d.GetCurrencyList(false)
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 		// нужно знать текущий блок, который есть у большинства нодов
 		blockId, err = d.GetConfirmedBlockId()
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 
@@ -80,7 +81,7 @@ BEGIN:
 		// берем всех юзеров по порядку
 		community, err := d.GetCommunityUsers()
 		if err != nil {
-			if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
 		for _, userId := range community {
@@ -88,7 +89,7 @@ BEGIN:
 			myPrefix := utils.Int64ToStr(userId) + "_"
 			allTables, err := d.GetAllTables()
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			if !utils.InSliceString(myPrefix+"my_keys", allTables) {
@@ -97,14 +98,14 @@ BEGIN:
 			// проверим, майнер ли
 			minerId, err := d.GetMyMinerId(userId)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			if minerId > 0 {
 				// наш приватный ключ нода, которым будем расшифровывать комменты
 				privateKey, err = d.GetNodePrivateKey(myPrefix)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -112,7 +113,7 @@ BEGIN:
 			if len(privateKey) == 0 {
 				privateKey, err = d.GetMyPrivateKey(myPrefix)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -122,7 +123,7 @@ BEGIN:
 			}
 			myData, err := d.OneRow("SELECT shop_secret_key, shop_callback_url FROM " + myPrefix + "my_table").String()
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
@@ -138,7 +139,7 @@ BEGIN:
 					ORDER BY id DESC
 					`), blockId-confirmations)
 			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -148,14 +149,14 @@ BEGIN:
 				var amount float64
 				err = rows.Scan(&id, &block_id, &type_id, &currency_id, &amount, &to_user_id, &comment_status, &comment)
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				if len(myData["shop_callback_url"]) == 0 {
 					// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 					err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 					if err != nil {
-						if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					continue
@@ -164,7 +165,7 @@ BEGIN:
 				// вначале нужно проверить, точно ли есть такой перевод в блоке
 				binaryData, err := d.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				p := new(dcparser.Parser)
@@ -185,24 +186,24 @@ BEGIN:
 
 							block, _ := pem.Decode([]byte(privateKey))
 							if block == nil || block.Type != "RSA PRIVATE KEY" {
-								if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 							private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 							if err != nil {
-								if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 							decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
 							if err != nil {
-								if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 							decryptedComment = string(decryptedComment_)
 							// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
 							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
 							if err != nil {
-								if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						} else {
@@ -214,7 +215,7 @@ BEGIN:
 						// т.к. средства на нашем счете уже урезались, а  вот те, что после reduction - остались в том виде, в котором пришли
 						lastReduction, err := d.OneRow("SELECT block_id, pct FROM reduction WHERE currency_id  = ? ORDER BY block_id", currency_id).Int64()
 						if err != nil {
-							if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 						if blockId <= lastReduction["block_id"] {
@@ -245,7 +246,7 @@ BEGIN:
 						client := &http.Client{}
 						req, err := http.NewRequest("POST", myData["shop_callback_url"], bytes.NewBufferString(data.Encode()))
 						if err != nil {
-							if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 						req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -253,7 +254,7 @@ BEGIN:
 
 						resp, err := client.Do(req)
 						if err != nil {
-							if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
 						//contents, _ := ioutil.ReadAll(resp.Body)
@@ -261,7 +262,7 @@ BEGIN:
 							// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 							if err != nil {
-								if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 						}
@@ -270,7 +271,7 @@ BEGIN:
 			}
 		}
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

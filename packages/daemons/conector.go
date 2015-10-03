@@ -30,11 +30,7 @@ func Connector() {
 		}
 	}
 
-	if utils.Mobile() {
-		sleepTime = 600
-	} else {
-		sleepTime = 30
-	}
+
 	GoroutineName := "Connector"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -42,6 +38,11 @@ func Connector() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 600
+	} else {
+		d.sleepTime = 30
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -80,13 +81,13 @@ BEGIN:
 		log.Info("%v", maxHosts)
 		collective, err := d.GetCommunityUsers()
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue
 		}
 		if len(collective) == 0 {
 			myUserId, err := d.GetMyUserId("")
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue
 			}
 			collective = append(collective, myUserId)
@@ -94,7 +95,7 @@ BEGIN:
 		// в сингл-моде будет только $my_miners_ids[0]
 		myMinersIds, err := d.GetMyMinersIds(collective)
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue
 		}
 		log.Info("%v", myMinersIds)
@@ -141,7 +142,7 @@ BEGIN:
 				delMiners = append(delMiners, data["miner_id"])
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
 				if err != nil {
-					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				continue
@@ -180,7 +181,7 @@ BEGIN:
 				log.Info("delete %v", result.userId)
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				}
 				for _, data := range hosts {
 					if utils.StrToInt64(data["user_id"]) != result.userId {
@@ -198,7 +199,7 @@ BEGIN:
 			need := maxHosts - len(hosts)
 			max, err := d.Single("SELECT max(miner_id) FROM miners").Int()
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			i0 := 0
@@ -242,13 +243,13 @@ BEGIN:
 					hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
 					err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					log.Debug(host)
 					err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 					if err != nil {
-						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 				}
@@ -260,7 +261,7 @@ BEGIN:
 		if len(hosts) < 10 {
 			hostsData_, err := ioutil.ReadFile(*utils.Dir + "/nodes.inc")
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			hostsData := strings.Split(string(hostsData_), "\n")
@@ -295,13 +296,13 @@ BEGIN:
 
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				log.Debug(host)
 				err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 				if err != nil {
-					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				nodesInc[host] = userId
@@ -317,12 +318,12 @@ BEGIN:
 			nodesFile = nodesFile[:len(nodesFile)-1]
 			err := ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(nodesFile), 0644)
 			if err != nil {
-				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}

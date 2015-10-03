@@ -14,11 +14,7 @@ func ElectionsAdmin() {
 		}
 	}()
 
-	if utils.Mobile() {
-		sleepTime = 3600
-	} else {
-		sleepTime = 60
-	}
+
 	const GoroutineName = "ElectionsAdmin"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -26,6 +22,11 @@ func ElectionsAdmin() {
 		return
 	}
 	d.goRoutineName = GoroutineName
+	if utils.Mobile() {
+		d.sleepTime = 3600
+	} else {
+		d.sleepTime = 60
+	}
 	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
 		return
 	}
@@ -55,28 +56,28 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if blockId == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		variables, err := d.GetAllVariables()
@@ -85,22 +86,22 @@ BEGIN:
 		// проверим, прошло ли 2 недели с момента последнего обновления
 		adminTime, err := d.Single("SELECT time FROM admin").Int64()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if curTime-adminTime <= variables.Int64["new_pct_period"] {
-			if d.unlockPrintSleep(utils.ErrInfo("14 day error"), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo("14 day error"), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		// сколько всего майнеров
 		countMiners, err := d.Single("SELECT count(miner_id) FROM miners WHERE active  =  1").Int64()
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if countMiners < 1000 {
-			if d.unlockPrintSleep(utils.ErrInfo("countMiners < 1000"), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo("countMiners < 1000"), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -114,7 +115,7 @@ BEGIN:
 				GROUP BY  admin_user_id
 				`, "admin_user_id", "votes", curTime-variables.Int64["new_pct_period"])
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		for admin_user_id, votes := range votes_admin {
@@ -124,7 +125,7 @@ BEGIN:
 			}
 		}
 		if newAdmin == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo("newAdmin == 0"), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo("newAdmin == 0"), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -132,7 +133,7 @@ BEGIN:
 		forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewAdmin"), curTime, myUserId, newAdmin)
 		binSign, err := d.GetBinSign(forSign, myUserId)
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		data := utils.DecToBin(utils.TypeInt("NewAdmin"), 1)
@@ -143,20 +144,20 @@ BEGIN:
 
 		err = d.InsertReplaceTxInQueue(data)
 		if err != nil {
-			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		p := new(dcparser.Parser)
 		err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 		if err != nil {
-			if d.unlockPrintSleep(err, sleepTime) {	break BEGIN }
+			if d.unlockPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		d.dbUnlock()
 
-		if d.dSleep(sleepTime) {
+		if d.dSleep(d.sleepTime) {
 			break BEGIN
 		}
 	}
