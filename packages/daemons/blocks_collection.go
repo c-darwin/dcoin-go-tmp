@@ -351,7 +351,7 @@ BEGIN:
 		}
 		log.Info("currentBlockId", currentBlockId, "maxBlockId", maxBlockId)
 		if maxBlockId <= currentBlockId {
-			d.unlockPrintSleep(utils.ErrInfo(errors.New("maxBlockId <= currentBlockId")), 1)
+			d.unlockPrintSleep(utils.ErrInfo(errors.New("maxBlockId <= currentBlockId")), d.sleepTime)
 			continue
 		}
 
