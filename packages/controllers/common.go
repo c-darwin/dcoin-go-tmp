@@ -316,10 +316,6 @@ func makeTemplate(html, name string, tData interface{}) (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	modal, err := static.Asset("static/templates/modal.html")
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
 	funcMap := template.FuncMap{
 		"makeCurrencyName": func(currencyId int64) string {
 			if currencyId >= 1000 {
@@ -413,7 +409,6 @@ func makeTemplate(html, name string, tData interface{}) (string, error) {
 	t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
 	t = template.Must(t.Parse(string(alert_success)))
 	t = template.Must(t.Parse(string(signatures)))
-	t = template.Must(t.Parse(string(modal)))
 	b := new(bytes.Buffer)
 	err = t.ExecuteTemplate(b, name, tData)
 	if err != nil {

@@ -58,11 +58,7 @@ func (c *Controller) Login() (string, error) {
 	}
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле
-	config, err := c.DCDB.OneRow("SELECT pool_admin_user_id, pool_tech_works FROM config").String()
-	if err != nil {
-		return "", err
-	}
-	if len(config["pool_admin_user_id"]) > 1 && config["pool_admin_user_id"] != utils.Int64ToStr(c.UserId) && config["pool_tech_works"] == "1" {
+	if len(c.NodeConfig["pool_admin_user_id"]) > 0 && c.NodeConfig["pool_admin_user_id"] != utils.Int64ToStr(c.UserId) && c.NodeConfig["pool_tech_works"] == "1" {
 		pool_tech_works = 1
 	} else {
 		pool_tech_works = 0

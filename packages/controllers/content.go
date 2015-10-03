@@ -377,7 +377,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 				log.Error("%v", err)
 			}
 			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
-				tplName = "poolTechWorks"
+				tplName = "login"
 			}
 			// Если у юзера только 1 праймари ключ, то выдавать форму, где показываются данные для подписи и форма ввода подписи не нужно.
 			// Только если он сам не захочет, указав это в my_table
