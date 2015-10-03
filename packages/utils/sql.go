@@ -1621,7 +1621,7 @@ func (db *DCDB) FormatQuery(q string) string {
 		}
 	}
 
-	log.Debug("%v", newQ)
+	//log.Debug("%v", newQ)
 	return newQ
 }
 
