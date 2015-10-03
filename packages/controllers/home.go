@@ -37,6 +37,7 @@ type homePage struct {
 	ShowSignData          bool
 	IOS                   bool
 	Token                 string
+	Mobile				  bool
 }
 
 type CurrencyPct struct {
@@ -245,6 +246,7 @@ func (c *Controller) Home() (string, error) {
 		ShowSignData:          c.ShowSignData,
 		SignData:              "",
 		IOS:                   utils.IOS(),
+		Mobile:				   utils.Mobile(),
 		Token:                 token})
 	if err != nil {
 		return "", utils.ErrInfo(err)

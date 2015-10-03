@@ -6,6 +6,8 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"regexp"
+	"os"
+	"github.com/astaxie/beego/config"
 )
 
 func Content(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +253,22 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if tplName == "installStep0" && len(configIni["dbtype"]) > 0 {
-		tplName = "updatingBlockchain"
+	if tplName == "installStep0" {
+		log.Debug("ConfigInit monitor")
+		if _, err := os.Stat(*utils.Dir+"/config.ini"); err == nil {
+
+			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			configIni, err = configIni_.GetSection("default")
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			if len(configIni["db_type"]) > 0 {
+				tplName = "updatingBlockchain"
+			}
+		}
 	}
 
 	log.Debug("tplName2=", tplName)
@@ -361,7 +377,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 				log.Error("%v", err)
 			}
 			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
-				tplName = "pool_tech_works"
+				tplName = "poolTechWorks"
 			}
 			// Если у юзера только 1 праймари ключ, то выдавать форму, где показываются данные для подписи и форма ввода подписи не нужно.
 			// Только если он сам не захочет, указав это в my_table
