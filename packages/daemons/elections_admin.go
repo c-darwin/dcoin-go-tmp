@@ -14,6 +14,11 @@ func ElectionsAdmin() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 3600
+	} else {
+		sleepTime = 60
+	}
 	const GoroutineName = "ElectionsAdmin"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -26,6 +31,12 @@ func ElectionsAdmin() {
 	}
 	d.DCDB = DbConnect()
 	if d.DCDB == nil {
+		return
+	}
+
+	err = d.notMinerSetSleepTime(1800)
+	if err != nil {
+		log.Error("%v", err)
 		return
 	}
 
@@ -44,28 +55,28 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if blockId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		variables, err := d.GetAllVariables()
@@ -74,22 +85,22 @@ BEGIN:
 		// проверим, прошло ли 2 недели с момента последнего обновления
 		adminTime, err := d.Single("SELECT time FROM admin").Int64()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if curTime-adminTime <= variables.Int64["new_pct_period"] {
-			d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("14 day error"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		// сколько всего майнеров
 		countMiners, err := d.Single("SELECT count(miner_id) FROM miners WHERE active  =  1").Int64()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if countMiners < 1000 {
-			d.unlockPrintSleep(utils.ErrInfo("countMiners < 1000"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("countMiners < 1000"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -103,7 +114,7 @@ BEGIN:
 				GROUP BY  admin_user_id
 				`, "admin_user_id", "votes", curTime-variables.Int64["new_pct_period"])
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		for admin_user_id, votes := range votes_admin {
@@ -113,7 +124,7 @@ BEGIN:
 			}
 		}
 		if newAdmin == 0 {
-			d.unlockPrintSleep(utils.ErrInfo("newAdmin == 0"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("newAdmin == 0"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -121,7 +132,7 @@ BEGIN:
 		forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewAdmin"), curTime, myUserId, newAdmin)
 		binSign, err := d.GetBinSign(forSign, myUserId)
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		data := utils.DecToBin(utils.TypeInt("NewAdmin"), 1)
@@ -132,25 +143,21 @@ BEGIN:
 
 		err = d.InsertReplaceTxInQueue(data)
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		p := new(dcparser.Parser)
 		err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 		if err != nil {
-			d.unlockPrintSleep(err, 1)
+			if d.unlockPrintSleep(err, sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		d.dbUnlock()
-		for i := 0; i < 60; i++ {
-			utils.Sleep(1)
-			// проверим, не нужно ли нам выйти из цикла
-			if CheckDaemonsRestart() {
-				break BEGIN
-			}
+
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
-
 }

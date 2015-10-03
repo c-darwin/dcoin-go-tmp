@@ -137,6 +137,24 @@
 	#dc_content{
 		margin-bottom: 10px;
 	}
+
+	{{if .Mobile}}
+	.page-header {
+		display: block;
+		position: fixed;
+		top: 0px;
+		left: 0px;
+		z-index: 9999;
+		font-size: 16px;
+		width: 100%;
+		text-align: center;
+		border-bottom: none;
+	}
+	#dc_content{
+		margin-bottom: 60px;
+	}
+	{{end}}
+
 	{{if .IOS}}
 	.navbar-fixed-top{
 		padding-top: 15px;
@@ -151,7 +169,18 @@
 	#wrapper{
 		padding-top: 15px;
 	}
+	.page-header {
+		margin: 35px auto;
+	}
 	{{end}}
+
+	{{if .Android}}
+	.page-header {
+		margin: 20px auto;
+	}
+	{{end}}
+
+
 
 </style>
 </head>
@@ -530,7 +559,7 @@
 <style>
 	.ico{font-size:2em; color: #8e8e98;}
 	.icoDiv{padding-top: 5px; display: inline-block;  text-align: center}
-	.icoDiv p{font-size: 11px; color: #8e8e98;line-height: 22px;}
+	.icoDiv p{font-size: 11px; color: #8e8e98;line-height: 19px;}
 	.icoMarginRight{margin-right: 24px}
 	#page-wrapper{padding-bottom: 40px;}
 	.icoDiv:hover .ico, .icoDiv:hover p{color:#007aff}

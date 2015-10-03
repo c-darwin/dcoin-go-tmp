@@ -20,6 +20,11 @@ func Disseminator() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 300
+	} else {
+		sleepTime = 1
+	}
 	GoroutineName := "Disseminator"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -56,18 +61,20 @@ BEGIN:
 					LEFT JOIN miners_data ON nodes_connection.user_id = miners_data.user_id
 					`, -1)
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue
 			}
 			if len(hosts) == 0 {
-				utils.Sleep(1)
+				if d.dSleep(sleepTime) {
+					break BEGIN
+				}
 				continue
 			}
 		} else {
 			// защищенный режим
 			nodeData, err = d.OneRow("SELECT node_public_key, tcp_host FROM miners_data WHERE user_id  =  ?", nodeConfig["static_node_user_id"]).String()
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue
 			}
 			hosts = append(hosts, map[string]string{"host": nodeConfig["local_gate_ip"], "node_public_key": nodeData["node_public_key"], "user_id": nodeConfig["static_node_user_id"]})
@@ -87,7 +94,7 @@ BEGIN:
 							 user_id IN (`+strings.Join(utils.SliceInt64ToString(myUsersIds), ",")+`)
 				`, utils.TypeInt("ChangeNodeKey")).Int64()
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
@@ -104,7 +111,7 @@ BEGIN:
 			myMinerId := myMinersIds[r]
 			myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
@@ -112,12 +119,12 @@ BEGIN:
 			// для теста ролбеков отключим на время
 			data, err := d.OneRow("SELECT block_id, hash, head_hash FROM info_block WHERE sent  =  0").Bytes()
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			err = d.ExecSql("UPDATE info_block SET sent = 1")
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
@@ -134,7 +141,7 @@ BEGIN:
 				toBeSent = append(toBeSent, data["head_hash"]...)
 				err = d.ExecSql("UPDATE info_block SET sent = 1")
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			} else { // тр-ии без блока
@@ -144,12 +151,14 @@ BEGIN:
 			// возьмем хэши тр-ий
 			transactions, err := d.GetAll("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0", -1)
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			if len(transactions) == 0 {
 				log.Debug("len(transactions) == 0")
-				utils.Sleep(1)
+				if d.dSleep(sleepTime) {
+					break BEGIN
+				}
 				continue BEGIN
 			}
 			for _, data := range transactions {
@@ -158,7 +167,7 @@ BEGIN:
 				toBeSent = append(toBeSent, []byte(data["hash"])...)
 				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hexHash)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -186,7 +195,7 @@ BEGIN:
 			// возьмем хэши и сами тр-ии
 			rows, err := d.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			defer rows.Close()
@@ -194,14 +203,14 @@ BEGIN:
 				var hash, data []byte
 				err = rows.Scan(&hash, &data)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				log.Debug("hash %x", hash)
 				hashHex := utils.BinToHex(hash)
 				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hashHex)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				toBeSent = append(toBeSent, data...)
@@ -284,9 +293,9 @@ BEGIN:
 
 		d.dbUnlock()
 
-		utils.Sleep(1)
-
-		log.Info("%v", "Happy end")
+		if d.dSleep(sleepTime) {
+			break BEGIN
+		}
 	}
 
 }

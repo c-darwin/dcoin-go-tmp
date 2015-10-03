@@ -3,7 +3,6 @@ package daemons
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"runtime"
 )
 
 /*
@@ -18,6 +17,11 @@ func QueueParserTx() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 180
+	} else {
+		sleepTime = 1
+	}
 	const GoroutineName = "QueueParserTx"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -31,10 +35,6 @@ func QueueParserTx() {
 	d.DCDB = DbConnect()
 	if d.DCDB == nil {
 		return
-	}
-
-	if runtime.GOOS == "android" {
-
 	}
 
 BEGIN:
@@ -52,24 +52,24 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if blockId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		// чистим зацикленные
 		err = d.ExecSql("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -77,15 +77,15 @@ BEGIN:
 		p.DCDB = d.DCDB
 		err = p.AllTxParser()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		d.dbUnlock()
 
-		utils.Sleep(1)
-
-		log.Info("%v", "Happy end")
+		if d.dSleep(sleepTime) {
+			break BEGIN
+		}
 	}
 
 }

@@ -2,7 +2,6 @@ package daemons
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"log"
 	"strings"
 )
 
@@ -20,6 +19,11 @@ func TestblockDisseminator() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 3600
+	} else {
+		sleepTime = 1
+	}
 	const GoroutineName = "TestblockDisseminator"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -35,6 +39,12 @@ func TestblockDisseminator() {
 		return
 	}
 
+	err = d.notMinerSetSleepTime(1800)
+	if err != nil {
+		log.Error("%v", err)
+		return
+	}
+
 BEGIN:
 	for {
 		log.Info(GoroutineName)
@@ -47,13 +57,13 @@ BEGIN:
 
 		nodeConfig, err := d.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) != 0 {
-			d.PrintSleep("local_gate_ip", 1)
+			if d.dPrintSleep("local_gate_ip", sleepTime) {	break BEGIN }
 			continue
 		}
 
 		_, _, _, _, level, levelsRange, err := d.TestBlock()
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue
 		}
 		log.Debug("level: %v", level)
@@ -61,7 +71,7 @@ BEGIN:
 		// получим id майнеров, которые на нашем уровне
 		nodesIds := utils.GetOurLevelNodes(level, levelsRange)
 		if len(nodesIds) == 0 {
-			d.PrintSleep("len(nodesIds) == 0", 1)
+			if d.dPrintSleep("len(nodesIds) == 0", sleepTime) {	break BEGIN }
 			continue
 		}
 		log.Debug("nodesIds: %v", nodesIds)
@@ -69,7 +79,7 @@ BEGIN:
 		// получим хосты майнеров, которые на нашем уровне
 		hosts, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN (" + strings.Join(utils.SliceInt64ToString(nodesIds), `,`) + ")").String()
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue
 		}
 		log.Debug("hosts: %v", hosts)
@@ -77,14 +87,14 @@ BEGIN:
 		// шлем block_id, user_id, mrkl_root, signature
 		data, err := d.OneRow("SELECT block_id, time, user_id, mrkl_root, signature FROM testblock WHERE status  =  'active' AND sent=0").String()
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue
 		}
 		if len(data) > 0 {
 
 			err = d.ExecSql("UPDATE testblock SET sent=1")
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue
 			}
 
@@ -217,9 +227,9 @@ BEGIN:
 			}
 		}
 
-		utils.Sleep(1)
-
-		log.Info("%v", "Happy end")
+		if d.dSleep(sleepTime) {
+			break BEGIN
+		}
 	}
 
 }

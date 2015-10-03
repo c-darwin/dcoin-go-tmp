@@ -20,6 +20,11 @@ func MaxOtherCurrenciesGenerator() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 3600
+	} else {
+		sleepTime = 60
+	}
 	const GoroutineName = "MaxOtherCurrenciesGenerator"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -32,6 +37,12 @@ func MaxOtherCurrenciesGenerator() {
 	}
 	d.DCDB = DbConnect()
 	if d.DCDB == nil {
+		return
+	}
+
+	err = d.notMinerSetSleepTime(1800)
+	if err != nil {
+		log.Error("%v", err)
 		return
 	}
 
@@ -50,28 +61,28 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		blockId, err := d.GetBlockId()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if blockId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		_, _, myMinerId, _, _, _, err := d.TestBlock()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		// а майнер ли я ?
 		if myMinerId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		variables, err := d.GetAllVariables()
@@ -79,17 +90,17 @@ BEGIN:
 
 		totalCountCurrencies, err := d.GetCountCurrencies()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		// проверим, прошло ли 2 недели с момента последнего обновления
 		pctTime, err := d.Single("SELECT max(time) FROM max_other_currencies_time").Int64()
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		if curTime-pctTime <= variables.Int64["new_max_other_currencies"] {
-			d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("14 day error"), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -97,7 +108,7 @@ BEGIN:
 		maxOtherCurrenciesVotes := make(map[int64][]map[int64]int64)
 		rows, err := d.Query("SELECT currency_id, count, count(user_id) as votes FROM votes_max_other_currencies GROUP BY currency_id, count ORDER BY currency_id, count ASC")
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		defer rows.Close()
@@ -105,7 +116,7 @@ BEGIN:
 			var currency_id, count, votes int64
 			err = rows.Scan(&currency_id, &count, &votes)
 			if err != nil {
-				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count: votes})
@@ -122,7 +133,7 @@ BEGIN:
 		forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewMaxOtherCurrencies"), curTime, myUserId, jsonData)
 		binSign, err := d.GetBinSign(forSign, myUserId)
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 		data := utils.DecToBin(utils.TypeInt("NewMaxOtherCurrencies"), 1)
@@ -133,7 +144,7 @@ BEGIN:
 
 		err = d.InsertReplaceTxInQueue(data)
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -141,18 +152,14 @@ BEGIN:
 		p.DCDB = d.DCDB
 		err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 		if err != nil {
-			d.unlockPrintSleep(utils.ErrInfo(err), 1)
+			if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
 		d.dbUnlock()
-		for i := 0; i < 60; i++ {
-			utils.Sleep(1)
-			// проверим, не нужно ли нам выйти из цикла
-			if CheckDaemonsRestart() {
-				break BEGIN
-			}
+
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
-
 }

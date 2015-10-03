@@ -39,6 +39,13 @@ func Confirmations() {
 
 BEGIN:
 	for {
+
+		if utils.Mobile() {
+			sleepTime = 300
+		} else {
+			sleepTime = 60
+		}
+
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
@@ -48,9 +55,8 @@ BEGIN:
 		}
 
 		var startBlockId int64
-		sleep := 60
-		// если последний проверенный был давно (пропасть более 10 блоков),
-		// то начинаем проверку последних 10 блоков
+		// если последний проверенный был давно (пропасть более 5 блоков),
+		// то начинаем проверку последних 5 блоков
 		ConfirmedBlockId, err := d.GetConfirmedBlockId()
 		if err != nil {
 			log.Error("%v", err)
@@ -61,7 +67,7 @@ BEGIN:
 		}
 		if LastBlockId-ConfirmedBlockId > 5 {
 			startBlockId = ConfirmedBlockId + 1
-			sleep = 10
+			sleepTime = 10
 		}
 		if startBlockId == 0 {
 			startBlockId = LastBlockId
@@ -148,12 +154,8 @@ BEGIN:
 			}
 		}
 
-		for i := 0; i < sleep; i++ {
-			utils.Sleep(1)
-			// проверим, не нужно ли нам выйти из цикла
-			if CheckDaemonsRestart() {
-				break BEGIN
-			}
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
 }

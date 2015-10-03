@@ -13,6 +13,11 @@ func CfProjects() {
 		}
 	}()
 
+	if utils.Mobile() {
+		sleepTime = 1800
+	} else {
+		sleepTime = 60
+	}
 	const GoroutineName = "CfProjects"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -43,7 +48,7 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -58,7 +63,7 @@ BEGIN:
 		for _, cf_projects := range all {
 			gmapData, err := utils.GetHttpTextAnswer("http://maps.googleapis.com/maps/api/geocode/json?latlng=" + cf_projects["latitude"] + "," + cf_projects["longitude"] + "&sensor=true_or_false")
 			if err != nil {
-				d.PrintSleep(utils.ErrInfo(err), 1)
+				if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			var gmap map[string][]map[string][]map[string]string
@@ -68,7 +73,7 @@ BEGIN:
 				city := gmap["results"][len(gmap["results"])-2]["address_components"][1]["short_name"]
 				err = d.ExecSql("UPDATE cf_projects SET country = ?, city = ?, geo_checked= 1 WHERE id = ?", country, city, cf_projects["id"])
 				if err != nil {
-					d.unlockPrintSleep(utils.ErrInfo(err), 1)
+					if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
@@ -86,39 +91,35 @@ BEGIN:
 			// отмечаем, чтобы больше не брать
 			err = d.ExecSql("UPDATE cf_funding SET checked = 1 WHERE id = ?", data["id"])
 			if err != nil {
-				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			// сколько собрано средств
 			funding, err := d.Single("SELECT sum(amount) FROM cf_funding WHERE project_id  =  ? AND del_block_id  =  0", data["project_id"]).Float64()
 			if err != nil {
-				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
 			// сколько всего фундеров
 			countFunders, err := d.Single("SELECT count(id) FROM cf_funding WHERE project_id  = ? AND del_block_id  =  0 GROUP BY user_id", data["project_id"]).Int64()
 			if err != nil {
-				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
 			// обновляем кол-во фундеров и собранные средства
 			err = d.ExecSql("UPDATE cf_projects SET funding = ?, funders = ? WHERE id = ?", funding, countFunders, data["project_id"])
 			if err != nil {
-				d.unlockPrintSleep(utils.ErrInfo(err), 1)
+				if d.unlockPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
 
 		d.dbUnlock()
 
-		for i := 0; i < 60; i++ {
-			utils.Sleep(1)
-			// проверим, не нужно ли нам выйти из цикла
-			if CheckDaemonsRestart() {
-				break BEGIN
-			}
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
 }

@@ -30,6 +30,11 @@ func Connector() {
 		}
 	}
 
+	if utils.Mobile() {
+		sleepTime = 600
+	} else {
+		sleepTime = 30
+	}
 	GoroutineName := "Connector"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -57,7 +62,7 @@ BEGIN:
 
 		nodeConfig, err := d.GetNodeConfig()
 		if len(nodeConfig["local_gate_ip"]) > 0 {
-			utils.Sleep(5)
+			utils.Sleep(2)
 			continue
 		}
 
@@ -75,13 +80,13 @@ BEGIN:
 		log.Info("%v", maxHosts)
 		collective, err := d.GetCommunityUsers()
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue
 		}
 		if len(collective) == 0 {
 			myUserId, err := d.GetMyUserId("")
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue
 			}
 			collective = append(collective, myUserId)
@@ -89,7 +94,7 @@ BEGIN:
 		// в сингл-моде будет только $my_miners_ids[0]
 		myMinersIds, err := d.GetMyMinersIds(collective)
 		if err != nil {
-			d.PrintSleep(err, 1)
+			if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 			continue
 		}
 		log.Info("%v", myMinersIds)
@@ -114,7 +119,6 @@ BEGIN:
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
 			if CheckDaemonsRestart() {
-				utils.Sleep(1)
 				break BEGIN
 			}
 
@@ -137,7 +141,7 @@ BEGIN:
 				delMiners = append(delMiners, data["miner_id"])
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ? OR user_id = ?", data["host"], data["user_id"])
 				if err != nil {
-					utils.Sleep(1)
+					if d.dPrintSleep(utils.ErrInfo(err), sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				continue
@@ -176,7 +180,7 @@ BEGIN:
 				log.Info("delete %v", result.userId)
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				}
 				for _, data := range hosts {
 					if utils.StrToInt64(data["user_id"]) != result.userId {
@@ -194,7 +198,7 @@ BEGIN:
 			need := maxHosts - len(hosts)
 			max, err := d.Single("SELECT max(miner_id) FROM miners").Int()
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			i0 := 0
@@ -238,13 +242,13 @@ BEGIN:
 					hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
 					err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 					if err != nil {
-						d.PrintSleep(err, 1)
+						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					log.Debug(host)
 					err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 					if err != nil {
-						d.PrintSleep(err, 1)
+						if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 				}
@@ -256,7 +260,7 @@ BEGIN:
 		if len(hosts) < 10 {
 			hostsData_, err := ioutil.ReadFile(*utils.Dir + "/nodes.inc")
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			hostsData := strings.Split(string(hostsData_), "\n")
@@ -291,13 +295,13 @@ BEGIN:
 
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				log.Debug(host)
 				err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 				if err != nil {
-					d.PrintSleep(err, 1)
+					if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				nodesInc[host] = userId
@@ -313,17 +317,13 @@ BEGIN:
 			nodesFile = nodesFile[:len(nodesFile)-1]
 			err := ioutil.WriteFile(*utils.Dir+"/nodes.inc", []byte(nodesFile), 0644)
 			if err != nil {
-				d.PrintSleep(err, 1)
+				if d.dPrintSleep(err, sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
 
-		for i := 0; i < 10; i++ {
-			if CheckDaemonsRestart() {
-				utils.Sleep(1)
-				break BEGIN
-			}
-			utils.Sleep(1)
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
 }

@@ -84,6 +84,12 @@ func Mobile() bool {
 	}
 	return false
 }
+func Android() bool {
+	if runtime.GOOS == "android" {
+		return true
+	}
+	return false
+}
 func Sleep(sec time.Duration) {
 	//log.Debug("time.Duration(sec): %v / %v",sec, GetParent())
 	time.Sleep(sec * time.Second)
@@ -956,21 +962,21 @@ START:
 }
 
 func round(num float64) int64 {
-	log.Debug("num", num)
+	//log.Debug("num", num)
 	//num += ROUND_FIX
 	//	return int(StrToFloat64(Float64ToStr(num)) + math.Copysign(0.5, num))
-	log.Debug("num", num)
+	//log.Debug("num", num)
 	return int64(num + math.Copysign(0.5, num))
 }
 
 func Round(num float64, precision int) float64 {
 	num += consts.ROUND_FIX
-	log.Debug("num", num)
+	//log.Debug("num", num)
 	//num = StrToFloat64(Float64ToStr(num))
-	log.Debug("precision", precision)
-	log.Debug("float64(precision)", float64(precision))
+	//log.Debug("precision", precision)
+	//log.Debug("float64(precision)", float64(precision))
 	output := math.Pow(10, float64(precision))
-	log.Debug("output", output)
+	//log.Debug("output", output)
 	return float64(round(num*output)) / output
 }
 

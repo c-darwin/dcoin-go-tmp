@@ -798,7 +798,7 @@
 	</div>
 	<div class="panel0" id="buyDC">
 		Buy on <a href="http://tmp-e.dcoin.club" target="_blank">exchange</a> <input type="text" style="width: 60px;display: inline-block" class="form-control" id="exAmount">
-		<select id="buy_currency_id" style="width: 100px; display: inline-block" class="form-control" >
+		<select id="buy_currency_id" style="width: {{if .Mobile}}80{{else}}100{{end}}px; display: inline-block" class="form-control" >
 			<option value='72'>dUSD</option>
 		</select>
 		<button class="btn btn-primary exNext" id="exNext">Next</button>
@@ -815,7 +815,7 @@
 			<tbody><tr><th>Операция</th><th>Статус</th></tr></tbody>
 			<tbody id="tokensTable"></tbody>
 		</table>
-		<button class="btn" id="showEx">Показать информацию с биржи</button>
+		<button class="btn btn-outline btn-primary" id="showEx">Показать информацию с биржи</button>
 	</div>
 </div>
 

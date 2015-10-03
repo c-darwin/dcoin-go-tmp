@@ -19,6 +19,7 @@ type index struct {
 	IOS      bool
 	Upgrade3 string
 	Upgrade4 string
+	Android bool
 	Mobile	 bool
 }
 
@@ -108,6 +109,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		/*IOS: true,
 		Mobile: true})*/
 		IOS: utils.IOS(),
+		Android: utils.Android(),
 		Mobile: utils.Mobile()})
 	if err != nil {
 		log.Error("%v", err)

@@ -4,6 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
+
 func UnbanNodes() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12,6 +13,7 @@ func UnbanNodes() {
 		}
 	}()
 
+	sleepTime := 3600
 	GoroutineName := "UnbanNodes"
 	d := new(daemon)
 	d.DCDB = DbConnect()
@@ -39,15 +41,14 @@ BEGIN:
 
 		err = d.ExecSql("DELETE FROM nodes_ban")
 		if err != nil {
-			d.PrintSleep(err, 1)
-			continue BEGIN
-		}
-		for i := 0; i < 3600; i++ {
-			if CheckDaemonsRestart() {
-				utils.Sleep(1)
+			if (d.dPrintSleep(err, sleepTime)) {
 				break BEGIN
 			}
-			utils.Sleep(1)
+			continue BEGIN
+		}
+
+		if d.dSleep(sleepTime) {
+			break BEGIN
 		}
 	}
 }

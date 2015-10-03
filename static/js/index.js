@@ -131,7 +131,7 @@ function save_key () {
 
     $('#wrapper').spin();
     console.log("$('#wrapper').spin();");
-
+    $('#modal_alert').html( "" );
     $('#key').text( $("#modal_key").val() );
     $('#password').text( $("#modal_password").val() );
     $('#setup_password').text( $("#modal_setup_password").val() );
@@ -394,6 +394,7 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
     var exp = '';
     var hSig = '';
     var decrypt_PEM = '';
+    key = key.trim();
     // ключ может быть незашифрованным, но без BEGIN RSA PRIVATE KEY
     if (key.substr(0,4) == 'MIIE')
         decrypt_PEM = '-----BEGIN RSA PRIVATE KEY-----'+key+'-----END RSA PRIVATE KEY-----';

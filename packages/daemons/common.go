@@ -7,6 +7,7 @@ import (
 	"github.com/op/go-logging"
 	"time"
 	"os"
+	"errors"
 )
 
 var (
@@ -15,11 +16,14 @@ var (
 	AnswerDaemonCh  chan bool
 	MonitorDaemonCh chan []string = make(chan []string, 100)
 	configIni       map[string]string
+	sleepTime int = 60
 )
 
 type daemon struct {
 	*utils.DCDB
-	goRoutineName string
+	goRoutineName 	string
+	DaemonCh        chan bool
+	AnswerDaemonCh  chan bool
 }
 
 func (d *daemon) dbLock() (error, bool) {
@@ -31,7 +35,32 @@ func (d *daemon) dbUnlock() error {
 	return d.DbUnlock(d.goRoutineName)
 }
 
-func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
+func (d *daemon) dSleep(sleep int) bool {
+	for i := 0; i < sleep; i++ {
+		if CheckDaemonsRestart() {
+			return true
+		}
+		utils.Sleep(1)
+	}
+	return false
+}
+
+func (d *daemon) dPrintSleep(err_ interface{}, sleep int) bool {
+	var err error
+	switch err_.(type) {
+		case string:
+		err = errors.New(err_.(string))
+		case error:
+		err = err_.(error)
+	}
+	log.Error("%v (%v)", err, utils.GetParent())
+	if d.dSleep(sleep) {
+		return true
+	}
+	return false
+}
+
+func (d *daemon) unlockPrintSleep(err error, sleep int) bool {
 	if err != nil {
 		log.Error("%v", err)
 	}
@@ -39,7 +68,13 @@ func (d *daemon) unlockPrintSleep(err error, sleep time.Duration) {
 	if err != nil {
 		log.Error("%v", err)
 	}
-	utils.Sleep(sleep)
+	for i := 0; i < sleep; i++ {
+		if CheckDaemonsRestart() {
+			return true
+		}
+		utils.Sleep(1)
+	}
+	return false
 }
 
 func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
@@ -51,6 +86,24 @@ func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
 		log.Error("%v", err)
 	}
 	utils.Sleep(sleep)
+}
+
+func (d *daemon) notMinerSetSleepTime(sleep int) error {
+	community, err := d.GetCommunityUsers()
+	if err != nil {
+		return err
+	}
+	if len(community) == 0 {
+		userId, err := d.GetMyUserId("")
+		if err != nil {
+			return err
+		}
+		minerId, err := d.GetMyMinerId(userId)
+		if minerId == 0 {
+			sleepTime = sleep
+		}
+	}
+	return nil
 }
 
 func ConfigInit() {
@@ -80,6 +133,7 @@ func ConfigInit() {
 
 func init() {
 	flag.Parse()
+
 }
 
 func CheckDaemonsRestart() bool {
