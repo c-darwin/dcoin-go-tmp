@@ -2322,59 +2322,63 @@ func (db *DCDB) UpdDaemonTime(name string) {
 func (db *DCDB) GetAiId(table string) (string, error) {
 	exists := ""
 	column := "id"
-	switch db.ConfigIni["db_type"] {
-	case "sqlite":
-		err := db.QueryRow("SELECT id FROM " + table).Scan(&exists)
-		if err != nil {
-			if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
-				err = db.QueryRow("SELECT log_id FROM " + table).Scan(&exists)
-				if err != nil {
+	if table == "users" {
+		column = "user_id"
+	} else {
+		switch db.ConfigIni["db_type"] {
+		case "sqlite":
+			err := db.QueryRow("SELECT id FROM " + table).Scan(&exists)
+			if err != nil {
+				if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
+					err = db.QueryRow("SELECT log_id FROM " + table).Scan(&exists)
+					if err != nil {
+						if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
+							column = "log_id"
+						} else {
+							return "", ErrInfo(err)
+						}
+					}
+					column = "log_id"
+				} else {
 					if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
-						column = "log_id"
+						column = "id"
 					} else {
 						return "", ErrInfo(err)
 					}
 				}
-				column = "log_id"
-			} else {
-				if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
-					column = "id"
-				} else {
-					return "", ErrInfo(err)
+			}
+		case "postgresql":
+			exists = ""
+			err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "id").Scan(&exists)
+			if err != nil && err != sql.ErrNoRows {
+				return "", err
+			}
+			if len(exists) == 0 {
+				err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "log_id").Scan(&exists)
+				if err != nil {
+					return "", err
 				}
+				if len(exists) == 0 {
+					return "", fmt.Errorf("no id, log_id")
+				}
+				column = "log_id"
 			}
-		}
-	case "postgresql":
-		exists = ""
-		err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "id").Scan(&exists)
-		if err != nil && err != sql.ErrNoRows {
-			return "", err
-		}
-		if len(exists) == 0 {
-			err := db.QueryRow("SELECT column_name FROM information_schema.columns WHERE table_name=$1 and column_name=$2", table, "log_id").Scan(&exists)
-			if err != nil {
+		case "mysql":
+			exists = ""
+			err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "id").Scan(&exists)
+			if err != nil && err != sql.ErrNoRows {
 				return "", err
 			}
 			if len(exists) == 0 {
-				return "", fmt.Errorf("no id, log_id")
+				err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "log_id").Scan(&exists)
+				if err != nil {
+					return "", err
+				}
+				if len(exists) == 0 {
+					return "", fmt.Errorf("no id, log_id")
+				}
+				column = "log_id"
 			}
-			column = "log_id"
-		}
-	case "mysql":
-		exists = ""
-		err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "id").Scan(&exists)
-		if err != nil && err != sql.ErrNoRows {
-			return "", err
-		}
-		if len(exists) == 0 {
-			err := db.QueryRow("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name=? and column_name=?", db.ConfigIni["db_name"], table, "log_id").Scan(&exists)
-			if err != nil {
-				return "", err
-			}
-			if len(exists) == 0 {
-				return "", fmt.Errorf("no id, log_id")
-			}
-			column = "log_id"
 		}
 	}
 	return column, nil
