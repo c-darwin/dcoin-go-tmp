@@ -58,7 +58,7 @@ func (c *Controller) Login() (string, error) {
 	}
 	//fmt.Println(c.Lang)
 	// проверим, не идут ли тех. работы на пуле
-	if len(c.NodeConfig["pool_admin_user_id"]) > 0 && c.NodeConfig["pool_admin_user_id"] != utils.Int64ToStr(c.UserId) && c.NodeConfig["pool_tech_works"] == "1" {
+	if len(c.NodeConfig["pool_admin_user_id"]) > 0 && c.NodeConfig["pool_admin_user_id"] != utils.Int64ToStr(c.UserId) && c.NodeConfig["pool_tech_works"] == "1" && c.Community {
 		pool_tech_works = 1
 	} else {
 		pool_tech_works = 0
