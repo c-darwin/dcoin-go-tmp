@@ -151,7 +151,7 @@ BEGIN:
 						log.Debug("SET AI %s", table)
 						err = d.SetAI(table, 0)
 						if err != nil {
-							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+							log.Error("%v", err)
 						}
 					}
 				}
