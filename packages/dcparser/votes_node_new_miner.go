@@ -135,7 +135,7 @@ func (p *Parser) VotesNodeNewMiner() error {
 	minerData.votes0 = votes[0]
 	minerData.votes1 = votes[1]
 	minerData.minMinersKeepers = p.Variables.Int64["min_miners_keepers"]
-	log.Debug("minerData", minerData)
+	log.Debug("minerData %v", minerData)
 	if p.minersCheckVotes1(minerData) || (minerData.votes0 > minerData.minMinersKeepers || int(minerData.votes0) == len(minerData.minersIds)) {
 		// отмечаем, что голосование нодов закончено
 		err = p.ExecSql("UPDATE votes_miners SET votes_end = 1, end_block_id = ? WHERE id = ?", p.BlockData.BlockId, p.TxMaps.Int64["vote_id"])

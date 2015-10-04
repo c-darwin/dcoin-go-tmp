@@ -2324,6 +2324,8 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 	column := "id"
 	if table == "users" {
 		column = "user_id"
+	} else if table == "miners" {
+		column = "miner_id"
 	} else {
 		switch db.ConfigIni["db_type"] {
 		case "sqlite":
