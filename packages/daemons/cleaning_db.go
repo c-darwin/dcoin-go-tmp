@@ -136,7 +136,11 @@ BEGIN:
 						continue BEGIN
 					}
 					if table == "cf_currency" {
-						err = d.SetAI("cf_currency", 999)
+						if d.ConfigIni["db_type"] == "postgresql" {
+							err = d.SetAI("cf_currency", 1000)
+						} else {
+							err = d.SetAI("cf_currency", 999)
+						}
 						if err != nil {
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
