@@ -376,7 +376,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Error("%v", err)
 			}
-			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" {
+			if len(config["pool_admin_user_id"]) > 0 && utils.StrToInt64(config["pool_admin_user_id"]) != sessUserId && config["pool_tech_works"] == "1" && c.Community {
 				tplName = "login"
 			}
 			// Если у юзера только 1 праймари ключ, то выдавать форму, где показываются данные для подписи и форма ввода подписи не нужно.
