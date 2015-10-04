@@ -21,6 +21,7 @@ type index struct {
 	Upgrade4 string
 	Android bool
 	Mobile	 bool
+	ShowIOSMenu bool
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -45,21 +46,22 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	sessUserId := GetSessUserId(sess)
 
-	var key string
+	var key, myPrefix, status string
+	var communityUsers []int64
+
 	if utils.DB != nil && utils.DB.DB != nil {
+		communityUsers, err = utils.DB.GetCommunityUsers()
+		if err != nil {
+			log.Error("%v", err)
+		}
+		if len(communityUsers) > 0 {
+			myPrefix = utils.Int64ToStr(sessUserId) + "_"
+		}
+		status, err := utils.DB.Single("SELECT status FROM " + myPrefix + "my_table").String()
 
 		// чтобы нельзя было зайти по локалке
 		// :: - для маков
 		if ok, _ := regexp.MatchString(`(\:\:)|(127\.0\.0\.1)`, r.RemoteAddr); ok {
-			communityUsers, err := utils.DB.GetCommunityUsers()
-			if err != nil {
-				log.Error("%v", err)
-			}
-			myPrefix := ""
-			if len(communityUsers) > 0 {
-				myPrefix = utils.Int64ToStr(sessUserId) + "_"
-			}
-			status, err := utils.DB.Single("SELECT status FROM " + myPrefix + "my_table").String()
 			if status != "waiting_accept_new_key" && status != "waiting_set_new_key" {
 				key, err = utils.DB.Single("SELECT private_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").String()
 				if err != nil {
@@ -67,6 +69,43 @@ func Index(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+	}
+
+	showIOSMenu := true
+	// Когда меню не выдаем
+	if utils.DB == nil || utils.DB.DB == nil {
+		showIOSMenu = false
+	} else {
+		if status ==  "my_pending" {
+			showIOSMenu = false
+		}
+	}
+
+	if utils.DB == nil || utils.DB.DB == nil {
+		blockData, err := utils.DB.GetInfoBlock()
+		if err != nil {
+			log.Error("%v", err)
+		}
+		wTime := int64(12)
+		wTimeReady := int64(2)
+		log.Debug("wTime: %v / utils.Time(): %v / blockData[time]: %v", wTime, utils.Time(), utils.StrToInt64(blockData["time"]))
+		// если время менее 12 часов от текущего, то выдаем не подвержденные, а просто те, что есть в блокчейне
+		if utils.Time()-utils.StrToInt64(blockData["time"]) < 3600*wTime {
+			lastBlockData, err := utils.DB.GetLastBlockData()
+			if err != nil {
+				log.Error("%v", err)
+			}
+			log.Debug("lastBlockData[lastBlockTime]: %v", lastBlockData["lastBlockTime"])
+			log.Debug("time.Now().Unix(): %v", utils.Time())
+			if utils.Time() -lastBlockData["lastBlockTime"] >= 3600*wTimeReady {
+				showIOSMenu = false
+			}
+		} else {
+			showIOSMenu = false
+		}
+	}
+	if !utils.Mobile() {
+		showIOSMenu = false
 	}
 
 	r.ParseForm()
@@ -106,6 +145,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		Lang: globalLangReadOnly[lang],
 		Key: key,
 		SetLang: setLang,
+		ShowIOSMenu: showIOSMenu,
 		/*IOS: true,
 		Mobile: true})*/
 		IOS: utils.IOS(),
