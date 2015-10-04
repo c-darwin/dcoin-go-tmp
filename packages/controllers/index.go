@@ -26,6 +26,8 @@ type index struct {
 
 func Index(w http.ResponseWriter, r *http.Request) {
 
+	r.ParseForm()
+
 	parameters_ := make(map[string]interface{})
 	err := json.Unmarshal([]byte(r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
@@ -81,7 +83,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if utils.DB == nil || utils.DB.DB == nil {
+	if utils.DB != nil && utils.DB.DB != nil {
 		blockData, err := utils.DB.GetInfoBlock()
 		if err != nil {
 			log.Error("%v", err)
@@ -108,7 +110,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		showIOSMenu = false
 	}
 
-	r.ParseForm()
 	var upgrade3 string
 	if len(r.FormValue("upgrade3")) > 0 {
 		upgrade3 = "1"
