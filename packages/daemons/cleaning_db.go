@@ -149,7 +149,11 @@ BEGIN:
 						}
 					} else {
 						log.Debug("SET AI %s", table)
-						err = d.SetAI(table, 0)
+						if d.ConfigIni["db_type"] == "postgresql" {
+							err = d.SetAI(table, 1)
+						} else {
+							err = d.SetAI(table, 0)
+						}
 						if err != nil {
 							log.Error("%v", err)
 						}
