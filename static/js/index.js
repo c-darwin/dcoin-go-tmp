@@ -91,6 +91,11 @@ function login_ok (result) {
             if (!tpl_name || tpl_name=='installStep0' || tpl_name=='installStep6')
                 tpl_name = 'home';
 
+            if ($("#mobileos").val() == "1") {
+                $("#page-wrapper").css('padding-bottom', '40px');
+                $(".navbar-default").css('border-color', '#ccc');
+                $("#ios_menu").css('display', 'block');
+            }
             $( "#dc_menu" ).load( "ajax?controllerName=menu", { }, function() {
                 $( "#dc_content" ).load( "content", { tpl_name: tpl_name}, function() {
                     $.getScript("static/js/plugins/metisMenu/metisMenu.min.js", function() {

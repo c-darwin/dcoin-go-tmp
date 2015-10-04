@@ -737,6 +737,8 @@
 										$( 'input[name="FormDC"]' ).val($("#buy_currency_id").val());
 										$( 'input[name="FormToken"]' ).val(data.token);
 										$( "#sendForm" ).submit();
+									} else {
+										$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
 									}
 								});
 						}, 'JSON'

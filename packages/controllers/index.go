@@ -151,11 +151,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		Key: key,
 		SetLang: setLang,
 		ShowIOSMenu: showIOSMenu,
-		/*IOS: true,
-		Mobile: true})*/
-		IOS: utils.IOS(),
+		IOS: true,
+		Android: true,
+		Mobile: true})
+		/*IOS: utils.IOS(),
 		Android: utils.Android(),
-		Mobile: utils.Mobile()})
+		Mobile: utils.Mobile()})*/
 	if err != nil {
 		log.Error("%v", err)
 	}

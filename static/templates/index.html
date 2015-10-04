@@ -538,6 +538,11 @@
 			else
 				fc_navigate(page, param_obj);
 
+			/*if (/waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain/.test(page)) {
+				$("#ios_menu").css("display", "none");
+				console.log(page, "ios_menu none")
+			}*/
+
 			if (param_obj && typeof param_obj['lang']!='undefined') {
 				load_menu();
 			}
@@ -555,17 +560,17 @@
 
 </script>
 
-{{if .IOS}}
+
 <style>
 	.ico{font-size:2em; color: #8e8e98;}
 	.icoDiv{padding-top: 5px; display: inline-block;  text-align: center}
 	.icoDiv p{font-size: 11px; color: #8e8e98;line-height: 19px;}
 	.icoMarginRight{margin-right: 24px}
-	#page-wrapper{padding-bottom: 40px;}
+	{{if .ShowIOSMenu}}#page-wrapper{padding-bottom: 40px;} .navbar-default {border-color: #ccc;} {{end}}
 	.icoDiv:hover .ico, .icoDiv:hover p{color:#007aff}
-	.navbar-default {border-color: #ccc;}
+
 </style>
-<div class="navbar-fixed-bottom row-fluid" style="padding-top: 3px;background-color: #F8F8F8; border-top:1px solid #ccc; height: 50px;opacity: 0.95;">
+<div id="ios_menu" class="navbar-fixed-bottom row-fluid" style="padding-top: 3px;background-color: #F8F8F8; border-top:1px solid #ccc; height: 50px;opacity: 0.95; display: {{if .ShowIOSMenu}}block{{else}}none{{end}}">
 	<div class="navbar-inner" style="">
 		<div class="container" style="">
 			<div class="icoDiv icoMarginRight" onclick="javascript:location.href='#home'"><i class="fa fa-home fa-lg ico"></i><p>Home</p></div>
@@ -576,6 +581,7 @@
 		</div>
 	</div>
 </div>
-{{end}}
+
+<input type="hidden" id="mobileos" value="{{if .Mobile}}1{{else}}0{{end}}">
 
 </body></html>
