@@ -38,7 +38,8 @@ func Confirmations() {
 	}
 
 	var s int
-BEGIN:
+
+	BEGIN:
 	for {
 		// первые 2 минуты спим по 10 сек, чтобы блоки успели собраться
 		s++
@@ -75,6 +76,7 @@ BEGIN:
 		if LastBlockId-ConfirmedBlockId > 5 {
 			startBlockId = ConfirmedBlockId + 1
 			d.sleepTime = 10
+			s = 0 // 2 минуты отчитываем с начала
 		}
 		if startBlockId == 0 {
 			startBlockId = LastBlockId

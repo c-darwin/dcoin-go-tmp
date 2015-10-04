@@ -83,7 +83,11 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if utils.DB != nil && utils.DB.DB != nil {
+	if sessUserId == 0 {
+		showIOSMenu = false
+	}
+
+	if showIOSMenu && utils.DB != nil && utils.DB.DB != nil {
 		blockData, err := utils.DB.GetInfoBlock()
 		if err != nil {
 			log.Error("%v", err)
@@ -106,7 +110,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 			showIOSMenu = false
 		}
 	}
-	if !utils.Mobile() {
+	if showIOSMenu && !utils.Mobile() {
 		showIOSMenu = false
 	}
 
