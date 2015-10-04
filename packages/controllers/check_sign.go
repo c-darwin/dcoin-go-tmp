@@ -177,7 +177,7 @@ func (c *Controller) Check_sign() (string, error) {
 				if err != nil {
 					return "{\"result\":0}", err
 				}
-				if len(setupPassword_) > 0 && setupPassword_ != string(utils.DSha256(setupPassword) {
+				if len(setupPassword_) > 0 && setupPassword_ != string(utils.DSha256(setupPassword)) {
 					log.Debug(setupPassword_, string(utils.DSha256(setupPassword)), setupPassword)
 					return "{\"result\":0}", nil
 				}
