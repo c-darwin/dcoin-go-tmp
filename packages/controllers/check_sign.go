@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 )
