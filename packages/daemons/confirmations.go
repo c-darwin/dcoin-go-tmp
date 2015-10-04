@@ -37,13 +37,20 @@ func Confirmations() {
 		return
 	}
 
+	var s int
 BEGIN:
 	for {
+		// первые 2 минуты спим по 10 сек, чтобы блоки успели собраться
+		s++
 
 		if utils.Mobile() {
 			d.sleepTime = 300
 		} else {
 			d.sleepTime = 60
+		}
+
+		if s < 12 {
+			d.sleepTime = 10
 		}
 
 		log.Info(GoroutineName)
