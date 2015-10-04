@@ -2060,7 +2060,7 @@ func (p *Parser) rollbackAI(table string, num int64) error {
 		return utils.ErrInfo(err)
 	}
 
-	current, err := p.Single("SELECT ? FROM "+table+" ORDER BY ? DESC LIMIT 1", AiId, AiId).Int64()
+	current, err := p.Single("SELECT "+AiId+" FROM "+table+" ORDER BY ? DESC LIMIT 1", AiId).Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
