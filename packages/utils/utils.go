@@ -1802,13 +1802,13 @@ func EncodeLengthPlusData(data_ interface{}) []byte {
 	case []byte:
 		data = data_.([]byte)
 	}
-	log.Debug("data: %x", data)
-	log.Debug("len data: %d", len(data))
+	//log.Debug("data: %x", data)
+	//log.Debug("len data: %d", len(data))
 	return append(EncodeLength(int64(len(data))), data...)
 }
 
 func EncodeLength(len0 int64) []byte {
-	log.Debug("len0: %v", len0)
+	//log.Debug("len0: %v", len0)
 	if len0 <= 127 {
 		if len0 < 16 {
 			result := HexToBin([]byte(fmt.Sprintf("0%x", len0)))
