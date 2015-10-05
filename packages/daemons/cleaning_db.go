@@ -57,24 +57,34 @@ BEGIN:
 			continue BEGIN
 		}
 		if curBlockId-30 > endBlockId {
-			blocks, err := d.GetMap(`
-					SELECT id, data
-					FROM block_chain
-					WHERE id > ? AND id <= ?
-					ORDER BY id
-					`, "id", "data", endBlockId, curBlockId-30)
-			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-				continue BEGIN
-			}
 			file, err := os.OpenFile(*utils.Dir+"/public/blockchain", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			for id, data := range blocks {
+			rows, err := d.Query(d.FormatQuery(`
+					SELECT id, data
+					FROM block_chain
+					WHERE id > ? AND id <= ?
+					ORDER BY id
+					`), endBlockId, curBlockId-30)
+			if err != nil {
+				file.Close()
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+				continue BEGIN
+			}
+
+			defer rows.Close()
+			for rows.Next() {
+				var id, data string
+				err = rows.Scan(&id, &data)
+				if err != nil {
+					file.Close()
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+					continue BEGIN
+				}
 				blockData := append(utils.DecToBin(id, 5), utils.EncodeLengthPlusData(data)...)
-				sizeAndData := append(utils.DecToBin(len(data), 5), blockData...)
+				sizeAndData := append(utils.DecToBin(len(blockData), 5), blockData...)
 				//err := ioutil.WriteFile(*utils.Dir+"/public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
 				if _, err = file.Write(append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...)); err != nil {
 					file.Close()
