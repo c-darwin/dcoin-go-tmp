@@ -140,9 +140,9 @@ db_name=`)
 	}
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
-	logLevel, err := logging.LogLevel(configIni["log_level"])
+	logLevel, err := logging.LogLevel(*utils.LogLevel)
 	if err != nil {
-		logLevel = logging.ERROR
+		log.Error("%v", utils.ErrInfo(err))
 	}
 
 	log.Debug("logLevel: %v", logLevel)
