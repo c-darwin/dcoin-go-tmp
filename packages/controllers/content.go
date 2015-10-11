@@ -175,6 +175,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			c.MyPrefix = utils.Int64ToStr(sessUserId) + "_"
 			c.Community = true
 		}
+		log.Debug("c.MyPrefix %s", c.MyPrefix)
 		// нужна мин. комиссия на пуле для перевода монет
 		config, err := c.GetNodeConfig()
 		if err != nil {

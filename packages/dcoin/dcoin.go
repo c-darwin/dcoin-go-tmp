@@ -13,7 +13,6 @@ import (
 	"github.com/op/go-logging"
 	_ "image/png"
 	"io"
-	//"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -278,6 +277,41 @@ db_name=`)
 
 	tcpListener(db)
 
+	// ожидает появления свежих записей в чате, затем ждет появления коннектов
+	// (заносятся из демеона connections и от тех, кто сам подключился к ноде)
+	go utils.ChatOutput(utils.ChatNewTx)
+/*
+	// добавление соединений в чат
+	go func() {
+		utils.Sleep(5)
+		conn, err := net.DialTimeout("tcp", "192.168.100.35:8087", 5*time.Second)
+		if err == nil {
+			utils.ChatPoolConn = append(utils.ChatPoolConn, conn)
+		}
+		conn, err = net.DialTimeout("tcp", "192.168.100.55:8087", 5*time.Second)
+		if err == nil {
+			utils.ChatPoolConn = append(utils.ChatPoolConn, conn)
+		}
+		for {
+			utils.ChatPoolConn = append(utils.ChatPoolConn, <-utils.ChatJoinConn)
+			log.Debug("ChatPoolConn %v", utils.ChatPoolConn)
+		}
+	}()
+
+	// Удаление мертвых соеденнений с чатом
+	go func() {
+		for {
+			conn := <- utils.ChatDelConn
+			tmp := utils.ChatPoolConn
+			for k, v := range tmp {
+				if v == conn {
+					utils.ChatPoolConn = append(tmp[:k], tmp[k+1:]...)
+				}
+			}
+			log.Debug("ChatPoolConn %v", utils.ChatPoolConn)
+		}
+	}()
+*/
 	utils.Sleep(3)
 
 	IosLog("Sleep")

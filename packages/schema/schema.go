@@ -10,14 +10,15 @@ import (
 
 var log = logging.MustGetLogger("schema")
 
-type recmap map[string]interface{}
-type recmapi map[int]interface{}
-type recmap2 map[string]string
+type Recmap map[string]interface{}
+type Recmapi map[int]interface{}
+type Recmap2 map[string]string
 type SchemaStruct struct {
 	*utils.DCDB
 	DbType       string
 	PrefixUserId int
-	s            recmap
+	S            Recmap
+	OnlyPrint bool
 }
 
 /*
@@ -26,9 +27,9 @@ type SchemaStruct struct {
 
 func (schema *SchemaStruct) GetSchema() {
 
-	s := make(recmap)
-	s1 := make(recmap)
-	s2 := make(recmapi)
+	s := make(Recmap)
+	s1 := make(Recmap)
+	s2 := make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('[my_prefix]my_cf_funding_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "from_user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "project_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
@@ -43,24 +44,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Нужно чтобы автор проекта мог узнать, кому какие товары отправлять"
 	s["[my_prefix]my_cf_funding"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "type", "mysql": "enum('promised_amount','miner', 'null') NOT NULL DEFAULT 'null'", "sqlite": "varchar(100) ", "postgresql": "enum('promised_amount','miner', 'null') NOT NULL DEFAULT 'null'", "comment": ""}
 	s2[1] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["[my_prefix]my_tasks"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(10) NOT NULL DEFAULT '0'", "sqlite": "int(10) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "public_key", "mysql": "varbinary(512) NOT NULL DEFAULT ''", "sqlite": "varbinary(512) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Нужен просто чтобы опознать в блоке зареганного юзера и отметить approved"}
@@ -69,12 +70,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Чтобы после генерации нового юзера не потерять его приватный ключ можно сохранить его тут"
 	s["[my_prefix]my_new_users"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('[my_prefix]my_admin_messages_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "parent_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -91,12 +92,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Общение с админом, баг-репорты и пр."
 	s["[my_prefix]my_admin_messages"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "tinyint(3) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "smallint  NOT NULL  default nextval('[my_prefix]my_promised_amount_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "amount", "mysql": "decimal(13,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(13,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(13,2) NOT NULL DEFAULT '0'", "comment": ""}
@@ -106,12 +107,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Просто показываем, какие данные еще не попали в блоки. Те, что уже попали тут удалены"
 	s["[my_prefix]my_promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('[my_prefix]my_cash_requests_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время попадания в блок"}
@@ -130,12 +131,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_cash_requests"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('[my_prefix]my_dc_transactions_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "status", "mysql": "enum('pending','approved') NOT NULL DEFAULT 'approved'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'approved'", "postgresql": "enum('pending','approved') NOT NULL DEFAULT 'approved'", "comment": "pending - только при отправки DC с нашего кошелька, т.к. нужно показать юзеру, что запрос принят"}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Уведомления по sms и email"}
@@ -156,12 +157,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Нужно только для отчетов, которые показываются юзеру"
 	s["[my_prefix]my_dc_transactions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "smallint(6) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "smallint NOT NULL  default nextval('[my_prefix]my_holidays_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "start_time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -171,12 +172,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_holidays"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('[my_prefix]my_keys_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -192,12 +193,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Ключи для авторизации юзера. Используем крайний"
 	s["[my_prefix]my_keys"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('[my_prefix]my_node_keys_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "public_key", "mysql": "varbinary(512) NOT NULL DEFAULT ''", "sqlite": "varbinary(512) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
@@ -211,12 +212,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["[my_prefix]my_node_keys"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "name", "mysql": "varchar(200) NOT NULL DEFAULT ''", "sqlite": "varchar(200) NOT NULL DEFAULT ''", "postgresql": "varchar(200) NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "email", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "sms", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -227,24 +228,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"name"}
 	s1["comment"] = ""
 	s["[my_prefix]my_notifications"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "last_voting", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время последнего голосования"}
 	s2[1] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Уведомление о том, что со времени последнего голоса прошло более 2 недель"}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"last_voting"}
 	s1["comment"] = "Нужно только для отсылки уведомлений, что пора голосовать"
 	s["[my_prefix]my_complex_votes"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "miner_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "status", "mysql": "enum('waiting_accept_new_key','waiting_set_new_key','bad_key','my_pending','miner','user','passive_miner','suspended_miner') NOT NULL DEFAULT 'my_pending'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'my_pending'", "postgresql": "enum('waiting_accept_new_key','waiting_set_new_key','bad_key','my_pending','miner','user','passive_miner','suspended_miner') NOT NULL DEFAULT 'my_pending'", "comment": "bad_key - это когда юзер зарегался по чужому ключу, который нашел в паблике, либо если указал старый ключ вместо нового"}
@@ -296,12 +297,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["[my_prefix]my_table"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "currency_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "pct", "mysql": "float NOT NULL DEFAULT '0'", "sqlite": "float NOT NULL DEFAULT '0'", "postgresql": "float NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "min", "mysql": "float NOT NULL DEFAULT '0'", "sqlite": "float NOT NULL DEFAULT '0'", "postgresql": "float NOT NULL DEFAULT '0'", "comment": ""}
@@ -309,12 +310,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["[my_prefix]my_commission"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "type", "mysql": "enum('null','miner','promised_amount','arbitrator','seller') NOT NULL DEFAULT 'null'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'null'", "postgresql": "enum('null','miner','promised_amount','arbitrator','seller') NOT NULL DEFAULT 'null'", "comment": ""}
 	s2[1] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "comment", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
@@ -322,12 +323,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Чтобы было проще понять причину отказов при апгрейде акка или добавлении обещанной суммы. Также сюда пишутся комменты арбитрам и продавцам, когда покупатели запрашивают манибек"
 	s["[my_prefix]my_comments"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_arbitrator_conditions_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "conditions", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -337,12 +338,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitrator_conditions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "conditions", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -350,12 +351,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["arbitrator_conditions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_ca_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -364,12 +365,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_ca"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_seller_hold_back_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -378,12 +379,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_seller_hold_back"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_arbitrator_conditions_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -392,12 +393,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_arbitrator_conditions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_arbitration_trust_list_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -406,12 +407,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_arbitration_trust_list"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_money_back_request_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -420,24 +421,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_money_back_request"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "arbitrator_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["comment"] = "Список арбитров, кому доверяют юзеры"
 	s["arbitration_trust_list"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_arbitration_trust_list_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "arbitration_trust_list", "mysql": "varchar(512) NOT NULL DEFAULT ''", "sqlite": "varchar(512) NOT NULL DEFAULT ''", "postgresql": "varchar(512) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "prev_log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -446,12 +447,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_arbitration_trust_list"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('orders_id_seq')", "comment": "Этот ID указывается в тр-ии при запросе манибека"}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Время блока, в котором запечатана данная сделка"}
 	s2[2] = map[string]string{"name": "buyer", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "user_id покупателя"}
@@ -478,12 +479,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["orders"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_orders_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "end_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "status", "mysql": "enum('normal','refund') NOT NULL DEFAULT 'normal'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'normal'", "postgresql": "enum('normal','refund') NOT NULL DEFAULT 'normal'", "comment": ""}
@@ -500,12 +501,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_orders"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "referral", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount", "mysql": "decimal(15,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(15,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(15,2) NOT NULL DEFAULT '0'", "comment": ""}
@@ -515,12 +516,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Для вывода статы по рефам"
 	s["referral_stats"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "type", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -531,12 +532,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Для удобства незарегенных юзеров на пуле. Показываем им статус их тр-ий"
 	s["transactions_status"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "block_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "good", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "bad", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -545,12 +546,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"block_id"}
 	s1["comment"] = "Результаты сверки имеющегося у нас блока с блоками у случайных нодов"
 	s["confirmations"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_key_request_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -559,12 +560,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_key_request"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_key_active_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -573,24 +574,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_key_active"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["admin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_admin_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -601,12 +602,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_admin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "admin_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -615,12 +616,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["votes_admin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_votes_admin_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "admin_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -631,12 +632,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_admin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_new_credit_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -645,12 +646,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_new_credit"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_creditor_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -659,12 +660,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_creditor"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_repayment_credit_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -673,12 +674,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_repayment_credit"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_credit_part_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -687,12 +688,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_credit_part"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('credits_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "del_block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -716,12 +717,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["credits"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_credits_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "amount", "mysql": "decimal(10,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(10,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(10,2) NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "to_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -735,12 +736,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_credits"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "project_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "ps1", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "ps2", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -754,23 +755,23 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Каждому CF-проекту вручную указывается платежные системы"
 	s["cf_projects_ps"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "project_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"project_id"}
 	s1["comment"] = "Какие проекты не выводим в CF-каталоге"
 	s["cf_blacklist"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "email", "mysql": "varchar(200) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(200) NOT NULL DEFAULT ''", "postgresql": "varchar(200) NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -778,12 +779,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"email"}
 	s1["comment"] = ""
 	s["pool_waiting_list"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('cf_lang_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "name", "mysql": "varchar(200) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(200) NOT NULL DEFAULT ''", "postgresql": "varchar(200) NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
@@ -791,12 +792,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_lang"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_user_avatar_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -805,12 +806,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_user_avatar"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_cf_comments_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -819,12 +820,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_cf_comments"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_new_cf_project_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -833,12 +834,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_new_cf_project"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_cf_project_data_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -847,12 +848,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_cf_project_data"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_cf_send_dc_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -861,12 +862,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_cf_send_dc"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('cf_comments_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "project_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -879,12 +880,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_comments"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('cf_funding_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "project_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -901,12 +902,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_funding"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('cf_currency_id_seq')", "comment": "ID идет от 1000, чтобы id CF-валют не пересекались с DC-валютами"}
 	s2[1] = map[string]string{"name": "name", "mysql": "char(7) NOT NULL DEFAULT ''", "sqlite": "char(7) NOT NULL DEFAULT ''", "postgresql": "char(7) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "project_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
@@ -916,12 +917,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI_START"] = "1000"
 	s1["comment"] = ""
 	s["cf_currency"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('cf_projects_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "currency_id", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -946,12 +947,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('cf_projects_data_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "hide", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "project_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
@@ -971,12 +972,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["cf_projects_data"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_cf_projects_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "category_id", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -986,12 +987,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_cf_projects_data_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "hide", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "lang_id", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1010,12 +1011,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_cf_projects_data"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "from_user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "comment", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
@@ -1023,12 +1024,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Абузы на майнеров от майнеров"
 	s["abuses"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('admin_blog_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "lng", "mysql": "varchar(5) NOT NULL DEFAULT ''", "sqlite": "varchar(5) NOT NULL DEFAULT ''", "postgresql": "varchar(5) NOT NULL DEFAULT ''", "comment": ""}
@@ -1039,12 +1040,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Блог админа"
 	s["admin_blog"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('alert_messages_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "close", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Юзер может закрыть сообщение и оно больше не появится"}
@@ -1056,12 +1057,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Сообщения от админа, которые выводятся в интерфейсе софта"
 	s["alert_messages"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш от полного заголовка блока (new_block_id,prev_block_hash,merkle_root,time,user_id,level). Используется как PREV_BLOCK_HASH"}
 	s2[2] = map[string]string{"name": "head_hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш от заголовка блока (user_id,block_id,prev_head_hash). Используется для обновления head_hash в info_block при восстановлении после вилки в upd_block_info()"}
@@ -1072,12 +1073,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"id"}
 	s1["comment"] = "Главная таблица. Хранит цепочку блоков"
 	s["block_chain"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('cash_requests_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время создания запроса. От него отсчитываем 48 часов"}
 	s2[2] = map[string]string{"name": "from_user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1094,12 +1095,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Запросы на обмен DC на наличные"
 	s["cash_requests"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "tinyint(3) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "smallint  NOT NULL  default nextval('currency_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "name", "mysql": "char(3) NOT NULL DEFAULT ''", "sqlite": "char(3) NOT NULL DEFAULT ''", "postgresql": "char(3) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "full_name", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
@@ -1110,12 +1111,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["currency"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int  NOT NULL  default nextval('log_currency_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "max_other_currencies", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
@@ -1125,12 +1126,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_currency"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "name", "mysql": "char(15) NOT NULL DEFAULT ''", "sqlite": "char(15) NOT NULL DEFAULT ''", "postgresql": "char(15) NOT NULL DEFAULT ''", "comment": "Кодовое обозначение демона"}
 	s2[1] = map[string]string{"name": "script", "mysql": "char(40) NOT NULL DEFAULT ''", "sqlite": "char(40) NOT NULL DEFAULT ''", "postgresql": "char(40) NOT NULL DEFAULT ''", "comment": "Название скрипта"}
 	s2[2] = map[string]string{"name": "param", "mysql": "char(5) NOT NULL DEFAULT ''", "sqlite": "char(5) NOT NULL DEFAULT ''", "postgresql": "char(5) NOT NULL DEFAULT ''", "comment": "Параметры для запуска"}
@@ -1143,12 +1144,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"script"}
 	s1["comment"] = "Демоны"
 	s["daemons"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "race", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Раса. От 1 до 3"}
 	s2[2] = map[string]string{"name": "country", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1199,12 +1200,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Точки по каждому юзеру"
 	s["faces"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('holidays_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "del", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "1-удалено. нужно для отката"}
@@ -1215,12 +1216,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Время, в которое майнер не получает %, т.к. отдыхает"
 	s["holidays"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш от полного заголовка блока (new_block_id,prev_block_hash,merkle_root,time,user_id,level). Используется как prev_hash"}
 	s2[1] = map[string]string{"name": "head_hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш от заголовка блока (user_id,block_id,prev_head_hash)"}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1231,12 +1232,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Текущий блок, данные из которого мы уже занесли к себе"
 	s["info_block"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('promised_amount_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "del_block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "bigint(16) NOT NULL DEFAULT '0'", "sqlite": "bigint(16) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1270,12 +1271,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_promised_amount_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "del_block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount", "mysql": "decimal(13,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(13,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(13,2) NOT NULL DEFAULT '0'", "comment": ""}
@@ -1299,12 +1300,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_faces_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "race", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1358,12 +1359,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Точки по каждому юзеру"
 	s["log_faces"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_miners_data_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "miner_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -1391,24 +1392,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners_data"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "count", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Сколько новых транзакций сделал юзер за минуту"}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["log_minute"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_recycle_bin_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "profile_file_name", "mysql": "varchar(64) NOT NULL DEFAULT ''", "sqlite": "varchar(64) NOT NULL DEFAULT ''", "postgresql": "varchar(64) NOT NULL DEFAULT ''", "comment": ""}
@@ -1420,12 +1421,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_recycle_bin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_spots_compatibility_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "version", "mysql": "double NOT NULL DEFAULT '0'", "sqlite": "double NOT NULL DEFAULT '0'", "postgresql": "money NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "example_spots", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
@@ -1439,12 +1440,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_spots_compatibility"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_actualization_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1453,12 +1454,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_actualization"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_abuses_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1467,12 +1468,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "можно создавать только 1 тр-ю с абузами за 24h"
 	s["log_time_abuses"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_for_repaid_fix_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1481,12 +1482,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_for_repaid_fix"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_commission_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1495,12 +1496,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_commission"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_promised_amount_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1509,12 +1510,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Для учета кол-ва запр. на доб. / удал. / изменение promised_amount. Чистим кроном"
 	s["log_time_promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_cash_requests_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1523,12 +1524,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_cash_requests"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_geolocation_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1537,12 +1538,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_geolocation"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_holidays_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1551,12 +1552,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_holidays"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_message_to_admin_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1565,12 +1566,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_message_to_admin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_mining_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -1579,12 +1580,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_mining"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_change_host_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -1593,12 +1594,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_change_host"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_new_miner_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1607,12 +1608,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_new_miner"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_new_user_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1621,12 +1622,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_new_user"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_node_key_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1635,12 +1636,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_node_key"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_primary_key_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1649,12 +1650,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_primary_key"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_votes_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1663,12 +1664,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Храним данные за 1 сутки"
 	s["log_time_votes"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_votes_miners_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1677,12 +1678,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Лимиты для повторых запросов, за которые голосуют ноды"
 	s["log_time_votes_miners"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_votes_nodes_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1691,12 +1692,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Голоса от нодов"
 	s["log_time_votes_nodes"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_time_votes_complex_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1705,24 +1706,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["log_time_votes_complex"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Храним данные за сутки, чтобы избежать дублей."
 	s["log_transactions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_users_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "name", "mysql": "varchar(30) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(30) NOT NULL DEFAULT ''", "postgresql": "varchar(30) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "avatar", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
@@ -1747,12 +1748,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_users"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_variables_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "data", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
@@ -1760,12 +1761,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_variables"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "Кто голосует"}
 	s2[1] = map[string]string{"name": "voting_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "За что голосует. тут может быть id geolocation и пр"}
 	s2[2] = map[string]string{"name": "type", "mysql": "enum('null','votes_miners','promised_amount') NOT NULL", "sqlite": "varchar(100)  NOT NULL", "postgresql": "enum('null','votes_miners','promised_amount') NOT NULL", "comment": "Нужно для voting_id' DEFAULT 'null"}
@@ -1774,12 +1775,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "voting_id", "type"}
 	s1["comment"] = "Чтобы 1 юзер не смог проголосовать 2 раза за одно и тоже"
 	s["log_votes"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_wallets_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "amount", "mysql": "decimal(15,2) UNSIGNED NOT NULL DEFAULT '0'", "sqlite": "decimal(15,2)  NOT NULL DEFAULT '0'", "postgresql": "decimal(15,2)  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount_backup", "mysql": "decimal(15,2)  NOT NULL DEFAULT '0'", "sqlite": "decimal(15,2)  NOT NULL DEFAULT '0'", "postgresql": "decimal(15,2)  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1791,12 +1792,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Таблица, где будет браться инфа при откате блока"
 	s["log_wallets"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "lock_time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "script_name", "mysql": "varchar(100) NOT NULL DEFAULT ''", "sqlite": "varchar(100) NOT NULL DEFAULT ''", "postgresql": "varchar(100) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "info", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
@@ -1805,12 +1806,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Полная блокировка на поступление новых блоков/тр-ий"
 	s["main_lock"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "miner_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('miners_miner_id_seq')", "comment": "Если есть забаненные, то на их место становятся новички, т.о. все miner_id будут заняты без пробелов"}
 	s2[1] = map[string]string{"name": "active", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "1 - активен, 0 - забанен"}
 	s2[2] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Без log_id нельзя определить, был ли апдейт в табле miners или же инсерт, т.к. по AUTO_INCREMENT не понять, т.к. обновление может быть в самой последней строке"}
@@ -1819,12 +1820,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "miner_id"
 	s1["comment"] = ""
 	s["miners"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_miners_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
 	s2[2] = map[string]string{"name": "prev_log_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -1833,12 +1834,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_miners"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "miner_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Из таблицы miners"}
 	s2[2] = map[string]string{"name": "reg_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Время, когда майнер получил miner_id по итогам голосования. Определеяется один раз и не меняется. Нужно, чтобы не давать новым майнерам генерить тр-ии регистрации новых юзеров и исходящих запросов"}
@@ -1864,12 +1865,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["miners_data"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "version", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "alert", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1877,12 +1878,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Сюда пишется новая версия, которая загружена в public"
 	s["new_version"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "ban_start", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "info", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
@@ -1890,12 +1891,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баним на 1 час тех, кто дает нам данные с ошибками"
 	s["nodes_ban"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "host", "mysql": "varchar(100) NOT NULL DEFAULT ''", "sqlite": "varchar(100) NOT NULL DEFAULT ''", "postgresql": "varchar(100) NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Чтобы получать открытый ключ, которым шифруем блоки и тр-ии"}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "ID блока, который есть у данного нода. Чтобы слать ему только >="}
@@ -1903,12 +1904,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"host"}
 	s1["comment"] = "Ноды, которым шлем данные и от которых принимаем данные"
 	s["nodes_connection"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('pct_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время блока, в котором были новые %"}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1921,12 +1922,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "% майнера, юзера. На основе  pct_votes"
 	s["pct"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('max_promised_amounts_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время блока, в котором были новые max_promised_amount"}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1938,23 +1939,23 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "На основе votes_max_promised_amount"
 	s["max_promised_amounts"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"time"}
 	s1["comment"] = "Время последнего обновления max_other_currencies_time в currency "
 	s["max_other_currencies_time"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('reduction_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время блока, в котором было произведено уполовинивание"}
 	s2[2] = map[string]string{"name": "notification", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -1967,12 +1968,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Когда была последняя процедура урезания для конкретной валюты. Чтобы отсчитывать 2 недели до следующей"
 	s["reduction"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Нужно только для того, чтобы определять, голосовал ли юзер или нет. От этого зависит, будет он получать майнерский или юзерский %"}
 	s2[2] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1982,12 +1983,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_miner_pct"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_miner_pct_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -1999,12 +2000,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_miner_pct"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "pct", "mysql": "decimal(13,13) NOT NULL DEFAULT '0'", "sqlite": "TEXT NOT NULL DEFAULT '0'", "postgresql": "decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
@@ -2013,12 +2014,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = "Голосвание за %. Каждые 14 дней пересчет"
 	s["votes_user_pct"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_user_pct_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "pct", "mysql": "decimal(13,13) NOT NULL DEFAULT '0'", "sqlite": "decimal(13,13) NOT NULL DEFAULT '0'", "postgresql": "decimal(13,13) NOT NULL DEFAULT '0'", "comment": ""}
@@ -2029,12 +2030,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_user_pct"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Учитываются только свежие голоса, т.е. один голос только за одно урезание"}
 	s2[2] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2044,12 +2045,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = "Голосвание за уполовинивание денежной массы. Каждые 14 дней пересчет"
 	s["votes_reduction"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_reduction_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2061,12 +2062,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_reduction"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Возможные варианты задаются в скрипте, иначе будут проблемы с поиском варианта-победителя"}
@@ -2075,12 +2076,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = ""
 	s["votes_max_promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_max_promised_amount_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2091,12 +2092,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_promised_amount"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "count", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Возможные варианты задаются в скрипте, иначе будут проблемы с поиском варианта-победителя"}
@@ -2105,12 +2106,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = ""
 	s["votes_max_other_currencies"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_max_other_currencies_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "count", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2121,12 +2122,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_max_other_currencies"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time_start", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "От какого времени отсчитывается 1 месяц"}
 	s2[2] = map[string]string{"name": "points", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Баллы, полученные майнером за голосования"}
@@ -2135,12 +2136,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Баллы майнеров, по которым решается - получат они майнерские % или юзерские"
 	s["points"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('log_points_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time_start", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "points", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -2151,12 +2152,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_points"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "time_start", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Время начала действия статуса. До какого времени действует данный статус определяем простым добавлением в массив времени, которое будет через 30 дней"}
 	s2[2] = map[string]string{"name": "status", "mysql": "enum('user','miner') NOT NULL DEFAULT 'user'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'user'", "postgresql": "enum('user','miner') NOT NULL DEFAULT 'user'", "comment": ""}
@@ -2164,12 +2165,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = "Статусы юзеров на основе подсчета points"
 	s["points_status"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "head_hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2178,24 +2179,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"head_hash", "hash"}
 	s1["comment"] = "Блоки, которые мы должны забрать у указанных нодов"
 	s["queue_blocks"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "head_hash", "mysql": "binary(32) NOT NULL DEFAULT ''", "sqlite": "binary(32) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш от заголовка блока (user_id,block_id,prev_head_hash)"}
 	s2[1] = map[string]string{"name": "data", "mysql": "longblob NOT NULL DEFAULT ''", "sqlite": "longblob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"head_hash"}
 	s1["comment"] = "Очередь на фронтальную проверку соревнующихся блоков"
 	s["queue_testblock"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "md5 от тр-ии"}
 	s2[1] = map[string]string{"name": "high_rate", "mysql": "tinyint(1) NOT NULL DEFAULT '0'", "sqlite": "tinyint(1) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Если 1, значит это админская тр-ия"}
 	s2[2] = map[string]string{"name": "data", "mysql": "longblob NOT NULL DEFAULT ''", "sqlite": "longblob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": ""}
@@ -2204,12 +2205,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Тр-ии, которые мы должны проверить"
 	s["queue_tx"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "profile_file_name", "mysql": "varchar(64) NOT NULL DEFAULT ''", "sqlite": "varchar(64) NOT NULL DEFAULT ''", "postgresql": "varchar(64) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "face_file_name", "mysql": "varchar(64) NOT NULL DEFAULT ''", "sqlite": "varchar(64) NOT NULL DEFAULT ''", "postgresql": "varchar(64) NOT NULL DEFAULT ''", "comment": ""}
@@ -2218,12 +2219,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
 	s["recycle_bin"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "version", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "example_spots", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": "Точки, которые наносим на 2 фото-примера (анфас и профиль)"}
 	s2[2] = map[string]string{"name": "compatibility", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": "С какими версиями совместимо"}
@@ -2234,12 +2235,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"version"}
 	s1["comment"] = "Совместимость текущей версии точек с предыдущими"
 	s["spots_compatibility"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "ID тестируемого блока"}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": "Время, когда блок попал сюда"}
 	s2[2] = map[string]string{"name": "level", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": "Пишем сюда для использования при формировании заголовка"}
@@ -2255,12 +2256,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = "Нужно на этапе соревнования, у кого меньше хэш"
 	s["testblock"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "lock_time", "mysql": "int(10) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(10)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "script_name", "mysql": "varchar(30) NOT NULL DEFAULT ''", "sqlite": "varchar(30) NOT NULL DEFAULT ''", "postgresql": "varchar(30) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "uniq", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
@@ -2268,12 +2269,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["UNIQ"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["testblock_lock"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Все хэши из этой таблы шлем тому, у кого хотим получить блок (т.е. недостающие тр-ии для составления блока)"}
 	s2[1] = map[string]string{"name": "data", "mysql": "longblob NOT NULL DEFAULT ''", "sqlite": "longblob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": "Само тело тр-ии"}
 	s2[2] = map[string]string{"name": "verified", "mysql": "tinyint(1) NOT NULL DEFAULT '1'", "sqlite": "tinyint(1) NOT NULL DEFAULT '1'", "postgresql": "smallint NOT NULL DEFAULT '1'", "comment": "Оставшиеся после прихода нового блока тр-ии отмечаются как \"непроверенные\" и их нужно проверять по новой"}
@@ -2289,12 +2290,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Все незанесенные в блок тр-ии, которые у нас есть"
 	s["transactions"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "int NOT NULL  default nextval('transactions_testblock_id_seq')", "comment": "Порядок следования очень важен"}
 	s2[1] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "md5 для обмена только недостающими тр-ми"}
 	s2[2] = map[string]string{"name": "data", "mysql": "longblob NOT NULL DEFAULT ''", "sqlite": "longblob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": ""}
@@ -2307,12 +2308,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Тр-ии, которые используются в текущем testblock"
 	s["transactions_testblock"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_commission_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "commission", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
@@ -2322,12 +2323,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["log_commission"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "commission", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": "Комиссии по всем валютам в json. Если какой-то валюты нет в списке, то комиссия будет равна нулю. currency_id, %, мин., макс."}
 	s2[2] = map[string]string{"name": "log_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2335,12 +2336,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Каждый майнер определяет, какая комиссия с тр-ий будет доставаться ему, если он будет генерить блок"
 	s["commission"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('users_user_id_seq')", "comment": "На него будут слаться деньги"}
 	s2[1] = map[string]string{"name": "name", "mysql": "varchar(30) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(30) NOT NULL DEFAULT ''", "postgresql": "varchar(30) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "avatar", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
@@ -2364,12 +2365,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "user_id"
 	s1["comment"] = ""
 	s["users"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "name", "mysql": "varchar(35) NOT NULL DEFAULT ''", "sqlite": "varchar(35) NOT NULL DEFAULT ''", "postgresql": "varchar(35) NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "value", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "comment", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
@@ -2377,12 +2378,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"name"}
 	s1["comment"] = ""
 	s["variables"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('votes_miners_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "type", "mysql": "enum('null','node_voting','user_voting') NOT NULL DEFAULT 'null'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'null'", "postgresql": "enum('null','node_voting','user_voting') NOT NULL DEFAULT 'null'", "comment": ""}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": "За кого голосуем"}
@@ -2397,12 +2398,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Отдел. от miners_data, чтобы гол. шли точно за свежие данные"
 	s["votes_miners"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "first", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "second", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2412,12 +2413,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Голосвание за рефские %. Каждые 14 дней пересчет"
 	s["votes_referral"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_referral_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "first", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2430,12 +2431,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_referral"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "first", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "second", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "third", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2443,12 +2444,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["referral"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_referral_log_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "first", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "second", "mysql": "tinyint(2) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(2)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2460,22 +2461,22 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_referral"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "progress", "mysql": "varchar(10) NOT NULL DEFAULT ''", "sqlite": "varchar(10) NOT NULL DEFAULT ''", "postgresql": "varchar(10) NOT NULL DEFAULT ''", "comment": "На каком шаге остановились"}
 	s1["fields"] = s2
 	s1["comment"] = "Используется только в момент установки"
 	s["install"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "INTEGER NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "currency_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "amount", "mysql": "decimal(15,2) unsigned NOT NULL DEFAULT '0'", "sqlite": "decimal(15,2)  NOT NULL DEFAULT '0'", "postgresql": "decimal(15,2)  NOT NULL DEFAULT '0'", "comment": ""}
@@ -2486,12 +2487,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"user_id", "currency_id"}
 	s1["comment"] = "У кого сколько какой валюты"
 	s["wallets"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "Хэш транзакции. Нужно для удаления данных из буфера, после того, как транзакция была обработана в блоке, либо анулирована из-за ошибок при повторной проверке"}
 	s2[1] = map[string]string{"name": "del_block_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "Т.к. удалять нельзя из-за возможного отката блока, приходится делать delete=1, а через сутки - чистить"}
 	s2[2] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
@@ -2502,12 +2503,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = "Суммируем все списания, которые еще не в блоке"
 	s["wallets_buffer"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('forex_orders_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "Чей ордер"}
 	s2[2] = map[string]string{"name": "sell_currency_id", "mysql": "int(10) NOT NULL DEFAULT '0'", "sqlite": "int(10) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Что продается"}
@@ -2523,12 +2524,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["forex_orders"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_forex_orders_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "main_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "ID из log_forex_orders_main. Для откатов"}
 	s2[2] = map[string]string{"name": "order_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": "Какой ордер был задействован. Для откатов"}
@@ -2541,12 +2542,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Все ордеры, который были затронуты в результате тр-ии"
 	s["log_forex_orders"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('log_forex_orders_main_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "block_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "Чтобы можно было понять, какие данные можно смело удалять из-за их давности"}
 	s1["fields"] = s2
@@ -2554,12 +2555,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Каждый ордер пишется сюда. При откате любого ордера просто берем последнюю строку отсюда"
 	s["log_forex_orders_main"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "tx_hash", "mysql": "binary(16) DEFAULT ''", "sqlite": "binary(16) DEFAULT ''", "postgresql": "bytea  DEFAULT ''", "comment": "По этому хэшу отмечается, что данная тр-ия попала в блок и ставится del_block_id"}
 	s2[1] = map[string]string{"name": "user_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s2[2] = map[string]string{"name": "del_block_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": "block_id сюда пишется в тот момент, когда тр-ия попала в блок и уже не используется для фронтальной проверки. Нужно чтобы можно было понять, какие данные можно смело удалять из-за их давности"}
@@ -2567,12 +2568,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"tx_hash"}
 	s1["comment"] = "В один блок не должно попасть более чем 10 тр-ий перевода средств или создания forex-ордеров на суммы менее эквивалента 0.05-0.1$ по текущему курсу"
 	s["log_time_money_orders"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('x_my_admin_messages_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "add_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "для удаления старых my_pending"}
 	s2[2] = map[string]string{"name": "user_int_message_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "ID сообщения, который присылает юзер"}
@@ -2592,47 +2593,47 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Эта табла видна только админу"
 	s["x_my_admin_messages"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "data", "mysql": "varchar(20) NOT NULL DEFAULT ''", "sqlite": "varchar(20) NOT NULL DEFAULT ''", "postgresql": "varchar(20) NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"hash"}
 	s1["comment"] = ""
 	s["authorization"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = "Если не пусто, то работаем в режиме пула"
 	s["community"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "uniq", "mysql": "enum('1') NOT NULL DEFAULT '1'", "sqlite": "varchar(100)  NOT NULL DEFAULT '1'", "postgresql": "enum('1') NOT NULL DEFAULT '1'", "comment": ""}
 	s2[1] = map[string]string{"name": "data", "mysql": "text NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"uniq"}
 	s1["comment"] = ""
 	s["backup_community"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('payment_systems_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "name", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
@@ -2640,24 +2641,24 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "id"
 	s1["comment"] = "Для тех, кто не хочет встречаться для обмена кода на наличные"
 	s["payment_systems"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "ip", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Раз в минуту удаляется"}
 	s2[1] = map[string]string{"name": "req", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Кол-во запросов от ip. "}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"ip"}
 	s1["comment"] = "Защита от случайного ддоса"
 	s["ddos_protection"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "my_block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Параллельно с info_block пишем и сюда. Нужно при обнулении рабочих таблиц, чтобы знать до какого блока не трогаем таблы my_"}
 	s2[1] = map[string]string{"name": "local_gate_ip", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "Если тут не пусто, то connector будет не активным, а ip для disseminator будет браться тут. Нужно для защищенного режима"}
 	s2[2] = map[string]string{"name": "static_node_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Все исходящие тр-ии будут подписаны публичным ключом этой ноды. Нужно для защищенного режима"}
@@ -2687,12 +2688,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["fields"] = s2
 	s1["comment"] = ""
 	s["config"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[1] = map[string]string{"name": "private_key", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "used_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
@@ -2700,30 +2701,53 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["PRIMARY"] = []string{"id"}
 	s1["comment"] = "Ключи для tools/available_keys"
 	s["_my_refs"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "token", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255)  NOT NULL DEFAULT ''", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"token"}
 	s1["comment"] = "Токены длы получения инфы с какой-то центральной биржы"
 	s["[my_prefix]my_tokens"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
 
-	s = make(recmap)
-	s1 = make(recmap)
-	s2 = make(recmapi)
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "stop_time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["comment"] = "Сигнал демонам об остановке"
 	s["stop_daemons"] = s1
-	schema.s = s
-	schema.printSchema()
+	schema.S = s
+	schema.PrintSchema()
+
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('chat_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "md5 от тр-ии"}
+	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[3] = map[string]string{"name": "lang", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[4] = map[string]string{"name": "room", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[5] = map[string]string{"name": "receiver", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[6] = map[string]string{"name": "sender", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[7] = map[string]string{"name": "status", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s2[8] = map[string]string{"name": "message", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
+	s2[9] = map[string]string{"name": "enc_message", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
+	s2[10] = map[string]string{"name": "signature", "mysql": "blob NOT NULL DEFAULT ''", "sqlite": "blob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": ""}
+	s2[11] = map[string]string{"name": "sent", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"hash"}
+	s1["AI"] = "id"
+	s1["comment"] = ""
+	s["chat"] = s1
+	schema.S = s
+	schema.PrintSchema()
 
 	prefix := ""
 	if schema.PrefixUserId > 0 {
@@ -2735,7 +2759,7 @@ func (schema *SchemaStruct) GetSchema() {
 
 func (schema *SchemaStruct) typeMysql() {
 	var result string
-	for table_name, v := range schema.s {
+	for table_name, v := range schema.S {
 		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
 			if schema.PrefixUserId > 0 {
 				continue
@@ -2753,7 +2777,7 @@ func (schema *SchemaStruct) typeMysql() {
 		primaryKey := ""
 		uniqKey := ""
 		var tableSlice []string
-		for k, v1 := range v.(recmap) {
+		for k, v1 := range v.(Recmap) {
 			if k == "comment" {
 				tableComment = v1.(string)
 				//fmt.Println(k, v1.(string), v1)
@@ -2761,17 +2785,17 @@ func (schema *SchemaStruct) typeMysql() {
 				//fmt.Println(k, v1)
 				//i:=0
 				//end:=""
-				for i := 0; i < len(v1.(recmapi)); i++ {
-					/*if i == len(v1.(recmap)) - 1 {
+				for i := 0; i < len(v1.(Recmapi)); i++ {
+					/*if i == len(v1.(Recmap)) - 1 {
 						end = ""
 					} else {
 						end = ","
 					}*/
-					dType := v1.(recmapi)[i].(map[string]string)["mysql"]
+					dType := v1.(Recmapi)[i].(map[string]string)["mysql"]
 					if ok, _ := regexp.MatchString(`AUTO_INCREMENT`, dType); ok {
 						dType = strings.Replace(dType, "DEFAULT '0'", "", -1)
 					}
-					tableSlice = append(tableSlice, fmt.Sprintf("`%s` %s COMMENT '%s'", v1.(recmapi)[i].(map[string]string)["name"], dType, v1.(recmapi)[i].(map[string]string)["comment"]))
+					tableSlice = append(tableSlice, fmt.Sprintf("`%s` %s COMMENT '%s'", v1.(Recmapi)[i].(map[string]string)["name"], dType, v1.(Recmapi)[i].(map[string]string)["comment"]))
 					//fmt.Println(i)
 					//i++
 				}
@@ -2815,7 +2839,7 @@ func (schema *SchemaStruct) typeMysql() {
 
 func (schema *SchemaStruct) typePostgresql() {
 	var result string
-	for table_name, v := range schema.s {
+	for table_name, v := range schema.S {
 		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
 			if schema.PrefixUserId > 0 {
 				continue
@@ -2828,11 +2852,11 @@ func (schema *SchemaStruct) typePostgresql() {
 		AI := ""
 		AI_START := "1"
 		var tableSlice []string
-		for k, v1 := range v.(recmap) {
+		for k, v1 := range v.(Recmap) {
 			if k == "fields" {
-				for i := 0; i < len(v1.(recmapi)); i++ {
+				for i := 0; i < len(v1.(Recmapi)); i++ {
 					var enumSlice []string
-					dType := v1.(recmapi)[i].(map[string]string)["postgresql"]
+					dType := v1.(Recmapi)[i].(map[string]string)["postgresql"]
 					if ok, _ := regexp.MatchString(`enum`, dType); ok {
 						//enum('normal','refund') NOT NULL DEFAULT 'normal'
 						r, _ := regexp.Compile(`'([\w]+)'`)
@@ -2847,19 +2871,19 @@ func (schema *SchemaStruct) typePostgresql() {
 								//fmt.Println(enumSlice)
 							}
 						}
-						name := v1.(recmapi)[i].(map[string]string)["name"]
+						name := v1.(Recmapi)[i].(map[string]string)["name"]
 						result += fmt.Sprintf("DROP TYPE IF EXISTS \"%s_enum_%s\" CASCADE;\n", table_name, name)
 						result += fmt.Sprintf("CREATE TYPE \"%s_enum_%s\" AS ENUM ('%s');\n", table_name, name, strings.Join(enumSlice, "','"))
 					}
 				}
 
-				for i := 0; i < len(v1.(recmapi)); i++ {
-					dType := v1.(recmapi)[i].(map[string]string)["postgresql"]
+				for i := 0; i < len(v1.(Recmapi)); i++ {
+					dType := v1.(Recmapi)[i].(map[string]string)["postgresql"]
 					if ok, _ := regexp.MatchString(`enum`, dType); ok {
 						//NOT NULL DEFAULT 'user'
 						r, _ := regexp.Compile(`^enum\(.*?\)(.*)$`)
 						rest := r.FindStringSubmatch(dType)
-						dType = fmt.Sprintf("%s_enum_%s %s", table_name, v1.(recmapi)[i].(map[string]string)["name"], rest[1])
+						dType = fmt.Sprintf("%s_enum_%s %s", table_name, v1.(Recmapi)[i].(map[string]string)["name"], rest[1])
 					}
 					if ok, _ := regexp.MatchString(`nextval\('\[my_prefix\]`, dType); ok {
 						if schema.PrefixUserId == 0 {
@@ -2869,7 +2893,7 @@ func (schema *SchemaStruct) typePostgresql() {
 						}
 					}
 
-					tableSlice = append(tableSlice, fmt.Sprintf("\"%s\" %s", v1.(recmapi)[i].(map[string]string)["name"], dType))
+					tableSlice = append(tableSlice, fmt.Sprintf("\"%s\" %s", v1.(Recmapi)[i].(map[string]string)["name"], dType))
 				}
 			} else if k == "PRIMARY" {
 				primaryKey = fmt.Sprintf("ALTER TABLE ONLY \"%[1]s\" ADD CONSTRAINT %[1]s_pkey PRIMARY KEY (%[2]s);", table_name, strings.Join(v1.([]string), ","))
@@ -2929,7 +2953,7 @@ func (schema *SchemaStruct) replMy(table_name *string) {
 
 func (schema *SchemaStruct) typeSqlite() {
 	var result string
-	for table_name, v := range schema.s {
+	for table_name, v := range schema.S {
 		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
 			if schema.PrefixUserId > 0 {
 				continue
@@ -2945,7 +2969,7 @@ func (schema *SchemaStruct) typeSqlite() {
 		AI := ""
 		AI_START := "1"
 		var tableSlice []string
-		for k, v1 := range v.(recmap) {
+		for k, v1 := range v.(Recmap) {
 			/*if k=="comment" {
 				tableComment = v1.(string)
 				//fmt.Println(k, v1.(string), v1)
@@ -2953,13 +2977,13 @@ func (schema *SchemaStruct) typeSqlite() {
 				//fmt.Println(k, v1)
 				//i:=0
 				//end:=""
-				for i := 0; i < len(v1.(recmapi)); i++ {
-					/*if i == len(v1.(recmap)) - 1 {
+				for i := 0; i < len(v1.(Recmapi)); i++ {
+					/*if i == len(v1.(Recmap)) - 1 {
 						end = ""
 					} else {
 						end = ","
 					}*/
-					tableSlice = append(tableSlice, fmt.Sprintf("\"%s\" %s", v1.(recmapi)[i].(map[string]string)["name"], v1.(recmapi)[i].(map[string]string)["sqlite"]))
+					tableSlice = append(tableSlice, fmt.Sprintf("\"%s\" %s", v1.(Recmapi)[i].(map[string]string)["name"], v1.(Recmapi)[i].(map[string]string)["sqlite"]))
 					//fmt.Println(i)
 					//i++
 				}
@@ -2991,23 +3015,31 @@ func (schema *SchemaStruct) typeSqlite() {
 		}
 		result += fmt.Sprintln(");\n\n")
 		//log.Println(result)
-		err := schema.DCDB.ExecSql(result)
-		if err != nil {
-			log.Debug("%v", err)
+		if !schema.OnlyPrint {
+			err := schema.DCDB.ExecSql(result)
+			if err != nil {
+				log.Debug("%v", err)
+			}
+		} else {
+			fmt.Println(result)
 		}
 		//log.Println("AI_START=", AI_START)
 		if AI_START != "1" {
 			q := `BEGIN TRANSACTION; UPDATE sqlite_sequence SET seq = 999 WHERE name = 'cf_currency';INSERT INTO sqlite_sequence (name,seq) SELECT 'cf_currency', 999 WHERE NOT EXISTS (SELECT changes() AS change FROM sqlite_sequence WHERE change <> 0);COMMIT;`
-			err := schema.DCDB.ExecSql(q)
-			//log.Println(q)
-			if err != nil {
-				log.Debug("%v", err)
+			if !schema.OnlyPrint {
+				err := schema.DCDB.ExecSql(q)
+				//log.Println(q)
+				if err != nil {
+					log.Debug("%v", err)
+				}
+			} else {
+				fmt.Println(result)
 			}
 		}
 	}
 }
 
-func (schema *SchemaStruct) printSchema() {
+func (schema *SchemaStruct) PrintSchema() {
 	switch schema.DbType {
 	case "mysql":
 		schema.typeMysql()

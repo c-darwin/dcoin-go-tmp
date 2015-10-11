@@ -635,7 +635,7 @@ func (p *Parser) generalCheck() error {
 	}
 	// чтобы не записали слишком длинную подпись
 	// 128 - это нод-ключ
-	if len(p.TxMap["sign"]) < 128 || len(p.TxMap["sign"]) > 5000 {
+	if len(p.TxMap["sign"]) < 128 || len(p.TxMap["sign"]) > 5120 {
 		return utils.ErrInfoFmt("incorrect sign size")
 	}
 	return nil
@@ -2111,13 +2111,6 @@ func (p *Parser) getMyMinersIds() (map[int]int, error) {
 	return myMinersIds, nil
 }
 
-func IntSliceToStr(Int []int) []string {
-	var result []string
-	for _, v := range Int {
-		result = append(result, utils.IntToStr(v))
-	}
-	return result
-}
 
 func (p *Parser) generalCheckAdmin() error {
 	if !utils.CheckInputData(p.TxMap["user_id"], "int") {

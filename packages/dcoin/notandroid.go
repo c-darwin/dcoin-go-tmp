@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"regexp"
 )
 
 /*
@@ -31,7 +32,10 @@ static inline void waitSig() {
     #endif
 }
 */
-import "C"
+import (
+	"C"
+	//"fmt"
+)
 
 func IosLog(text string) {
 }
@@ -141,6 +145,64 @@ func tcpListener(db *utils.DCDB) {
 				}
 			}
 		}()
+	}()
+
+	// Листенинг для чата
+	go func() {
+		listener, err := net.Listen("tcp", ":8087")
+		if err != nil {
+			log.Error("Error listening: %v", err)
+			panic(err)
+		}
+		defer listener.Close()
+
+		for {
+			conn, _ := listener.Accept()
+			log.Debug("main conn %v\n", conn)
+			log.Debug("conn.RemoteAddr() %v\n", conn.RemoteAddr().String())
+
+			go func(conn net.Conn) {
+				buf := make([]byte, 4)
+				_, err := conn.Read(buf)
+				if err != nil {
+					log.Debug("%v", err)
+					return
+				}
+				log.Debug("buf %x", buf)
+				// получим user_id в первых 4-х байтах
+				userId := utils.BinToDec(buf)
+
+				// и тип канала
+				buf = make([]byte, 1)
+				_, err = conn.Read(buf)
+				if err != nil {
+					log.Debug("%v", err)
+					return
+				}
+				log.Debug("buf %x", buf)
+				chType := utils.BinToDec(buf)
+				log.Debug("userId %v chType %v", userId, chType)
+
+				// мониторит входящие
+				if chType == 0 {
+					log.Debug("chType 0")
+					go utils.ChatInput(conn, utils.ChatNewTx)
+				}
+				// создаем канал, через который будем рассылать тр-ии чата
+				if chType == 1 {
+					re := regexp.MustCompile(`(.*?):[0-9]+$`)
+					match := re.FindStringSubmatch(conn.RemoteAddr().String())
+					if len(match) != 0 {
+						log.Debug("chType 1")
+						// проверим, нет ли уже созданного канала для такого хоста
+						if _, ok := utils.ChatOutConnections[match[1]]; !ok {
+							utils.ChatOutConnections[match[1]] = 1
+							utils.ChatTxDisseminator(conn, match[1])
+						}
+					}
+				}
+			}(conn)
+		}
 	}()
 }
 

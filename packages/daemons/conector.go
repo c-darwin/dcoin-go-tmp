@@ -9,7 +9,10 @@ import (
 	"os"
 	"strings"
 	"time"
+	"regexp"
 )
+
+var myUserIdForChat int64
 
 func Connector() {
 	defer func() {
@@ -91,6 +94,9 @@ BEGIN:
 				continue
 			}
 			collective = append(collective, myUserId)
+			myUserIdForChat = myUserId
+		} else {
+			myUserIdForChat, err = d.Single(`SELECT pool_admin_user_id FROM config`).Int64()
 		}
 		// в сингл-моде будет только $my_miners_ids[0]
 		myMinersIds, err := d.GetMyMinersIds(collective)
@@ -374,6 +380,63 @@ func check(host string, userId int64) *answerType {
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 		return &answerType{userId: userId, answer: 0}
+	}
+
+	// создадим канал для чата
+	if utils.BinToDec(answer) == 1 {
+		re := regexp.MustCompile(`(.*?):[0-9]+$`)
+		match := re.FindStringSubmatch(host)
+		if len(match) != 0 {
+
+			log.Debug("myUserIdForChat %v", myUserIdForChat)
+			log.Debug("chat host: %v", match[1]+":8087")
+			//chatHost:=match[1]+":8087"
+			chatHostWoPort := "192.168.150.30"
+			chatHost:="192.168.150.30:8087"
+			// канал для приема тр-ий чата
+			conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			} else {
+				log.Debug(conn.RemoteAddr().String(), conn)
+				myUid := utils.DecToBin(myUserIdForChat, 4)
+				log.Debug("myUid %x", myUid)
+				n, err := conn.Write(myUid)
+				log.Debug("n: %d", n)
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				n, err = conn.Write(utils.DecToBin(1, 1))
+				log.Debug("n: %d", n)
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				go utils.ChatInput(conn, utils.ChatNewTx)
+			}
+
+			// канал для отправки тр-ий чата
+			conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			} else {
+				log.Debug(conn2.RemoteAddr().String(), conn)
+				n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
+				log.Debug("n: %d", n)
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				n, err = conn2.Write(utils.DecToBin(0, 1))
+				log.Debug("n: %d", n)
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+				}
+				// проверим, нет ли уже созданного канала для такого хоста
+				if _, ok := utils.ChatOutConnections[chatHostWoPort]; !ok {
+					utils.ChatOutConnections[chatHostWoPort] = 1
+					utils.ChatTxDisseminator(conn2, chatHostWoPort)
+				}
+			}
+		}
 	}
 	log.Debug("host: %v / answer: %v", host, answer)
 	return &answerType{userId: userId, answer: utils.BinToDec(answer)}

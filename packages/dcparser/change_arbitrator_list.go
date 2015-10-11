@@ -46,7 +46,7 @@ func (p *Parser) ChangeArbitratorListFront() error {
 	// юзер мог удалить весь список доверенных
 	if len(arbitrationTrustList) > 0 {
 		// указанные id должны быть ID юзеров. Являются ли эти юзеры арбитрами будет проверяться при отправке монет
-		count, err := p.Single("SELECT count(user_id) FROM users WHERE user_id IN (" + strings.Join(IntSliceToStr(arbitrationTrustList), ",") + ")").Int()
+		count, err := p.Single("SELECT count(user_id) FROM users WHERE user_id IN (" + strings.Join(utils.IntSliceToStr(arbitrationTrustList), ",") + ")").Int()
 		if err != nil {
 			return p.ErrInfo(err)
 		}

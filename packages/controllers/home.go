@@ -38,6 +38,7 @@ type homePage struct {
 	IOS                   bool
 	Token                 string
 	Mobile				  bool
+	MyChatName			  string
 }
 
 type CurrencyPct struct {
@@ -218,6 +219,16 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 
+	myChatName := utils.Int64ToStr(c.SessUserId)
+	// возможно у отпарвителя есть ник
+	name, err := c.Single(`SELECT name FROM users WHERE user_id = ?`, c.SessUserId).String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	if len(name) > 0 {
+		myChatName = name
+	}
+
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
 		CountSignArr:          c.CountSignArr,
 		CountSign:             c.CountSign,
@@ -245,6 +256,7 @@ func (c *Controller) Home() (string, error) {
 		Title:                 c.Lang["geolocation"],
 		ShowSignData:          c.ShowSignData,
 		SignData:              "",
+		MyChatName:			   myChatName,
 		IOS:                   utils.IOS(),
 		Mobile:				   utils.Mobile(),
 		Token:                 token})

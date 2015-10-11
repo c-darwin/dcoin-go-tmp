@@ -20,7 +20,6 @@ func MaxOtherCurrenciesGenerator() {
 		}
 	}()
 
-
 	const GoroutineName = "MaxOtherCurrenciesGenerator"
 	d := new(daemon)
 	d.DCDB = DbConnect()

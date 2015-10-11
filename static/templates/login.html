@@ -67,7 +67,7 @@
 {{end}}
 
 {{if .PoolTechWorks}}
-	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 35%; bottom: 0px; margin: auto">>{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>';
+	<div class="alert alert-info" style="max-width: 540px; text-align: center; position: relative; top: 35%; bottom: 0px; margin: auto">{{.Lang.pool_tech_works}}</div><div id="show_login" style="width: 40px; height:40px"></div>
 {{else}}
 	<div style="margin:0 auto; display: table; position: relative; top: 35%;" id="login_div">
 		<span style="display: inline-block">
@@ -119,11 +119,11 @@
 		$('#login_div').css('display', 'none');
 		$('#loading_div').css('display', 'table');
 		$.post('ajax?controllerName=availableKeys', { {{if .Community}}'email': $('#sign_up_in_pool_email').val(){{end}} }, function(data) {
-			$('#signUpModal').modal('hide');
 			$('#wrapper').spin(false);
-			$('.modal-backdrop').remove();
-			$('.modal-backdrop').css('display', 'none');
 			if (data.success) {
+				$('#signUpModal').modal('hide');
+				$('.modal-backdrop').remove();
+				$('.modal-backdrop').css('display', 'none');
 				fc_navigate ('setPassword', '');
 			} else if (data.error && data.error == "no_available_keys") {
 				$('#login_div').css('display', 'table');
@@ -132,6 +132,9 @@
 				$('#sign_up_in_pool').css('display', 'none');
 				$('#signUpModal').modal({ backdrop: 'static' });
 			} else if (data.error) {
+				$('#signUpModal').modal('hide');
+				$('.modal-backdrop').remove();
+				$('.modal-backdrop').css('display', 'none');
 				$('#available_key_alert').html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+data.error+'</p></div>');
 			}
 		}, "JSON");

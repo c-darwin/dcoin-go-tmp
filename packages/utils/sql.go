@@ -2639,3 +2639,71 @@ func (db *DCDB) InsertReplaceTxInQueue(data []byte) error {
 	}
 	return nil
 }
+
+func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, status int64, signature []byte) error {
+
+	if sender <= 0 || sender > 16777215 {
+		return ErrInfoFmt("incorrect sender")
+	}
+	if receiver < 0 || receiver > 16777215 {
+		return ErrInfoFmt("incorrect receiver")
+	}
+	if lang <= 0 || lang > 255 {
+		return ErrInfoFmt("incorrect lang")
+	}
+	if room < 0 || room > 16777215 {
+		return ErrInfoFmt("incorrect room")
+	}
+	if status!=0 && status!=1 {
+		return ErrInfoFmt("incorrect status")
+	}
+	if len(message) == 0 || ((status == 0 && len(message) > 1024) || (status == 1 && len(message) > 5120)) {
+		return ErrInfoFmt("incorrect message")
+	}
+	if len(signature) < 128 || len(signature) > 5120 {
+		return ErrInfoFmt("incorrect signature")
+	}
+
+	if receiver > 0 {
+		// проверим, есть ли такой юзер и заодно получим public_key
+		publicKey, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = ?", receiver).Bytes()
+		if err != nil {
+			return ErrInfo(err)
+		}
+		if len(publicKey) == 0 {
+			return ErrInfoFmt("incorrect receiver")
+		}
+	}
+
+	publicKey, err := db.Single("SELECT public_key_0 FROM users WHERE user_id = ?", sender).Bytes()
+	if err != nil {
+		return ErrInfo(err)
+	}
+	if len(publicKey) == 0 {
+		return ErrInfoFmt("incorrect sender. null public_key_0")
+	}
+
+	// проверяем подпись
+	forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", lang, room, receiver, sender, status, message)
+	CheckSignResult, err := CheckSign([][]byte{publicKey}, forSign, HexToBin(signature), true)
+	if err != nil {
+		return ErrInfo(err)
+	}
+	if !CheckSignResult {
+		return ErrInfoFmt("incorrect signature %s", forSign)
+	}
+
+	// нельзя за сутки слать более X сообщений
+	count, err := db.Single(`SELECT count(hash) FROM chat WHERE sender = ? AND time > ?`, sender, Time()-86400).Int64()
+	if count > 100 {
+		return ErrInfoFmt(">100 messages per 24h")
+	}
+
+	// нет ли бана от админа
+	ban, err := db.Single(`SELECT time_start+sec FROM chat_ban WHERE user_id = ? AND time_start+sec > ?`, sender, Time()).Int64()
+	if ban > 0 {
+		return ErrInfoFmt("ban. remaing %d seconds", ban-Time())
+	}
+
+	return nil
+}

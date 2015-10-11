@@ -85,6 +85,7 @@ func (c *Controller) Check_sign() (string, error) {
 				}
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
 				c.sess.Set("public_key", string(utils.BinToHex([]byte(public_key))))
+				log.Debug("string(utils.BinToHex([]byte(public_key))) %s", string(utils.BinToHex([]byte(public_key))))
 
 				adminUSerID, err := c.DCDB.GetAdminUserId()
 				if err != nil {
@@ -126,7 +127,7 @@ func (c *Controller) Check_sign() (string, error) {
 				log.Debug("c.sess.Set(user_id) %d", userId)
 
 				// паблик кей в сессии нужен чтобы выбрасывать юзера, если ключ изменился
-				c.sess.Set("public_key", string(utils.BinToHex(publicKey)))
+				c.sess.Set("public_key", string(publicKey))
 
 				// возможно в табле my_keys старые данные, но если эта табла есть, то нужно добавить туда ключ
 				if utils.InSliceString(utils.Int64ToStr(userId)+"_my_keys", allTables) {

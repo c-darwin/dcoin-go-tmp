@@ -80,6 +80,8 @@ func (c *Controller) InstallStep1() (string, error) {
 		return "", err
 	}
 
+	log.Debug("sqliteDbUrl: %s", sqliteDbUrl)
+
 	go func() {
 
 		configIni, err = confIni.GetSection("default")

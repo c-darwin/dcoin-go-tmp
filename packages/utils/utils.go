@@ -70,9 +70,28 @@ var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var EndBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 
+// сигнал горутине, которая мониторит таблу chat, что есть новые данные
+var ChatNewTx = make(chan bool, 100)
+//var ChatJoinConn = make(chan net.Conn)
+//var ChatPoolConn []net.Conn
+//var ChatDelConn = make(chan net.Conn)
+
+
+type ChatData struct {
+	Hashes []byte
+	HashesArr [][]byte
+}
+var ChatDataChan chan *ChatData = make(chan *ChatData)
+// исходящие соединения протоколируем тут, используется для подсчета кол-ва
+// отправляемых данных в канал ChatDataChan и для исключения создания повторных
+// исходящих соединений
+var ChatOutConnections map[string]int = make(map[string]int)
+
 func init() {
 	flag.Parse()
 }
+
+
 func IOS() bool {
 	if (runtime.GOARCH == "arm" || runtime.GOARCH == "arm64") && runtime.GOOS == "darwin" {
 		return true
@@ -2226,7 +2245,7 @@ func CheckSign(publicKeys [][]byte, forSign string, signs []byte, nodeKeyOrLogin
 			log.Error("HashSha1(forSign)", string(HashSha1(forSign)))
 			log.Error("forSign", forSign)
 			log.Error("sign: %x\n", signsSlice[i])
-			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v", HashSha1(forSign), forSign)
+			return false, ErrInfoFmt("incorrect sign:  hash = %x; forSign = %v, publicKeys[i] = %x, sign = %x", HashSha1(forSign), forSign, publicKeys[i], signsSlice[i])
 		}
 	}
 	return true, nil
@@ -2543,6 +2562,14 @@ func TypeInt(txType string) int64 {
 		}
 	}
 	return 0
+}
+
+func IntSliceToStr(Int []int) []string {
+	var result []string
+	for _, v := range Int {
+		result = append(result, IntToStr(v))
+	}
+	return result
 }
 
 func MakePrivateKey(key string) (*rsa.PrivateKey, error) {
@@ -2911,6 +2938,7 @@ func ProtectedCheckRemoteAddrAndGetHost(binaryData *[]byte, conn net.Conn) (stri
 func WriteSizeAndData(binaryData []byte, conn net.Conn) error {
 	// в 4-х байтах пишем размер данных, которые пошлем далее
 	size := DecToBin(len(binaryData), 4)
+	fmt.Println("len(binaryData)", len(binaryData))
 	_, err := conn.Write(size)
 	if err != nil {
 		return ErrInfo(err)
@@ -3036,4 +3064,272 @@ func JsonAnswer(err interface{}, answType string) *jsonAnswer {
 	}
 	result, _ := json.Marshal(map[string]string{answType: fmt.Sprintf("%v", error_)})
 	return &jsonAnswer{errors.New(string(result))}
+}
+
+
+
+func TCPGetSizeAndData(conn net.Conn, maxSize int64) ([]byte, error) {
+	// получаем размер данных
+	buf := make([]byte, 4)
+	_, err := conn.Read(buf)
+	if err != nil {
+		return nil, ErrInfo(err)
+	}
+	size := BinToDec(buf)
+	fmt.Println("size: ", size)
+
+	// получаем сами данные
+	if size > maxSize || size == 0 {
+		return nil, ErrInfo("incorrect size")
+	}
+	binaryData := make([]byte, size)
+	_, err = io.ReadFull(conn, binaryData)
+	if err != nil {
+		return nil, ErrInfo("incorrect binaryData")
+	}
+	return binaryData, nil
+}
+
+func ChatInput(conn net.Conn, newTx chan bool) {
+
+	fmt.Println("ChatInput", conn.RemoteAddr().String())
+
+	conn.SetReadDeadline(time.Now().Add(500 * time.Second))
+
+	for {
+		// тут ждем, пока нам пришлют данные
+		fmt.Printf("ChatInput")
+		binaryData, err := TCPGetSizeAndData(conn, 1048576)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Printf("binaryData %x\n", binaryData)
+		var hash []byte
+		addsql := ""
+		var hashes []map[string]int
+		for {
+			hash = BytesShift(&binaryData, 16)
+			if DB.ConfigIni["db_type"] == "postgresql" {
+				addsql += "decode('" + string(BinToHex(hash)) + "', 'hex'),"
+			} else {
+				addsql += "x'" + string(BinToHex(hash)) + "',"
+			}
+			hashes = append(hashes, map[string]int{string(hash): 1})
+			if len(binaryData) < 16 {
+				break
+			}
+		}
+
+		if len(addsql) == 0 {
+			fmt.Println("empty hashes")
+			return
+		}
+		addsql = addsql[:len(addsql)-1]
+		fmt.Println("addsql", addsql)
+
+		// смотрим в табле chat, чего у нас уже есть
+		fmt.Println(`SELECT hash FROM chat WHERE hash IN (`+addsql+`)`)
+		rows, err := DB.Query(`SELECT hash FROM chat WHERE hash IN (`+addsql+`)`)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var hash string
+			err = rows.Scan(&hash)
+			if err != nil {
+				fmt.Println(err)
+			}
+			// отмечаем 0 то, что у нас уже есть
+			for k, v := range hashes {
+				if _, ok := v[hash]; ok {
+					hashes[k][hash] = 0
+				}
+			}
+		}
+
+		binHash := ""
+		// преобразуем хэши в набор бит, где 0 означет, что такой хэш есть и его слать не надо, а 1 - надо
+		for _, hashmap := range hashes {
+			for _, result := range hashmap {
+				binHash = binHash + IntToStr(result)
+			}
+		}
+
+		fmt.Println("binHash", binHash)
+
+		// шлем набор байт, который содержит метки, чего надо качать
+		err = WriteSizeAndData([]byte(binHash), conn)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// получаем тр-ии, которых у нас нету
+		binaryData, err = TCPGetSizeAndData(conn, 10485760)
+		if err != nil {
+			fmt.Println(err)
+		}
+		var sendToChan bool
+		for {
+			length := DecodeLength(&binaryData)
+			fmt.Println("length: ", length)
+			if int(length) > len(binaryData) {
+				fmt.Println("break length > len(binaryData)", length, len(binaryData))
+				return
+			}
+			if length > 0 {
+				txData := BytesShift(&binaryData, length)
+				fmt.Printf("txData %x\n", txData)
+				lang := BinToDecBytesShift(&txData, 1)
+				room := BinToDecBytesShift(&txData, 4)
+				receiver := BinToDecBytesShift(&txData, 4)
+				sender := BinToDecBytesShift(&txData, 4)
+				status := BinToDecBytesShift(&txData, 1)
+				fmt.Printf("status %d\n", status)
+				size := DecodeLength(&txData)
+				message := BytesShift(&txData, size)
+				size = DecodeLength(&txData)
+				fmt.Printf("size %d\n", size)
+				signature := BinToHex(BytesShift(&txData, size))
+				fmt.Printf("signature %s\n", signature)
+
+				// проверяем даннные из тр-ий
+				err := DB.CheckChatMessage(string(message), sender, receiver, lang, room, status, signature)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				data := Int64ToByte(lang)
+				data = append(data, Int64ToByte(room)...)
+				data = append(data, Int64ToByte(receiver)...)
+				data = append(data, Int64ToByte(sender)...)
+				data = append(data, Int64ToByte(status)...)
+				data = append(data, []byte(message)...)
+				data = append(data, []byte(signature)...)
+				hash = Md5(data)
+				// заносим в таблу
+				err = DB.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, Time(), lang, room, receiver, sender, status, message, signature)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				sendToChan = true
+
+			}
+			if length == 0 {
+				break
+			}
+		}
+
+		if sendToChan {
+			newTx <- true
+		}
+	}
+}
+
+
+// ожидает появления свежих записей в чате, затем ждет появления коннектов
+// (заносятся из демеона connections и от тех, кто сам подключился к ноде)
+func ChatOutput(newTx chan bool) {
+
+	for {
+		// просто так тр-ии в chat не появятся, их кто-то должен туда запихать, ждем тут
+		<-newTx
+
+		//log.Debug("ChatPoolConn %v", ChatPoolConn)
+
+		// смотрим, есть ли в табле неотправленные тр-ии
+		rows, err := DB.Query("SELECT hash, lang, room, receiver, sender, status, message, signature FROM chat WHERE sent = 0 ORDER BY id ASC")
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer rows.Close()
+		var hashes []byte
+		var hashesArr [][]byte
+		for rows.Next() {
+			var lang, room, receiver, sender, status int64
+			var message string
+			var signature, hash []byte
+			err = rows.Scan(&hash, &lang, &room, &receiver, &sender, &status, &message, &signature)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			fmt.Println(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
+			err = DB.ExecSql(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			data := DecToBin(lang, 1)
+			data = append(data, DecToBin(room, 4)...)
+			data = append(data, DecToBin(receiver, 4)...)
+			data = append(data, DecToBin(sender, 4)...)
+			data = append(data, DecToBin(status, 1)...)
+			data = append(data, EncodeLengthPlusData(message)...)
+			data = append(data, EncodeLengthPlusData(signature)...)
+			//allTx = append(allTx, utils.EncodeLengthPlusData(data))
+
+			hashes = append(hashes, hash...)
+			hashesArr = append(hashesArr, data)
+		}
+		if len(hashes) == 0 {
+			fmt.Println("len(hashes) == 0")
+			continue
+		}
+
+		// шлем всем горутинам ChatTxDisseminator, чтобы они разослали по серверам,
+		// которые ранее к нам подключились или к которым мы подключались
+		for i:=0; i < len(ChatOutConnections); i++ {
+			fmt.Println("ChatData", i)
+			ChatDataChan <- &ChatData{Hashes: hashes, HashesArr: hashesArr}
+		}
+	}
+}
+
+// когда подклюаемся к кому-то или когда кто-то подключается к нам,
+// то создается горутина, которая будет ждать, пока появятся свежие
+// данные в табле chat, чтобы послать их
+func ChatTxDisseminator(conn net.Conn, host string) {
+	for {
+		fmt.Println("wait ChatDataChan", conn.RemoteAddr().String())
+		data := <-ChatDataChan
+		fmt.Println("data", data)
+		// шлем хэши
+		err := WriteSizeAndData(data.Hashes, conn)
+		if err != nil {
+			fmt.Println(err)
+			delete(ChatOutConnections, host)
+			break
+		}
+		fmt.Println("WriteSizeAndData ok")
+
+		// получаем номера хэшей, тр-ии которых пошлем далее
+		hashesBin, err := TCPGetSizeAndData(conn, 10485760)
+		if err != nil {
+			fmt.Println(err)
+			delete(ChatOutConnections, host)
+			break
+		}
+		fmt.Println("TCPGetSizeAndData ok")
+
+		var TxForSend []byte
+		for i := 0; i<len(hashesBin); i++ {
+			hashMark := hashesBin[i:i+1]
+			if string(hashMark) == "1" {
+				TxForSend = append(TxForSend, EncodeLengthPlusData(data.HashesArr[i])...)
+			}
+		}
+		// шлем тр-ии
+		err = WriteSizeAndData(TxForSend, conn)
+		if err != nil {
+			fmt.Println(err)
+			delete(ChatOutConnections, host)
+			break
+		}
+
+		fmt.Println("WriteSizeAndData 2  ok")
+	}
 }

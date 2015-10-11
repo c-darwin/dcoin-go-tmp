@@ -83,6 +83,7 @@ jQuery.fn.center = function () {
         $(window).scrollLeft()) + "px");
     return this;
 }
+
 function decrypt_comment(id, type) {
 
     console.log('decrypt_comment');
@@ -109,7 +110,7 @@ function decrypt_comment(id, type) {
 
     var decrypt_comment_ = rsa2.decrypt(e_text);
 
-    $.post( 'ajax/save_decrypt_comment.php', {
+    $.post( 'ajax?controllerName=saveDecryptComment', {
         'id' : id,
         'comment' : decrypt_comment_,
         'type' : type
@@ -144,7 +145,7 @@ function decrypt_comment_01 (id, type, miner_id, mcrypt_iv) {
         var comment = rsa2.decrypt(e_text);
     }
     // decrypt_comment может содержать зловред
-    $.post( 'ajax/save_decrypt_comment.php', {
+    $.post( 'ajax?controllerName=saveDecryptComment', {
         'id' : id,
         'comment' : comment,
         'type' : type
@@ -168,7 +169,7 @@ function decrypt_message(id, type) {
 
     decrypt_comment = rsa2.decrypt(e_text);
 
-    $.post( 'ajax/save_decrypt_comment.php', {
+    $.post( 'ajax?controllerName=saveDecryptComment', {
         'id' : id,
         'comment' : decrypt_comment,
         'type' : type
@@ -189,7 +190,7 @@ function decrypt_admin_message(id) {
 
     decrypt_comment = rsa2.decrypt(e_text);
 
-    $.post( 'ajax/save_admin_decrypt_message.php', {
+    $.post( 'ajax?controllerName=saveDecryptComment', {
         'id' : id,
         'message' : decrypt_comment
     }, function (data) {
