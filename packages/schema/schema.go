@@ -2850,6 +2850,7 @@ func (schema *SchemaStruct) typeMysql() {
 
 func (schema *SchemaStruct) typePostgresql() {
 	var result string
+	var err error
 	for table_name, v := range schema.S {
 		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
 			if schema.PrefixUserId > 0 {
@@ -2945,7 +2946,11 @@ func (schema *SchemaStruct) typePostgresql() {
 		}
 
 		result += fmt.Sprintln("\n\n")
-		err := schema.DCDB.ExecSql(result)
+		if !schema.OnlyPrint {
+			err = schema.DCDB.ExecSql(result)
+		} else {
+			fmt.Println(result)
+		}
 		if err != nil {
 			log.Error("%v", err)
 		}
