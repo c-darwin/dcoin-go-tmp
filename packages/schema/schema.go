@@ -2743,7 +2743,8 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[11] = map[string]string{"name": "signature", "mysql": "blob NOT NULL DEFAULT ''", "sqlite": "blob NOT NULL DEFAULT ''", "postgresql": "bytea NOT NULL DEFAULT ''", "comment": ""}
 	s2[12] = map[string]string{"name": "sent", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"hash"}
+	s1["PRIMARY"] = []string{"id"}
+	s1["UNIQ"] = []string{"hash"}
 	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["chat"] = s1
@@ -2759,6 +2760,7 @@ func (schema *SchemaStruct) GetSchema() {
 }
 
 func (schema *SchemaStruct) typeMysql() {
+	var err error
 	var result string
 	for table_name, v := range schema.S {
 		if ok, _ := regexp.MatchString(`\[my_prefix\]`, table_name); !ok {
@@ -2769,7 +2771,11 @@ func (schema *SchemaStruct) typeMysql() {
 		AI := ""
 		AI_START := "1"
 		schema.replMy(&table_name)
-		err := schema.DCDB.ExecSql("DROP TABLE IF EXISTS " + table_name)
+		if !schema.OnlyPrint {
+			err = schema.DCDB.ExecSql("DROP TABLE IF EXISTS " + table_name)
+		} else {
+			fmt.Println("DROP TABLE IF EXISTS " + table_name+";")
+		}
 		if err != nil {
 			log.Error("%v %v", err, table_name)
 		}
@@ -2831,7 +2837,11 @@ func (schema *SchemaStruct) typeMysql() {
 		} else {
 			result += fmt.Sprintf(") ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='%s';\n\n", tableComment)
 		}
-		err = schema.DCDB.ExecSql(result)
+		if !schema.OnlyPrint {
+			err = schema.DCDB.ExecSql(result)
+		} else {
+			fmt.Println(result)
+		}
 		if err != nil {
 			log.Error("%s", err)
 		}

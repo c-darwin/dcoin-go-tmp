@@ -387,7 +387,7 @@ func check(host string, userId int64) *answerType {
 	if utils.BinToDec(answer) == 1 {
 		re := regexp.MustCompile(`(.*?):[0-9]+$`)
 		match := re.FindStringSubmatch(host)
-		if len(match) != 0 && *utils.Console==0 {
+		if len(match) != 0 {
 
 			log.Debug("myUserIdForChat %v", myUserIdForChat)
 			log.Debug("chat host: %v", match[1]+":8087")
