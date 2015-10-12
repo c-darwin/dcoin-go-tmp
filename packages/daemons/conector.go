@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"regexp"
+	"fmt"
 )
 
 var myUserIdForChat int64
@@ -386,53 +387,63 @@ func check(host string, userId int64) *answerType {
 	if utils.BinToDec(answer) == 1 {
 		re := regexp.MustCompile(`(.*?):[0-9]+$`)
 		match := re.FindStringSubmatch(host)
-		if len(match) != 0 {
+		if len(match) != 0 && *utils.Console==0 {
 
 			log.Debug("myUserIdForChat %v", myUserIdForChat)
 			log.Debug("chat host: %v", match[1]+":8087")
-			//chatHost:=match[1]+":8087"
-			chatHostWoPort := "192.168.150.30"
-			chatHost:="192.168.150.30:8087"
-			// канал для приема тр-ий чата
-			conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
-			if err != nil {
-				log.Error("%v", utils.ErrInfo(err))
-			} else {
-				log.Debug(conn.RemoteAddr().String(), conn)
-				myUid := utils.DecToBin(myUserIdForChat, 4)
-				log.Debug("myUid %x", myUid)
-				n, err := conn.Write(myUid)
-				log.Debug("n: %d", n)
-				if err != nil {
-					log.Error("%v", utils.ErrInfo(err))
-				}
-				n, err = conn.Write(utils.DecToBin(1, 1))
-				log.Debug("n: %d", n)
-				if err != nil {
-					log.Error("%v", utils.ErrInfo(err))
-				}
-				go utils.ChatInput(conn, utils.ChatNewTx)
-			}
+			chatHostWoPort:=match[1]
+			chatHost:=match[1]+":8087"
+			//chatHostWoPort := "192.168.150.30"
+			//chatHost := "192.168.150.30:8087"
 
-			// канал для отправки тр-ий чата
-			conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
-			if err != nil {
-				log.Error("%v", utils.ErrInfo(err))
-			} else {
-				log.Debug(conn2.RemoteAddr().String(), conn)
-				n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
-				log.Debug("n: %d", n)
+			// проверим, нет ли уже созданных каналов для такого хоста
+			if _, ok := utils.ChatOutConnections[chatHostWoPort]; !ok {
+
+				// канал для приема тр-ий чата
+				conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
+				} else {
+					log.Debug(conn.RemoteAddr().String(), conn)
+					myUid := utils.DecToBin(myUserIdForChat, 4)
+					log.Debug("myUid %x", myUid)
+					n, err := conn.Write(myUid)
+					log.Debug("n: %d", n)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+					}
+					n, err = conn.Write(utils.DecToBin(1, 1))
+					log.Debug("n: %d", n)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+					}
+					fmt.Println("connector ChatInput", conn.RemoteAddr(), utils.Time())
+					go utils.ChatInput(conn, utils.ChatNewTx)
 				}
-				n, err = conn2.Write(utils.DecToBin(0, 1))
-				log.Debug("n: %d", n)
+
+
+				// канал для отправки тр-ий чата
+				conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
-				}
-				// проверим, нет ли уже созданного канала для такого хоста
-				if _, ok := utils.ChatOutConnections[chatHostWoPort]; !ok {
+				} else {
+					log.Debug(conn2.RemoteAddr().String(), conn)
+					n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
+					log.Debug("n: %d", n)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+					}
+					n, err = conn2.Write(utils.DecToBin(0, 1))
+					log.Debug("n: %d", n)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+					}
+
+					fmt.Println("connector ADD", chatHostWoPort, conn.RemoteAddr(), utils.Time())
+					utils.ChatMutex.Lock()
 					utils.ChatOutConnections[chatHostWoPort] = 1
+					utils.ChatMutex.Unlock()
+					fmt.Println("ChatOutConnections", utils.ChatOutConnections)
 					utils.ChatTxDisseminator(conn2, chatHostWoPort)
 				}
 			}

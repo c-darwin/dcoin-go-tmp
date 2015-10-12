@@ -43,6 +43,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 type BlockData struct {
@@ -76,12 +77,13 @@ var ChatNewTx = make(chan bool, 100)
 //var ChatPoolConn []net.Conn
 //var ChatDelConn = make(chan net.Conn)
 
+var ChatMutex   = &sync.Mutex{}
 
 type ChatData struct {
 	Hashes []byte
 	HashesArr [][]byte
 }
-var ChatDataChan chan *ChatData = make(chan *ChatData)
+var ChatDataChan chan *ChatData = make(chan *ChatData, 10)
 // исходящие соединения протоколируем тут, используется для подсчета кол-ва
 // отправляемых данных в канал ChatDataChan и для исключения создания повторных
 // исходящих соединений
@@ -3092,16 +3094,16 @@ func TCPGetSizeAndData(conn net.Conn, maxSize int64) ([]byte, error) {
 
 func ChatInput(conn net.Conn, newTx chan bool) {
 
-	fmt.Println("ChatInput", conn.RemoteAddr().String())
+	fmt.Println("ChatInput start from ", conn.RemoteAddr().String(), Time())
 
-	conn.SetReadDeadline(time.Now().Add(500 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(5000 * time.Second))
 
 	for {
 		// тут ждем, пока нам пришлют данные
-		fmt.Printf("ChatInput")
+		fmt.Println("ChatInput for", conn.RemoteAddr().String(), Time())
 		binaryData, err := TCPGetSizeAndData(conn, 1048576)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("ChatInput ERROR", err, conn.RemoteAddr().String(), Time())
 			return
 		}
 		fmt.Printf("binaryData %x\n", binaryData)
@@ -3149,20 +3151,27 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 			}
 		}
 
+		var needTx bool // есть ли что слать
 		binHash := ""
 		// преобразуем хэши в набор бит, где 0 означет, что такой хэш есть и его слать не надо, а 1 - надо
 		for _, hashmap := range hashes {
 			for _, result := range hashmap {
 				binHash = binHash + IntToStr(result)
+				if result == 1 {
+					needTx = true
+				}
 			}
 		}
 
 		fmt.Println("binHash", binHash)
-
-		// шлем набор байт, который содержит метки, чего надо качать
+		// шлем набор байт, который содержит метки, чего надо качать или "0" - значит ничего качать не будем
 		err = WriteSizeAndData([]byte(binHash), conn)
 		if err != nil {
 			fmt.Println(err)
+		}
+		if !needTx {
+			fmt.Println("continue")
+			continue
 		}
 
 		// получаем тр-ии, которых у нас нету
@@ -3186,16 +3195,12 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 				receiver := BinToDecBytesShift(&txData, 4)
 				sender := BinToDecBytesShift(&txData, 4)
 				status := BinToDecBytesShift(&txData, 1)
-				fmt.Printf("status %d\n", status)
-				size := DecodeLength(&txData)
-				message := BytesShift(&txData, size)
-				size = DecodeLength(&txData)
-				fmt.Printf("size %d\n", size)
-				signature := BinToHex(BytesShift(&txData, size))
-				fmt.Printf("signature %s\n", signature)
+				message := BytesShift(&txData, DecodeLength(&txData))
+				signTime := BinToDecBytesShift(&txData, 4)
+				signature := BinToHex(BytesShift(&txData, DecodeLength(&txData)))
 
 				// проверяем даннные из тр-ий
-				err := DB.CheckChatMessage(string(message), sender, receiver, lang, room, status, signature)
+				err := DB.CheckChatMessage(string(message), sender, receiver, lang, room, status, signTime, signature)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -3207,10 +3212,11 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 				data = append(data, Int64ToByte(sender)...)
 				data = append(data, Int64ToByte(status)...)
 				data = append(data, []byte(message)...)
+				data = append(data, Int64ToByte(signTime)...)
 				data = append(data, []byte(signature)...)
 				hash = Md5(data)
 				// заносим в таблу
-				err = DB.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, Time(), lang, room, receiver, sender, status, message, signature)
+				err = DB.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, Time(), lang, room, receiver, sender, status, message, signTime, signature)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -3235,13 +3241,15 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 func ChatOutput(newTx chan bool) {
 
 	for {
+		fmt.Println("ChatOutput wait newTx")
 		// просто так тр-ии в chat не появятся, их кто-то должен туда запихать, ждем тут
 		<-newTx
+		fmt.Println("ChatOutput newTx")
 
 		//log.Debug("ChatPoolConn %v", ChatPoolConn)
 
 		// смотрим, есть ли в табле неотправленные тр-ии
-		rows, err := DB.Query("SELECT hash, lang, room, receiver, sender, status, message, signature FROM chat WHERE sent = 0 ORDER BY id ASC")
+		rows, err := DB.Query("SELECT hash, lang, room, receiver, sender, status, message, enc_message, sign_time, signature FROM chat WHERE sent = 0 ORDER BY id ASC")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -3249,13 +3257,17 @@ func ChatOutput(newTx chan bool) {
 		var hashes []byte
 		var hashesArr [][]byte
 		for rows.Next() {
-			var lang, room, receiver, sender, status int64
-			var message string
+			var lang, room, receiver, sender, status, signTime int64
+			var message, enc_message string
 			var signature, hash []byte
-			err = rows.Scan(&hash, &lang, &room, &receiver, &sender, &status, &message, &signature)
+			err = rows.Scan(&hash, &lang, &room, &receiver, &sender, &status, &message, &enc_message, &signTime, &signature)
 			if err != nil {
 				fmt.Println(err)
 				continue
+			}
+			if status == 2 {
+				message = enc_message
+				status = 1
 			}
 			fmt.Println(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
 			err = DB.ExecSql(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
@@ -3269,6 +3281,7 @@ func ChatOutput(newTx chan bool) {
 			data = append(data, DecToBin(sender, 4)...)
 			data = append(data, DecToBin(status, 1)...)
 			data = append(data, EncodeLengthPlusData(message)...)
+			data = append(data, DecToBin(signTime, 4)...)
 			data = append(data, EncodeLengthPlusData(signature)...)
 			//allTx = append(allTx, utils.EncodeLengthPlusData(data))
 
@@ -3283,7 +3296,7 @@ func ChatOutput(newTx chan bool) {
 		// шлем всем горутинам ChatTxDisseminator, чтобы они разослали по серверам,
 		// которые ранее к нам подключились или к которым мы подключались
 		for i:=0; i < len(ChatOutConnections); i++ {
-			fmt.Println("ChatData", i)
+			fmt.Println("ChatData", i, hashes, hashesArr)
 			ChatDataChan <- &ChatData{Hashes: hashes, HashesArr: hashesArr}
 		}
 	}
@@ -3294,9 +3307,9 @@ func ChatOutput(newTx chan bool) {
 // данные в табле chat, чтобы послать их
 func ChatTxDisseminator(conn net.Conn, host string) {
 	for {
-		fmt.Println("wait ChatDataChan", conn.RemoteAddr().String())
+		fmt.Println("wait ChatDataChan send TO->", conn.RemoteAddr().String(), Time())
 		data := <-ChatDataChan
-		fmt.Println("data", data)
+		fmt.Println("data", data.Hashes, data.HashesArr, "TO->", conn.RemoteAddr().String(), Time())
 		// шлем хэши
 		err := WriteSizeAndData(data.Hashes, conn)
 		if err != nil {
@@ -3304,7 +3317,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 			delete(ChatOutConnections, host)
 			break
 		}
-		fmt.Println("WriteSizeAndData ok")
+		fmt.Println("WriteSizeAndData ok", conn.RemoteAddr().String(), Time())
 
 		// получаем номера хэшей, тр-ии которых пошлем далее
 		hashesBin, err := TCPGetSizeAndData(conn, 10485760)
@@ -3322,12 +3335,16 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 				TxForSend = append(TxForSend, EncodeLengthPlusData(data.HashesArr[i])...)
 			}
 		}
+
+		fmt.Printf("TxForSend: %x\n", TxForSend)
 		// шлем тр-ии
-		err = WriteSizeAndData(TxForSend, conn)
-		if err != nil {
-			fmt.Println(err)
-			delete(ChatOutConnections, host)
-			break
+		if len(TxForSend) > 0 {
+			err = WriteSizeAndData(TxForSend, conn)
+			if err != nil {
+				fmt.Println(err)
+				delete(ChatOutConnections, host)
+				break
+			}
 		}
 
 		fmt.Println("WriteSizeAndData 2  ok")

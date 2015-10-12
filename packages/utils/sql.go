@@ -2640,7 +2640,7 @@ func (db *DCDB) InsertReplaceTxInQueue(data []byte) error {
 	return nil
 }
 
-func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, status int64, signature []byte) error {
+func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, status, signTime int64, signature []byte) error {
 
 	if sender <= 0 || sender > 16777215 {
 		return ErrInfoFmt("incorrect sender")
@@ -2656,6 +2656,9 @@ func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, s
 	}
 	if status!=0 && status!=1 {
 		return ErrInfoFmt("incorrect status")
+	}
+	if signTime < 0 || signTime > 4294967295 {
+		return ErrInfoFmt("incorrect room")
 	}
 	if len(message) == 0 || ((status == 0 && len(message) > 1024) || (status == 1 && len(message) > 5120)) {
 		return ErrInfoFmt("incorrect message")
@@ -2684,7 +2687,7 @@ func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, s
 	}
 
 	// проверяем подпись
-	forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", lang, room, receiver, sender, status, message)
+	forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v", lang, room, receiver, sender, status,  message, signTime)
 	CheckSignResult, err := CheckSign([][]byte{publicKey}, forSign, HexToBin(signature), true)
 	if err != nil {
 		return ErrInfo(err)

@@ -51,7 +51,7 @@ func (c *Controller) GetChatMessages() (string, error) {
 						return "", utils.ErrInfo(err)
 					}
 					if len(decrypted) > 0 {
-						err = c.ExecSql(`UPDATE chat SET enc_message = message, message = ?, status = ? WHERE id = ?`, decrypted, "decrypted", data["id"])
+						err = c.ExecSql(`UPDATE chat SET enc_message = message, message = ?, status = ? WHERE id = ?`, decrypted, 2, data["id"])
 						if err != nil {
 							return "", utils.ErrInfo(err)
 						}

@@ -13,6 +13,7 @@ func (c *Controller) SendToTheChat() (string, error) {
 	lang := utils.StrToInt64(c.r.FormValue("lang"))
 	room := utils.StrToInt64(c.r.FormValue("room"))
 	status := utils.StrToInt64(c.r.FormValue("status"))
+	signTime := utils.StrToInt64(c.r.FormValue("sign_time"))
 	signature := []byte(c.r.FormValue("signature"))
 
 	data := utils.Int64ToByte(lang)
@@ -21,17 +22,18 @@ func (c *Controller) SendToTheChat() (string, error) {
 	data = append(data, utils.Int64ToByte(sender)...)
 	data = append(data, utils.Int64ToByte(status)...)
 	data = append(data, []byte(message)...)
+	data = append(data, utils.Int64ToByte(signTime)...)
 	data = append(data, []byte(signature)...)
 
 	hash := utils.Md5(data)
 
-	err := c.CheckChatMessage(message, sender, receiver, lang, room, status, signature)
+	err := c.CheckChatMessage(message, sender, receiver, lang, room, status, signTime, signature)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 
 	// на пуле сообщение сразу отобразится у всех
-	err = c.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, utils.Time(), lang, room, receiver, sender, status, message, signature)
+	err = c.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, utils.Time(), lang, room, receiver, sender, status, message, signTime, signature)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

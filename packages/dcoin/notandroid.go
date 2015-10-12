@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 	"regexp"
+	"fmt"
 )
 
 /*
@@ -34,7 +35,6 @@ static inline void waitSig() {
 */
 import (
 	"C"
-	//"fmt"
 )
 
 func IosLog(text string) {
@@ -168,7 +168,6 @@ func tcpListener(db *utils.DCDB) {
 					log.Debug("%v", err)
 					return
 				}
-				log.Debug("buf %x", buf)
 				// получим user_id в первых 4-х байтах
 				userId := utils.BinToDec(buf)
 
@@ -179,13 +178,12 @@ func tcpListener(db *utils.DCDB) {
 					log.Debug("%v", err)
 					return
 				}
-				log.Debug("buf %x", buf)
 				chType := utils.BinToDec(buf)
 				log.Debug("userId %v chType %v", userId, chType)
 
 				// мониторит входящие
 				if chType == 0 {
-					log.Debug("chType 0")
+					fmt.Println("chType 0", conn.RemoteAddr(), utils.Time())
 					go utils.ChatInput(conn, utils.ChatNewTx)
 				}
 				// создаем канал, через который будем рассылать тр-ии чата
@@ -193,11 +191,18 @@ func tcpListener(db *utils.DCDB) {
 					re := regexp.MustCompile(`(.*?):[0-9]+$`)
 					match := re.FindStringSubmatch(conn.RemoteAddr().String())
 					if len(match) != 0 {
-						log.Debug("chType 1")
+						fmt.Println("chType 1", conn.RemoteAddr(), utils.Time())
 						// проверим, нет ли уже созданного канала для такого хоста
 						if _, ok := utils.ChatOutConnections[match[1]]; !ok {
+							fmt.Println("ADD", match[1], conn.RemoteAddr(), utils.Time())
+							utils.ChatMutex.Lock()
 							utils.ChatOutConnections[match[1]] = 1
+							utils.ChatMutex.Unlock()
+							fmt.Println("utils.ChatOutConnections", utils.ChatOutConnections)
 							utils.ChatTxDisseminator(conn, match[1])
+						} else {
+							fmt.Println("SKIP", match[1], conn.RemoteAddr(), utils.Time())
+							conn.Close()
 						}
 					}
 				}

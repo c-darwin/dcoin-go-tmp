@@ -15,6 +15,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	sess, err := globalSessions.SessionStart(w, r)
 	if err != nil {
 		log.Error("%v", err)
+		return
 	}
 	defer sess.SessionRelease(w)
 	sessUserId := GetSessUserId(sess)
