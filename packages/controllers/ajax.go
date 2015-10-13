@@ -41,7 +41,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		var err error
 		//c.DCDB, err = utils.NewDbConnect(configIni)
 		c.DCDB = utils.DB
-		if c.DCDB.DB == nil {
+		if c.DCDB == nil || c.DCDB == nil {
 			log.Error("utils.DB == nil")
 			dbInit = false
 		}

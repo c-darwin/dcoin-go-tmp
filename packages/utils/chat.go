@@ -174,6 +174,9 @@ func ChatOutputTesting() {
 // (заносятся из демеона connections и от тех, кто сам подключился к ноде)
 func ChatOutput(newTx chan bool) {
 
+	// держим канал в активном состоянии
+	go ChatOutputTesting()
+
 	for {
 		fmt.Println("ChatOutput wait newTx")
 		// просто так тр-ии в chat не появятся, их кто-то должен туда запихать, ждем тут
