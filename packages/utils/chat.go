@@ -29,9 +29,10 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 
 	fmt.Println("ChatInput start. wait data from ", conn.RemoteAddr().String(), Time())
 
-	conn.SetReadDeadline(time.Now().Add(120 * time.Second))
-
 	for {
+
+		conn.SetReadDeadline(time.Now().Add(120 * time.Second))
+
 		// тут ждем, пока нам пришлют данные
 		fmt.Println("ChatInput for", conn.RemoteAddr().String(), Time())
 		binaryData, err := TCPGetSizeAndData(conn, 1048576)
@@ -39,6 +40,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 			fmt.Println("ChatInput ERROR", err, conn.RemoteAddr().String(), Time())
 			return
 		}
+		conn.SetReadDeadline(time.Time{})
 		fmt.Printf("binaryData %x\n", binaryData)
 
 		// каждые 30 сек шлется сигнал, что канал еще жив
