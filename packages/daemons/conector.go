@@ -427,7 +427,7 @@ func check(host string, userId int64) *answerType {
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 				} else {
-					log.Debug(conn2.RemoteAddr().String(), conn)
+					log.Debug(conn2.RemoteAddr().String(), conn2)
 					n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
 					log.Debug("n: %d", n)
 					if err != nil {
@@ -439,7 +439,7 @@ func check(host string, userId int64) *answerType {
 						log.Error("%v", utils.ErrInfo(err))
 					}
 
-					fmt.Println("connector ADD", chatHostWoPort, conn.RemoteAddr(), utils.Time())
+					fmt.Println("connector ADD", chatHostWoPort, conn2.RemoteAddr(), utils.Time())
 					utils.ChatMutex.Lock()
 					utils.ChatOutConnections[chatHostWoPort] = 1
 					utils.ChatMutex.Unlock()

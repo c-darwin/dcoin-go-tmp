@@ -163,6 +163,7 @@ func ChatOutputTesting() {
 	for {
 		// шлем всем горутинам ChatTxDisseminator, чтобы они разослали по серверам,
 		// которые ранее к нам подключились или к которым мы подключались
+		fmt.Println("ChatOutConnections:", ChatOutConnections)
 		for i:=0; i < len(ChatOutConnections); i++ {
 			ChatDataChan <- nil
 		}
@@ -247,7 +248,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 		fmt.Println("wait ChatDataChan send TO->", conn.RemoteAddr().String(), Time())
 		data := <-ChatDataChan
 		if data == nil {
-			fmt.Println("> send test data to ", conn.RemoteAddr().String())
+			fmt.Println("> send test data to ", conn.RemoteAddr().String(), Time())
 			err := WriteSizeAndData(EncodeLengthPlusData([]byte{0}), conn)
 			if err != nil {
 				fmt.Println(err)
