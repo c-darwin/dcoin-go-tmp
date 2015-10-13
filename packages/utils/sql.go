@@ -2705,13 +2705,13 @@ func (db *DCDB) CheckChatMessage(message string, sender, receiver, lang, room, s
 	// нельзя за сутки слать более X сообщений
 	count, err := db.Single(`SELECT count(hash) FROM chat WHERE sender = ? AND time > ?`, sender, Time()-86400).Int64()
 	if count > 100 {
-		return ErrInfoFmt(">100 messages per 24h")
+		return ErrInfoFmt(">100 messages per 24h from %d", sender)
 	}
 
 	// нет ли бана от админа
 	ban, err := db.Single(`SELECT time_start+sec FROM chat_ban WHERE user_id = ? AND time_start+sec > ?`, sender, Time()).Int64()
 	if ban > 0 {
-		return ErrInfoFmt("ban. remaing %d seconds", ban-Time())
+		return ErrInfoFmt("ban %d. remaing %d seconds", sender, ban-Time())
 	}
 
 	return nil
