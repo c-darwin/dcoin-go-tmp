@@ -39,8 +39,11 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	c.SessUserId = sessUserId
 	if dbInit {
 		var err error
+
 		//c.DCDB, err = utils.NewDbConnect(configIni)
+		
 		c.DCDB = utils.DB
+
 		if utils.DB == nil || utils.DB.DB == nil {
 			log.Error("utils.DB == nil")
 			dbInit = false
