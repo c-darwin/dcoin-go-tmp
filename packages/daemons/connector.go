@@ -329,6 +329,9 @@ BEGIN:
 				continue BEGIN
 			}
 		}
+		if nodeCount==0 {
+			d.sleepTime = 5
+		}
 
 		if d.dSleep(d.sleepTime) {
 			break BEGIN
