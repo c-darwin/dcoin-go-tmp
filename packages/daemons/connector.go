@@ -181,6 +181,7 @@ BEGIN:
 
 		log.Debug("%v", "hosts", hosts)
 		var newHosts []map[string]string
+		var countOk int
 		// если нода не отвечает, то удалем её из таблы nodes_connection
 		for i := 0; i < len(hosts); i++ {
 			result := <-ch
@@ -195,6 +196,8 @@ BEGIN:
 						newHosts = append(newHosts, data)
 					}
 				}
+			} else {
+				countOk++
 			}
 			log.Info("answer: %v", result)
 		}
@@ -329,11 +332,15 @@ BEGIN:
 				continue BEGIN
 			}
 		}
-		if nodeCount==0 {
-			d.sleepTime = 5
+
+		var sleepTime int
+		if countOk == 0 {
+			sleepTime = 5
+		} else {
+			sleepTime = d.sleepTime
 		}
 
-		if d.dSleep(d.sleepTime) {
+		if d.dSleep(sleepTime) {
 			break BEGIN
 		}
 	}
