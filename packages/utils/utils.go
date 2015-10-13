@@ -43,7 +43,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"sync"
 )
 
 type BlockData struct {
