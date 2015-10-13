@@ -318,5 +318,6 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 		}
 
 		fmt.Println("WriteSizeAndData 2  ok")
+		time.Sleep(10 * time.Millisecond)
 	}
 }
