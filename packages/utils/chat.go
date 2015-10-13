@@ -25,7 +25,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 
 		// каждые 30 сек шлется сигнал, что канал еще жив
 		if len(binaryData) == 1 {
-			fmt.Println("Get test data from ", conn.RemoteAddr().String(), Time())
+			fmt.Println(">> Get test data from ", conn.RemoteAddr().String(), Time())
 			continue
 		}
 
@@ -247,13 +247,14 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 		fmt.Println("wait ChatDataChan send TO->", conn.RemoteAddr().String(), Time())
 		data := <-ChatDataChan
 		if data == nil {
-			fmt.Println("send test data to ", conn.RemoteAddr().String())
+			fmt.Println("> send test data to ", conn.RemoteAddr().String())
 			err := WriteSizeAndData(EncodeLengthPlusData("1"), conn)
 			if err != nil {
 				fmt.Println(err)
 				delete(ChatOutConnections, host)
 				break
 			}
+			continue
 		} else {
 			fmt.Println("data", data.Hashes, data.HashesArr, "TO->", conn.RemoteAddr().String(), Time())
 			// шлем хэши
