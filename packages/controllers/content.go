@@ -11,7 +11,12 @@ import (
 )
 
 func Content(w http.ResponseWriter, r *http.Request) {
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Content Recovered", r)
+			panic(r)
+		}
+	}()
 	var err error
 
 	w.Header().Set("Content-type", "text/html")

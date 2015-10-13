@@ -8,7 +8,12 @@ import (
 )
 
 func Ajax(w http.ResponseWriter, r *http.Request) {
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("ajax Recovered", r)
+			panic(r)
+		}
+	}()
 	log.Debug("Ajax")
 	w.Header().Set("Content-type", "text/html")
 
@@ -41,7 +46,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		var err error
 
 		//c.DCDB, err = utils.NewDbConnect(configIni)
-		
+
 		c.DCDB = utils.DB
 
 		if utils.DB == nil || utils.DB.DB == nil {
@@ -128,10 +133,15 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		if ok, _ := regexp.MatchString(`^(?i)`+pages+`$`, controllerName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
-			// вызываем контроллер в зависимости от шаблона
-			html, err = CallController(c, controllerName)
-			if err != nil {
-				log.Error("ajax error: %v", err)
+			// без БД будет выдавать панику
+			if ok, _ := regexp.MatchString(`^(?i)GetChatMessages$`, controllerName); ok && !dbInit {
+				html = "Please wait. nill dbInit"
+			} else {
+				// вызываем контроллер в зависимости от шаблона
+				html, err = CallController(c, controllerName)
+				if err != nil {
+					log.Error("ajax error: %v", err)
+				}
 			}
 		}
 	}
