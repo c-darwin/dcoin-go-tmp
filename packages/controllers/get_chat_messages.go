@@ -99,5 +99,7 @@ func (c *Controller) GetChatMessages() (string, error) {
 		chatIds[c.SessUserId] = append(chatIds[c.SessUserId], utils.StrToInt(data["id"]))
 	}
 
+	log.Debug("chat data: %v", result)
+
 	return utils.JsonAnswer(result, "messages").String(), nil
 }
