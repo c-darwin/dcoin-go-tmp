@@ -39,21 +39,25 @@ func (c *Controller) GetChatMessages() (string, error) {
 			if receiver == c.SessUserId {
 				privateKey, err := c.GetMyPrivateKey(c.MyPrefix)
 				if err != nil {
-					return "", utils.ErrInfo(err)
+					log.Error("%v", utils.ErrInfo(err))
+					continue
 				}
 				if len(privateKey) > 0 {
 					rsaPrivateKey, err := utils.MakePrivateKey(privateKey)
 					if err != nil {
-						return "", utils.ErrInfo(err)
+						log.Error("%v, %s", utils.ErrInfo(err), privateKey)
+						continue
 					}
 					decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, rsaPrivateKey, utils.HexToBin([]byte(data["message"])))
 					if err != nil {
-						return "", utils.ErrInfo(err)
+						log.Error("%v", utils.ErrInfo(err))
+						continue
 					}
 					if len(decrypted) > 0 {
 						err = c.ExecSql(`UPDATE chat SET enc_message = message, message = ?, status = ? WHERE id = ?`, decrypted, 2, data["id"])
 						if err != nil {
-							return "", utils.ErrInfo(err)
+							log.Error("%v", utils.ErrInfo(err))
+							continue
 						}
 						message = string(decrypted)
 						status = "2"
