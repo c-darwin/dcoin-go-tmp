@@ -4,7 +4,25 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"sync"
 )
+// сигнал горутине, которая мониторит таблу chat, что есть новые данные
+var ChatNewTx = make(chan bool, 100)
+//var ChatJoinConn = make(chan net.Conn)
+//var ChatPoolConn []net.Conn
+//var ChatDelConn = make(chan net.Conn)
+
+var ChatMutex   = &sync.Mutex{}
+
+type ChatData struct {
+	Hashes []byte
+	HashesArr [][]byte
+}
+var ChatDataChan chan *ChatData = make(chan *ChatData, 10)
+// исходящие соединения протоколируем тут, используется для подсчета кол-ва
+// отправляемых данных в канал ChatDataChan и для исключения создания повторных
+// исходящих соединений
+var ChatOutConnections map[string]int = make(map[string]int)
 
 // Ждет входящие данные
 func ChatInput(conn net.Conn, newTx chan bool) {
@@ -255,6 +273,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 				delete(ChatOutConnections, host)
 				break
 			}
+			Sleep(1)
 			continue
 		} else {
 			fmt.Println("data", data.Hashes, data.HashesArr, "TO->", conn.RemoteAddr().String(), Time())

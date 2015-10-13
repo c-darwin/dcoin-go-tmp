@@ -403,6 +403,7 @@ func check(host string, userId int64) *answerType {
 				conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
+					return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 				} else {
 					log.Debug(conn.RemoteAddr().String(), conn)
 					myUid := utils.DecToBin(myUserIdForChat, 4)
@@ -411,11 +412,13 @@ func check(host string, userId int64) *answerType {
 					log.Debug("n: %d", n)
 					if err != nil {
 						log.Error("%v", utils.ErrInfo(err))
+						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 					}
 					n, err = conn.Write(utils.DecToBin(1, 1))
 					log.Debug("n: %d", n)
 					if err != nil {
 						log.Error("%v", utils.ErrInfo(err))
+						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 					}
 					fmt.Println("connector ChatInput", conn.RemoteAddr(), utils.Time())
 					go utils.ChatInput(conn, utils.ChatNewTx)
@@ -426,17 +429,20 @@ func check(host string, userId int64) *answerType {
 				conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
+					return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 				} else {
 					log.Debug(conn2.RemoteAddr().String(), conn2)
 					n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
 					log.Debug("n: %d", n)
 					if err != nil {
 						log.Error("%v", utils.ErrInfo(err))
+						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 					}
 					n, err = conn2.Write(utils.DecToBin(0, 1))
 					log.Debug("n: %d", n)
 					if err != nil {
 						log.Error("%v", utils.ErrInfo(err))
+						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 					}
 
 					fmt.Println("connector ADD", chatHostWoPort, conn2.RemoteAddr(), utils.Time())

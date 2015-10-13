@@ -71,23 +71,6 @@ var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var EndBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 
-// сигнал горутине, которая мониторит таблу chat, что есть новые данные
-var ChatNewTx = make(chan bool, 100)
-//var ChatJoinConn = make(chan net.Conn)
-//var ChatPoolConn []net.Conn
-//var ChatDelConn = make(chan net.Conn)
-
-var ChatMutex   = &sync.Mutex{}
-
-type ChatData struct {
-	Hashes []byte
-	HashesArr [][]byte
-}
-var ChatDataChan chan *ChatData = make(chan *ChatData, 10)
-// исходящие соединения протоколируем тут, используется для подсчета кол-ва
-// отправляемых данных в канал ChatDataChan и для исключения создания повторных
-// исходящих соединений
-var ChatOutConnections map[string]int = make(map[string]int)
 
 func init() {
 	flag.Parse()
