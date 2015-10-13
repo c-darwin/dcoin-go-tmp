@@ -22,7 +22,7 @@ var ChatDataChan chan *ChatData = make(chan *ChatData, 10)
 // исходящие соединения протоколируем тут, используется для подсчета кол-ва
 // отправляемых данных в канал ChatDataChan и для исключения создания повторных
 // исходящих соединений
-var ChatOutConnections map[string]int = make(map[string]int)
+var ChatOutConnections map[int64]int = make(map[int64]int)
 
 // Ждет входящие данные
 func ChatInput(conn net.Conn, newTx chan bool) {
@@ -263,7 +263,7 @@ func ChatOutput(newTx chan bool) {
 // когда подклюаемся к кому-то или когда кто-то подключается к нам,
 // то создается горутина, которая будет ждать, пока появятся свежие
 // данные в табле chat, чтобы послать их
-func ChatTxDisseminator(conn net.Conn, host string) {
+func ChatTxDisseminator(conn net.Conn, userId int64) {
 	for {
 		fmt.Println("wait ChatDataChan send TO->", conn.RemoteAddr().String(), Time())
 		data := <-ChatDataChan
@@ -272,7 +272,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 			err := WriteSizeAndData(EncodeLengthPlusData([]byte{0}), conn)
 			if err != nil {
 				fmt.Println(err)
-				delete(ChatOutConnections, host)
+				delete(ChatOutConnections, userId)
 				break
 			}
 			Sleep(1)
@@ -283,7 +283,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 			err := WriteSizeAndData(data.Hashes, conn)
 			if err != nil {
 				fmt.Println(err)
-				delete(ChatOutConnections, host)
+				delete(ChatOutConnections, userId)
 				break
 			}
 		}
@@ -293,7 +293,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 		hashesBin, err := TCPGetSizeAndData(conn, 10485760)
 		if err != nil {
 			fmt.Println(err)
-			delete(ChatOutConnections, host)
+			delete(ChatOutConnections, userId)
 			break
 		}
 		fmt.Println("TCPGetSizeAndData ok")
@@ -312,7 +312,7 @@ func ChatTxDisseminator(conn net.Conn, host string) {
 			err = WriteSizeAndData(TxForSend, conn)
 			if err != nil {
 				fmt.Println(err)
-				delete(ChatOutConnections, host)
+				delete(ChatOutConnections, userId)
 				break
 			}
 		}

@@ -193,15 +193,15 @@ func tcpListener(db *utils.DCDB) {
 					if len(match) != 0 {
 						fmt.Println("chType 1", conn.RemoteAddr(), utils.Time())
 						// проверим, нет ли уже созданного канала для такого хоста
-						if _, ok := utils.ChatOutConnections[match[1]]; !ok {
-							fmt.Println("ADD", match[1], conn.RemoteAddr(), utils.Time())
+						if _, ok := utils.ChatOutConnections[userId]; !ok {
+							fmt.Println("ADD", userId, conn.RemoteAddr(), utils.Time())
 							utils.ChatMutex.Lock()
-							utils.ChatOutConnections[match[1]] = 1
+							utils.ChatOutConnections[userId] = 1
 							utils.ChatMutex.Unlock()
 							fmt.Println("utils.ChatOutConnections", utils.ChatOutConnections)
-							utils.ChatTxDisseminator(conn, match[1])
+							utils.ChatTxDisseminator(conn, userId)
 						} else {
-							fmt.Println("SKIP", match[1], conn.RemoteAddr(), utils.Time())
+							fmt.Println("SKIP", userId, conn.RemoteAddr(), utils.Time())
 							conn.Close()
 						}
 					}

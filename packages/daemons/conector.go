@@ -391,13 +391,13 @@ func check(host string, userId int64) *answerType {
 
 			log.Debug("myUserIdForChat %v", myUserIdForChat)
 			log.Debug("chat host: %v", match[1]+":8087")
-			chatHostWoPort:=match[1]
+			//chatHostWoPort:=match[1]
 			chatHost:=match[1]+":8087"
 			//chatHostWoPort := "192.168.150.30"
 			//chatHost := "192.168.150.30:8087"
 
 			// проверим, нет ли уже созданных каналов для такого хоста
-			if _, ok := utils.ChatOutConnections[chatHostWoPort]; !ok {
+			if _, ok := utils.ChatOutConnections[userId]; !ok {
 
 				// канал для приема тр-ий чата
 				conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
@@ -445,12 +445,12 @@ func check(host string, userId int64) *answerType {
 						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 					}
 
-					fmt.Println("connector ADD", chatHostWoPort, conn2.RemoteAddr(), utils.Time())
+					fmt.Println("connector ADD", userId, conn2.RemoteAddr(), utils.Time())
 					utils.ChatMutex.Lock()
-					utils.ChatOutConnections[chatHostWoPort] = 1
+					utils.ChatOutConnections[userId] = 1
 					utils.ChatMutex.Unlock()
 					fmt.Println("ChatOutConnections", utils.ChatOutConnections)
-					utils.ChatTxDisseminator(conn2, chatHostWoPort)
+					utils.ChatTxDisseminator(conn2, userId)
 				}
 			}
 		}
