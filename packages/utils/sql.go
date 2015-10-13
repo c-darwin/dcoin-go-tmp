@@ -1408,7 +1408,13 @@ func (db *DCDB) GetUserPublicKey(userId int64) (string, error) {
 }
 
 func (db *DCDB) GetMyPrivateKey(myPrefix string) (string, error) {
-	return db.Single("SELECT private_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").String()
+	key, err :=  db.Single("SELECT private_key FROM " + myPrefix + "my_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_keys)").String()
+	if err != nil {
+		return "", ErrInfo(err)
+	}
+	key = strings.Replace(key,"-----BEGIN RSA PRIVATE KEY-----","-----BEGIN RSA PRIVATE KEY-----\n",-1)
+	key = strings.Replace(key,"-----END RSA PRIVATE KEY-----","\n-----END RSA PRIVATE KEY-----",-1)
+	return key, nil
 }
 
 func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {

@@ -45,7 +45,7 @@ func (c *Controller) GetChatMessages() (string, error) {
 				if len(privateKey) > 0 {
 					rsaPrivateKey, err := utils.MakePrivateKey(privateKey)
 					if err != nil {
-						log.Error("%v, %s", utils.ErrInfo(err), privateKey)
+						log.Error("%v", utils.ErrInfo(err))
 						continue
 					}
 					decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, rsaPrivateKey, utils.HexToBin([]byte(data["message"])))
