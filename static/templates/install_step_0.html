@@ -43,6 +43,7 @@
 	});
 
 	$('#next').bind('click', function () {
+		$('#next').prop('disabled', true);
 		$('#wrapper').spin();
 		$.post( 'content', {
 			'tpl_name' : 'installStep1',

@@ -5,6 +5,10 @@
 		var chatEncrypted = 0;
 
 		$('#sendToChat').bind('click', function () {
+
+			$('#sendToChat').text('wait');
+			$('#sendToChat').prop('disabled', true);
+
 			chatMessage = $('#myChatMessage').val();
 			if (chatEncrypted == 1) {
 				$.post( 'ajax?controllerName=encryptChatMessage', {
@@ -26,6 +30,7 @@
 		}
 		function sendToTheChat() {
 
+
 			var chatMessageReceiver =  $('#chatUserIdReceiver').val();
 			var chatMessageSender =  userId;
 			var status = 0;
@@ -45,7 +50,8 @@
 				'sign_time': signTime,
 				'signature': e_n_sign['hSig']
 			}, function (data) {
-
+				$('#sendToChat').prop('disabled', false);
+				$('#sendToChat').text('Send');
 			});
 		}
 
@@ -57,28 +63,32 @@
 			}
 		}
 		$(document).ready(function() {
-			$.post( 'ajax?controllerName=getChatMessages&first=1&room='+room+'&lang='+lang, {}, function (data) {
 
-				if(typeof data.messages != "undefined" && data.messages !="") {
+			$.post('ajax?controllerName=getChatMessages&first=1&'+room+'&lang='+lang, {}, function (data) {
+				if (typeof data.messages != "undefined" && data.messages != "") {
 					$('#chatMessages').append(data.messages);
 					scrollToBottom();
+					setTimeout(function() {
+						var intervalID = setInterval( function() {
+							$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
+								//if(typeof data.messages != "undefined" && data.messages !="") {
+								console.log("data.messages", data.messages);
+								$('#chatMessages').append(data.messages);
+								scrollToBottom();
+								//}
+							}, 'JSON');
+
+							var objDiv = document.getElementById("chatwindow");
+							console.log(objDiv.scrollHeight, objDiv.scrollTop, objDiv.clientHeight)
+
+						} , 1000);
+						intervalIdArray.push(intervalID);
+					}, 500);
 				}
 
 			}, 'JSON');
-			var intervalID = setInterval( function() {
-				$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
-					//if(typeof data.messages != "undefined" && data.messages !="") {
-						console.log("data.messages", data.messages);
-						$('#chatMessages').append(data.messages);
-						scrollToBottom();
-					//}
-				}, 'JSON');
 
-				var objDiv = document.getElementById("chatwindow");
-				console.log(objDiv.scrollHeight, objDiv.scrollTop, objDiv.clientHeight)
 
-			} , 1000);
-			intervalIdArray.push(intervalID);
 		});
 
 		function setReceiver(nick, receiverId){
@@ -90,16 +100,16 @@
 		}
 
 
-		$('#chatLock').bind('click', function () {
-			if ($(this).attr('class') == "fa fa-lock") {
-				$(this).attr("class", "fa fa-unlock");
+		function lock_unlock() {
+			if ($('#chatLockIco').attr('class') == "fa fa-lock") {
+				$('#chatLockIco').attr("class", "fa fa-unlock");
 				$("#myChatMessage").css("display", "inline-block");
 				$("#selectReceiver").css("display", "none");
 				$("#myChatMessage").css("background-color", "#fff");
 				$("#myChatMessage").css("color", "#000");
 				chatEncrypted = 0
 			} else {
-				$(this).attr("class", "fa fa-lock");
+				$('#chatLockIco').attr("class", "fa fa-lock");
 				if ($("#chatUserIdReceiver").val() == "0") {
 					$("#myChatMessage").css("display", "none");
 					$("#selectReceiver").css("display", "inline-block");
@@ -108,5 +118,5 @@
 				$("#myChatMessage").css("color", "#fff");
 				chatEncrypted = 1
 			}
-		});
+		}
 

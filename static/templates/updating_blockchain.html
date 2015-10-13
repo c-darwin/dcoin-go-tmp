@@ -341,7 +341,7 @@
 						$('#block_time').text(d);
 						$('#cur_block_id').text(data.block_id);
 						console.log(d);
-						var pct = Math.round(data.block_id/{{.LastBlock}}*100);
+						var pct = Math.round(data.block_id/{{.LastBlock}}*100) - 1;
 						$('#meter').width(pct+'%');
 						$('#meter').text(pct+'%');
 					} else if (data.block_id==-1) {
