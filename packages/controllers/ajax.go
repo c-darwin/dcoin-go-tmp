@@ -87,7 +87,7 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 	parameters_ := make(map[string]interface{})
 	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
 	if err != nil {
-		log.Error("%v", err)
+		log.Debug("%v", err)
 	}
 	log.Debug("parameters_=", parameters_)
 	parameters := make(map[string]string)

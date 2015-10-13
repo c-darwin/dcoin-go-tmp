@@ -161,7 +161,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 				err = DB.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, Time(), lang, room, receiver, sender, status, message, signTime, signature)
 				if err != nil {
 					fmt.Println(err)
-					return
+					//return
 				}
 				sendToChan = true
 
