@@ -6,22 +6,26 @@
 
 		$('#sendToChat').bind('click', function () {
 
-			$('#sendToChat').text('wait');
+			/*document.getElementById("sendToChat").innerHTML="wait...";
+			document.getElementById("sendToChat").disabled="true";*/
+			$('#sendToChat').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
 			$('#sendToChat').prop('disabled', true);
 
-			chatMessage = $('#myChatMessage').val();
-			if (chatEncrypted == 1) {
-				$.post( 'ajax?controllerName=encryptChatMessage', {
-					'receiver': $('#chatUserIdReceiver').val(),
-					'message': $('#myChatMessage').val()
-				}, function (data) {
-					chatMessage = data.success;
-					decryptChatMessage = $('#myChatMessage').val();
+			setTimeout(function() {
+				chatMessage = $('#myChatMessage').val();
+				if (chatEncrypted == 1) {
+					$.post('ajax?controllerName=encryptChatMessage', {
+						'receiver': $('#chatUserIdReceiver').val(),
+						'message': $('#myChatMessage').val()
+					}, function (data) {
+						chatMessage = data.success;
+						decryptChatMessage = $('#myChatMessage').val();
+						sendToTheChat()
+					}, 'JSON');
+				} else {
 					sendToTheChat()
-				}, 'JSON');
-			} else {
-				sendToTheChat()
-			}
+				}
+			}, 500);
 
 		});
 
@@ -38,26 +42,50 @@
 				status = 1
 			}
 			var signTime = Math.floor(Date.now() / 1000);
-			var e_n_sign = get_e_n_sign( $("#key").text(), $("#password").text(), lang+","+room+","+chatMessageReceiver+","+chatMessageSender+","+status+","+chatMessage+","+signTime, 'chat_alert');
-			$.post( 'ajax?controllerName=sendToTheChat', {
-				'receiver': chatMessageReceiver,
-				'sender': userId,
-				'lang': lang,
-				'room': room,
-				'message': chatMessage,
-				'decrypt_message': decryptChatMessage,
-				'status': status,
-				'sign_time': signTime,
-				'signature': e_n_sign['hSig']
-			}, function (data) {
-				$('#sendToChat').prop('disabled', false);
-				$('#sendToChat').text('Send');
-			});
+
+
+
+
+			var objEx =
+			{
+				key: $("#key").text(),
+				pass: $("#password").text(),
+				forsign: lang+","+room+","+chatMessageReceiver+","+chatMessageSender+","+status+","+chatMessage+","+signTime,
+			};
+
+			var workerAjax = new Worker("/static/js/worker.js");
+			workerAjax.onmessage  = function(event) {
+				if (typeof event.data.error != "undefined") {
+					$("#chat_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.Lang.incorrect_key_or_password}}</p></div>');
+				} else {
+					$.post( 'ajax?controllerName=sendToTheChat', {
+						'receiver': chatMessageReceiver,
+						'sender': userId,
+						'lang': lang,
+						'room': room,
+						'message': chatMessage,
+						'decrypt_message': decryptChatMessage,
+						'status': status,
+						'sign_time': signTime,
+						'signature': event.data.hSig
+					}, function (data) {
+						$('#sendToChat').prop('disabled', false);
+						$('#sendToChat').html('Send');
+					});
+				}
+			};
+			workerAjax.onerror = function(err) {
+				alert(err.message);
+			};
+			workerAjax.postMessage(objEx);
+
+			//var e_n_sign = get_e_n_sign( $("#key").text(), $("#password").text(), lang+","+room+","+chatMessageReceiver+","+chatMessageSender+","+status+","+chatMessage+","+signTime, 'chat_alert');
+
 		}
 
 		function scrollToBottom() {
 			var objDiv = document.getElementById("chatwindow");
-			console.log(objDiv.scrollHeight-67-objDiv.scrollTop)
+			//console.log(objDiv.scrollHeight-67-objDiv.scrollTop)
 			if (objDiv.scrollTop == 0 || objDiv.scrollHeight-67-objDiv.scrollTop == objDiv.clientHeight) {
 				objDiv.scrollTop = objDiv.scrollHeight;
 			}
@@ -70,16 +98,33 @@
 					scrollToBottom();
 					setTimeout(function() {
 						var intervalID = setInterval( function() {
-							$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
+
+								$.ajax({
+									url: 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang,
+									type: 'POST',
+									async: false,
+									cache: false,
+									dataType: "JSON",
+									timeout: 3000,
+									error: function(){
+										return true;
+									},
+									success: function(data){
+										$('#chatMessages').append(data.messages);
+										scrollToBottom();
+									}
+								});
+
+							/*$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
 								//if(typeof data.messages != "undefined" && data.messages !="") {
-								console.log("data.messages", data.messages);
+								//console.log("data.messages", data.messages);
 								$('#chatMessages').append(data.messages);
 								scrollToBottom();
 								//}
-							}, 'JSON');
+							}, 'JSON');*/
 
 							var objDiv = document.getElementById("chatwindow");
-							console.log(objDiv.scrollHeight, objDiv.scrollTop, objDiv.clientHeight)
+							//console.log(objDiv.scrollHeight, objDiv.scrollTop, objDiv.clientHeight)
 
 						} , 1000);
 						intervalIdArray.push(intervalID);

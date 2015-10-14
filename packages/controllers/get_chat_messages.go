@@ -19,6 +19,15 @@ func (c *Controller) GetChatMessages() (string, error) {
 
 	if first == "1" {
 		chatIds[c.SessUserId] = []int{}
+		maxId, err := c.Single(`SELECT max(id) FROM chat`).Int64()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		// удалим старое
+		err = c.ExecSql(`DELETE FROM chat WHERE id < ?`, maxId-100)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 	}
 	ids := ""
 	if len(chatIds[c.SessUserId]) > 0 {

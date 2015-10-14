@@ -720,29 +720,53 @@
 		$('#exNextPS').bind('click', function () {
 			$.post( 'http://tmp-e.dcoin.club/ajax/sign_login.php', {
 				}, function (forsignature) {
-					console.log(forsignature)
-					var e_n_sign = get_e_n_sign(key, pass, forsignature, 'ex_alert');
-					$.post( 'http://tmp-e.dcoin.club/ajax/check_sign.php', {
-							'sign': e_n_sign['hSig'],
-							'user_id': {{.UserId}}
-						}, function (data) {
-							if (data.result=="1") {
-								// сохраним токен у себя в БД
-								$.post('ajax?controllerName=saveToken', {
-									'token': data.token
-								}, function () {
-									console.log(data);
-									$('input[name="FormExPs"]').val($("#payment_system").val());
-									$('input[name="FormExAmount"]').val($("#exAmount").val());
-									$('input[name="FormDC"]').val($("#buy_currency_id").val());
-									$('input[name="FormToken"]').val(data.token);
-									$("#sendForm").submit();
-								});
-							} else {
-								$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
-							}
-						}, 'JSON'
-					);
+					console.log(forsignature);
+
+
+					var objEx =
+					{
+						key: key,
+						pass: pass,
+						forsign: forsignature,
+					};
+
+					var workerAjax = new Worker("worker.js");
+					workerAjax.onmessage  = function(event)	{
+						if(typeof event.data.error != "undefined") {
+							$("#wrapper").spin(false);
+							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.Lang.incorrect_key_or_password}}</p></div>');
+						} else {
+							$.post( 'http://tmp-e.dcoin.club/ajax/check_sign.php', {
+								'sign': event.data.hSig,
+								'user_id': {{.UserId}}
+							}, function (data) {
+									if (data.result=="1") {
+										// сохраним токен у себя в БД
+										$.post('ajax?controllerName=saveToken', {
+											'token': data.token
+										}, function () {
+											console.log(data);
+											$('input[name="FormExPs"]').val($("#payment_system").val());
+											$('input[name="FormExAmount"]').val($("#exAmount").val());
+											$('input[name="FormDC"]').val($("#buy_currency_id").val());
+											$('input[name="FormToken"]').val(data.token);
+											$("#sendForm").submit();
+										});
+									} else {
+										$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
+									}
+								}, 'JSON'
+							);
+						}
+					};
+					workerAjax.onerror = function(err) {
+						alert(err.message);
+					};
+					workerAjax.postMessage(objEx);
+
+
+					//var e_n_sign = get_e_n_sign(key, pass, forsignature, 'ex_alert');
+
 				}
 			);
 		});

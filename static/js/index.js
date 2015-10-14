@@ -415,6 +415,7 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
             pass = CryptoJS.enc.Latin1.parse(hex_md5(pass))
             var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
             decrypt_PEM = hex2a(decrypted.toString());
+
 /*
             cipherParams = CryptoJS.lib.CipherParams.create({
                 ciphertext: CryptoJS.enc.Base64.parse((key.replace(/\n|\r/g, "")))
@@ -464,21 +465,21 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
 
 function doSign_(type) {
 
-    if (typeof(type)==='undefined') type='sign';
+    if (typeof(type) === 'undefined') type = 'sign';
 
-    console.log('type='+type);
+    console.log('type=' + type);
 
     var SIGN_LOGIN = false;
 
     jQuery.extend({
-        getValues: function(url) {
+        getValues: function (url) {
             var result = null;
             $.ajax({
                 url: url,
                 type: 'get',
                 dataType: 'json',
                 async: false,
-                success: function(data) {
+                success: function (data) {
                     result = data;
                 }
             });
@@ -490,8 +491,13 @@ function doSign_(type) {
     var pass = $("#password").text();
     var setup_password = $("#setup_password").text();
     var save_key = $("#save_key").text();
-    console.log("save_key="+save_key)
+    console.log("save_key=" + save_key)
 
+    if (key.length < 512) {
+        $("#modal_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+$('#incorrect_key_or_password').val()+'</p></div>');
+        $("#wrapper").spin(false);
+        return false;
+    }
     if (type=='sign') {
         var forsignature = $("#for-signature").val();
     }

@@ -80,6 +80,18 @@ $('#key_div').on(
         }
     }
 );
+
+$('#saveKeyAndLogin').bind('click', function () {
+	save_key();
+	$(this).html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+	$(this).addClass( "disabled" );
+	setTimeout(function() {
+		doSign('login');
+		$('#saveKeyAndLogin').html('{{.Lang.login}}');
+		$('#saveKeyAndLogin').removeClass( "disabled" )
+	}, 500);
+});
+
 </script>
 
 <div class="modal fade" id="{{.MyModalIdName}}">
@@ -124,7 +136,7 @@ $('#key_div').on(
 					</fieldset>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-success  btn-lg btn-block" data-toggle="button" onclick="save_key();doSign('login')">{{.Lang.login}}</button>
+				<button id="saveKeyAndLogin" type="button" class="btn btn-success  btn-lg btn-block" data-toggle="button">{{.Lang.login}}</button>
 			</div>
 		</div>
 	</div>

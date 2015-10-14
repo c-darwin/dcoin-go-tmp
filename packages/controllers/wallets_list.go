@@ -48,7 +48,7 @@ func (c *Controller) WalletsList() (string, error) {
 	if c.SessUserId > 0 {
 		wallets, err = c.GetBalances(c.SessUserId)
 		if c.SessRestricted == 0 {
-			myDcTransactions, err = c.GetAll("SELECT * FROM "+c.MyPrefix+"my_dc_transactions ORDER BY id DESC LIMIT 0, 100", 100)
+			myDcTransactions, err = c.GetAll("SELECT * FROM "+c.MyPrefix+"my_dc_transactions ORDER BY id DESC LIMIT 100", 100)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}

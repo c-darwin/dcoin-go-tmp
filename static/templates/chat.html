@@ -27,7 +27,7 @@
 
 		<span id="selectReceiver" style="display: none;vertical-align: middle;">Please, select receiver</span>
 		<input type="text" class="form-control" id="myChatMessage" style="display: inline-block;vertical-align: middle; width: 200px" placeholder="{{.MyChatName}}:" onfocus="this.placeholder = ''" onblur="this.placeholder = '{{.MyChatName}}:'">
-		<button class="btn btn-primary" id="sendToChat" style="display: inline-block">Send</button>
+		<button class="btn btn-primary" id="sendToChat" style="display: inline-block" onclick="document.getElementById('sendToChat').innerHTML='wait'">Send</button>
 	</div>
 </div>
 
