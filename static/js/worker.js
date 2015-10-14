@@ -47,6 +47,8 @@ onmessage = function (obj) {
         } catch(e) {
             decrypt_PEM = 'invalid base64 code';
         }
+    } else {
+        decrypt_PEM = key
     }
 
     if (typeof decrypt_PEM != "string" || decrypt_PEM.indexOf('RSA PRIVATE KEY') == -1) {
