@@ -334,7 +334,7 @@ BEGIN:
 		}
 
 		var sleepTime int
-		if countOk == 0 {
+		if countOk < 2 {
 			sleepTime = 5
 		} else {
 			sleepTime = d.sleepTime
