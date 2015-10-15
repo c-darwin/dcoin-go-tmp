@@ -171,9 +171,9 @@ BEGIN:
 						data2 := data[5:]
 						length := utils.DecodeLength(&data2)
 						log.Debug("length", length)
-						log.Debug("data2 %x\n", data2)
+						//log.Debug("data2 %x\n", data2)
 						blockBin := utils.BytesShift(&data2, length)
-						log.Debug("blockBin %x\n", blockBin)
+						//log.Debug("blockBin %x\n", blockBin)
 
 						if *utils.StartBlockId == 0 || (*utils.StartBlockId > 0 && blockId > *utils.StartBlockId) {
 

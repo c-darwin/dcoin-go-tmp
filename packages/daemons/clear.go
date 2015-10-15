@@ -4,6 +4,9 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
+/*
+если табла была очищена, то в parser.rollbackAI будет 0, поэтому нелья чистить таблы под нуль
+*/
 func Clear() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -77,16 +80,16 @@ BEGIN:
 			continue BEGIN
 		}
 
-		// через rollback_blocks_2 с запасом 1440 блоков чистим таблу log_votes где есть del_block_id
+		// через rollback_blocks_2 с запасом 14400 блоков чистим таблу log_votes где есть del_block_id
 		// при этом, если проверяющих будет мало, то табла может захламиться незаконченными голосованиями
-		err = d.ExecSql("DELETE FROM log_votes WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-1440)
+		err = d.ExecSql("DELETE FROM log_votes WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-14400)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
 
-		// через 1440 блоков чистим таблу wallets_buffer где есть del_block_id
-		err = d.ExecSql("DELETE FROM wallets_buffer WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-1440)
+		// через 14400 блоков чистим таблу wallets_buffer где есть del_block_id
+		err = d.ExecSql("DELETE FROM wallets_buffer WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-14400)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -173,12 +176,12 @@ BEGIN:
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		err = d.ExecSql("DELETE FROM log_wallets WHERE block_id < ? AND block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-1440)
+		err = d.ExecSql("DELETE FROM log_wallets WHERE block_id < ? AND block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-14400)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		err = d.ExecSql("DELETE FROM log_time_money_orders WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-1440)
+		err = d.ExecSql("DELETE FROM log_time_money_orders WHERE del_block_id < ? AND del_block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-14400)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -202,7 +205,7 @@ BEGIN:
 			"log_votes_user_pct",
 			"log_wallets"}
 		for _, table := range arr {
-			err = d.ExecSql("DELETE FROM "+table+" WHERE block_id < ? AND block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-1440)
+			err = d.ExecSql("DELETE FROM "+table+" WHERE block_id < ? AND block_id > 0", blockId-variables.Int64["rollback_blocks_2"]-14400)
 			if err != nil {
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN

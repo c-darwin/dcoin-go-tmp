@@ -23,9 +23,10 @@ var ChatDataChan chan *ChatData = make(chan *ChatData, 10)
 // отправляемых данных в канал ChatDataChan и для исключения создания повторных
 // исходящих соединений
 var ChatOutConnections map[int64]int = make(map[int64]int)
+var ChatInConnections map[int64]int = make(map[int64]int)
 
 // Ждет входящие данные
-func ChatInput(conn net.Conn, newTx chan bool) {
+func ChatInput(conn net.Conn, userId int64) {
 
 	fmt.Println("ChatInput start. wait data from ", conn.RemoteAddr().String(), Time())
 
@@ -38,6 +39,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 		binaryData, err := TCPGetSizeAndData(conn, 1048576)
 		if err != nil {
 			fmt.Println("ChatInput ERROR", err, conn.RemoteAddr().String(), Time())
+			safeDeleteFromChatMap(ChatInConnections, userId)
 			return
 		}
 		conn.SetReadDeadline(time.Time{})
@@ -67,6 +69,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 
 		if len(addsql) == 0 {
 			fmt.Println("empty hashes")
+			safeDeleteFromChatMap(ChatInConnections, userId)
 			return
 		}
 		addsql = addsql[:len(addsql)-1]
@@ -76,14 +79,18 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 		fmt.Println(`SELECT hash FROM chat WHERE hash IN (`+addsql+`)`)
 		rows, err := DB.Query(`SELECT hash FROM chat WHERE hash IN (`+addsql+`)`)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(ErrInfo(err))
+			safeDeleteFromChatMap(ChatInConnections, userId)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
 			var hash string
 			err = rows.Scan(&hash)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(ErrInfo(err))
+				safeDeleteFromChatMap(ChatInConnections, userId)
+				return
 			}
 			// отмечаем 0 то, что у нас уже есть
 			for k, v := range hashes {
@@ -109,7 +116,9 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 		// шлем набор байт, который содержит метки, чего надо качать или "0" - значит ничего качать не будем
 		err = WriteSizeAndData([]byte(binHash), conn)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(ErrInfo(err))
+			safeDeleteFromChatMap(ChatInConnections, userId)
+			return
 		}
 		if !needTx {
 			fmt.Println("continue")
@@ -119,7 +128,9 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 		// получаем тр-ии, которых у нас нету
 		binaryData, err = TCPGetSizeAndData(conn, 10485760)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(ErrInfo(err))
+			safeDeleteFromChatMap(ChatInConnections, userId)
+			return
 		}
 		var sendToChan bool
 		for {
@@ -127,6 +138,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 			fmt.Println("length: ", length)
 			if int(length) > len(binaryData) {
 				fmt.Println("break length > len(binaryData)", length, len(binaryData))
+				safeDeleteFromChatMap(ChatInConnections, userId)
 				return
 			}
 			if length > 0 {
@@ -144,7 +156,8 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 				// проверяем даннные из тр-ий
 				err := DB.CheckChatMessage(string(message), sender, receiver, lang, room, status, signTime, signature)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Println(ErrInfo(err))
+					safeDeleteFromChatMap(ChatInConnections, userId)
 					return
 				}
 
@@ -160,7 +173,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 				// заносим в таблу
 				err = DB.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, Time(), lang, room, receiver, sender, status, message, signTime, signature)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Println(ErrInfo(err))
 					//return
 				}
 				sendToChan = true
@@ -172,7 +185,7 @@ func ChatInput(conn net.Conn, newTx chan bool) {
 		}
 
 		if sendToChan {
-			newTx <- true
+			ChatNewTx <- true
 		}
 	}
 }
@@ -209,7 +222,7 @@ func ChatOutput(newTx chan bool) {
 		// смотрим, есть ли в табле неотправленные тр-ии
 		rows, err := DB.Query("SELECT hash, lang, room, receiver, sender, status, message, enc_message, sign_time, signature FROM chat WHERE sent = 0 ORDER BY id ASC")
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(ErrInfo(err))
 		}
 		defer rows.Close()
 		var hashes []byte
@@ -220,7 +233,7 @@ func ChatOutput(newTx chan bool) {
 			var signature, hash []byte
 			err = rows.Scan(&hash, &lang, &room, &receiver, &sender, &status, &message, &enc_message, &signTime, &signature)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(ErrInfo(err))
 				continue
 			}
 			if status == 2 {
@@ -230,7 +243,7 @@ func ChatOutput(newTx chan bool) {
 			fmt.Println(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
 			err = DB.ExecSql(`UPDATE chat SET sent = 1 WHERE hex(hash) = ?`, string(BinToHex(hash)))
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(ErrInfo(err))
 				continue
 			}
 			data := DecToBin(lang, 1)
@@ -271,8 +284,9 @@ func ChatTxDisseminator(conn net.Conn, userId int64) {
 			fmt.Println("> send test data to ", conn.RemoteAddr().String(), Time())
 			err := WriteSizeAndData(EncodeLengthPlusData([]byte{0}), conn)
 			if err != nil {
-				fmt.Println(err)
-				delete(ChatOutConnections, userId)
+				fmt.Println(ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
+				safeDeleteFromChatMap(ChatOutConnections, userId)
 				break
 			}
 			Sleep(1)
@@ -282,8 +296,9 @@ func ChatTxDisseminator(conn net.Conn, userId int64) {
 			// шлем хэши
 			err := WriteSizeAndData(data.Hashes, conn)
 			if err != nil {
-				fmt.Println(err)
-				delete(ChatOutConnections, userId)
+				fmt.Println(ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
+				safeDeleteFromChatMap(ChatOutConnections, userId)
 				break
 			}
 		}
@@ -292,8 +307,9 @@ func ChatTxDisseminator(conn net.Conn, userId int64) {
 		// получаем номера хэшей, тр-ии которых пошлем далее
 		hashesBin, err := TCPGetSizeAndData(conn, 10485760)
 		if err != nil {
-			fmt.Println(err)
-			delete(ChatOutConnections, userId)
+			fmt.Println(ErrInfo(err))
+			log.Error("%v", ErrInfo(err))
+			safeDeleteFromChatMap(ChatOutConnections, userId)
 			break
 		}
 		fmt.Println("TCPGetSizeAndData ok")
@@ -311,8 +327,9 @@ func ChatTxDisseminator(conn net.Conn, userId int64) {
 		if len(TxForSend) > 0 {
 			err = WriteSizeAndData(TxForSend, conn)
 			if err != nil {
-				fmt.Println(err)
-				delete(ChatOutConnections, userId)
+				fmt.Println(ErrInfo(err))
+				log.Error("%v", ErrInfo(err))
+				safeDeleteFromChatMap(ChatOutConnections, userId)
 				break
 			}
 		}
@@ -320,4 +337,10 @@ func ChatTxDisseminator(conn net.Conn, userId int64) {
 		fmt.Println("WriteSizeAndData 2  ok")
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+func safeDeleteFromChatMap(delMap map[int64]int, userId int64) {
+	ChatMutex.Lock()
+	delete(delMap, userId)
+	ChatMutex.Unlock()
 }

@@ -15,6 +15,106 @@ import (
 
 var myUserIdForChat int64
 
+func (d *daemon) chatConnector() {
+	maxMinerId, err := d.Single("SELECT max(miner_id) FROM miners_data").Int64()
+	if err != nil {
+		log.Error("%v", err)
+	}
+	if maxMinerId == 0 {
+		maxMinerId = 1
+	}
+	q := ""
+	if d.ConfigIni["db_type"] == "postgresql" {
+		q = "SELECT DISTINCT ON (tcp_host) tcp_host, user_id FROM miners_data WHERE miner_id IN (" + strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CHAT_NODES), ",") + ")"
+	} else {
+		q = "SELECT tcp_host, user_id FROM miners_data WHERE miner_id IN  (" + strings.Join(utils.RandSlice(1, maxMinerId, consts.COUNT_CHAT_NODES), ",") + ") GROUP BY tcp_host"
+	}
+	hosts, err := d.GetAll(q, consts.COUNT_CHAT_NODES)
+	if err != nil {
+		log.Error("%v", err)
+	}
+
+	for _, data := range hosts {
+
+		host := data["host"]
+		userId := utils.StrToInt64(data["userId"])
+
+		go func(host string, userId int64) {
+
+			re := regexp.MustCompile(`(.*?):[0-9]+$`)
+			match := re.FindStringSubmatch(host)
+
+			if len(match) != 0 {
+
+				log.Debug("myUserIdForChat %v", myUserIdForChat)
+				log.Debug("chat host: %v", match[1]+consts.CHAT_PORT)
+				chatHost := match[1]+consts.CHAT_PORT
+				//chatHost := "192.168.150.30:8087"
+
+				// проверим, нет ли уже созданных каналов для такого хоста
+				if _, ok := utils.ChatOutConnections[userId]; !ok {
+
+					// канал для приема тр-ий чата
+					conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+						return
+					} else {
+						log.Debug(conn.RemoteAddr().String(), conn)
+						myUid := utils.DecToBin(myUserIdForChat, 4)
+						log.Debug("myUid %x", myUid)
+						n, err := conn.Write(myUid)
+						log.Debug("n: %d", n)
+						if err != nil {
+							log.Error("%v", utils.ErrInfo(err))
+							return
+						}
+						n, err = conn.Write(utils.DecToBin(1, 1))
+						log.Debug("n: %d", n)
+						if err != nil {
+							log.Error("%v", utils.ErrInfo(err))
+							return
+						}
+						fmt.Println("connector ChatInput", conn.RemoteAddr(), utils.Time())
+						utils.ChatMutex.Lock()
+						utils.ChatInConnections[userId] = 1
+						utils.ChatMutex.Unlock()
+						go utils.ChatInput(conn, userId)
+					}
+
+					// канал для отправки тр-ий чата
+					conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
+					if err != nil {
+						log.Error("%v", utils.ErrInfo(err))
+						return
+					} else {
+						log.Debug(conn2.RemoteAddr().String(), conn2)
+						n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
+						log.Debug("n: %d", n)
+						if err != nil {
+							log.Error("%v", utils.ErrInfo(err))
+							return
+						}
+						n, err = conn2.Write(utils.DecToBin(0, 1))
+						log.Debug("n: %d", n)
+						if err != nil {
+							log.Error("%v", utils.ErrInfo(err))
+							return
+						}
+
+						fmt.Println("connector ADD", userId, conn2.RemoteAddr(), utils.Time())
+						utils.ChatMutex.Lock()
+						utils.ChatOutConnections[userId] = 1
+						utils.ChatMutex.Unlock()
+						fmt.Println("ChatOutConnections", utils.ChatOutConnections)
+						utils.ChatTxDisseminator(conn2, userId)
+					}
+				}
+			}
+		}(host, userId)
+	}
+}
+
 func Connector() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -55,7 +155,39 @@ func Connector() {
 		return
 	}
 
-BEGIN:
+	collective, err := d.GetCommunityUsers()
+	if err != nil {
+		log.Error("%v", err)
+		return
+	}
+	if len(collective) == 0 {
+		myUserId, err := d.GetMyUserId("")
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+		collective = append(collective, myUserId)
+		myUserIdForChat = myUserId
+	} else {
+		myUserIdForChat, err = d.Single(`SELECT pool_admin_user_id FROM config`).Int64()
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+	}
+
+
+	// соединения для чата иногда отваливаются, поэтому в цикле мониторим состояние
+	go func() {
+		for {
+			if len(utils.ChatOutConnections) < 1 || len(utils.ChatInConnections) < 1 {
+				go d.chatConnector()
+			}
+			utils.Sleep(30)
+		}
+	}()
+
+	BEGIN:
 	for {
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
@@ -83,22 +215,8 @@ BEGIN:
 			maxHosts = utils.StrToInt(nodeConfig["out_connections"])
 		}
 		log.Info("%v", maxHosts)
-		collective, err := d.GetCommunityUsers()
-		if err != nil {
-			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
-			continue
-		}
-		if len(collective) == 0 {
-			myUserId, err := d.GetMyUserId("")
-			if err != nil {
-				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
-				continue
-			}
-			collective = append(collective, myUserId)
-			myUserIdForChat = myUserId
-		} else {
-			myUserIdForChat, err = d.Single(`SELECT pool_admin_user_id FROM config`).Int64()
-		}
+
+
 		// в сингл-моде будет только $my_miners_ids[0]
 		myMinersIds, err := d.GetMyMinersIds(collective)
 		if err != nil {
@@ -395,75 +513,7 @@ func check(host string, userId int64) *answerType {
 
 	// создадим канал для чата
 	if utils.BinToDec(answer) == 1 {
-		re := regexp.MustCompile(`(.*?):[0-9]+$`)
-		match := re.FindStringSubmatch(host)
-		if len(match) != 0 {
 
-			log.Debug("myUserIdForChat %v", myUserIdForChat)
-			log.Debug("chat host: %v", match[1]+":8087")
-			//chatHostWoPort:=match[1]
-			chatHost:=match[1]+":8087"
-			//chatHostWoPort := "192.168.150.30"
-			//chatHost := "192.168.150.30:8087"
-
-			// проверим, нет ли уже созданных каналов для такого хоста
-			if _, ok := utils.ChatOutConnections[userId]; !ok {
-
-				// канал для приема тр-ий чата
-				conn, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
-				if err != nil {
-					log.Error("%v", utils.ErrInfo(err))
-					return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-				} else {
-					log.Debug(conn.RemoteAddr().String(), conn)
-					myUid := utils.DecToBin(myUserIdForChat, 4)
-					log.Debug("myUid %x", myUid)
-					n, err := conn.Write(myUid)
-					log.Debug("n: %d", n)
-					if err != nil {
-						log.Error("%v", utils.ErrInfo(err))
-						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-					}
-					n, err = conn.Write(utils.DecToBin(1, 1))
-					log.Debug("n: %d", n)
-					if err != nil {
-						log.Error("%v", utils.ErrInfo(err))
-						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-					}
-					fmt.Println("connector ChatInput", conn.RemoteAddr(), utils.Time())
-					go utils.ChatInput(conn, utils.ChatNewTx)
-				}
-
-
-				// канал для отправки тр-ий чата
-				conn2, err := net.DialTimeout("tcp", chatHost, 5*time.Second)
-				if err != nil {
-					log.Error("%v", utils.ErrInfo(err))
-					return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-				} else {
-					log.Debug(conn2.RemoteAddr().String(), conn2)
-					n, err := conn2.Write(utils.DecToBin(myUserIdForChat, 4))
-					log.Debug("n: %d", n)
-					if err != nil {
-						log.Error("%v", utils.ErrInfo(err))
-						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-					}
-					n, err = conn2.Write(utils.DecToBin(0, 1))
-					log.Debug("n: %d", n)
-					if err != nil {
-						log.Error("%v", utils.ErrInfo(err))
-						return &answerType{userId: userId, answer: utils.BinToDec(answer)}
-					}
-
-					fmt.Println("connector ADD", userId, conn2.RemoteAddr(), utils.Time())
-					utils.ChatMutex.Lock()
-					utils.ChatOutConnections[userId] = 1
-					utils.ChatMutex.Unlock()
-					fmt.Println("ChatOutConnections", utils.ChatOutConnections)
-					utils.ChatTxDisseminator(conn2, userId)
-				}
-			}
-		}
 	}
 	log.Debug("host: %v / answer: %v", host, answer)
 	return &answerType{userId: userId, answer: utils.BinToDec(answer)}

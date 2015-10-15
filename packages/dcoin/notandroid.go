@@ -184,7 +184,10 @@ func tcpListener(db *utils.DCDB) {
 				// мониторит входящие
 				if chType == 0 {
 					fmt.Println("chType 0", conn.RemoteAddr(), utils.Time())
-					go utils.ChatInput(conn, utils.ChatNewTx)
+					utils.ChatMutex.Lock()
+					utils.ChatInConnections[userId] = 1
+					utils.ChatMutex.Unlock()
+					go utils.ChatInput(conn, userId)
 				}
 				// создаем канал, через который будем рассылать тр-ии чата
 				if chType == 1 {

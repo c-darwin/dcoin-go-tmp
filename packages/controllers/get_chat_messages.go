@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/rand"
 	"text/template"
+	"encoding/json"
 )
 
 var chatIds = make(map[int64][]int)
@@ -109,6 +110,12 @@ func (c *Controller) GetChatMessages() (string, error) {
 	}
 
 	log.Debug("chat data: %v", result)
+	chatStatus := "ok"
+	if len(utils.ChatInConnections) == 0 || len(utils.ChatOutConnections) == 0 {
+		chatStatus = "bad"
+	}
 
-	return utils.JsonAnswer(result, "messages").String(), nil
+	resultJson, _ := json.Marshal(map[string]string{"messages": result, "chatStatus": chatStatus})
+
+	return string(resultJson), nil
 }

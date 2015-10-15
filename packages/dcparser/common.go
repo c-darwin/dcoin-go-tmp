@@ -2060,7 +2060,8 @@ func (p *Parser) rollbackAI(table string, num int64) error {
 		return utils.ErrInfo(err)
 	}
 
-	current, err := p.Single("SELECT "+AiId+" FROM "+table+" ORDER BY ? DESC LIMIT 1", AiId).Int64()
+	// если табла была очищена, то тут будет 0, поэтому нелья чистить таблы под нуль
+	current, err := p.Single("SELECT "+AiId+" FROM "+table+" ORDER BY "+AiId+" DESC LIMIT 1").Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
