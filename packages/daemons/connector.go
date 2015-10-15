@@ -16,6 +16,7 @@ import (
 var myUserIdForChat int64
 
 func (d *daemon) chatConnector() {
+	log.Debug("start chatConnector")
 	maxMinerId, err := d.Single("SELECT max(miner_id) FROM miners_data").Int64()
 	if err != nil {
 		log.Error("%v", err)
@@ -33,22 +34,25 @@ func (d *daemon) chatConnector() {
 	if err != nil {
 		log.Error("%v", err)
 	}
-
+	log.Debug("hosts: %v", hosts)
 	for _, data := range hosts {
 
-		host := data["host"]
-		userId := utils.StrToInt64(data["userId"])
+		host := data["tcp_host"]
+		userId := utils.StrToInt64(data["user_id"])
 
 		go func(host string, userId int64) {
 
+			log.Debug("host: %v", host)
+			log.Debug("userId: %d", userId)
 			re := regexp.MustCompile(`(.*?):[0-9]+$`)
 			match := re.FindStringSubmatch(host)
+			log.Debug("match: %v", match)
 
 			if len(match) != 0 {
 
 				log.Debug("myUserIdForChat %v", myUserIdForChat)
 				log.Debug("chat host: %v", match[1]+consts.CHAT_PORT)
-				chatHost := match[1]+consts.CHAT_PORT
+				chatHost := match[1]+":"+consts.CHAT_PORT
 				//chatHost := "192.168.150.30:8087"
 
 				// проверим, нет ли уже созданных каналов для такого хоста
