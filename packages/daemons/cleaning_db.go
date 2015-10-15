@@ -138,7 +138,7 @@ BEGIN:
 			}
 			for _, table := range allTables {
 				log.Debug("table: %s", table)
-				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang`, table); !ok {
+				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang|main_lock`, table); !ok {
 					log.Debug("DELETE FROM %s", table)
 					err = d.ExecSql("DELETE FROM " + table)
 					if err != nil {
@@ -173,6 +173,11 @@ BEGIN:
 						}
 					}
 				}
+			}
+			err = d.ExecSql("DELETE FROM main_lock")
+			if err != nil {
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+				continue BEGIN
 			}
 		}
 
