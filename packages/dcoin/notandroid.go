@@ -15,6 +15,7 @@ import (
 	"time"
 	"regexp"
 	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 /*
@@ -35,7 +36,6 @@ static inline void waitSig() {
 */
 import (
 	"C"
-	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 func IosLog(text string) {
