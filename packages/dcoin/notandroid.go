@@ -35,6 +35,7 @@ static inline void waitSig() {
 */
 import (
 	"C"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 func IosLog(text string) {
@@ -149,7 +150,7 @@ func tcpListener(db *utils.DCDB) {
 
 	// Листенинг для чата
 	go func() {
-		listener, err := net.Listen("tcp", ":8087")
+		listener, err := net.Listen("tcp", ":"+consts.CHAT_PORT)
 		if err != nil {
 			log.Error("Error listening: %v", err)
 			panic(err)
