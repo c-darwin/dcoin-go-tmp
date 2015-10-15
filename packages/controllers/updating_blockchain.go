@@ -90,7 +90,7 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		}
 		defer resp.Body.Close()
 
-		blockMeter = int64(utils.Round(float64((blockId/consts.LAST_BLOCK)*100), 0))
+		blockMeter = int64(utils.Round(float64((blockId/consts.LAST_BLOCK)*100), 0))-1
 
 	} else {
 		waitText = c.Lang["loading_blockchain_please_wait"]

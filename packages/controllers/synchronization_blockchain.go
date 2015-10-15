@@ -89,7 +89,16 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 		}
 	}
 
-	result := map[string]string{"block_id": blockId, "block_time": blockTime}
+	connections, err := c.Single(`SELECT count(*) from nodes_connection`).String()
+	if err != nil {
+		return "", err
+	}
+	confirmedBlockId, err := c.GetConfirmedBlockId()
+	if err != nil {
+		return "", err
+	}
+
+	result := map[string]string{"block_id": blockId, "confirmed_block_id": utils.Int64ToStr(confirmedBlockId), "block_time": blockTime, "connections": connections}
 	resultJ, _ := json.Marshal(result)
 
 	return string(resultJ), nil
