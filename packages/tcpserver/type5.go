@@ -17,26 +17,26 @@ func (t *TcpServer) Type5() {
 	// если работаем в режиме пула, то нужно проверить, верный ли у юзера нодовский ключ
 	community, err := t.GetCommunityUsers()
 	if err != nil {
-		log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+		log.Error("%v", utils.ErrInfo("incorrect user_id"))
 		t.Conn.Write(utils.DecToBin(0, 1))
 		return
 	}
 	if len(community) > 0 {
 		allTables, err := t.GetAllTables()
 		if err != nil {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		keyTable := utils.Int64ToStr(userId) + "_my_node_keys"
 		if !utils.InSliceString(keyTable, allTables) {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		myBlockId, err := t.GetMyBlockId()
 		if err != nil {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
@@ -47,23 +47,23 @@ func (t *TcpServer) Type5() {
 							 block_id < ?
 				`, myBlockId).String()
 		if err != nil {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		if len(myNodeKey) == 0 {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		nodePublicKey, err := t.GetNodePublicKey(userId)
 		if err != nil {
-			log.Debug("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("incorrect user_id"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		if myNodeKey != string(nodePublicKey) {
-			log.Debug("%v", utils.ErrInfo("myNodeKey != nodePublicKey"))
+			log.Error("%v", utils.ErrInfo("myNodeKey != nodePublicKey"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
