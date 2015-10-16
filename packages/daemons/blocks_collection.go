@@ -160,7 +160,7 @@ BEGIN:
 
 						data := make([]byte, dataSize)
 						file.Read(data)
-						log.Debug("data %x\n", data)
+						//log.Debug("data %x\n", data)
 						blockId := utils.BinToDec(data[0:5])
 						if *utils.EndBlockId > 0 && blockId == *utils.EndBlockId {
 							if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }

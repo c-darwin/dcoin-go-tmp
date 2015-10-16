@@ -1480,6 +1480,9 @@ func (db *DCDB) TestBlock() (*prevBlockType, int64, int64, int64, int64, [][][]i
 	var levelsRange [][][]int64
 	// последний успешно записанный блок
 	rows, err := db.Query(db.FormatQuery(`SELECT hex(hash), hex(head_hash), block_id, time, level FROM info_block`))
+	if err != nil {
+		return prevBlock, userId, minerId, currentUserId, level, levelsRange, ErrInfo(err)
+	}
 	defer rows.Close()
 	if ok := rows.Next(); ok {
 		err = rows.Scan(&prevBlock.Hash, &prevBlock.HeadHash, &prevBlock.BlockId, &prevBlock.Time, &prevBlock.Level)

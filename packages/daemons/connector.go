@@ -159,31 +159,14 @@ func Connector() {
 		return
 	}
 
-	collective, err := d.GetCommunityUsers()
-	if err != nil {
-		log.Error("%v", err)
-		return
-	}
-	if len(collective) == 0 {
-		myUserId, err := d.GetMyUserId("")
-		if err != nil {
-			log.Error("%v", err)
-			return
-		}
-		collective = append(collective, myUserId)
-		myUserIdForChat = myUserId
-	} else {
-		myUserIdForChat, err = d.Single(`SELECT pool_admin_user_id FROM config`).Int64()
-		if err != nil {
-			log.Error("%v", err)
-			return
-		}
-	}
-
 
 	// соединения для чата иногда отваливаются, поэтому в цикле мониторим состояние
 	go func() {
 		for {
+			if myUserIdForChat == 0 {
+				utils.Sleep(1)
+				continue
+			}
 			if len(utils.ChatOutConnections) < 1 || len(utils.ChatInConnections) < 1 {
 				go d.chatConnector()
 			}
@@ -220,6 +203,26 @@ func Connector() {
 		}
 		log.Info("%v", maxHosts)
 
+		collective, err := d.GetCommunityUsers()
+		if err != nil {
+			log.Error("%v", err)
+			return
+		}
+		if len(collective) == 0 {
+			myUserId, err := d.GetMyUserId("")
+			if err != nil {
+				log.Error("%v", err)
+				return
+			}
+			collective = append(collective, myUserId)
+			myUserIdForChat = myUserId
+		} else {
+			myUserIdForChat, err = d.Single(`SELECT pool_admin_user_id FROM config`).Int64()
+			if err != nil {
+				log.Error("%v", err)
+				return
+			}
+		}
 
 		// в сингл-моде будет только $my_miners_ids[0]
 		myMinersIds, err := d.GetMyMinersIds(collective)
