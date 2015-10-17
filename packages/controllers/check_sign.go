@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
+	"regexp"
 )
 
 func (c *Controller) Check_sign() (string, error) {
@@ -35,12 +36,13 @@ func (c *Controller) Check_sign() (string, error) {
 	log.Debug("c.r.RemoteAddr %s", c.r.RemoteAddr)
 	log.Debug("c.r.Header.Get(User-Agent) %s", c.r.Header.Get("User-Agent"))
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
-	log.Debug("RemoteAddr %s", RemoteAddr)
-	if configIni["sign_hash"] == "ip" {
-		hash = utils.Md5(RemoteAddr)
-	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
+	re := regexp.MustCompile(`(.*?):[0-9]+$`)
+	match := re.FindStringSubmatch(RemoteAddr)
+	if len(match) != 0 {
+		RemoteAddr = match[1]
 	}
+	log.Debug("RemoteAddr %s", RemoteAddr)
+	hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	log.Debug("hash %s", hash)
 
 	if len(c.CommunityUsers) > 0 {
@@ -227,12 +229,9 @@ func (c *Controller) Check_sign() (string, error) {
 			}
 		} else {
 
-			if configIni["sign_hash"] == "ip" {
-				hash = utils.Md5(RemoteAddr)
-			} else {
-				hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
-			}
-			log.Debug("hash", hash)
+			log.Debug("RemoteAddr %s", RemoteAddr)
+			hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
+			log.Debug("hash %s", hash)
 
 			// получим данные для подписи
 			forSign, err := c.DCDB.GetDataAuthorization(hash)

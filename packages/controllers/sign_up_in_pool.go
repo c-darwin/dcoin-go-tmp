@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"regexp"
 )
 
 func (c *Controller) SignUpInPool() (string, error) {
@@ -29,13 +30,19 @@ func (c *Controller) SignUpInPool() (string, error) {
 		}
 		// получим данные для подписи
 		var hash []byte
+
+
 		RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
-		if configIni["sign_hash"] == "ip" {
-			hash = utils.Md5(RemoteAddr)
-		} else {
-			hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
+		re := regexp.MustCompile(`(.*?):[0-9]+$`)
+		match := re.FindStringSubmatch(RemoteAddr)
+		if len(match) != 0 {
+			RemoteAddr = match[1]
 		}
+		log.Debug("RemoteAddr %s", RemoteAddr)
+		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 		log.Debug("hash %s", hash)
+
+
 		forSign, err := c.GetDataAuthorization(hash)
 		log.Debug("forSign: %v", forSign)
 		publicKey, err := c.GetUserPublicKey(userId)

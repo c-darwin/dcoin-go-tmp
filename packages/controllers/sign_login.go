@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"regexp"
 )
 
 /*
@@ -14,17 +15,19 @@ func (c *Controller) SignLogin() (string, error) {
 
 	var hash []byte
 	loginCode := utils.RandSeq(20)
-	log.Debug("configIni[sign_hash] %s", configIni["sign_hash"])
-	log.Debug("c.r.RemoteAddr %s", c.r.RemoteAddr)
-	log.Debug("c.r.Header.Get(User-Agent) %s", c.r.Header.Get("User-Agent"))
+
+
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
-	log.Debug("RemoteAddr %s", RemoteAddr)
-	if configIni["sign_hash"] == "ip" {
-		hash = utils.Md5(RemoteAddr)
-	} else {
-		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
+	re := regexp.MustCompile(`(.*?):[0-9]+$`)
+	match := re.FindStringSubmatch(RemoteAddr)
+	if len(match) != 0 {
+		RemoteAddr = match[1]
 	}
+	log.Debug("RemoteAddr %s", RemoteAddr)
+	hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	log.Debug("hash %s", hash)
+
+
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hex(hash) = ?`, hash)
 	if err != nil {
 		return "", err
