@@ -146,7 +146,7 @@ BEGIN:
 					}
 					continue BEGIN
 				}
-				err = d.ExecSql(`UPDATE config SET current_load_blockchain = "file"`)
+				err = d.ExecSql(`UPDATE config SET current_load_blockchain = 'file'`)
 				if err != nil {
 					if d.unlockPrintSleep(err, d.sleepTime) {
 						break BEGIN
@@ -254,7 +254,7 @@ BEGIN:
 		}
 		d.dbUnlock()
 
-		err = d.ExecSql(`UPDATE config SET current_load_blockchain = "nodes"`)
+		err = d.ExecSql(`UPDATE config SET current_load_blockchain = 'nodes'`)
 		if err != nil {
 			if d.unlockPrintSleep(err, d.sleepTime) {
 				break BEGIN

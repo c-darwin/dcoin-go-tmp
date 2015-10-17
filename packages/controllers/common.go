@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -72,11 +71,12 @@ var (
 
 func SessInit() {
 	var err error
-	path := *utils.Dir + `/tmp`
+	/*path := *utils.Dir + `/tmp`
 	if runtime.GOOS == "windows" {
 		path = "tmp"
 	}
-	globalSessions, err = session.NewManager("file", `{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)
+	globalSessions, err = session.NewManager("file", `{"cookieName":"gosessionid","gclifetime":864000,"ProviderConfig":"`+path+`"}`)*/
+	globalSessions, err = session.NewManager("memory", `{"cookieName":"gosessionid","gclifetime":864000}`)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 	}
