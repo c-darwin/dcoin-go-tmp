@@ -34,12 +34,21 @@ func (d *daemon) chatConnector() {
 	if err != nil {
 		log.Error("%v", err)
 	}
+	// исключим себя
+	myTcpHost, err := d.Single(`SELECT tcp_host FROM miner_data WHERE user_id = ?`, myUserIdForChat).String()
+	if err != nil {
+		log.Error("%v", err)
+	}
+
 	log.Debug("hosts: %v", hosts)
 	for _, data := range hosts {
 
 		host := data["tcp_host"]
 		userId := utils.StrToInt64(data["user_id"])
 
+		if host == myTcpHost {
+			continue
+		}
 		go func(host string, userId int64) {
 
 			log.Debug("host: %v", host)
