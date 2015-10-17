@@ -39,6 +39,7 @@ func (d *daemon) chatConnector() {
 	if err != nil {
 		log.Error("%v", err)
 	}
+	fmt.Println("myTcpHost:", myTcpHost)
 
 	log.Debug("hosts: %v", hosts)
 	for _, data := range hosts {
