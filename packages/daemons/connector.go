@@ -35,7 +35,7 @@ func (d *daemon) chatConnector() {
 		log.Error("%v", err)
 	}
 	// исключим себя
-	myTcpHost, err := d.Single(`SELECT tcp_host FROM miner_data WHERE user_id = ?`, myUserIdForChat).String()
+	myTcpHost, err := d.Single(`SELECT tcp_host FROM miners_data WHERE user_id = ?`, myUserIdForChat).String()
 	if err != nil {
 		log.Error("%v", err)
 	}
