@@ -46,7 +46,9 @@ func (d *daemon) chatConnector() {
 	for userId, _ := range utils.ChatOutConnections {
 		uids+=utils.Int64ToStr(userId)+","
 	}
-	uids = uids[:len(uids)-1]
+	if len(uids) > 0 {
+		uids = uids[:len(uids)-1]
+	}
 	existsTcpHost, err := d.GetList(`SELECT tcp_host FROM miners_data WHERE user_id IN (`+uids+`)`).String()
 	if err != nil {
 		log.Error("%v", err)
