@@ -56,6 +56,7 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
+		log.Debug("curBlockId: %v / endBlockId: %v", curBlockId, endBlockId)
 		if curBlockId-30 > endBlockId {
 			file, err := os.OpenFile(*utils.Dir+"/public/blockchain", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {

@@ -98,7 +98,12 @@ func (c *Controller) SynchronizationBlockchain() (string, error) {
 		return "", err
 	}
 
-	result := map[string]string{"block_id": blockId, "confirmed_block_id": utils.Int64ToStr(confirmedBlockId), "block_time": blockTime, "connections": connections}
+	currentLoadBlockchain := "nodes"
+	if c.NodeConfig["current_load_blockchain"] == "file" {
+		currentLoadBlockchain = c.NodeConfig["first_load_blockchain_url"]
+	}
+
+	result := map[string]string{"block_id": blockId, "confirmed_block_id": utils.Int64ToStr(confirmedBlockId), "block_time": blockTime, "connections": connections, "current_load_blockchain": currentLoadBlockchain}
 	resultJ, _ := json.Marshal(result)
 
 	return string(resultJ), nil

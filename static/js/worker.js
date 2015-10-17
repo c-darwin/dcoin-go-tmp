@@ -52,7 +52,7 @@ onmessage = function (obj) {
     }
 
     if (typeof decrypt_PEM != "string" || decrypt_PEM.indexOf('RSA PRIVATE KEY') == -1) {
-        error = "incorrect_key";
+        error = "incorrect_key (size="+decrypt_PEM.length+")";
     } else {
         var rsa = new RSAKey();
         var a = rsa.readPrivateKeyFromPEMString(decrypt_PEM);

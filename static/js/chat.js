@@ -56,7 +56,9 @@
 			var workerAjax = new Worker("/static/js/worker.js");
 			workerAjax.onmessage  = function(event) {
 				if (typeof event.data.error != "undefined") {
-					$("#chat_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.Lang.incorrect_key_or_password}}</p></div>');
+					$("#chat_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+error+'</p></div>');
+					$('#sendToChat').prop('disabled', false);
+					$('#sendToChat').html('Send');
 				} else {
 					$.post( 'ajax?controllerName=sendToTheChat', {
 						'receiver': chatMessageReceiver,
@@ -96,10 +98,11 @@
 				if (typeof data.messages != "undefined" && data.messages != "") {
 					$('#chatMessages').append(data.messages);
 					scrollToBottom();
+				}
 					setTimeout(function() {
 						var intervalID = setInterval( function() {
 
-								$.ajax({
+								/*$.ajax({
 									url: 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang,
 									type: 'POST',
 									async: false,
@@ -113,15 +116,20 @@
 										$('#chatMessages').append(data.messages);
 										scrollToBottom();
 									}
-								});
+								});*/
 
-							/*$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
+							$.post( 'ajax?controllerName=getChatMessages&room='+room+'&lang='+lang, {}, function (data) {
 								//if(typeof data.messages != "undefined" && data.messages !="") {
 								//console.log("data.messages", data.messages);
 								$('#chatMessages').append(data.messages);
 								scrollToBottom();
+								if (data.chatStatus == "bad") {
+									$('#chatTitle').html("Chat <span style='color:#ff0000'>*</span>")
+								} else {
+									$('#chatTitle').html("Chat <span style='color:#00ff00'>*</span>")
+								}
 								//}
-							}, 'JSON');*/
+							}, 'JSON');
 
 							var objDiv = document.getElementById("chatwindow");
 							//console.log(objDiv.scrollHeight, objDiv.scrollTop, objDiv.clientHeight)
@@ -129,7 +137,7 @@
 						} , 1000);
 						intervalIdArray.push(intervalID);
 					}, 500);
-				}
+
 
 			}, 'JSON');
 

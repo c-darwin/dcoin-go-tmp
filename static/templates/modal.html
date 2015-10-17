@@ -42,7 +42,7 @@ var handleFileSelect = function(f) {
 	    })(f);
 	    reader.readAsText(f);
 	}
-}
+};
 
 $( document ).ready(function() {
 	if (window.FileReader === undefined) {
@@ -83,7 +83,7 @@ $('#key_div').on(
 
 $('#saveKeyAndLogin').bind('click', function () {
 	save_key();
-	$(this).html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+	$(this).html('Wait...');
 	$(this).addClass( "disabled" );
 	setTimeout(function() {
 		doSign('login');

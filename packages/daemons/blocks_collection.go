@@ -146,6 +146,14 @@ BEGIN:
 					}
 					continue BEGIN
 				}
+				err = d.ExecSql(`UPDATE config SET current_load_blockchain = "file"`)
+				if err != nil {
+					if d.unlockPrintSleep(err, d.sleepTime) {
+						break BEGIN
+					}
+					continue BEGIN
+				}
+
 				for {
 					// проверим, не нужно ли нам выйти из цикла
 					if CheckDaemonsRestart() {
@@ -218,6 +226,7 @@ BEGIN:
 				}
 				file.Close()
 			} else {
+
 				newBlock, err := static.Asset("static/1block.bin")
 				if err != nil {
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
@@ -244,6 +253,14 @@ BEGIN:
 			continue BEGIN
 		}
 		d.dbUnlock()
+
+		err = d.ExecSql(`UPDATE config SET current_load_blockchain = "nodes"`)
+		if err != nil {
+			if d.unlockPrintSleep(err, d.sleepTime) {
+				break BEGIN
+			}
+			continue BEGIN
+		}
 
 		myConfig, err := d.OneRow("SELECT local_gate_ip, static_node_user_id FROM config").String()
 		if err != nil {

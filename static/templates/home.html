@@ -718,6 +718,10 @@
 			$(".exNext").css("margin-top", "10px");
 		}
 		$('#exNextPS').bind('click', function () {
+
+			$('#exNextPS').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+			$('#exNextPS').prop('disabled', true);
+
 			$.post( 'http://tmp-e.dcoin.club/ajax/sign_login.php', {
 				}, function (forsignature) {
 					console.log(forsignature);
@@ -730,11 +734,13 @@
 						forsign: forsignature,
 					};
 
-					var workerAjax = new Worker("worker.js");
-					workerAjax.onmessage  = function(event)	{
+					var workerAjax = new Worker("/static/js/worker.js");
+					workerAjax.onmessage = function(event)	{
 						if(typeof event.data.error != "undefined") {
 							$("#wrapper").spin(false);
-							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.Lang.incorrect_key_or_password}}</p></div>');
+							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>error</p></div>');
+							$('#exNextPS').prop('disabled', false);
+							$('#exNextPS').html('Next');
 						} else {
 							$.post( 'http://tmp-e.dcoin.club/ajax/check_sign.php', {
 								'sign': event.data.hSig,
@@ -755,8 +761,9 @@
 									} else {
 										$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
 									}
-								}, 'JSON'
-							);
+									$('#exNextPS').prop('disabled', false);
+									$('#exNextPS').html('Next');
+							}, 'JSON')
 						}
 					};
 					workerAjax.onerror = function(err) {
@@ -767,8 +774,7 @@
 
 					//var e_n_sign = get_e_n_sign(key, pass, forsignature, 'ex_alert');
 
-				}
-			);
+			});
 		});
 
 		$('#exNext').bind('click', function () {
@@ -785,27 +791,30 @@
 
 
 		$(document).ready(function(){
-			$.post( 'http://tmp-e.dcoin.club/info.php', {
-				'token': {{.Token}}
-			}, function (data) {
-				if (typeof data != "undefined") {
-					$('#tokens').css("display", "block");
-					$('#tokensTable').append("<tr><td>Покупка " + data.token.amount_fiat + " " + currency_name[data.token.buy_currency_id] + "</td><td>" + data.token.status + "</td></tr>");
-				}
-				for (var i=0; i < data.wallets.length; i++) {
-					$('#balancesTable').append("<tr><td>"+currency_name[data.wallets[i].currency_id]+"</td><td>"+data.wallets[i].amount+"</td></tr>");
-				}
-				for (var i=0; i < data.orders.length; i++) {
-					$('#ordersTable').append("<tr><td>"+currency_name[data.orders[i].buy_currency_id]+"/"+currency_name[data.orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount * (1/data.orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.orders[i].amount/data.orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
-				}
-				for (var i=0; i < data.withdraw.length; i++) {
-					var status = "wait"
-					if (typeof data.withdraw[i].close_time != "undefined") {
-						status = "complete"
+			var token = {{.Token}};
+			if (token != "") {
+				$.post( 'http://tmp-e.dcoin.club/info.php', {
+					'token': token
+				}, function (data) {
+					if (typeof data != "undefined") {
+						$('#tokens').css("display", "block");
+						$('#tokensTable').append("<tr><td>Покупка " + data.token.amount_fiat + " " + currency_name[data.token.buy_currency_id] + "</td><td>" + data.token.status + "</td></tr>");
 					}
-					$('#withdrawTable').append("<tr><td>"+data.withdraw[i].open_time+"</td><td>"+data.withdraw[i].amount+"</td><td>"+status+"</td></tr>");
-				}
-			}, 'JSON');
+					for (var i=0; i < data.wallets.length; i++) {
+						$('#balancesTable').append("<tr><td>"+currency_name[data.wallets[i].currency_id]+"</td><td>"+data.wallets[i].amount+"</td></tr>");
+					}
+					for (var i=0; i < data.orders.length; i++) {
+						$('#ordersTable').append("<tr><td>"+currency_name[data.orders[i].buy_currency_id]+"/"+currency_name[data.orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount * (1/data.orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.orders[i].amount/data.orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
+					}
+					for (var i=0; i < data.withdraw.length; i++) {
+						var status = "wait"
+						if (typeof data.withdraw[i].close_time != "undefined") {
+							status = "complete"
+						}
+						$('#withdrawTable').append("<tr><td>"+data.withdraw[i].open_time+"</td><td>"+data.withdraw[i].amount+"</td><td>"+status+"</td></tr>");
+					}
+				}, 'JSON');
+			}
 		});
 	</script>
 	<div style="clear: both"></div>
@@ -903,7 +912,7 @@
 		#chatLock { padding: 3px 7px; font-size: 20px; }
 		#chatLockIco{}
 	</style>
-	<h3 style="margin-top: 20px">Chat</h3>
+	<h3 style="margin-top: 20px" id="chatTitle">Chat</h3>
 	<div id="chat" class="col-lg-12">
 		<div id="chat_alert"></div>
 		<div style="max-height: 300px; overflow-y: auto; margin-bottom: 5px" id="chatwindow">
