@@ -347,6 +347,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
 			return
 		}
+
 		if tplName == "login" {
 			tplName = "home"
 		}
@@ -457,6 +458,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		if ok, _ := regexp.MatchString(`^(?i)waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
+			// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню
+			if len(r.FormValue("tpl_name")) > 0 && tplName == "login" {
+				w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
+				return
+			}
 			// вызываем контроллер в зависимости от шаблона
 			html, err = CallController(c, tplName)
 			if err != nil {
