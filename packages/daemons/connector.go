@@ -41,13 +41,24 @@ func (d *daemon) chatConnector() {
 	}
 	fmt.Println("myTcpHost:", myTcpHost)
 
+	// исключим хосты, к которым уже подключены
+	var uids string
+	for userId, _ := range utils.ChatOutConnections {
+		uids+=utils.Int64ToStr(userId)+","
+	}
+	uids = uids[:len(uids)-1]
+	existsTcpHost, err := d.GetList(`SELECT tcp_host FROM miners_data WHERE user_id IN (`+uids+`)`).String()
+	if err != nil {
+		log.Error("%v", err)
+	}
+
 	log.Debug("hosts: %v", hosts)
 	for _, data := range hosts {
 
 		host := data["tcp_host"]
 		userId := utils.StrToInt64(data["user_id"])
 
-		if host == myTcpHost {
+		if host == myTcpHost || utils.InSliceString(host, existsTcpHost) {
 			continue
 		}
 		go func(host string, userId int64) {
