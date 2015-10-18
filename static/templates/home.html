@@ -1,7 +1,7 @@
 {{ define "home" }}
-<link rel="stylesheet" type="text/css" href="static/css/tooltipster.css" />
+<!--<link rel="stylesheet" type="text/css" href="static/css/tooltipster.css" />
 <link rel="stylesheet" type="text/css" href="static/css/tooltipster-shadow.css" />
-<script type="text/javascript" src="static/js/jquery.tooltipster.min.js"></script>
+<script type="text/javascript" src="static/js/jquery.tooltipster.min.js"></script>-->
 <style>
 	@media (min-width: 1024px) {
 		.qtip-close{display: none}
@@ -25,12 +25,12 @@
 </style>
 <script>
 	$(function() {
-		$('[title!=""]').qtip( {
+		/*$('[title!=""]').qtip( {
 			position: {target: 'mouse', adjust: { x: 5, y: 5 }},
 			style: { classes: 'qtip-blue qtip-bootstrap qtip-shadow' },
 			content: {	button: true }
 			}
-		);
+		);*/
 
 		$.ajax({
 			url: "http://dcoinsimple.com/api.php",
@@ -152,13 +152,13 @@
 	.fd-tile.clean .icon i {
 		color: #E5E5E5;
 	}
-	.fa {
+	/*.fa {
 		display: inline-block;
 		font-family: FontAwesome;
 		font-style: normal;
 		font-weight: normal;
 		line-height: 1;
-	}
+	}*/
 	.fd-tile.detail .icon {
 		display: block;
 		float: right;
@@ -290,14 +290,14 @@
 
 </script>
 <script>
-	$(document).ready(function() {
+	/*$(document).ready(function() {
 		$('.tooltip').tooltipster({
 			delay: 50,
 			contentAsHTML: true,
 			interactive: true,
 			theme: 'tooltipster-shadow'
 		});
-	});
+	});*/
 </script>
 
 <style>
@@ -738,7 +738,7 @@
 					workerAjax.onmessage = function(event)	{
 						if(typeof event.data.error != "undefined") {
 							$("#wrapper").spin(false);
-							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>error</p></div>');
+							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+event.data.error+'</p></div>');
 							$('#exNextPS').prop('disabled', false);
 							$('#exNextPS').html('Next');
 						} else {
@@ -783,19 +783,43 @@
 		});
 
 
-		$('#showEx').bind('click', function () {
-			$('#exOrders').css("display", "inline-table");
-			$('#exBalances').css("display", "inline-table");
-			$('#exWithdraw').css("display", "inline-table");
+		$('#refreshEx').bind('click', function () {
+			getExData()
 		});
 
+		$(document).ready(function() {
+			getExData()
+		});
 
-		$(document).ready(function(){
-			var token = {{.Token}};
+		var exDataDisplay = false;
+		$('#displayEx').bind('click', function () {
+			if (exDataDisplay == true) {
+				$('#exOrders').css("display", "none");
+				$('#exBalances').css("display", "none");
+				$('#exWithdraw').css("display", "none");
+				$('#refreshEx').css("display", "none");
+				$('#displayEx').html("Показать информацию с биржи");
+				exDataDisplay = false
+			} else {
+				exDataDisplay = true;
+				$('#exOrders').css("display", "inline-table");
+				$('#exBalances').css("display", "inline-table");
+				$('#exWithdraw').css("display", "inline-table");
+				$('#refreshEx').css("display", "inline-block");
+				$('#displayEx').html("Убрать иформацию с биржи");
+				getExData()
+			}
+		});
+
+		var token = {{.Token}};
+
+		function getExData() {
 			if (token != "") {
+				$('#refreshEx').html('<img src="/static/img/squares2.gif" style="width:20px; margin:0px">');
 				$.post( 'http://tmp-e.dcoin.club/info.php', {
 					'token': token
 				}, function (data) {
+					$('#refreshEx').html('<i class="fa fa-refresh"></i>');
 					if (typeof data != "undefined") {
 						$('#tokens').css("display", "block");
 						$('#tokensTable').append("<tr><td>Покупка " + data.token.amount_fiat + " " + currency_name[data.token.buy_currency_id] + "</td><td>" + data.token.status + "</td></tr>");
@@ -815,7 +839,10 @@
 					}
 				}, 'JSON');
 			}
-		});
+		}
+
+
+
 	</script>
 	<div style="clear: both"></div>
 
@@ -838,7 +865,7 @@
 		</select>
 		<button class="btn btn-primary exNext" id="exNext">Next</button>
 	</div>
-	<form method="post" {{if .IOS}}target="_blank"{{end}} action="http://tmp-e.dcoin.club/go.php" id="sendForm">
+	<form method="get" action="http://tmp-e.dcoin.club/go.php" id="sendForm">
 		<input type="hidden" name="FormExPs">
 		<input type="hidden" name="FormExAmount">
 		<input type="hidden" name="FormDC">
@@ -850,7 +877,8 @@
 			<tbody><tr><th>Операция</th><th>Статус</th></tr></tbody>
 			<tbody id="tokensTable"></tbody>
 		</table>
-		<button class="btn btn-outline btn-primary" id="showEx">Показать информацию с биржи</button>
+		<button class="btn btn-outline btn-primary" id="displayEx">Показать информацию с биржи</button>
+		<button class="btn btn-outline btn-primary" id="refreshEx" style="display: none"><i class="fa fa-refresh"></i></button>
 	</div>
 </div>
 
@@ -925,7 +953,7 @@
 		<button class="btn btn-default"  onclick="lock_unlock(); return false" id="chatLock" style="display: inline-block; margin: 5px; width: 40px"><i id="chatLockIco" class="fa fa-unlock fa-lg"></i></button>
 		<span id="selectReceiver" style="display: none;vertical-align: middle;">Please, select receiver</span>
 		<input type="text" class="form-control" id="myChatMessage" style="display: inline-block;vertical-align: middle; width: 200px" placeholder="{{.MyChatName}}:" onfocus="this.placeholder = ''" onblur="this.placeholder = '{{.MyChatName}}:'">
-		<a class="btn btn-primary" id="sendToChat" style="display: inline-block">Send</a>
+		<button class="btn btn-primary" id="sendToChat" style="display: inline-block">Send</button>
 	</div>
 
 <style>
