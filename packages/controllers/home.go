@@ -37,8 +37,8 @@ type homePage struct {
 	ShowSignData          bool
 	IOS                   bool
 	Token                 string
-	Mobile				  bool
-	MyChatName			  string
+	Mobile                bool
+	MyChatName            string
 }
 
 type CurrencyPct struct {
@@ -113,7 +113,7 @@ func (c *Controller) Home() (string, error) {
 		return "", err
 	}
 	for k, v := range currencyList {
-		currencyList[k] = "d"+v
+		currencyList[k] = "d" + v
 	}
 	currencyList[1001] = "USD"
 
@@ -256,9 +256,9 @@ func (c *Controller) Home() (string, error) {
 		Title:                 c.Lang["geolocation"],
 		ShowSignData:          c.ShowSignData,
 		SignData:              "",
-		MyChatName:			   myChatName,
+		MyChatName:            myChatName,
 		IOS:                   utils.IOS(),
-		Mobile:				   utils.Mobile(),
+		Mobile:                utils.Mobile(),
 		Token:                 token})
 	if err != nil {
 		return "", utils.ErrInfo(err)

@@ -12,15 +12,15 @@ import (
 )
 
 type index struct {
-	DbOk     bool
-	Lang     map[string]string
-	Key      string
-	SetLang  string
-	IOS      bool
-	Upgrade3 string
-	Upgrade4 string
-	Android bool
-	Mobile	 bool
+	DbOk        bool
+	Lang        map[string]string
+	Key         string
+	SetLang     string
+	IOS         bool
+	Upgrade3    string
+	Upgrade4    string
+	Android     bool
+	Mobile      bool
 	ShowIOSMenu bool
 }
 
@@ -78,7 +78,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if utils.DB == nil || utils.DB.DB == nil {
 		showIOSMenu = false
 	} else {
-		if status ==  "my_pending" {
+		if status == "my_pending" {
 			showIOSMenu = false
 		}
 	}
@@ -103,7 +103,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Debug("lastBlockData[lastBlockTime]: %v", lastBlockData["lastBlockTime"])
 			log.Debug("time.Now().Unix(): %v", utils.Time())
-			if utils.Time() -lastBlockData["lastBlockTime"] >= 3600*wTimeReady {
+			if utils.Time()-lastBlockData["lastBlockTime"] >= 3600*wTimeReady {
 				showIOSMenu = false
 			}
 		} else {
@@ -144,19 +144,19 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 	b := new(bytes.Buffer)
 	err = t.Execute(b, &index{
-		Upgrade3: upgrade3,
-		Upgrade4: upgrade4,
-		DbOk: true,
-		Lang: globalLangReadOnly[lang],
-		Key: key,
-		SetLang: setLang,
+		Upgrade3:    upgrade3,
+		Upgrade4:    upgrade4,
+		DbOk:        true,
+		Lang:        globalLangReadOnly[lang],
+		Key:         key,
+		SetLang:     setLang,
 		ShowIOSMenu: showIOSMenu,
 		/*IOS: true,
 		Android: false,
 		Mobile: true})*/
-		IOS: utils.IOS(),
+		IOS:     utils.IOS(),
 		Android: utils.Android(),
-		Mobile: utils.Mobile()})
+		Mobile:  utils.Mobile()})
 	if err != nil {
 		log.Error("%v", err)
 	}

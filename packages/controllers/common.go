@@ -60,6 +60,7 @@ type Controller struct {
 	ConfirmedBlockId int64
 	MinerId          int64
 	Races            map[int64]string
+	EConfig          map[string]string
 }
 
 var (

@@ -35,7 +35,7 @@ func (c *Controller) SendToTheChat() (string, error) {
 
 	// на пуле сообщение сразу отобразится у всех
 	if status == 1 {
-		err = c.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, enc_message, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, utils.Time(), lang, room, receiver, sender, 2, message,  decryptMessage, signTime, signature)
+		err = c.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, enc_message, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, utils.Time(), lang, room, receiver, sender, 2, message, decryptMessage, signTime, signature)
 
 	} else {
 		err = c.ExecSql(`INSERT INTO chat (hash, time, lang, room, receiver, sender, status, message, sign_time, signature) VALUES ([hex], ?, ?, ?, ?, ?, ?, ?, ?, [hex])`, hash, utils.Time(), lang, room, receiver, sender, status, message, signTime, signature)

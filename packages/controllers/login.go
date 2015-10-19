@@ -64,12 +64,12 @@ func (c *Controller) Login() (string, error) {
 		pool_tech_works = 0
 	}
 	t.ExecuteTemplate(b, "login", &loginStruct{
-		Lang: c.Lang,
+		Lang:          c.Lang,
 		MyModalIdName: "myModalLogin",
-		UserID: c.UserId,
+		UserID:        c.UserId,
 		PoolTechWorks: pool_tech_works,
 		SetupPassword: setupPassword,
-		Community: c.Community,
-		Mobile: utils.Mobile()})
+		Community:     c.Community,
+		Mobile:        utils.Mobile()})
 	return b.String(), nil
 }

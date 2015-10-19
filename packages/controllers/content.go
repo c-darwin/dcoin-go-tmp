@@ -3,11 +3,11 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
-	"regexp"
 	"os"
-	"github.com/astaxie/beego/config"
+	"regexp"
 )
 
 func Content(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +261,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	if tplName == "installStep0" {
 		log.Debug("ConfigInit monitor")
-		if _, err := os.Stat(*utils.Dir+"/config.ini"); err == nil {
+		if _, err := os.Stat(*utils.Dir + "/config.ini"); err == nil {
 
 			configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 			if err != nil {

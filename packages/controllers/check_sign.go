@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"time"
 	"regexp"
+	"time"
 )
 
 func (c *Controller) Check_sign() (string, error) {

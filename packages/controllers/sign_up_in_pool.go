@@ -31,7 +31,6 @@ func (c *Controller) SignUpInPool() (string, error) {
 		// получим данные для подписи
 		var hash []byte
 
-
 		RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 		re := regexp.MustCompile(`(.*?):[0-9]+$`)
 		match := re.FindStringSubmatch(RemoteAddr)
@@ -41,7 +40,6 @@ func (c *Controller) SignUpInPool() (string, error) {
 		log.Debug("RemoteAddr %s", RemoteAddr)
 		hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 		log.Debug("hash %s", hash)
-
 
 		forSign, err := c.GetDataAuthorization(hash)
 		log.Debug("forSign: %v", forSign)

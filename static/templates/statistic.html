@@ -10,6 +10,13 @@
 	});
 
 </script>
+<script>
+	if (typeof intervalIdArray != "undefined") {
+		for (i=0; i<intervalIdArray.length; i++)
+			clearInterval(intervalIdArray[i]);
+	}
+	var intervalIdArray = [];
+</script>
 <script src="static/js/js.js"></script>
 <div id="profile_window" style="display: none; width: 500px;	padding:10px 10px; background-color: #fff; border:  1px solid black; ">
 	<button type="button" class="close" id="profileclose">×</button>

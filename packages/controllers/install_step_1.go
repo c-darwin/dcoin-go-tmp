@@ -6,8 +6,8 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"os"
 	"io/ioutil"
+	"os"
 )
 
 type installStep1Struct struct {

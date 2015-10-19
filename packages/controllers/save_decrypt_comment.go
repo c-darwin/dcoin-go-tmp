@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"crypto/rsa"
-	"crypto/rand"
 	"text/template"
 )
 
@@ -61,7 +61,7 @@ func (c *Controller) SaveDecryptComment() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
-		}else {
+		} else {
 			err = c.ExecSql(`
 				UPDATE `+c.MyPrefix+`my_`+commentType+`
 				SET comment = ?,

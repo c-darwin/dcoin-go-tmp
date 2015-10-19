@@ -16,7 +16,6 @@ func (c *Controller) SignLogin() (string, error) {
 	var hash []byte
 	loginCode := utils.RandSeq(20)
 
-
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 	re := regexp.MustCompile(`(.*?):[0-9]+$`)
 	match := re.FindStringSubmatch(RemoteAddr)
@@ -26,7 +25,6 @@ func (c *Controller) SignLogin() (string, error) {
 	log.Debug("RemoteAddr %s", RemoteAddr)
 	hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	log.Debug("hash %s", hash)
-
 
 	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hex(hash) = ?`, hash)
 	if err != nil {
