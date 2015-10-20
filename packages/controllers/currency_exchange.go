@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"time"
@@ -37,15 +36,8 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	c.r.ParseForm()
-	parameters := make(map[string]string)
-	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters)
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	log.Debug("parameters", parameters)
 	addSql := ""
-	if len(parameters["all_currencies"]) == 0 {
+	if len(c.Parameters["all_currencies"]) == 0 {
 		// по умолчанию выдаем только те валюты, которые есть хоть у кого-то на кошельках
 		actualCurrencies, err := c.GetList("SELECT currency_id FROM wallets GROUP BY currency_id").String()
 		if err != nil {
@@ -65,12 +57,12 @@ func (c *Controller) CurrencyExchange() (string, error) {
 	}
 
 	var sellCurrencyId, buyCurrencyId int64
-	if len(parameters["buy_currency_id"]) > 0 {
-		buyCurrencyId = utils.StrToInt64(parameters["buy_currency_id"])
+	if len(c.Parameters["buy_currency_id"]) > 0 {
+		buyCurrencyId = utils.StrToInt64(c.Parameters["buy_currency_id"])
 		c.sess.Set("buy_currency_id", buyCurrencyId)
 	}
-	if len(parameters["sell_currency_id"]) > 0 {
-		sellCurrencyId = utils.StrToInt64(parameters["sell_currency_id"])
+	if len(c.Parameters["sell_currency_id"]) > 0 {
+		sellCurrencyId = utils.StrToInt64(c.Parameters["sell_currency_id"])
 		c.sess.Set("sell_currency_id", sellCurrencyId)
 	}
 	if buyCurrencyId == 0 {

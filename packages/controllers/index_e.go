@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
@@ -18,6 +17,8 @@ type indexE struct {
 
 func IndexE(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
 	if utils.DB != nil && utils.DB.DB != nil {
 
 		sess, _ := globalSessions.SessionStart(w, r)
@@ -29,18 +30,11 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 		c.DCDB = utils.DB
 
 		r.ParseForm()
-		parameters_ := make(map[string]interface{})
-		err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
-		if err != nil {
-			w.Write(utils.ErrInfo(err))
-			log.Error("%v", err)
-			return
-		}
-		parameters := make(map[string]string)
-		for k, v := range parameters_ {
-			parameters[k] = utils.InterfaceToStr(v)
-		}
-		lang := GetLang(w, r, parameters)
+
+		c.Parameters, err = c.GetParameters()
+		log.Debug("parameters=", c.Parameters)
+
+		lang := GetLang(w, r, c.Parameters)
 		log.Debug("lang", lang)
 		c.Lang = globalLangReadOnly[lang]
 
@@ -48,7 +42,7 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 		if c.SessUserId > 0 {
 			myWallets, err = c.getMyWallets()
 			if err != nil {
-				w.Write(utils.ErrInfo(err))
+				w.Write([]byte(utils.ErrInfo(err).Error()))
 				log.Error("%v", err)
 				return
 			}
@@ -56,14 +50,14 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 
 		data, err := static.Asset("static/templates/index_e.html")
 		if err != nil {
-			w.Write(utils.ErrInfo(err))
+			w.Write([]byte(utils.ErrInfo(err).Error()))
 			log.Error("%v", err)
 			return
 		}
 		t := template.New("template")
 		t, err = t.Parse(string(data))
 		if err != nil {
-			w.Write(utils.ErrInfo(err))
+			w.Write([]byte(utils.ErrInfo(err).Error()))
 			log.Error("%v", err)
 			return
 		}
@@ -71,7 +65,7 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 		err = t.Execute(b, &indexE{MyWallets: myWallets, Lang: c.Lang, UserId: c.SessUserId})
 		if err != nil {
 			log.Error("%v", err)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(utils.ErrInfo(err).Error()))
 		} else {
 			w.Write(b.Bytes())
 		}

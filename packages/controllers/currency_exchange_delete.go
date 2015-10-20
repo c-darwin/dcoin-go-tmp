@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
@@ -26,14 +25,7 @@ func (c *Controller) CurrencyExchangeDelete() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	c.r.ParseForm()
-	parameters := make(map[string]string)
-	err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters)
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	log.Debug("parameters", parameters)
-	delId := utils.StrToInt64(parameters["del_id"])
+	delId := utils.StrToInt64(c.Parameters["del_id"])
 	signData := fmt.Sprintf("%d,%d,%d,%d", txTypeId, timeNow, c.SessUserId, delId)
 
 	/*data, err := static.Asset("static/templates/currency_exchange_delete.html")

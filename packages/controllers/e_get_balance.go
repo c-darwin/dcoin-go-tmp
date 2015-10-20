@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
-	"strings"
 	"fmt"
 )
 
@@ -19,5 +17,5 @@ func (c *Controller) EGetBalance() (string, error) {
 		html+=fmt.Sprintf("<strong>%v</strong> %v<br>", data["amount"], data["currency_name"])
 	}
 
-	return utils.JsonAnswer("html", html), nil
+	return utils.JsonAnswer("html", html).String(), nil
 }

@@ -38,6 +38,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	for k, v := range parameters_ {
 		parameters[k] = utils.InterfaceToStr(v)
 	}
+
 	lang := GetLang(w, r, parameters)
 
 	sess, err := globalSessions.SessionStart(w, r)

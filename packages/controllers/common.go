@@ -464,8 +464,8 @@ func (c *Controller) GetParameters() (map[string]string, error) {
 
 
 
-func geReductionLock() {
-	return utils.DB.ExecSql("SELECT time FROM e_reduction_lock")
+func getReductionLock() (int64, error) {
+	return utils.DB.Single("SELECT time FROM e_reduction_lock").Int64()
 }
 
 func userLock(userId int64) error {
@@ -482,7 +482,7 @@ func userLock(userId int64) error {
 	if affect == 0 {
 		return errors.New("queue error")
 	}
-	return nil
+	return err
 }
 
 func userAmountAndProfit(userId, currencyId int64) float64 {
@@ -515,11 +515,11 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 		newAmount = amount
 	}
 	log.Debug("newAmount: %v / commission: %v ", newAmount, commission)
-	if commission {
+	if commission>0{
 		userAmount := userAmountAndProfit(1, sellCurrencyId)
 		newAmount_ := userAmount + commission
 		// наисляем комиссию системе
-		err = updEWallet(1, sellCurrencyId, utils.Time, newAmount_)
+		err = updEWallet(1, sellCurrencyId, utils.Time(), newAmount_)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -533,7 +533,7 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 	// обратный курс. нужен для поиска по ордерам
 	reverseRate := utils.Round(1/sellRate, 6)
 
-	var totalBuyAmount, totalSellAmount int64
+	var totalBuyAmount, totalSellAmount float64
 	if orderType == "buy" {
 		totalBuyAmount = newAmount + reverseRate
 	} else {
@@ -552,7 +552,7 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 							 del_time = 0 AND
 							 empty_time = 0
 				ORDER BY sell_rate DESC
-				`, sellCurrencyId, reverseRate, buyCurrencyId)
+				`), sellCurrencyId, reverseRate, buyCurrencyId)
 	if err != nil {
 		return utils.ErrInfo(err)
 	}

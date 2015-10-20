@@ -3076,7 +3076,7 @@ func TCPGetSizeAndData(conn net.Conn, maxSize int64) ([]byte, error) {
 
 
 
-func ClearNull(num float64, n int64) float64 {
+func ClearNull(num float64, n int) float64 {
 	// пока так
 	return Round(num, n)
 }

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
@@ -80,16 +79,11 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		cfLang, err := c.GetAllCfLng()
 
 		r.ParseForm()
-		parameters_ := make(map[string]interface{})
-		err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
-		if err != nil {
-			log.Error("%v", err)
-		}
-		parameters := make(map[string]string)
-		for k, v := range parameters_ {
-			parameters[k] = utils.InterfaceToStr(v)
-		}
-		lang := GetLang(w, r, parameters)
+
+		c.Parameters, err = c.GetParameters()
+		log.Debug("parameters=", c.Parameters)
+
+		lang := GetLang(w, r, c.Parameters)
 
 		data, err := static.Asset("static/templates/index_cf.html")
 		t := template.New("template")

@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"errors"
-	"strings"
 )
 
 func (c *Controller) EDelOrder() (string, error) {
@@ -17,7 +15,7 @@ func (c *Controller) EDelOrder() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	if len(order) == 0 {
-		return utils.ErrInfo("order_id error")
+		return "", utils.ErrInfo("order_id error")
 	}
 	sellCurrencyId := utils.StrToInt64(order["sell_currency_id"])
 	amount := utils.StrToFloat64(order["amount"])
@@ -26,7 +24,7 @@ func (c *Controller) EDelOrder() (string, error) {
 	// косиссия биржи
 	commission := amountAndCommission - amount
 	err = userLock(c.SessUserId)
-	if err := nil {
+	if err != nil {
 		return "", err
 	}
 
