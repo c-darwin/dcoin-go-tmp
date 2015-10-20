@@ -10,7 +10,7 @@
 			var sell_rate =  1/parseFloat($('#'+type+'_sell_rate').val());
 			var amount =  parseFloat($('#'+type+'_amount').val());
 		}
-		$.post( 'ajax?controllerName=saveOrder', {
+		$.post( 'ajax?controllerName=ESaveOrder', {
 			'amount': amount,
 			'sell_rate': sell_rate,
 			'sell_currency_id': $('#'+type+'_sell_currency_id').val(),
@@ -87,16 +87,16 @@
 		<div class="row" style="width: 800px; padding-top: 25px">
 
 			<div class="col-md-12">
-				<div class="alert alert-info alert-dismissable">
+				<!--<div class="alert alert-info alert-dismissable">
 					{{.Lang.wiki_hello}}
-				</div>
+				</div>-->
 
 				<div class="panel panel-default">
 					<div class="panel-body text-center">
+
 						{{range $id, $pair := .CurrencyListPair}}
-							{{$disabled := ""}}
-							{{and (eq $pair[0] .CurrencyId) (eq $pair[1] .DcCurrencyId)}} {{$disabled := "disabled"}} {{end}}
-							<button type="button" class="btn btn-default {{$disabled}}" onclick="navigate('main',  {'currency_id':'{{$pair[0]}}', 'dc_currency_id':'{{$pair[1]}}'})">{{.CurrencyList $pair[1]}}/{{CurrencyList $pair[0]}}</button>
+						<button type="button" class="btn btn-default {{if and (eq (index $pair 0) $.CurrencyId) (eq (index $pair 1) $.DcCurrencyId)}} disabled {{end}}"
+								onclick="fc_navigate('eMain',  {'currency_id':'{{index $pair 0}}', 'dc_currency_id':'{{index $pair 1}}'})">{{index $.CurrencyList (index $pair 1)}}/{{index $.CurrencyList (index $pair 0)}}</button>
 						{{end}}
 					</div>
 				</div>
@@ -108,31 +108,31 @@
 			<div class="col-md-6">
 				<div class="panel panel-primary">
 					<div class="panel-heading">
-						<h3 class="panel-title"><i class="fa fa-arrow-circle-down"></i> {{.Lang.buy}} {{.DcCurrency}}></h3>
+						<h3 class="panel-title"><i class="fa fa-arrow-circle-down"></i> {{.Lang.buy}} {{.DcCurrency}}</h3>
 					</div>
 					<div class="panel-body">
 
 						<table class="table1">
 							<tr><td>{{.Lang.min_price}}: </td><td style="width: 145px;">{{.BuyMin}}  {{.Currency}}</td></tr>
-							<tr><td>{{.Lang.amount}} {{.DcCurrency}}>:</td><td><input type="text" class="form-control" id="buy_amount" style="width: 90px" value="0"> </td></tr>
-							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}>:</td><td class="form-inline"><input type="text" class="form-control" id="buy_sell_rate" style="width: 90px" value="{{.BuyMin}}"> {{.Currency}}</td></tr>
+							<tr><td>{{.Lang.amount}} {{.DcCurrency}}:</td><td><input type="text" class="form-control" id="buy_amount" style="width: 90px" value="0"> </td></tr>
+							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}:</td><td class="form-inline"><input type="text" class="form-control" id="buy_sell_rate" style="width: 90px" value="{{.BuyMin}}"> {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.total}}:</td><td><span id="buy_total">0</span> {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.commission}}:</td><td><span id="buy_commission">0</span> {{.Currency}}</td></tr>
-							<tr><td colspan="2"><input type="hidden" id="buy_buy_currency_id" value="{{.DcCurrencyId}}"><input type="hidden" id="buy_sell_currency_id" value="{{.CurrencyId}}"><div id="alerts-buy"></div><button class="btn btn-success" id="buy" onclick="save_order('buy')">{{.Lang.buy}} {{.DcCurrency}}></button></td></tr>
+							<tr><td colspan="2"><input type="hidden" id="buy_buy_currency_id" value="{{.DcCurrencyId}}"><input type="hidden" id="buy_sell_currency_id" value="{{.CurrencyId}}"><div id="alerts-buy"></div><button class="btn btn-success" id="buy" onclick="save_order('buy')">{{.Lang.buy}} {{.DcCurrency}}</button></td></tr>
 						</table>
 						<div class="orders-table">
-						<p><strong>{{.Lang.orders_for_sale}} {{.DcCurrency}}></strong></p>
+						<p><strong>{{.Lang.orders_for_sale}} {{.DcCurrency}}</strong></p>
 						<table class=" table table-striped" id="table2">
 							<thead>
 							<tr>
 								<th>{{.Lang.price}}</th>
-								<th>{{.DcCurrency}}></th>
+								<th>{{.DcCurrency}}</th>
 								<th>{{.Currency}}</th>
 							</tr>
 							</thead>
 							<tbody>
 							{{range $sell_rate, $amount := .Orders.Sell}}
-								<tr><td>{$sell_rate}</td><td>{$amount}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
+								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
@@ -144,30 +144,30 @@
 			<div class="col-md-6">
 				<div class="panel panel-primary">
 					<div class="panel-heading">
-						<h3 class="panel-title"><i class="fa fa-arrow-circle-up"></i> {{.Lang.sell}} {{.DcCurrency}}></h3>
+						<h3 class="panel-title"><i class="fa fa-arrow-circle-up"></i> {{.Lang.sell}} {{.DcCurrency}}</h3>
 					</div>
 					<div class="panel-body">
-						<table class="table1" >
+						<table class="table1">
 							<tr><td>{{.Lang.max_price}}: </td><td style="width: 145px;">{{.SellMax}} {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.amount}} {{.DcCurrency}}:</td><td><input type="text" class="form-control" id="sell_amount" style="width: 90px" value="0"> </td></tr>
-							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}:</td><td class="form-inline"><input type="text" class="form-control" id="sell_sell_rate" style="width: 90px" value="{{.SellMax}} {{.Currency}}</td></tr>
+							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}:</td><td class="form-inline"><input type="text" class="form-control" id="sell_sell_rate" style="width: 90px" value="{{.SellMax}}">{{.Currency}}</td></tr>
 							<tr><td>{{.Lang.total}}:</td><td><span id="sell_total">0</span> {{.Currency}}</td></tr>
-							<tr><td>{{.Lang.commission}}:</td><td><span id="sell_commission">0</span> {{.DcCurrency}}></td></tr>
-							<tr><td colspan="2"><input type="hidden" id="sell_buy_currency_id" value="{{.CurrencyId}}"><input type="hidden" id="sell_sell_currency_id" value="{{.DcCurrencyId}}"><div id="alerts-sell"></div><button class="btn btn-primary" onclick="save_order('sell')">{{.Lang.sell}} {{.DcCurrency}}></button></td></tr>
+							<tr><td>{{.Lang.commission}}:</td><td><span id="sell_commission">0</span> {{.DcCurrency}}</td></tr>
+							<tr><td colspan="2"><input type="hidden" id="sell_buy_currency_id" value="{{.CurrencyId}}"><input type="hidden" id="sell_sell_currency_id" value="{{.DcCurrencyId}}"><div id="alerts-sell"></div><button class="btn btn-primary" onclick="save_order('sell')">{{.Lang.sell}} {{.DcCurrency}}</button></td></tr>
 						</table>
 						<div class="orders-table">
-						<p><strong>{{.Lang.orders_for_purchase'] ?> {{.DcCurrency}}></strong></p>
+						<p><strong>{{.Lang.orders_for_purchase}} {{.DcCurrency}}</strong></p>
 						<table class=" table table-striped" id="table2">
 							<thead>
 							<tr>
 								<th>{{.Lang.price}}</th>
-								<th>{{.DcCurrency}}></th>
+								<th>{{.DcCurrency}}</th>
 								<th>{{.Currency}}</th>
 							</tr>
 							</thead>
 							<tbody>
 							{{range $sell_rate, $amount := .Orders.Buy}}
-								<tr><td>{$sell_rate}</td><td>{$amount}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
+								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
@@ -190,18 +190,19 @@
 							<th>{{.Lang.date}}</th>
 							<th>{{.Lang.type}}</th>
 							<th>{{.Lang.price}}</th>
-							<th>{{.Lang.amount}} ({{.DcCurrency}}>)</th>
+							<th>{{.Lang.amount}} ({{.DcCurrency}})</th>
 							<th>{{.Lang.total}} ({{.Currency}})</th>
 						</tr>
 						</thead>
 						<tbody>
+
 						{{range $id, $data := .TradeHistory}}
 							<tr>
-								<td>{$data['time']}</td>
-								<td class="text-{{if eq $data['type'] "sell"}}danger{{else}}success{{end}}"><strong>{$data['type']}</strong></td>
-								<td>{$data['sell_rate']} {{.Currency}}</td>
-								<td>{$data['amount']} {{.DcCurrency}}</td>
-								<td>{$data['total']}  {{.Currency}}</td>
+								<td>{{index $data "Time"}}</td>
+								<td class="text-{{if eq (index $data "Type") "sell"}}danger{{else}}success{{end}}"><strong>{{index $data "Type"}}</strong></td>
+								<td>{{index $data "AellRate"}} {{$.Currency}}</td>
+								<td>{{index $data "Amount"}} {{$.DcCurrency}}</td>
+								<td>{{index $data "Total"}}  {{$.Currency}}</td>
 							</tr>
 						{{end}}
 						</tbody>
@@ -209,7 +210,7 @@
 				</div>
 			</div>
 				<div style="text-align: center; width: 800px; margin-bottom: 10px">{{.Lang.commission_text}}</div>
-				<div style="text-align: center; width: 800px; margin-bottom: 50px">{.Lang.members}}: {{.Members}}</div>
+				<div style="text-align: center; width: 800px; margin-bottom: 50px">{{.Lang.members}}: {{.Members}}</div>
 		</div>
 		</div>
 
@@ -217,3 +218,4 @@
 
 	</div>
 </div>
+{{end}}

@@ -14,10 +14,13 @@ type eMainPage struct {
 	SellMax       float64
 	BuyMin        float64
 	Orders        eOrders
+	UserId	int64
 	DcCurrency    string
 	Currency      string
 	DcCurrencyId  int64
 	CurrencyId    int64
+	TradeHistory []map[string]string
+	CurrencyListPair map[int64][]int64
 }
 
 func eGetCurrencyList() (map[int64]string, error) {
@@ -50,19 +53,24 @@ func (c *Controller) EMain() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	log.Debug("%v", currencyList)
 
+	// работаем только с теми валютами, которые есть у нас в списке
 	if len(currencyList[dcCurrencyId]) == 0 || len(currencyList[currencyId]) == 0 {
 		return "", utils.ErrInfo("incorrect currency")
 	}
 
 	// пары валют для меню
+	currencyListPair, err := eGetCurrencyPair()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	dcCurrency := currencyList[dcCurrencyId]
 	currency := currencyList[currencyId]
 
 	// история сделок
 	var tradeHistory []map[string]string
 
-	// откатываем наши блоки до начала вилки
 	rows, err := c.Query(c.FormatQuery(`
 			SELECT sell_currency_id, sell_rate, amount, time
 			FROM e_trade
@@ -76,7 +84,7 @@ func (c *Controller) EMain() (string, error) {
 	for rows.Next() {
 		var sellCurrencyId, eTime int64
 		var sellRate, amount float64
-		err = rows.Scan(&sellCurrencyId, sellRate, amount, eTime)
+		err = rows.Scan(&sellCurrencyId, &sellRate, &amount, &eTime)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -102,7 +110,7 @@ func (c *Controller) EMain() (string, error) {
 	rows, err = c.Query(c.FormatQuery(`
 			SELECT sell_rate, amount
 			FROM e_orders
-			WHERE (sell_currency_id = ? AND buy_currency_id = ? AND
+			WHERE (sell_currency_id = ? AND buy_currency_id = ?) AND
 						empty_time = 0 AND
 						del_time = 0 AND
 						amount > 0
@@ -116,7 +124,7 @@ func (c *Controller) EMain() (string, error) {
 	var buyMin float64
 	for rows.Next() {
 		var sellRate, amount float64
-		err = rows.Scan(&sellRate, amount)
+		err = rows.Scan(&sellRate, &amount)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -130,7 +138,7 @@ func (c *Controller) EMain() (string, error) {
 
 	// активные ордеры на покупку
 	rows, err = c.Query(c.FormatQuery(`
-			SELECT *
+			SELECT sell_rate, amount
 			FROM e_orders
 			WHERE (sell_currency_id = ? AND buy_currency_id = ?) AND
 					empty_time = 0 AND
@@ -146,7 +154,7 @@ func (c *Controller) EMain() (string, error) {
 	var sellMax float64
 	for rows.Next() {
 		var sellRate, amount float64
-		err = rows.Scan(&sellRate, amount)
+		err = rows.Scan(&sellRate, &amount)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -167,7 +175,7 @@ func (c *Controller) EMain() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	TemplateStr, err := makeTemplate("emain", "eMain", &eMainPage{
+	TemplateStr, err := makeTemplate("e_main", "eMain", &eMainPage{
 		Lang:         c.Lang,
 		Commission:   commission,
 		Members:      members,
@@ -177,7 +185,10 @@ func (c *Controller) EMain() (string, error) {
 		DcCurrency:   dcCurrency,
 		Currency:     currency,
 		DcCurrencyId: dcCurrencyId,
+		UserId:c.SessUserId,
+		TradeHistory: tradeHistory,
 		CurrencyId:   currencyId,
+		CurrencyListPair: currencyListPair,
 		CurrencyList: currencyList})
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -188,4 +199,27 @@ func (c *Controller) EMain() (string, error) {
 type eOrders struct {
 	Sell map[float64]float64
 	Buy  map[float64]float64
+}
+
+func eGetCurrencyPair() (map[int64][]int64, error) {
+	currencyList := make(map[int64][]int64)
+	rows, err := utils.DB.Query(`
+			SELECT id,
+				   currency,
+				   dc_currency
+			FROM e_currency_pair
+			ORDER BY id
+			`)
+	if err != nil {
+		return currencyList, utils.ErrInfo(err)
+	}
+	for rows.Next() {
+		var id, currency, dc_currency int64
+		err = rows.Scan(&id, &currency, &dc_currency)
+		if err != nil {
+			return currencyList, utils.ErrInfo(err)
+		}
+		currencyList[id] = []int64{currency, dc_currency}
+	}
+	return currencyList, nil
 }

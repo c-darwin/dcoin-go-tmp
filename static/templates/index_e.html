@@ -18,6 +18,11 @@
 
   <!-- SB Admin CSS - Include with every page -->
   <link href="/static/css/sb-admin.css" rel="stylesheet">
+
+  <script language="javascript" type="text/javascript" src="/static/js/index.js"></script>
+
+
+
   <script>
     function navigate (page, parameters) {
       $.post("content?controllerName="+page, { tpl_name: page, parameters: parameters },
@@ -205,9 +210,12 @@
     <!-- /.navbar-static-side -->
   </nav>
 
+
   <div id="page-wrapper">
     <div class="row">
       <div class="col-lg-12">
+        <div id="dc_content"></div>
+
 
       </div>
       <!-- /.col-lg-12 -->
@@ -237,13 +245,18 @@
 <!-- SB Admin Scripts - Include with every page -->
 <script src="/static/js/sb-admin.js"></script>
 
+<!--
 <script src="/static/js/demo/flot-demo.js"></script>
+-->
+
 <!-- Page-Level Demo Scripts - Tables - Use for reference -->
 <script>
 
-  navigate('EMain');
 
   $(document).ready(function() {
+    console.log("fc_navigate");
+    fc_navigate('eMain');
+    console.log("fc_navigate ok");
     $('#dataTables-example').dataTable();
   });
 
@@ -355,6 +368,65 @@
 </div>
 <!-- /.modal -->
 
+<script language="JavaScript" type="text/javascript" src="/static/js/spin.js"></script>
+
+<script>
+  (function ($) {
+    $.fn.spin = function (opts, color) {
+      var presets = {
+        "tiny": {
+          lines: 8,
+          length: 2,
+          width: 2,
+          radius: 3
+        },
+        "small": {
+          lines: 8,
+          length: 4,
+          width: 3,
+          radius: 5
+        },
+        "large": {
+          lines: 10,
+          length: 8,
+          width: 4,
+          radius: 8
+        }
+      };
+      if (Spinner) {
+        return this.each(function () {
+          var $this = $(this),
+                  data = $this.data();
+
+          if (data.spinner) {
+            data.spinner.stop();
+            delete data.spinner;
+          }
+          if (opts !== false) {
+            if (typeof opts === "string") {
+              if (opts in presets) {
+                opts = presets[opts];
+              } else {
+                opts = {};
+              }
+              if (color) {
+                opts.color = color;
+              }
+            }
+            data.spinner = new Spinner($.extend({
+              color: $this.css('color')
+            }, opts)).spin(this);
+          }
+        });
+      } else {
+        throw "Spinner class not available.";
+      }
+    };
+  })(jQuery);
+
+  //$('#wrapper').spin();
+
+</script>
 </body>
 
 </html>

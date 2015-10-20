@@ -127,32 +127,24 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	r.ParseForm()
 	tplName := r.FormValue("tpl_name")
-	parameters_ := make(map[string]interface{})
-	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
-	if err != nil {
-		log.Error("%v", err)
-	}
-	log.Debug("parameters_=", parameters_)
-	parameters := make(map[string]string)
-	for k, v := range parameters_ {
-		parameters[k] = utils.InterfaceToStr(v)
-	}
-	c.Parameters = parameters
-	log.Debug("parameters=", parameters)
+
+	c.Parameters, err = c.GetParameters()
+	log.Debug("parameters=", c.Parameters)
+
 	log.Debug("tpl_name=", tplName)
 
 	// если в параметрах пришел язык, то установим его
-	newLang := utils.StrToInt(parameters["lang"])
+	newLang := utils.StrToInt(c.Parameters["lang"])
 	if newLang > 0 {
 		log.Debug("newLang", newLang)
 		SetLang(w, r, newLang)
 	}
 	// уведомления
 	//if utils.CheckInputData(parameters["alert"], "alert") {
-	c.Alert = parameters["alert"]
+	c.Alert = c.Parameters["alert"]
 	//}
 
-	lang := GetLang(w, r, parameters)
+	lang := GetLang(w, r, c.Parameters)
 	log.Debug("lang", lang)
 
 	c.Lang = globalLangReadOnly[lang]

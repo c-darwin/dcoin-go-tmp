@@ -268,6 +268,7 @@ db_name=`)
 	http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
 	http.HandleFunc(HandleHttpHost+"/e/", controllers.IndexE)
 	http.HandleFunc(HandleHttpHost+"/e/content", controllers.ContentE)
+	http.HandleFunc(HandleHttpHost+"/e/ajax", controllers.AjaxE)
 	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
 	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 

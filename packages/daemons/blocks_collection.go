@@ -372,6 +372,8 @@ BEGIN:
 			continue
 		}
 
+		fmt.Printf("\nnode: %s\n", maxBlockIdHost)
+
 		// в цикле собираем блоки, пока не дойдем до максимального
 		for blockId := currentBlockId + 1; blockId < maxBlockId+1; blockId++ {
 			d.UpdMainLock()

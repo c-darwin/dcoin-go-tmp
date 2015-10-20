@@ -2846,8 +2846,8 @@ func (schema *SchemaStruct) GetSchema() {
 	s1 = make(Recmap)
 	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_config_id_seq')", "comment": ""}
-	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[2] = map[string]string{"value": "currency_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[1] = map[string]string{"name": "name", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "value", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
@@ -2860,10 +2860,10 @@ func (schema *SchemaStruct) GetSchema() {
 	s = make(Recmap)
 	s1 = make(Recmap)
 	s2 = make(Recmapi)
-	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_currency_id_seq')", "comment": ""}
-	s2[1] = map[string]string{"name": "sort_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[0] = map[string]string{"name": "sort_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[1] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_currency_id_seq')", "comment": ""}
 	s2[2] = map[string]string{"name": "name", "mysql": "varchar(4) NOT NULL DEFAULT ''", "sqlite": "varchar(4) NOT NULL DEFAULT ''", "postgresql": "varchar(4) NOT NULL DEFAULT ''", "comment": ""}
-	s2[3] = map[string]string{"value": "min_withdraw", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[3] = map[string]string{"name": "min_withdraw", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
@@ -2879,7 +2879,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_currency_pair_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "currency", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[1] = map[string]string{"name": "dc_currency", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "dc_currency", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
@@ -2911,8 +2911,8 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_news_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "lang", "mysql": "char(2) NOT NULL DEFAULT ''", "sqlite": "char(2) NOT NULL DEFAULT ''", "postgresql": "char(2) NOT NULL DEFAULT ''", "comment": ""}
 	s2[2] = map[string]string{"name": "date", "mysql": "bigint(20) NOT NULL DEFAULT ''", "sqlite": "bigint(20) NOT NULL DEFAULT ''", "postgresql": "bigint(20) NOT NULL DEFAULT ''", "comment": ""}
-	s2[10] = map[string]string{"name": "title", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
-	s2[3] = map[string]string{"name": "text", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
+	s2[3] = map[string]string{"name": "title", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
+	s2[4] = map[string]string{"name": "text", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
@@ -2927,7 +2927,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_orders_id_seq')", "comment": ""}
 	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[4] = map[string]string{"name": "user_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "user_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[3] = map[string]string{"name": "sell_currency_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[4] = map[string]string{"name": "sell_rate", "mysql": "decimal(20,10) NOT NULL DEFAULT '0'", "sqlite": "decimal(20,10) NOT NULL DEFAULT '0'", "postgresql": "decimal(20,10) NOT NULL DEFAULT '0'", "comment": ""}
 	s2[5] = map[string]string{"name": "begin_amount", "mysql": "decimal(20,8) NOT NULL DEFAULT '0'", "sqlite": "decimal(20,8) NOT NULL DEFAULT '0'", "postgresql": "decimal(20,8) NOT NULL DEFAULT '0'", "comment": ""}

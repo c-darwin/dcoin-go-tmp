@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 	"regexp"
@@ -84,20 +83,11 @@ func Ajax(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	c.dbInit = dbInit
-	parameters_ := make(map[string]interface{})
-	err = json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
-	if err != nil {
-		log.Debug("%v", err)
-	}
-	log.Debug("parameters_=", parameters_)
-	parameters := make(map[string]string)
-	for k, v := range parameters_ {
-		parameters[k] = utils.InterfaceToStr(v)
-	}
-	c.Parameters = parameters
-	log.Debug("parameters=", parameters)
 
-	lang := GetLang(w, r, parameters)
+	c.Parameters, err = c.GetParameters()
+	log.Debug("parameters=", c.Parameters)
+
+	lang := GetLang(w, r, c.Parameters)
 	log.Debug("lang", lang)
 	c.Lang = globalLangReadOnly[lang]
 	c.LangInt = int64(lang)

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
 	"net/http"
@@ -17,6 +16,7 @@ type contentE struct {
 
 func ContentE(w http.ResponseWriter, r *http.Request) {
 
+	var err error
 	if utils.DB != nil && utils.DB.DB != nil {
 
 		sess, _ := globalSessions.SessionStart(w, r)
@@ -28,18 +28,13 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 		c.DCDB = utils.DB
 
 		r.ParseForm()
-		tplName := r.FormValue("controllerName")
-		parameters_ := make(map[string]interface{})
-		err := json.Unmarshal([]byte(c.r.PostFormValue("parameters")), &parameters_)
-		if err != nil {
-			log.Error("%v", err)
-		}
-		parameters := make(map[string]string)
-		for k, v := range parameters_ {
-			parameters[k] = utils.InterfaceToStr(v)
-		}
-		c.Parameters = parameters
-		lang := GetLang(w, r, parameters)
+		tplName := r.FormValue("page")
+
+
+		c.Parameters, err = c.GetParameters()
+		log.Debug("parameters=", c.Parameters)
+
+		lang := GetLang(w, r, c.Parameters)
 		c.Lang = globalLangReadOnly[lang]
 		log.Debug("c.Lang:", c.Lang)
 		c.LangInt = int64(lang)
@@ -49,7 +44,7 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 			c.TimeFormat = "2006-02-01 15:04:05"
 		}
 		// если в параметрах пришел язык, то установим его
-		newLang := utils.StrToInt(parameters["lang"])
+		newLang := utils.StrToInt(c.Parameters["lang"])
 		if newLang > 0 {
 			log.Debug("newLang", newLang)
 			SetLang(w, r, newLang)
