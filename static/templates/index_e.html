@@ -100,22 +100,12 @@
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('statistics')">
-              <i class="fa  fa-bar-chart-o  fa-fw"></i> {{.Lang.charts}}</a>
-            </a>
-          </li>
-          <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('news')">
-              <i class="fa   fa-info   fa-fw"></i> {{.Lang.news}}</a>
-            </a>
-          </li>
-          <li class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="http://dcoin.club/" onclick="location.href='http://dcoin.club'">
               <i class="fa    fa-question   fa-fw"></i> {{.Lang.about_dcoin}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('support')">
+            <a class="dropdown-toggle" href="mailto:admin@dcoin.club">
               <i class="fa  fa-envelope-o   fa-fw"></i> {{.Lang.support}}</a>
             </a>
           </li>
@@ -134,7 +124,7 @@
               <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu dropdown-user">
-              <li><a><i class="fa  fa-user  fa-fw"></i> User ID: <?php echo $user_id?></a></li>
+              <li><a><i class="fa  fa-user  fa-fw"></i> User ID: {{.UserId}}</a></li>
               <!--<li><a href="#" onclick="fc_navigate('my_settings')"><i class="fa fa-gear fa-fw"></i> Settings</a></li>-->
               <li class="divider"></li>
               <li><a href="#"  onclick="logout()"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
@@ -180,13 +170,13 @@
       <div class="sidebar-collapse">
         <ul class="nav" id="side-menu">
           <li>
-            <a href="#" onclick="fc_navigate('my_orders')"><i class="fa  fa-bars fa-fw"></i> {{.Lang.orders}} <!--<span class="badge pull-right">1</span>--> </a>
+            <a href="#" onclick="fc_navigate('eMyOrders')"><i class="fa  fa-bars fa-fw"></i> {{.Lang.orders}} <!--<span class="badge pull-right">1</span>--> </a>
           </li>
           <li>
-            <a href="#" onclick="fc_navigate('my_history')"><i class="fa fa-history fa-fw"></i> {{.Lang.history_deals}}</a>
+            <a href="#" onclick="fc_navigate('eMyHistory')"><i class="fa fa-history fa-fw"></i> {{.Lang.history_deals}}</a>
           </li>
           <li>
-            <a href="#" onclick="fc_navigate('my_finance')"><i class="fa fa-money fa-fw"></i> {{.Lang.finance}}</a>
+            <a href="#" onclick="fc_navigate('eMyFinance')"><i class="fa fa-money fa-fw"></i> {{.Lang.finance}}</a>
           </li>
 
         </ul>
@@ -197,8 +187,12 @@
             <i class="fa fa-money fa-fw"></i> {{.Lang.your_balance}}
           </div>
           <div class="panel-body" id="your_balance">
-            {{range $id, $data := .MyWallets}}
-              <strong>{{$data.Amount}}</strong> {{$data.CurrencyName}}<br>
+            {{if .MyWallets}}
+              {{range $id, $data := .MyWallets}}
+                <strong>{{$data.Amount}}</strong> {{$data.CurrencyName}}<br>
+              {{end}}
+            {{else}}
+              <strong>0</strong>
             {{end}}
           </div>
         </div>

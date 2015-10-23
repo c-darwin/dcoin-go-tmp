@@ -26,7 +26,7 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 
 		c := new(Controller)
 		c.r = r
-		c.SessUserId = GetSessUserId(sess)
+		c.SessUserId = GetSessEUserId(sess)
 		c.DCDB = utils.DB
 
 		r.ParseForm()

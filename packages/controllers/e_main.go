@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
+	"strings"
 )
 
 type eMainPage struct {
@@ -21,20 +22,8 @@ type eMainPage struct {
 	CurrencyId    int64
 	TradeHistory []map[string]string
 	CurrencyListPair map[int64][]int64
+	CommissionText string
 }
-
-func eGetCurrencyList() (map[int64]string, error) {
-	rez := make(map[int64]string)
-	list, err := utils.DB.GetMap("SELECT id, name FROM e_currency ORDER BY name", "id", "name")
-	if err != nil {
-		return rez, utils.ErrInfo(err)
-	}
-	for id, name := range list {
-		rez[utils.StrToInt64(id)] = name
-	}
-	return rez, nil
-}
-
 func (c *Controller) EMain() (string, error) {
 
 	var err error
@@ -102,7 +91,7 @@ func (c *Controller) EMain() (string, error) {
 			eTotal = amount
 		}
 		t := time.Unix(eTime, 0)
-		tradeHistory = append(tradeHistory, map[string]string{"Time": t.Format(c.TimeFormat), "Type": eType, "SellRate": utils.Float64ToStr(sellRate), "Amount": utils.Float64ToStr(eAmount), "Total": utils.Float64ToStr(eTotal)})
+		tradeHistory = append(tradeHistory, map[string]string{"Time": t.Format(c.TimeFormat), "Type": eType, "SellRate": utils.ClearNull(utils.Float64ToStr(sellRate), 2), "Amount": utils.ClearNull(utils.Float64ToStr(eAmount), 2), "Total": utils.ClearNull(utils.Float64ToStr(eTotal), 2)})
 	}
 
 	// активные ордеры на продажу
@@ -168,6 +157,8 @@ func (c *Controller) EMain() (string, error) {
 
 	// комиссия
 	commission := c.EConfig["commission"]
+	commissionText := strings.Replace(c.Lang["commission_text"], "[commission]",  commission, -1)
+
 
 	// кол-во юзеров
 	members, err := c.Single(`SELECT count(*) FROM e_users`).Int64()
@@ -188,6 +179,7 @@ func (c *Controller) EMain() (string, error) {
 		UserId:c.SessUserId,
 		TradeHistory: tradeHistory,
 		CurrencyId:   currencyId,
+		CommissionText: commissionText,
 		CurrencyListPair: currencyListPair,
 		CurrencyList: currencyList})
 	if err != nil {

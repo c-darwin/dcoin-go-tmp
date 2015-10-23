@@ -63,7 +63,7 @@ func AjaxE(w http.ResponseWriter, r *http.Request) {
 	}
 	c.ECommission = utils.StrToFloat64(c.EConfig["commission"])
 
-	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin$`, controllerName); !ok {
+	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ELogout$`, controllerName); !ok {
 		html = "Access denied 0"
 	} else {
 		if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin$`, controllerName); !ok && c.SessUserId <= 0 {

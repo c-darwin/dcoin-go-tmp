@@ -3076,7 +3076,18 @@ func TCPGetSizeAndData(conn net.Conn, maxSize int64) ([]byte, error) {
 
 
 
-func ClearNull(num float64, n int) float64 {
-	// пока так
-	return Round(num, n)
+func ClearNull(str string, n int) string {
+	//str := Float64ToStr(num)
+	ind := strings.Index(str, ".")
+	new := ""
+	if ind != -1 {
+		end := n
+		if len(str[ind+1:]) > 1 {
+			end = n+1
+		}
+		new = str[:ind] + "." + str[ind+1:ind+end]
+	} else {
+		new = str
+	}
+	return new
 }

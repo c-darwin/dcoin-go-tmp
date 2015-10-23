@@ -150,7 +150,7 @@
 						<table class="table1">
 							<tr><td>{{.Lang.max_price}}: </td><td style="width: 145px;">{{.SellMax}} {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.amount}} {{.DcCurrency}}:</td><td><input type="text" class="form-control" id="sell_amount" style="width: 90px" value="0"> </td></tr>
-							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}:</td><td class="form-inline"><input type="text" class="form-control" id="sell_sell_rate" style="width: 90px" value="{{.SellMax}}">{{.Currency}}</td></tr>
+							<tr><td>{{.Lang.price_per}} {{.DcCurrency}}:</td><td class="form-inline"><input type="text" class="form-control" id="sell_sell_rate" style="width: 90px" value="{{.SellMax}}"> {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.total}}:</td><td><span id="sell_total">0</span> {{.Currency}}</td></tr>
 							<tr><td>{{.Lang.commission}}:</td><td><span id="sell_commission">0</span> {{.DcCurrency}}</td></tr>
 							<tr><td colspan="2"><input type="hidden" id="sell_buy_currency_id" value="{{.CurrencyId}}"><input type="hidden" id="sell_sell_currency_id" value="{{.DcCurrencyId}}"><div id="alerts-sell"></div><button class="btn btn-primary" onclick="save_order('sell')">{{.Lang.sell}} {{.DcCurrency}}</button></td></tr>
@@ -200,7 +200,7 @@
 							<tr>
 								<td>{{index $data "Time"}}</td>
 								<td class="text-{{if eq (index $data "Type") "sell"}}danger{{else}}success{{end}}"><strong>{{index $data "Type"}}</strong></td>
-								<td>{{index $data "AellRate"}} {{$.Currency}}</td>
+								<td>{{index $data "SellRate"}} {{$.Currency}}</td>
 								<td>{{index $data "Amount"}} {{$.DcCurrency}}</td>
 								<td>{{index $data "Total"}}  {{$.Currency}}</td>
 							</tr>
@@ -209,7 +209,7 @@
 					</table>
 				</div>
 			</div>
-				<div style="text-align: center; width: 800px; margin-bottom: 10px">{{.Lang.commission_text}}</div>
+				<div style="text-align: center; width: 800px; margin-bottom: 10px">{{.CommissionText}}</div>
 				<div style="text-align: center; width: 800px; margin-bottom: 50px">{{.Lang.members}}: {{.Members}}</div>
 		</div>
 		</div>

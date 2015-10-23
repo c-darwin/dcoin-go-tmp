@@ -24,7 +24,7 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 
 		c := new(Controller)
 		c.r = r
-		c.SessUserId = GetSessUserId(sess)
+		c.SessUserId = GetSessEUserId(sess)
 		c.DCDB = utils.DB
 
 		r.ParseForm()
@@ -55,7 +55,7 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 			log.Error("%v", err)
 		}
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)emain`, tplName); !ok {
+		if ok, _ := regexp.MatchString(`^(?i)emain|EMyOrders|EMyHistory|EMyFinance`, tplName); !ok {
 			html = "Access denied"
 		} else {
 			// вызываем контроллер в зависимости от шаблона

@@ -608,8 +608,8 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 				return utils.ErrInfo(err)
 			}
 		}
-		mySellRate := utils.ClearNull(1/rowSellRate, 6)
-		myAmount := debit * mySellRate
+		mySellRate := utils.ClearNull(utils.Float64ToStr(1/rowSellRate), 6)
+		myAmount := debit * utils.StrToFloat64(mySellRate)
 		eTradeSellCurrencyId := sellCurrencyId
 		eTradeBuyCurrencyId := buyCurrencyId
 
@@ -733,4 +733,19 @@ func updEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
 
 func userUnlock(userId int64) {
 	utils.DB.ExecSql("UPDATE e_users SET lock = 0 WHERE id = ?", userId)
+}
+
+
+
+
+func eGetCurrencyList() (map[int64]string, error) {
+	rez := make(map[int64]string)
+	list, err := utils.DB.GetMap("SELECT id, name FROM e_currency ORDER BY name", "id", "name")
+	if err != nil {
+		return rez, utils.ErrInfo(err)
+	}
+	for id, name := range list {
+		rez[utils.StrToInt64(id)] = name
+	}
+	return rez, nil
 }
