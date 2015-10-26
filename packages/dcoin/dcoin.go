@@ -261,6 +261,7 @@ db_name=`)
 				// ждем, пока произойдет подключение к БД в другой гоурутине
 				if utils.DB == nil || utils.DB.DB == nil {
 					utils.Sleep(1)
+					fmt.Println("wait DB")
 				} else {
 					break
 				}
@@ -268,6 +269,8 @@ db_name=`)
 			BrowserHttpHost, HandleHttpHost, ListenHttpHost = GetHttpHost()
 			// для биржы нужен хост или каталог, поэтому нужно подключение к БД
 			exhangeHttpListener(HandleHttpHost)
+			// для ноды тоже нужна БД
+			tcpListener()
 		}
 		IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
 		log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
@@ -288,9 +291,6 @@ db_name=`)
 		httpListener(ListenHttpHost, BrowserHttpHost)
 
 	}()
-
-
-
 
 	// ожидает появления свежих записей в чате, затем ждет появления коннектов
 	// (заносятся из демеона connections и от тех, кто сам подключился к ноде)
