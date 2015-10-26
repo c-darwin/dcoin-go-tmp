@@ -244,9 +244,10 @@ func (c *Controller) InstallStep1() (string, error) {
 			panic(err)
 			os.Exit(1)
 		}
+
 	}()
 
-	utils.Sleep(3) // даем время обновиться config.ini, чтобы в content выдался yt installStep0, а updatingBlockchain
+	utils.Sleep(3) // даем время обновиться config.ini, чтобы в content выдался не installStep0, а updatingBlockchain
 	TemplateStr, err := makeTemplate("install_step_1", "installStep1", &installStep1Struct{
 		Lang: c.Lang})
 	if err != nil {

@@ -105,7 +105,8 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	}()
 }
 
-func tcpListener(db *utils.DCDB) {
+func tcpListener() {
+	db := utils.DB
 	log.Debug("tcp")
 	go func() {
 		if db == nil || db.DB == nil {

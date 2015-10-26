@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"regexp"
 )
 
 var (
@@ -206,7 +207,6 @@ db_name=`)
 	signals(countDaemons)
 
 	utils.Sleep(1)
-	db := utils.DB
 
 	IosLog("stop_daemons")
 	// мониторим сигнал из БД о том, что демонам надо завершаться
@@ -250,72 +250,54 @@ db_name=`)
 		}
 	}()
 
-	IosLog("BrowserHttpHost")
+
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
 	ListenHttpHost := ":8089"
-	if utils.DB != nil && utils.DB.DB != nil && !utils.Mobile() {
-		BrowserHttpHost, HandleHttpHost, ListenHttpHost = db.GetHttpHost()
-	}
-	IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
-	log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
-	// включаем листинг веб-сервером для клиентской части
-	http.HandleFunc(HandleHttpHost+"/", controllers.Index)
-	http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
-	http.HandleFunc(HandleHttpHost+"/ajax", controllers.Ajax)
-	http.HandleFunc(HandleHttpHost+"/tools", controllers.Tools)
-	http.HandleFunc(HandleHttpHost+"/cf/", controllers.IndexCf)
-	http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
-	http.HandleFunc(HandleHttpHost+"/e/", controllers.IndexE)
-	http.HandleFunc(HandleHttpHost+"/e/content", controllers.ContentE)
-	http.HandleFunc(HandleHttpHost+"/e/ajax", controllers.AjaxE)
-	http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
-	http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
+	go func() {
+		// уже прошли процесс инсталяции, где юзер указал БД и был перезапуск кошелька
+		if len(configIni["db_type"]) > 0 && !utils.Mobile() {
+			for {
+				// ждем, пока произойдет подключение к БД в другой гоурутине
+				if utils.DB == nil || utils.DB.DB == nil {
+					utils.Sleep(1)
+				} else {
+					break
+				}
+			}
+			BrowserHttpHost, HandleHttpHost, ListenHttpHost = GetHttpHost()
+			// для биржы нужен хост или каталог, поэтому нужно подключение к БД
+			exhangeHttpListener(HandleHttpHost)
+		}
+		IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
+		log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
+		// включаем листинг веб-сервером для клиентской части
+		http.HandleFunc(HandleHttpHost+"/", controllers.Index)
+		http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
+		http.HandleFunc(HandleHttpHost+"/ajax", controllers.Ajax)
+		http.HandleFunc(HandleHttpHost+"/tools", controllers.Tools)
+		http.HandleFunc(HandleHttpHost+"/cf/", controllers.IndexCf)
+		http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
+		http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
+		http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
-	log.Debug("ListenHttpHost", ListenHttpHost)
+		log.Debug("ListenHttpHost", ListenHttpHost)
 
-	IosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
+		IosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
 
-	httpListener(ListenHttpHost, BrowserHttpHost)
+		httpListener(ListenHttpHost, BrowserHttpHost)
 
-	tcpListener(db)
+	}()
+
+
+
 
 	// ожидает появления свежих записей в чате, затем ждет появления коннектов
 	// (заносятся из демеона connections и от тех, кто сам подключился к ноде)
 	go utils.ChatOutput(utils.ChatNewTx)
-/*
-	// добавление соединений в чат
-	go func() {
-		utils.Sleep(5)
-		conn, err := net.DialTimeout("tcp", "192.168.100.35:8087", 5*time.Second)
-		if err == nil {
-			utils.ChatPoolConn = append(utils.ChatPoolConn, conn)
-		}
-		conn, err = net.DialTimeout("tcp", "192.168.100.55:8087", 5*time.Second)
-		if err == nil {
-			utils.ChatPoolConn = append(utils.ChatPoolConn, conn)
-		}
-		for {
-			utils.ChatPoolConn = append(utils.ChatPoolConn, <-utils.ChatJoinConn)
-			log.Debug("ChatPoolConn %v", utils.ChatPoolConn)
-		}
-	}()
 
-	// Удаление мертвых соеденнений с чатом
-	go func() {
-		for {
-			conn := <- utils.ChatDelConn
-			tmp := utils.ChatPoolConn
-			for k, v := range tmp {
-				if v == conn {
-					utils.ChatPoolConn = append(tmp[:k], tmp[k+1:]...)
-				}
-			}
-			log.Debug("ChatPoolConn %v", utils.ChatPoolConn)
-		}
-	}()
-*/
 	utils.Sleep(3)
+
 
 	IosLog("Sleep")
 
@@ -329,6 +311,13 @@ db_name=`)
 	IosLog("ALL RIGHT")
 	utils.Sleep(3600 * 24 * 90)
 	log.Debug("EXIT")
+}
+
+func exhangeHttpListener(HandleHttpHost string) {
+
+	http.HandleFunc(HandleHttpHost+"/e/", controllers.IndexE)
+	http.HandleFunc(HandleHttpHost+"/e/content", controllers.ContentE)
+	http.HandleFunc(HandleHttpHost+"/e/ajax", controllers.AjaxE)
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
@@ -359,4 +348,47 @@ func openBrowser(BrowserHttpHost string) {
 	if err != nil {
 		log.Error("%v", err)
 	}
+}
+
+
+func GetHttpHost() (string, string, string) {
+	BrowserHttpHost := "http://localhost:8089"
+	HandleHttpHost := ""
+	ListenHttpHost := ":8089"
+	// Если первый запуск, то будет висеть на 8089
+	community, err := utils.DB.GetCommunityUsers()
+	log.Debug("community:%v", community)
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
+	}
+	//myPrefix := ""
+	//if len(community) > 0 {
+	//myUserId, err := db.GetPoolAdminUserId()
+	//	if err!=nil {
+	//		log.Error("%v", ErrInfo(err))
+	//		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
+	//	}
+	//myPrefix = Int64ToStr(myUserId)+"_"
+	//}
+	httpHost, err := utils.DB.Single("SELECT http_host FROM config").String()
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
+	}
+	if len(httpHost) > 0 {
+		re := regexp.MustCompile(`https?:\/\/([0-9a-z\_\.\-:]+)`)
+		match := re.FindStringSubmatch(httpHost)
+		if len(match) != 0 {
+			port := ""
+			// если ":" нету, значит порт не указан, а если ":" есть, значит в match[1] и в ListenHttpHost уже будет порт
+			if ok, _ := regexp.MatchString(`:`, match[1]); !ok {
+				port = ":80"
+			}
+			HandleHttpHost = match[1]
+			ListenHttpHost = match[1] + port
+		}
+		BrowserHttpHost = httpHost
+	}
+	return BrowserHttpHost, HandleHttpHost, ListenHttpHost
 }

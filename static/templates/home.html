@@ -23,7 +23,10 @@
 		}
 	}
 </style>
+
+
 <script>
+
 	$(function() {
 		/*$('[title!=""]').qtip( {
 			position: {target: 'mouse', adjust: { x: 5, y: 5 }},
@@ -71,8 +74,12 @@
 <style>
 	.alert-info a:link{text-decoration: underline}
 	.page-header{margin-top: 10px}
+	{{if not .Mobile}}#dc_content{margin-top:30px}{{end}}
 </style>
 <link href="static/css/cf.css" rel="stylesheet">
+{{if .AlertMessage}}
+<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.AlertMessage}}</p></div>
+{{end}}
 {{ template "alertSuccess". }}
 
 <style>

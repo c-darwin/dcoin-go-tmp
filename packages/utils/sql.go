@@ -793,6 +793,7 @@ func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
 		}
 		progress, err := db.Single("SELECT progress FROM install").String()
 		if err != nil || progress != "complete" {
+			// возможно попасть на тот момент, когда БД закрыта и идет скачивание готовой БД с сервера
 			if ok, _ := regexp.MatchString(`database is closed`, fmt.Sprintf("%s", err)); ok {
 				if DB != nil {
 					db = DB
@@ -859,47 +860,6 @@ func (db *DCDB) GetTcpHost() string {
 	return ""
 }
 
-func (db *DCDB) GetHttpHost() (string, string, string) {
-	BrowserHttpHost := "http://localhost:8089"
-	HandleHttpHost := ""
-	ListenHttpHost := ":8089"
-	// Если первый запуск, то будет висеть на 8089
-	community, err := db.GetCommunityUsers()
-	log.Debug("community:%v", community)
-	if err != nil {
-		log.Error("%v", ErrInfo(err))
-		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
-	}
-	//myPrefix := ""
-	//if len(community) > 0 {
-	//myUserId, err := db.GetPoolAdminUserId()
-	//	if err!=nil {
-	//		log.Error("%v", ErrInfo(err))
-	//		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
-	//	}
-	//myPrefix = Int64ToStr(myUserId)+"_"
-	//}
-	httpHost, err := db.Single("SELECT http_host FROM config").String()
-	if err != nil {
-		log.Error("%v", ErrInfo(err))
-		return BrowserHttpHost, HandleHttpHost, ListenHttpHost
-	}
-	if len(httpHost) > 0 {
-		re := regexp.MustCompile(`https?:\/\/([0-9a-z\_\.\-:]+)`)
-		match := re.FindStringSubmatch(httpHost)
-		if len(match) != 0 {
-			port := ""
-			// если ":" нету, значит порт не указан, а если ":" есть, значит в match[1] и в ListenHttpHost уже будет порт
-			if ok, _ := regexp.MatchString(`:`, match[1]); !ok {
-				port = ":80"
-			}
-			HandleHttpHost = match[1]
-			ListenHttpHost = match[1] + port
-		}
-		BrowserHttpHost = httpHost
-	}
-	return BrowserHttpHost, HandleHttpHost, ListenHttpHost
-}
 
 func (db *DCDB) GetQuotes() string {
 	dq := `"`

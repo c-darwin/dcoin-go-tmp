@@ -5,6 +5,11 @@ import (
 	"math"
 	"strings"
 	"time"
+	"encoding/json"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"crypto"
+	"crypto/rsa"
+	"fmt"
 )
 
 type homePage struct {
@@ -39,6 +44,7 @@ type homePage struct {
 	Token                 string
 	Mobile                bool
 	MyChatName            string
+	AlertMessage		  string
 }
 
 type CurrencyPct struct {
@@ -229,6 +235,33 @@ func (c *Controller) Home() (string, error) {
 		myChatName = name
 	}
 
+	alertMessage := ""
+	alert, err := utils.GetHttpTextAnswer("http://dcoin.club/alert")
+	if len(alert) > 0 {
+		alertData := new(alertType)
+		err = json.Unmarshal([]byte(alert), &alertData)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+
+		messageJson, err := json.Marshal(alertData.Message)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		pub, err := utils.BinToRsaPubKey(utils.HexToBin(consts.ALERT_KEY))
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1, utils.HashSha1(string(messageJson)), []byte(utils.HexToBin(alertData.Signature)))
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+
+		alertMessage = alertData.Message[utils.Int64ToStr(c.LangInt)]
+	}
+
+
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
 		CountSignArr:          c.CountSignArr,
 		CountSign:             c.CountSign,
@@ -251,6 +284,7 @@ func (c *Controller) Home() (string, error) {
 		UserId:                c.SessUserId,
 		PoolAdmin:             poolAdmin,
 		Alert:                 c.Alert,
+		AlertMessage:		   alertMessage,
 		MyNotice:              c.MyNotice,
 		Lang:                  c.Lang,
 		Title:                 c.Lang["geolocation"],
@@ -264,4 +298,9 @@ func (c *Controller) Home() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	return TemplateStr, nil
+}
+
+type alertType struct {
+	Message map[string]string
+	Signature string
 }
