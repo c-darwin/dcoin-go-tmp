@@ -266,6 +266,7 @@ db_name=`)
 					break
 				}
 			}
+			fmt.Println("GET http host")
 			BrowserHttpHost, HandleHttpHost, ListenHttpHost = GetHttpHost()
 			// для биржы нужен хост или каталог, поэтому нужно подключение к БД
 			exhangeHttpListener(HandleHttpHost)
@@ -273,7 +274,7 @@ db_name=`)
 			tcpListener()
 		}
 		IosLog(fmt.Sprintf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost))
-		log.Debug("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
+		fmt.Printf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v\n", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
 		// включаем листинг веб-сервером для клиентской части
 		http.HandleFunc(HandleHttpHost+"/", controllers.Index)
 		http.HandleFunc(HandleHttpHost+"/content", controllers.Content)
