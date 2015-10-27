@@ -23,6 +23,7 @@ type miningMenuPage struct {
 	Host              string
 	Result            string
 	NodePrivateKey    string
+	Mobile string
 }
 
 func (c *Controller) MiningMenu() (string, error) {
@@ -234,6 +235,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		Result:            result,
 		NodePrivateKey:    nodePrivateKey,
 		MinerVotesAttempt: minerVotesAttempt,
+		Mobile: utils.Mobile(),
 		Host:              hostTpl})
 	if err != nil {
 		return "", utils.ErrInfo(err)
