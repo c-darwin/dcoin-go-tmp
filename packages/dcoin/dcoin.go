@@ -315,9 +315,21 @@ db_name=`)
 
 func exhangeHttpListener(HandleHttpHost string) {
 
-	http.HandleFunc(HandleHttpHost+"/e/", controllers.IndexE)
-	http.HandleFunc(HandleHttpHost+"/e/content", controllers.ContentE)
-	http.HandleFunc(HandleHttpHost+"/e/ajax", controllers.AjaxE)
+	eConfig, err := utils.DB.GetMap(`SELECT * FROM e_config`, "name", "value")
+	if err != nil {
+		log.Error("%v", err)
+	}
+	if eConfig["enable"] == "1" {
+		if eConfig["domain"] {
+			http.HandleFunc(eConfig["domain"], controllers.IndexE)
+			http.HandleFunc(eConfig["domain"]+"/content", controllers.ContentE)
+			http.HandleFunc(eConfig["domain"]+"/ajax", controllers.AjaxE)
+		} else {
+			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/", controllers.IndexE)
+			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/content", controllers.ContentE)
+			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/ajax", controllers.AjaxE)
+		}
+	}
 }
 
 // http://grokbase.com/t/gg/golang-nuts/12a9yhgr64/go-nuts-disable-directory-listing-with-http-fileserver#201210093cnylxyosmdfuf3wh5xqnwiut4
