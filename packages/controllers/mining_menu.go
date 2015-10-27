@@ -23,7 +23,7 @@ type miningMenuPage struct {
 	Host              string
 	Result            string
 	NodePrivateKey    string
-	Mobile string
+	Mobile bool
 }
 
 func (c *Controller) MiningMenu() (string, error) {
