@@ -34,7 +34,7 @@ func (p *Parser) VotesExchangeFront() error {
 	}
 
 	// проверим, есть ли такой юзер
-	userId, err := p.Single("SELECT user_id FROM users WHERE user_id  =  ?", p.TxMaps.Int64["e_owner"]).String()
+	userId, err := p.Single("SELECT user_id FROM users WHERE user_id  =  ?", p.TxMaps.Int64["e_owner"]).Int64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}

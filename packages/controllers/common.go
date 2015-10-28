@@ -19,7 +19,6 @@ import (
 	"time"
 	"unicode"
 	"encoding/json"
-	"sync"
 	"errors"
 )
 

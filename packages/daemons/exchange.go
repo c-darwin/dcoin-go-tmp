@@ -1,7 +1,7 @@
 package daemons
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/dcparser"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"encoding/pem"
@@ -114,7 +114,7 @@ BEGIN:
 		}
 
 		// если есть свежая reduction, то нужно остановить торги
-		reduction, err := d.Single(`SELECT block_id FROM reduction WHERE block_id > ? and pct > 0`, maxReductionBlock)
+		reduction, err := d.Single(`SELECT block_id FROM reduction WHERE block_id > ? and pct > 0`, maxReductionBlock).Int64()
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -192,7 +192,7 @@ BEGIN:
 		 * */
 
 		// если всё остановлено из-за найденного блока с reduction, то входящие переводы не обрабатываем
-		reductionLock, err := utils.GetReductionLock()
+		reductionLock, err := utils.EGetReductionLock()
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -202,7 +202,7 @@ BEGIN:
 			continue BEGIN
 		}
 
-		rows, err := d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, tx_time, comment FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' ORDER BY id DESC`), blockId-confirmations)
+		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, tx_time, comment FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' ORDER BY id DESC`), blockId-confirmations)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -225,7 +225,7 @@ BEGIN:
 			}
 
 			// вначале нужно проверить, точно ли есть такой перевод в блоке
-			binaryData, err := d.ExecSql(`SELECT data FROM block_chain WHERE id = ?`, blockId)
+			binaryData, err := d.Single(`SELECT data FROM block_chain WHERE id = ?`, blockId).Bytes()
 			if err != nil {
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
@@ -240,7 +240,7 @@ BEGIN:
 				}
 
 				// сравнение данных из таблы my_dc_transactions с тем, что в блоке
-				if txMap.Int64["user_id"] == typeId && txMap.Int64["currency_id"] == currencyId && txMap.Money["amount"] == amount && txMap.String["comment"] == comment && txMap.Int64["to_user_id"] = toUserId {
+				if txMap.Int64["user_id"] == typeId && txMap.Int64["currency_id"] == currencyId && txMap.Money["amount"] == amount && txMap.String["comment"] == comment && txMap.Int64["to_user_id"] == toUserId {
 
 					// расшифруем коммент
 					block, _ := pem.Decode([]byte(nodePrivateKey))
@@ -290,10 +290,11 @@ BEGIN:
 					if len(user) == 0 {
 						continue
 					}
-					userAmountAndProfit, err := utils.EUserAmountAndProfit(user[1], currencyId)
+					uid := utils.StrToInt64(user[1])
+					userAmountAndProfit := utils.EUserAmountAndProfit(uid, currencyId)
 					newAmount_ := userAmountAndProfit + amount
 
-					utils.UpdEWallet(user[1], currencyId, utils.Time(), newAmount_)
+					utils.UpdEWallet(uid, currencyId, utils.Time(), newAmount_)
 
 					// для отчетности запишем в историю
 					err = d.ExecSql(`
@@ -308,7 +309,11 @@ BEGIN:
 							?,
 							?,
 							?
-						)`, user[1], currencyId, txTime, amount)
+						)`, uid, currencyId, txTime, amount)
+					if err != nil {
+						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+						continue BEGIN
+					}
 				}
 			}
 		}
@@ -319,7 +324,7 @@ BEGIN:
 		// максимальный номер блока для процентов. Чтобы брать только новые
 		maxPctBlock, err := d.Single(`SELECT max(block_id) FROM e_user_pct`).Int64()
 
-		rows, err := d.Query(d.FormatQuery(`SELECT time, block_id, currency_id, user FROM pct WHERE  block_id < ? AND block_id > ?`), blockId-confirmations, maxPctBlock)
+		rows, err = d.Query(d.FormatQuery(`SELECT time, block_id, currency_id, user FROM pct WHERE  block_id < ? AND block_id > ?`), blockId-confirmations, maxPctBlock)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN

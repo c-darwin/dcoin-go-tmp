@@ -37,7 +37,7 @@ func (c *Controller) ESaveOrder() (string, error) {
 	if sellRate < 0.0001 {
 		return "", errors.New(strings.Replace(c.Lang["save_order_min_price"], "[price]", "0.0001", -1))
 	}
-	reductionLock, err := utils.getReductionLock()
+	reductionLock, err := utils.EGetReductionLock()
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}

@@ -43,6 +43,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 type BlockData struct {
@@ -3094,7 +3095,7 @@ func ClearNull(str string, n int) string {
 }
 
 
-func GetReductionLock() (int64, error) {
+func EGetReductionLock() (int64, error) {
 	return DB.Single("SELECT time FROM e_reduction_lock").Int64()
 }
 
