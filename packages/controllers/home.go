@@ -45,6 +45,7 @@ type homePage struct {
 	Mobile                bool
 	MyChatName            string
 	AlertMessage		  string
+	TopExMap map[int64]topEx
 }
 
 type CurrencyPct struct {
@@ -261,6 +262,38 @@ func (c *Controller) Home() (string, error) {
 		alertMessage = alertData.Message[utils.Int64ToStr(c.LangInt)]
 	}
 
+	// получим топ 5 бирж
+	topExMap := make(map[int64]topEx)
+	var q string
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = "select miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result from miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
+	} else {
+		q = "select miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result from miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
+	}
+	rows, err := c.Query(c.FormatQuery(q))
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var user_id, count, result int64
+		var e_host string
+		err = rows.Scan(&user_id, &e_host, &count, &result)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if topExMap[user_id] == nil {
+			topExMap[user_id] = new(topEx)
+			if result == 0 {
+				topExMap[user_id].Vote0 = count
+			} else {
+				topExMap[user_id].Vote1 = count
+			}
+			topExMap[user_id].Host = e_host
+			topExMap[user_id].UserId = user_id
+		}
+	}
+
 
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
 		CountSignArr:          c.CountSignArr,
@@ -293,6 +326,7 @@ func (c *Controller) Home() (string, error) {
 		MyChatName:            myChatName,
 		IOS:                   utils.IOS(),
 		Mobile:                utils.Mobile(),
+		TopExMap: topExMap,
 		Token:                 token})
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -303,4 +337,11 @@ func (c *Controller) Home() (string, error) {
 type alertType struct {
 	Message map[string]string
 	Signature string
+}
+
+type topEx struct {
+	Vote1 int64
+	Vote0 int64
+	Host string
+	UserId int64
 }

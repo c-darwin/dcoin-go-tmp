@@ -2029,7 +2029,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[2] = map[string]string{"name": "result", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s2[3] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"user_id","user_id"}
+	s1["PRIMARY"] = []string{"user_id","e_owner_id"}
 	s1["comment"] = "Голосование за биржи"
 	s["votes_exchange"] = s1
 	schema.S = s
