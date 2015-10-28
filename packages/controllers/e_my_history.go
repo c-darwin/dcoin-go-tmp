@@ -20,7 +20,7 @@ func (c *Controller) EMyHistory() (string, error) {
 		return `<script language="javascript"> window.location.href = "/e/"</script>If you are not redirected automatically, follow the <a href="/e/">/e/</a>`, nil
 	}
 
-	currencyList, err := eGetCurrencyList()
+	currencyList, err := utils.EGetCurrencyList()
 
 	var myHistory []*EmyHistory
 

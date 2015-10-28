@@ -464,9 +464,6 @@ func (c *Controller) GetParameters() (map[string]string, error) {
 
 
 
-func getReductionLock() (int64, error) {
-	return utils.DB.Single("SELECT time FROM e_reduction_lock").Int64()
-}
 
 func userLock(userId int64) error {
 	var affect int64
@@ -485,21 +482,6 @@ func userLock(userId int64) error {
 	return err
 }
 
-func userAmountAndProfit(userId, currencyId int64) float64 {
-	var UserCurrencyId, UserLastUpdate int64
-	var UserAmount float64
-	err := utils.DB.QueryRow(utils.DB.FormatQuery("SELECT currency_id, amount, last_update FROM e_wallets WHERE user_id  =  ? AND currency_id  =  ?"), userId, currencyId).Scan(&UserCurrencyId, &UserAmount, &UserLastUpdate)
-	if err != nil {
-		return 0
-	}
-	if UserAmount <= 0 {
-		return 0
-	}
-	profit, err := utils.DB.CalcProfitGen(UserCurrencyId, UserAmount, 0, UserLastUpdate, utils.Time(), "wallet")
-	return UserAmount + profit
-}
-
-var eWallets = &sync.Mutex{}
 
 func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCurrencyId int64, orderType string) error {
 	log.Debug("userId: %v / amount: %v / sellRate: %v / float64: %v / sellCurrencyId: %v / buyCurrencyId: %v / orderType: %v ", userId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType)
@@ -516,15 +498,15 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 	}
 	log.Debug("newAmount: %v / commission: %v ", newAmount, commission)
 	if commission>0{
-		userAmount := userAmountAndProfit(1, sellCurrencyId)
+		userAmount := utils.EUserAmountAndProfit(1, sellCurrencyId)
 		newAmount_ := userAmount + commission
 		// наисляем комиссию системе
-		err = updEWallet(1, sellCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(1, sellCurrencyId, utils.Time(), newAmount_)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 		// и сразу вычитаем комиссию с кошелька юзера
-		userAmount = userAmountAndProfit(userId, sellCurrencyId)
+		userAmount = utils.EUserAmountAndProfit(userId, sellCurrencyId)
 		err = utils.DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ? AND currency_id = ?",userAmount-commission, utils.Time(), userId, sellCurrencyId)
 		if err != nil {
 			return utils.ErrInfo(err)
@@ -633,9 +615,9 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 		sellerBuyAmount := sellerSellAmount * (1/rowSellRate)
 
 		// начисляем валюту, которую продавец получил (R)
-		userAmount := userAmountAndProfit(rowUserId, rowBuyCurrencyId)
+		userAmount := utils.EUserAmountAndProfit(rowUserId, rowBuyCurrencyId)
 		newAmount_ := userAmount + sellerBuyAmount
-		err = updEWallet(rowUserId, rowBuyCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(rowUserId, rowBuyCurrencyId, utils.Time(), newAmount_)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -643,17 +625,17 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 		// ====== Покупатель валюты (наш юзер) ======
 
 		// списываем валюту, которую мы продали (R)
-		userAmount = userAmountAndProfit(userId, rowBuyCurrencyId)
+		userAmount = utils.EUserAmountAndProfit(userId, rowBuyCurrencyId)
 		newAmount_ = userAmount - sellerBuyAmount
-		err = updEWallet(userId, rowBuyCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(userId, rowBuyCurrencyId, utils.Time(), newAmount_)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
 
 		// начисляем валюту, которую мы получили (U)
-		userAmount = userAmountAndProfit(userId, rowSellCurrencyId)
+		userAmount = utils.EUserAmountAndProfit(userId, rowSellCurrencyId)
 		newAmount_ = userAmount + sellerSellAmount
-		err = updEWallet(userId, rowSellCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(userId, rowSellCurrencyId, utils.Time(), newAmount_)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -694,7 +676,7 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 			}
 
 			// вычитаем с баланса сумму созданного ордера
-			userAmount := userAmountAndProfit(userId, sellCurrencyId)
+			userAmount := utils.EUserAmountAndProfit(userId, sellCurrencyId)
 			err = utils.DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ? AND currency_id = ?", userAmount-newOrderAmount, utils.Time(), userId, sellCurrencyId)
 			if err != nil {
 				return utils.ErrInfo(err)
@@ -707,29 +689,6 @@ func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellC
 	return nil
 }
 
-func updEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
-	eWallets.Lock()
-	exists, err := utils.DB.Single(`SELECT user_id FROM e_wallets WHERE user_id = ?`, userId).Int64()
-	if err!=nil {
-		eWallets.Unlock()
-		return utils.ErrInfo(err)
-	}
-	if exists == 0 {
-		err = utils.DB.ExecSql("INSERT INTO e_wallets ( user_id, currency_id, amount, last_update ) VALUES ( ?, ?, ?, ? )", userId, currencyId, amount, lastUpdate)
-		if err != nil {
-			eWallets.Unlock()
-			return utils.ErrInfo(err)
-		}
-	} else {
-		err = utils.DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ?", amount, lastUpdate, userId)
-		if err != nil {
-			eWallets.Unlock()
-			return utils.ErrInfo(err)
-		}
-	}
-	eWallets.Unlock()
-	return nil
-}
 
 func userUnlock(userId int64) {
 	utils.DB.ExecSql("UPDATE e_users SET lock = 0 WHERE id = ?", userId)
@@ -737,15 +696,3 @@ func userUnlock(userId int64) {
 
 
 
-
-func eGetCurrencyList() (map[int64]string, error) {
-	rez := make(map[int64]string)
-	list, err := utils.DB.GetMap("SELECT id, name FROM e_currency ORDER BY name", "id", "name")
-	if err != nil {
-		return rez, utils.ErrInfo(err)
-	}
-	for id, name := range list {
-		rez[utils.StrToInt64(id)] = name
-	}
-	return rez, nil
-}

@@ -70,6 +70,7 @@ var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var EndBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 
+var eWallets = &sync.Mutex{}
 
 func init() {
 	flag.Parse()
@@ -3090,4 +3091,61 @@ func ClearNull(str string, n int) string {
 		new = str
 	}
 	return new
+}
+
+
+func GetReductionLock() (int64, error) {
+	return DB.Single("SELECT time FROM e_reduction_lock").Int64()
+}
+
+
+func EUserAmountAndProfit(userId, currencyId int64) float64 {
+	var UserCurrencyId, UserLastUpdate int64
+	var UserAmount float64
+	err := DB.QueryRow(DB.FormatQuery("SELECT currency_id, amount, last_update FROM e_wallets WHERE user_id  =  ? AND currency_id  =  ?"), userId, currencyId).Scan(&UserCurrencyId, &UserAmount, &UserLastUpdate)
+	if err != nil {
+		return 0
+	}
+	if UserAmount <= 0 {
+		return 0
+	}
+	profit, err := DB.CalcProfitGen(UserCurrencyId, UserAmount, 0, UserLastUpdate, Time(), "wallet")
+	return UserAmount + profit
+}
+
+func EGetCurrencyList() (map[int64]string, error) {
+	rez := make(map[int64]string)
+	list, err := DB.GetMap("SELECT id, name FROM e_currency ORDER BY name", "id", "name")
+	if err != nil {
+		return rez, ErrInfo(err)
+	}
+	for id, name := range list {
+		rez[StrToInt64(id)] = name
+	}
+	return rez, nil
+}
+
+
+func UpdEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
+	eWallets.Lock()
+	exists, err := DB.Single(`SELECT user_id FROM e_wallets WHERE user_id = ?`, userId).Int64()
+	if err!=nil {
+		eWallets.Unlock()
+		return ErrInfo(err)
+	}
+	if exists == 0 {
+		err = DB.ExecSql("INSERT INTO e_wallets ( user_id, currency_id, amount, last_update ) VALUES ( ?, ?, ?, ? )", userId, currencyId, amount, lastUpdate)
+		if err != nil {
+			eWallets.Unlock()
+			return ErrInfo(err)
+		}
+	} else {
+		err = DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ?", amount, lastUpdate, userId)
+		if err != nil {
+			eWallets.Unlock()
+			return ErrInfo(err)
+		}
+	}
+	eWallets.Unlock()
+	return nil
 }

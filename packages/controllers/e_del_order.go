@@ -35,14 +35,14 @@ func (c *Controller) EDelOrder() (string, error) {
 	}
 
 	// возвращаем остаток ордера на кошель
-	userAmount := userAmountAndProfit(c.SessUserId, sellCurrencyId)
+	userAmount := utils.EUserAmountAndProfit(c.SessUserId, sellCurrencyId)
 	err = utils.DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ? AND currency_id = ?", userAmount+amountAndCommission, utils.Time(), c.SessUserId, sellCurrencyId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 
 	// вычитаем комиссию биржи
-	userAmount = userAmountAndProfit(1, sellCurrencyId)
+	userAmount = utils.EUserAmountAndProfit(1, sellCurrencyId)
 	err = utils.DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = 1 AND currency_id = ?", userAmount-commission, utils.Time(), sellCurrencyId)
 	if err != nil {
 		return "", utils.ErrInfo(err)

@@ -1382,11 +1382,12 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[14] = map[string]string{"name": "video_url_id", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
 	s2[15] = map[string]string{"name": "http_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
 	s2[16] = map[string]string{"name": "tcp_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
-	s2[17] = map[string]string{"name": "latitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
-	s2[18] = map[string]string{"name": "longitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
-	s2[19] = map[string]string{"name": "country", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[20] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
-	s2[21] = map[string]string{"name": "prev_log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
+	s2[17] = map[string]string{"name": "e_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
+	s2[18] = map[string]string{"name": "latitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
+	s2[19] = map[string]string{"name": "longitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
+	s2[20] = map[string]string{"name": "country", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[21] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
+	s2[22] = map[string]string{"name": "prev_log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"log_id"}
 	s1["AI"] = "log_id"
@@ -1741,8 +1742,9 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[14] = map[string]string{"name": "seller_hold_back_pct", "mysql": "decimal(5,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(5,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(5,2) NOT NULL DEFAULT '0'", "comment": ""}
 	s2[15] = map[string]string{"name": "arbitration_days_refund", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[16] = map[string]string{"name": "url", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
-	s2[17] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
-	s2[18] = map[string]string{"name": "prev_log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
+	s2[17] = map[string]string{"name": "chat_ban", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
+	s2[18] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
+	s2[19] = map[string]string{"name": "prev_log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"log_id"}
 	s1["AI"] = "log_id"
@@ -1857,10 +1859,11 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[14] = map[string]string{"name": "video_url_id", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "Если пусто, то видео берем по ID юзера.flv"}
 	s2[15] = map[string]string{"name": "http_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "адрес домена:порт или IP:порт, где брать фото и видео данного майнера"}
 	s2[16] = map[string]string{"name": "tcp_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "адрес домена:порт или IP:порт, куда ноды должны слать свои TCP пакеты с блоками/хэшами/тр-ми"}
-	s2[17] = map[string]string{"name": "latitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": "Местоположение можно сменить без проблем, но это одновременно ведет запуск голосования у promised_amount по всем валютам, где статус mining или hold"}
-	s2[18] = map[string]string{"name": "longitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
-	s2[19] = map[string]string{"name": "country", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
-	s2[20] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
+	s2[17] = map[string]string{"name": "e_host", "mysql": "varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "просто для апи запросов на биржу"}
+	s2[18] = map[string]string{"name": "latitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": "Местоположение можно сменить без проблем, но это одновременно ведет запуск голосования у promised_amount по всем валютам, где статус mining или hold"}
+	s2[19] = map[string]string{"name": "longitude", "mysql": "decimal(8,5) NOT NULL DEFAULT '0'", "sqlite": "decimal(8,5) NOT NULL DEFAULT '0'", "postgresql": "decimal(8,5) NOT NULL DEFAULT '0'", "comment": ""}
+	s2[20] = map[string]string{"name": "country", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[21] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["comment"] = ""
@@ -2017,6 +2020,22 @@ func (schema *SchemaStruct) GetSchema() {
 	schema.S = s
 	schema.PrintSchema()
 
+
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+	s2[0] = map[string]string{"name": "user_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[1] = map[string]string{"name": "e_owner_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": "user_id владельца биржи, за которую идет голосование"}
+	s2[2] = map[string]string{"name": "result", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[3] = map[string]string{"name": "log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"user_id","user_id"}
+	s1["comment"] = "Голосование за биржи"
+	s["votes_exchange"] = s1
+	schema.S = s
+	schema.PrintSchema()
+
+
 	s = make(Recmap)
 	s1 = make(Recmap)
 	s2 = make(Recmapi)
@@ -2030,6 +2049,21 @@ func (schema *SchemaStruct) GetSchema() {
 	s1["AI"] = "log_id"
 	s1["comment"] = ""
 	s["log_votes_user_pct"] = s1
+	schema.S = s
+	schema.PrintSchema()
+
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+	s2[0] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint  NOT NULL  default nextval('log_votes_exchange_log_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name": "result", "mysql": "tinyint(3) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(3)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "В каком блоке было занесено. Нужно для удаления старых данных"}
+	s2[3] = map[string]string{"name": "prev_log_id", "mysql": "bigint(20) NOT NULL DEFAULT '0'", "sqlite": "bigint(20) NOT NULL DEFAULT '0'", "postgresql": "bigint NOT NULL DEFAULT '0'", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"log_id"}
+	s1["AI"] = "log_id"
+	s1["comment"] = ""
+	s["log_votes_exchange"] = s1
 	schema.S = s
 	schema.PrintSchema()
 
@@ -2359,7 +2393,8 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[14] = map[string]string{"name": "seller_hold_back_pct", "mysql": "decimal(5,2) NOT NULL DEFAULT '0'", "sqlite": "decimal(5,2) NOT NULL DEFAULT '0'", "postgresql": "decimal(5,2) NOT NULL DEFAULT '0'", "comment": "% холдбека для новых сделок"}
 	s2[15] = map[string]string{"name": "arbitration_days_refund", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Продавец тут указывает кол-во дней для новых сделок, в течение которых он готов сделать манибек. Если стоит 0, значит продавец больше не работает с манибеком"}
 	s2[16] = map[string]string{"name": "url", "mysql": "varchar(50) NOT NULL DEFAULT ''", "sqlite": "varchar(50) NOT NULL DEFAULT ''", "postgresql": "varchar(50) NOT NULL DEFAULT ''", "comment": ""}
-	s2[17] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[17] = map[string]string{"name": "chat_ban", "mysql": "tinyint(4) NOT NULL DEFAULT '0'", "sqlite": "tinyint(4) NOT NULL DEFAULT '0'", "postgresql": "smallint NOT NULL DEFAULT '0'", "comment": ""}
+	s2[18] = map[string]string{"name": "log_id", "mysql": "bigint(20) unsigned NOT NULL DEFAULT '0'", "sqlite": "bigint(20)  NOT NULL DEFAULT '0'", "postgresql": "bigint  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"user_id"}
 	s1["AI"] = "user_id"

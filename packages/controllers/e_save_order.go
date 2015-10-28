@@ -37,7 +37,7 @@ func (c *Controller) ESaveOrder() (string, error) {
 	if sellRate < 0.0001 {
 		return "", errors.New(strings.Replace(c.Lang["save_order_min_price"], "[price]", "0.0001", -1))
 	}
-	reductionLock, err := getReductionLock()
+	reductionLock, err := utils.getReductionLock()
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -46,7 +46,7 @@ func (c *Controller) ESaveOrder() (string, error) {
 	}
 
 	// нужно проверить, есть ли нужная сумма на счету юзера
-	userAmountAndProfit := userAmountAndProfit(c.SessUserId, sellCurrencyId)
+	userAmountAndProfit := utils.EUserAmountAndProfit(c.SessUserId, sellCurrencyId)
 	if userAmountAndProfit < amount {
 		return "", errors.New(c.Lang["not_enough_money"]+" ("+utils.Float64ToStr(userAmountAndProfit)+"<"+utils.Float64ToStr(amount)+")"+strings.Replace(c.Lang["add_funds_link"], "[currency]", "USD", -1))
 	}

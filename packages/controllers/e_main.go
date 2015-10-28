@@ -38,7 +38,7 @@ func (c *Controller) EMain() (string, error) {
 	}
 
 	// все валюты, с которыми работаем
-	currencyList, err := eGetCurrencyList()
+	currencyList, err := utils.EGetCurrencyList()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

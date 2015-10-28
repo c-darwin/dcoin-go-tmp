@@ -31,7 +31,7 @@ func (c *Controller) EMyFinance() (string, error) {
 
 	confirmations := c.EConfig["confirmations"]
 
-	currencyList, err := eGetCurrencyList()
+	currencyList, err := utils.EGetCurrencyList()
 
 	// счет, куда юзеры должны слать DC
 	mainDcAccount := c.EConfig["main_dc_account"]

@@ -1065,12 +1065,16 @@ func (c *Controller) SaveQueue() (string, error) {
 
 		http_host := []byte(c.r.FormValue("http_host"))
 		tcp_host := []byte(c.r.FormValue("tcp_host"))
+		e_host := []byte(c.r.FormValue("e_host"))
 
 		if !utils.CheckInputData(c.r.FormValue("http_host"), "http_host") {
 			return `incorrect http_host`, nil
 		}
 		if !utils.CheckInputData(c.r.FormValue("tcp_host"), "tcp_host") {
 			return `incorrect tcp_host`, nil
+		}
+		if !utils.CheckInputData(c.r.FormValue("e_host"), "http_host") {
+			return `incorrect e_host`, nil
 		}
 
 		var community []int64
@@ -1132,7 +1136,7 @@ func (c *Controller) SaveQueue() (string, error) {
 					log.Error("%v", utils.ErrInfo(err))
 					continue
 				}
-				forSign := fmt.Sprintf("%d,%d,%d,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host)
+				forSign := fmt.Sprintf("%d,%d,%d,%s,%s,%s", utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, e_host)
 				binSignature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA1, utils.HashSha1(forSign))
 				pubKey_, _ := utils.GetPublicFromPrivate(string(nodePrivateKey))
 				log.Debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>forSign:%s / binSignature:%x / txType_:%s / timeNow:%s / uId:%s / http_host:%s / tcp_host:%s / GetPublicFromPrivate:%s", forSign, binSignature, utils.TypeInt(txType_), timeNow, uId, http_host, tcp_host, pubKey_)
@@ -1146,6 +1150,7 @@ func (c *Controller) SaveQueue() (string, error) {
 				data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(uId))...)
 				data = append(data, utils.EncodeLengthPlusData(http_host)...)
 				data = append(data, utils.EncodeLengthPlusData(tcp_host)...)
+				data = append(data, utils.EncodeLengthPlusData(e_host)...)
 				data = append(data, utils.EncodeLengthPlusData([]byte(binSignature))...)
 
 				err = c.ExecSql("INSERT INTO queue_tx (hash, data) VALUES ([hex], [hex])", utils.Md5(data), utils.BinToHex(data))

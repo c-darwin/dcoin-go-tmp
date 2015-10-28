@@ -79,20 +79,24 @@ func (c *Controller) GetChatMessages() (string, error) {
 		name := data["sender"]
 		ava := "/static/img/noavatar.png"
 		// возможно у отпарвителя есть ник
-		nameAva, err := c.OneRow(`SELECT name, avatar FROM users WHERE user_id = ?`, sender).String()
+		nameAvaBan, err := c.OneRow(`SELECT name, avatar, chat_ban FROM users WHERE user_id = ?`, sender).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if len(nameAva["name"]) > 0 {
-			name = nameAva["name"]
+		// возможно юзер забанен
+		if nameAvaBan["name"] == "1" {
+			continue
+		}
+		if len(nameAvaBan["name"]) > 0 {
+			name = nameAvaBan["name"]
 		}
 
 		minerStatus, err := c.Single(`SELECT status FROM miners_data WHERE user_id = ?`, sender).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if minerStatus == "miner" && len(nameAva["avatar"]) > 0 {
-			ava = nameAva["avatar"]
+		if minerStatus == "miner" && len(nameAvaBan["avatar"]) > 0 {
+			ava = nameAvaBan["avatar"]
 		}
 
 		row := ""

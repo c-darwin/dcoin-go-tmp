@@ -11,9 +11,12 @@ func (p *Parser) ChangeHostInit() error {
 
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		fields = []map[string]string{{"http_host": "string"}, {"sign": "bytes"}}
-	} else {
+	} else if (p.BlockData != nil && p.BlockData.BlockId < 261209) {
 		fields = []map[string]string{{"http_host": "string"}, {"tcp_host": "string"}, {"sign": "bytes"}}
+	} else {
+		fields = []map[string]string{{"http_host": "string"}, {"tcp_host": "string"},{"e_host": "string"}, {"sign": "bytes"}}
 	}
+
 	err := p.GetTxMaps(fields)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -30,8 +33,10 @@ func (p *Parser) ChangeHostFront() error {
 	var verifyData map[string]string
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		verifyData = map[string]string{"http_host": "http_host"}
-	} else {
+	} else if p.BlockData != nil && p.BlockData.BlockId < 261209 {
 		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host"}
+	} else {
+		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host", "e_host": "http_host"}
 	}
 	err = p.CheckInputData(verifyData)
 	if err != nil {
@@ -57,9 +62,12 @@ func (p *Parser) ChangeHostFront() error {
 	var forSign string
 	if p.BlockData != nil && p.BlockData.BlockId < 250900 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"])
-	} else {
+	} else if p.BlockData != nil && p.BlockData.BlockId < 261209 {
 		forSign = fmt.Sprintf("%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"], p.TxMap["tcp_host"])
+	} else {
+		forSign = fmt.Sprintf("%s,%s,%s,%s,%s,%s", p.TxMap["type"], p.TxMap["time"], p.TxMap["user_id"], p.TxMap["http_host"], p.TxMap["tcp_host"], p.TxMap["e_host"])
 	}
+
 	if p.BlockData != nil && p.BlockData.BlockId <= 240240 {
 		CheckSignResult, err = utils.CheckSign(p.PublicKeys, forSign, p.TxMap["sign"], false)
 	} else {
@@ -90,7 +98,7 @@ func (p *Parser) ChangeHost() error {
 	} else {
 		tcpHost = p.TxMaps.String["tcp_host"]
 	}
-	err := p.selectiveLoggingAndUpd([]string{"http_host", "tcp_host"}, []interface{}{p.TxMaps.String["http_host"], tcpHost}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
+	err := p.selectiveLoggingAndUpd([]string{"http_host", "tcp_host", "e_host"}, []interface{}{p.TxMaps.String["http_host"], tcpHost, p.TxMaps.String["e_host"]}, "miners_data", []string{"user_id"}, []string{utils.Int64ToStr(p.TxUserID)})
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -110,7 +118,7 @@ func (p *Parser) ChangeHost() error {
 }
 
 func (p *Parser) ChangeHostRollback() error {
-	err := p.selectiveRollback([]string{"http_host", "tcp_host"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
+	err := p.selectiveRollback([]string{"http_host", "tcp_host", "e_host"}, "miners_data", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
