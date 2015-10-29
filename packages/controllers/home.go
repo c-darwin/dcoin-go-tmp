@@ -45,7 +45,7 @@ type homePage struct {
 	Mobile                bool
 	MyChatName            string
 	AlertMessage		  string
-	TopExMap map[int64]topEx
+	TopExMap map[int64]*topEx
 }
 
 type CurrencyPct struct {
@@ -263,7 +263,7 @@ func (c *Controller) Home() (string, error) {
 	}
 
 	// получим топ 5 бирж
-	topExMap := make(map[int64]topEx)
+	topExMap := make(map[int64]*topEx)
 	var q string
 	if c.ConfigIni["db_type"] == "postgresql" {
 		q = "select miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result from miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
@@ -282,10 +282,10 @@ func (c *Controller) Home() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if topExMap[user_id] == nil {
+		if len(topExMap[user_id].Host) == 0 {
 			topExMap[user_id] = new(topEx)
 			if result == 0 {
-				topExMap[user_id].Vote0 = count
+				topExMap[user_id].Vote1 = count
 			} else {
 				topExMap[user_id].Vote1 = count
 			}

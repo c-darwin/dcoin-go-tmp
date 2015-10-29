@@ -56,14 +56,6 @@ BEGIN:
 			break BEGIN
 		}
 
-		err, restart := d.dbLock()
-		if restart {
-			break BEGIN
-		}
-		if err != nil {
-			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
-			continue BEGIN
-		}
 
 		blockId, err := d.GetConfirmedBlockId()
 		if err != nil {

@@ -5,11 +5,7 @@ import (
 	"regexp"
 )
 
-/*
- * Генерим код, который юзер должен подписать своим ключом, доказав тем самым, что именно он хочет войти в аккаунт
- * */
-
-func (c *Controller) SignLogin() (string, error) {
+func (c *Controller) ESignLogin() (string, error) {
 
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -26,11 +22,11 @@ func (c *Controller) SignLogin() (string, error) {
 	hash = utils.Md5(c.r.Header.Get("User-Agent") + RemoteAddr)
 	log.Debug("hash %s", hash)
 
-	err := c.DCDB.ExecSql(`DELETE FROM authorization WHERE hex(hash) = ?`, hash)
+	err := c.DCDB.ExecSql(`DELETE FROM e_authorization WHERE hex(hash) = ?`, hash)
 	if err != nil {
 		return "", err
 	}
-	err = c.DCDB.ExecSql(`INSERT INTO authorization (hash, data) VALUES ([hex], ?)`, hash, loginCode)
+	err = c.DCDB.ExecSql(`INSERT INTO e_authorization (hash, data) VALUES ([hex], ?)`, hash, loginCode)
 	if err != nil {
 		return "", err
 	}
