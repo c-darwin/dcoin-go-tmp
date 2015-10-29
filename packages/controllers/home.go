@@ -242,7 +242,7 @@ func (c *Controller) Home() (string, error) {
 		alertData := new(alertType)
 		err = json.Unmarshal([]byte(alert), &alertData)
 		if err != nil {
-			return "", utils.ErrInfo(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 
 		messageJson, err := json.Marshal(alertData.Message)
@@ -252,11 +252,11 @@ func (c *Controller) Home() (string, error) {
 
 		pub, err := utils.BinToRsaPubKey(utils.HexToBin(consts.ALERT_KEY))
 		if err != nil {
-			return "", utils.ErrInfo(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1, utils.HashSha1(string(messageJson)), []byte(utils.HexToBin(alertData.Signature)))
 		if err != nil {
-			return "", utils.ErrInfo(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 
 		alertMessage = alertData.Message[utils.Int64ToStr(c.LangInt)]
@@ -268,30 +268,33 @@ func (c *Controller) Home() (string, error) {
 	if c.ConfigIni["db_type"] == "postgresql" {
 		q = "select miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result from miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
 	} else {
-		q = "select miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result from miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
+		q = "SELECT miners_data.user_id, e_host, count(votes_exchange.user_id) as count, result FROM miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id WHERE result >= 0 GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
 	}
-	rows, err := c.Query(c.FormatQuery(q))
+	rows, err := c.Query(q)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var user_id, count, result int64
-		var e_host string
+		var e_host []byte
 		err = rows.Scan(&user_id, &e_host, &count, &result)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if len(topExMap[user_id].Host) == 0 {
+		if topExMap[user_id] == nil {
 			topExMap[user_id] = new(topEx)
+		}
+		//if len(topExMap[user_id].Host) == 0 {
+		//	topExMap[user_id] = new(topEx)
 			if result == 0 {
 				topExMap[user_id].Vote1 = count
 			} else {
 				topExMap[user_id].Vote1 = count
 			}
-			topExMap[user_id].Host = e_host
+			topExMap[user_id].Host = string(e_host)
 			topExMap[user_id].UserId = user_id
-		}
+		//}
 	}
 
 
