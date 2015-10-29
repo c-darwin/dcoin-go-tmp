@@ -320,8 +320,10 @@ func exhangeHttpListener(HandleHttpHost string) {
 	if err != nil {
 		log.Error("%v", err)
 	}
+	fmt.Println("eConfig", eConfig)
 	if eConfig["enable"] == "1" {
 		if len(eConfig["domain"])>0 {
+			fmt.Println("domain", eConfig["domain"])
 			http.HandleFunc(eConfig["domain"], controllers.IndexE)
 			http.HandleFunc(eConfig["domain"]+"/content", controllers.ContentE)
 			http.HandleFunc(eConfig["domain"]+"/ajax", controllers.AjaxE)
