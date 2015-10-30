@@ -37,6 +37,11 @@ func (c *Controller) ECheckSign() (string, error) {
 		return "{\"result\":0}", err
 	}
 
+	log.Debug("userId %v", userId)
+	log.Debug("publicKey %x", publicKey)
+	log.Debug("forSign %v", forSign)
+	log.Debug("sign %v", sign)
+
 	// проверим подпись
 	resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(sign), true)
 	log.Debug("resultCheckSign %v", resultCheckSign)
