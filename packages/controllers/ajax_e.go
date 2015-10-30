@@ -66,7 +66,7 @@ func AjaxE(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ELogout|ESignLogin|ECheckSign$`, controllerName); !ok {
 		html = "Access denied 0"
 	} else {
-		if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin$`, controllerName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ESignLogin|ECheckSign$`, controllerName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
