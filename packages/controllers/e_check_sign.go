@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"regexp"
-	"fmt"
+//	"fmt"
 )
 
 func (c *Controller) ECheckSign() (string, error) {
