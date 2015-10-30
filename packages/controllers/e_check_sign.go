@@ -8,6 +8,8 @@ import (
 
 func (c *Controller) ECheckSign() (string, error) {
 
+	c.w.Header().Set("Access-Control-Allow-Origin", "*")
+	
 	c.r.ParseForm()
 	userId := utils.StrToInt64(c.r.FormValue("user_id"))
 	sign := []byte(c.r.FormValue("sign"))
