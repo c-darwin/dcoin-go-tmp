@@ -38,7 +38,7 @@ func (c *Controller) ECheckSign() (string, error) {
 	}
 
 	// проверим подпись
-	resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true)
+	resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(sign), true)
 	log.Debug("resultCheckSign %v", resultCheckSign)
 	if resultCheckSign {
 		// если это первый запрос, то создаем запись в табле users
