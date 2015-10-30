@@ -70,7 +70,9 @@ func AjaxE(w http.ResponseWriter, r *http.Request) {
 			html = "Access denied 1"
 		} else {
 			// вызываем контроллер в зависимости от шаблона
+			log.Debug("controllerName %s", controllerName)
 			html, err = CallController(c, controllerName)
+			log.Debug("html %s", html)
 			if err != nil {
 				log.Error("ajax error: %v", err)
 			}
