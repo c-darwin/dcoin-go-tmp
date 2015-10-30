@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"regexp"
+	"fmt"
 )
 
 func (c *Controller) ECheckSign() (string, error) {
@@ -38,6 +39,7 @@ func (c *Controller) ECheckSign() (string, error) {
 
 	// проверим подпись
 	resultCheckSign, err := utils.CheckSign([][]byte{publicKey}, forSign, utils.HexToBin(sign), true)
+	log.Debug("resultCheckSign %v", resultCheckSign)
 	if resultCheckSign {
 		// если это первый запрос, то создаем запись в табле users
 		eUserId, err := c.Single(`SELECT id	FROM e_users WHERE user_id = ?`, userId).Int64()
@@ -46,9 +48,15 @@ func (c *Controller) ECheckSign() (string, error) {
 		}
 		if eUserId == 0 {
 			eUserId, err = c.ExecSqlGetLastInsertId(`INSERT INTO e_users (user_id) VALUES (?)`, "user_id", userId)
+			if err != nil {
+				return "{\"result\":0}", err
+			}
 		}
 		token := utils.RandSeq(30)
-		c.ExecSql(`INSERT INTO e_tokens (token, user_id) VALUES (?, ?)`, token, eUserId)
+		err = c.ExecSql(`INSERT INTO e_tokens (token, user_id) VALUES (?, ?)`, token, eUserId)
+		if err != nil {
+			return "{\"result\":0}", err
+		}
 		return "{\"result\":1, \"token\":"+token+"}", nil
 
 	} else {
