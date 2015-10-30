@@ -32,7 +32,7 @@ func (c *Controller) ECheckSign() (string, error) {
 		return "{\"result\":0}", err
 	}
 
-	publicKey, err := c.GetMyPublicKey("")
+	publicKey, err := c.GetUserPublicKey(userId)
 	if err != nil {
 		return "{\"result\":0}", err
 	}
