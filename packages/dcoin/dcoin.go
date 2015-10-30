@@ -285,6 +285,7 @@ db_name=`)
 		http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
 		http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
+
 		log.Debug("ListenHttpHost", ListenHttpHost)
 
 		IosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
@@ -321,12 +322,18 @@ func exhangeHttpListener(HandleHttpHost string) {
 		log.Error("%v", err)
 	}
 	fmt.Println("eConfig", eConfig)
+
+	//http.HandleFunc("e-tmp.com:8089/", controllers.IndexE)
+	//http.HandleFunc("e-tmp.com:8089/e/", controllers.IndexE)
+
 	if eConfig["enable"] == "1" {
-		if len(eConfig["domain"])>0 {
+		if len(eConfig["domain"]) > 0 {
 			fmt.Println("domain", eConfig["domain"])
-			http.HandleFunc(eConfig["domain"], controllers.IndexE)
+			http.HandleFunc(eConfig["domain"]+"/", controllers.IndexE)
 			http.HandleFunc(eConfig["domain"]+"/content", controllers.ContentE)
 			http.HandleFunc(eConfig["domain"]+"/ajax", controllers.AjaxE)
+			http.Handle(eConfig["domain"]+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
+
 		} else {
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/", controllers.IndexE)
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/content", controllers.ContentE)
