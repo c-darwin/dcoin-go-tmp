@@ -65,8 +65,8 @@ func (c *Controller) ECheckSign() (string, error) {
 		if err != nil {
 			return "{\"result\":0}", err
 		}
-		log.Debug(`{"result":1, "token":"`+token+`"}`)
-		return `{"result":1, "token":"`+token+`"}`, nil
+		log.Debug(`{"result":"1", "token":"`+token+`"}`)
+		return `{"result":"1", "token":"`+string(token)+`"}`, nil
 
 	} else {
 		return "{\"result\":0}", nil
