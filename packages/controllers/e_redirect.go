@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"fmt"
 )
 
 func (c *Controller) ERedirect() (string, error) {
@@ -27,6 +28,7 @@ func (c *Controller) ERedirect() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	fmt.Println(ps, token, amount, buyCurrencyId)
 	result := ""
 	if ps == "pm" {
 		result = `<form action="https://perfectmoney.is/api/step1.asp" method="POST" id="pm">
@@ -52,6 +54,6 @@ func (c *Controller) ERedirect() (string, error) {
 		<input type="hidden" name="ik_am" value="`+utils.Float64ToStr(amount)+`" >
 		</form>`
 	}
-	return result, nil
+	return result+`<script>document.forms["pm"].submit();</script>`, nil
 
 }
