@@ -1587,8 +1587,7 @@ func Caller(steps int) string {
 
 func GetEntropy(hash string) int64 {
 	if len(hash) >= 6 {
-		result, err := strconv.ParseInt(hash[0:6], 16, 0)
-		CheckErr(err)
+		result, _ := strconv.ParseInt(hash[0:6], 16, 0)
 		return result
 	} else {
 		return 0

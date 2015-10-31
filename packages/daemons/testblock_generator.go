@@ -172,7 +172,10 @@ BEGIN:
 			log.Debug("sleep %v", sleep)
 			var newHeadHash string
 			err = d.QueryRow(d.FormatQuery("SELECT hex(head_hash) FROM info_block")).Scan(&newHeadHash)
-			utils.CheckErr(err)
+			if err != nil {
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+				continue BEGIN
+			}
 			log.Debug("newHeadHash %v", newHeadHash)
 			d.dbUnlock()
 			if newHeadHash != prevHeadHash {
