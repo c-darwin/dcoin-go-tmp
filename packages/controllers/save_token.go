@@ -13,6 +13,7 @@ func (c *Controller) SaveToken() (string, error) {
 
 	c.r.ParseForm()
 	token := c.r.FormValue("token")
+	eOwnerId := c.r.FormValue("e_owner_id")
 
 	if len(token) > 0 {
 		exists, err := c.Single(`SELECT token FROM `+c.MyPrefix+`my_tokens WHERE token = ?`, token).String()
@@ -20,7 +21,7 @@ func (c *Controller) SaveToken() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		if len(exists) == 0 {
-			err := c.ExecSql(`INSERT INTO `+c.MyPrefix+`my_tokens (token, time) VALUES (?, ?)`, token, utils.Time())
+			err := c.ExecSql(`INSERT INTO `+c.MyPrefix+`my_tokens (token, e_owner_id, time) VALUES (?, ?, ?)`, token, eOwnerId, utils.Time())
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}

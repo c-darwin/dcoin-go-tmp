@@ -9,7 +9,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"crypto"
 	"crypto/rsa"
-	"fmt"
+	"github.com/mcuadros/go-version"
 )
 
 type homePage struct {
@@ -45,6 +45,7 @@ type homePage struct {
 	Mobile                bool
 	MyChatName            string
 	AlertMessage		  string
+	ExchangeUrl 		  string
 	TopExMap map[int64]*topEx
 }
 
@@ -221,10 +222,12 @@ func (c *Controller) Home() (string, error) {
 	calcTotal := utils.Round(100*math.Pow(1+currency_pct[72].MinerSec, 3600*24*30)-100, 0)
 
 	// токен для запроса инфы с биржи
-	token, err := c.Single(`SELECT token FROM ` + c.MyPrefix + `my_tokens ORDER BY time DESC LIMIT 1`).String()
+	tokenAndUrl, err := c.OneRow(`SELECT token, e_host FROM ` + c.MyPrefix + `my_tokens LEFT JOIN miners_data ON miners_data.user_id = e_owner_id ORDER BY time DESC LIMIT 1`).String()
 	if err != nil {
 		return "", err
 	}
+	token := tokenAndUrl["token"];
+	exchangeUrl := tokenAndUrl["e_host"];
 
 	myChatName := utils.Int64ToStr(c.SessUserId)
 	// возможно у отпарвителя есть ник
@@ -247,7 +250,7 @@ func (c *Controller) Home() (string, error) {
 
 		messageJson, err := json.Marshal(alertData.Message)
 		if err != nil {
-			fmt.Println(err)
+			log.Error("%v", utils.ErrInfo(err))
 		}
 
 		pub, err := utils.BinToRsaPubKey(utils.HexToBin(consts.ALERT_KEY))
@@ -259,7 +262,10 @@ func (c *Controller) Home() (string, error) {
 			log.Error("%v", utils.ErrInfo(err))
 		}
 
-		alertMessage = alertData.Message[utils.Int64ToStr(c.LangInt)]
+		if version.Compare(alertData.Message["version"], consts.VERSION, ">") {
+			alertMessage = alertData.Message[utils.Int64ToStr(c.LangInt)]
+		}
+
 	}
 
 	// получим топ 5 бирж
@@ -330,7 +336,8 @@ func (c *Controller) Home() (string, error) {
 		IOS:                   utils.IOS(),
 		Mobile:                utils.Mobile(),
 		TopExMap: topExMap,
-		Token:                 token})
+		Token:                 token,
+		ExchangeUrl : exchangeUrl})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
