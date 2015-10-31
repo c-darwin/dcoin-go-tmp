@@ -23,7 +23,7 @@ func (c *Controller) ERedirect() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
-	tokenId, err := c.Single(`SELECT id FROM e_tokens WHERE token = ?`, token)
+	tokenId, err := c.Single(`SELECT id FROM e_tokens WHERE token = ?`, token).String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -41,7 +41,7 @@ func (c *Controller) ERedirect() (string, error) {
 		<input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK">
 		<input type="hidden" name="SUGGESTED_MEMO" value="Dcoins">
 		<input type="hidden" name="BAGGAGE_FIELDS" value="">
-		<input type="hidden" name="PAYMENT_AMOUNT" value="`+amount+`">
+		<input type="hidden" name="PAYMENT_AMOUNT" value="`+utils.Float64ToStr(amount)+`">
 	       </form>`
 	} else if ps == "mobile" {
 		result = `<form name="payment" method="post" action="https://sci.interkassa.com/" enctype="utf-8" id="pm">
@@ -49,7 +49,7 @@ func (c *Controller) ERedirect() (string, error) {
 		<input type="hidden" name="ik_pm_no" value="ID_4233" />
 		<input type="hidden" name="ik_cur" value="USD" />
 		<input type="hidden" name="ik_desc" value="token-`+tokenId+`" />
-		<input type="hidden" name="ik_am" value="`+amount+`" >
+		<input type="hidden" name="ik_am" value="`+utils.Float64ToStr(amount)+`" >
 		</form>`
 	}
 	return result, nil
