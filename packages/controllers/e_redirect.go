@@ -13,7 +13,7 @@ func (c *Controller) ERedirect() (string, error) {
 	amount := utils.StrToFloat64(c.r.FormValue("FormExAmount"))
 	buyCurrencyId := utils.StrToInt64(c.r.FormValue("FormDC"))
 
-	if !utils.CheckInputData(ps, "hex") || !utils.CheckInputData(token, "hex") {
+	if !utils.CheckInputData(ps, "string") || !utils.CheckInputData(token, "string") {
 		return "", errors.New("incorrect data")
 	}
 

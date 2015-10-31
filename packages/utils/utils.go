@@ -1046,6 +1046,12 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "string":
+		if ok, _ := regexp.MatchString(`^[\w]+$`, data); ok {
+			if StrToInt(data) <= 1024 {
+				return true
+			}
+		}
 	case "referral":
 		if ok, _ := regexp.MatchString(`^[0-9]{1,2}$`, data); ok {
 			if StrToInt(data) <= 30 {
