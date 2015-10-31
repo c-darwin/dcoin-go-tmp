@@ -11,7 +11,7 @@ func (c *Controller) ERedirect() (string, error) {
 	c.r.ParseForm()
 	ps := c.r.FormValue("FormExPs")
 	token := c.r.FormValue("FormToken")
-	amount := utils.StrToFloat64(c.r.FormValue("FormExAmount"))
+	amount := c.r.FormValue("FormExAmount")
 	buyCurrencyId := utils.StrToInt64(c.r.FormValue("FormDC"))
 
 	if !utils.CheckInputData(ps, "string") || !utils.CheckInputData(token, "string") {
@@ -19,7 +19,7 @@ func (c *Controller) ERedirect() (string, error) {
 	}
 
 	// order_id занесем когда поуступят деньги в платежной системе
-	err := c.ExecSql(`UPDATE e_tokens SET ps = ?, buy_currency_id = ?, amount_fiat = ? WHERE token = ?`, ps, buyCurrencyId, amount, token)
+	err := c.ExecSql(`UPDATE e_tokens SET ps = ?, buy_currency_id = ?, amount_fiat = ? WHERE token = ?`, ps, buyCurrencyId, utils.StrToFloat64(c.r.FormValue("FormExAmount")), token)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -28,7 +28,6 @@ func (c *Controller) ERedirect() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	fmt.Println(ps, token, amount, buyCurrencyId)
 	result := ""
 	if ps == "pm" {
 		result = `<form action="https://perfectmoney.is/api/step1.asp" method="POST" id="pm">
@@ -43,7 +42,7 @@ func (c *Controller) ERedirect() (string, error) {
 		<input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK">
 		<input type="hidden" name="SUGGESTED_MEMO" value="Dcoins">
 		<input type="hidden" name="BAGGAGE_FIELDS" value="">
-		<input type="hidden" name="PAYMENT_AMOUNT" value="`+utils.Float64ToStr(amount)+`">
+		<input type="hidden" name="PAYMENT_AMOUNT" value="`+amount+`">
 	       </form>`
 	} else if ps == "mobile" {
 		result = `<form name="payment" method="post" action="https://sci.interkassa.com/" enctype="utf-8" id="pm">
@@ -51,7 +50,7 @@ func (c *Controller) ERedirect() (string, error) {
 		<input type="hidden" name="ik_pm_no" value="ID_4233" />
 		<input type="hidden" name="ik_cur" value="USD" />
 		<input type="hidden" name="ik_desc" value="token-`+tokenId+`" />
-		<input type="hidden" name="ik_am" value="`+utils.Float64ToStr(amount)+`" >
+		<input type="hidden" name="ik_am" value="`+amount+`" >
 		</form>`
 	}
 	return result+`<script>document.forms["pm"].submit();</script>`, nil
