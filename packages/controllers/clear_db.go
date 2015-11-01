@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/astaxie/beego/config"
 )
 
 func (c *Controller) ClearDb() (string, error) {
@@ -16,6 +17,10 @@ func (c *Controller) ClearDb() (string, error) {
 		utils.Mutex.Unlock()
 		return "", utils.ErrInfo(err)
 	}
+
+	confIni, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
+	confIni.Set("db_type", "")
+	err = confIni.SaveConfigFile(*utils.Dir + "/config.ini")
 
 	return "", nil
 }
