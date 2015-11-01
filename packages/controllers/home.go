@@ -46,6 +46,7 @@ type homePage struct {
 	MyChatName            string
 	AlertMessage		  string
 	ExchangeUrl 		  string
+	Miner bool
 	TopExMap map[int64]*topEx
 }
 
@@ -303,6 +304,16 @@ func (c *Controller) Home() (string, error) {
 		//}
 	}
 
+	// майнер ли я?
+	miner_, err := c.Single(`SELCT miner_id FROM miners_data WHERE user_id=?`, c.SessUserId).Int64()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	var miner bool
+	if miner_ > 0 {
+		miner = true
+	}
+
 
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
 		CountSignArr:          c.CountSignArr,
@@ -336,6 +347,7 @@ func (c *Controller) Home() (string, error) {
 		IOS:                   utils.IOS(),
 		Mobile:                utils.Mobile(),
 		TopExMap: topExMap,
+		Miner: miner,
 		Token:                 token,
 		ExchangeUrl : exchangeUrl})
 	if err != nil {
