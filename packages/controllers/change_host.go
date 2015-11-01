@@ -34,6 +34,19 @@ func (c *Controller) ChangeHost() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	data2, err := c.OneRow("SELECT http_host, tcp_host, e_host FROM miners_data WHERE user_id = ?", c.SessUserId).String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	if len(data["http_host"]) == 0 {
+		data["http_host"] = data2["http_host"]
+	}
+	if len(data["tcp_host"]) == 0 {
+		data["tcp_host"] = data2["tcp_host"]
+	}
+	if len(data["e_host"]) == 0 {
+		data["e_host"] = data2["e_host"]
+	}
 
 	statusArray := map[string]string{"my_pending": c.Lang["local_pending"], "approved": c.Lang["status_approved"]}
 	data["host_status"] = statusArray[data["host_status"]]
