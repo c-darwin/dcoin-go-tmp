@@ -724,15 +724,15 @@
 			$(".exNext").addClass("btn-block");
 			$(".exNext").css("margin-top", "10px");
 		}
-		$('#exNextPS').bind('click', function () {
+
+		function selectEx(url, user_id) {
 
 			$('#exNextPS').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
 			$('#exNextPS').prop('disabled', true);
 
-			$.post( 'http://tmp-e.dcoin.club/ajax/sign_login.php', {
+			$.post( url+'ajax?controllerName=ESignLogin', {
 				}, function (forsignature) {
-					console.log(forsignature);
-
+					console.log("forsignature:", "#"+forsignature+"#");
 
 					var objEx =
 					{
@@ -749,16 +749,20 @@
 							$('#exNextPS').prop('disabled', false);
 							$('#exNextPS').html('Next');
 						} else {
-							$.post( 'http://tmp-e.dcoin.club/ajax/check_sign.php', {
+							console.log(url+'ajax?controllerName=ECheckSign');
+							$.get( url+'ajax?controllerName=ECheckSign', {
 								'sign': event.data.hSig,
 								'user_id': {{.UserId}}
 							}, function (data) {
+									console.log("ECheckSign", data);
 									if (data.result=="1") {
 										// сохраним токен у себя в БД
 										$.post('ajax?controllerName=saveToken', {
-											'token': data.token
+											'token': data.token,
+											'e_owner_id': user_id
 										}, function () {
 											console.log(data);
+											$('#sendForm').attr('action', url+'ajax');
 											$('input[name="FormExPs"]').val($("#payment_system").val());
 											$('input[name="FormExAmount"]').val($("#exAmount").val());
 											$('input[name="FormDC"]').val($("#buy_currency_id").val());
@@ -770,7 +774,7 @@
 									}
 									$('#exNextPS').prop('disabled', false);
 									$('#exNextPS').html('Next');
-							}, 'JSON')
+							}, "JSON");
 						}
 					};
 					workerAjax.onerror = function(err) {
@@ -781,12 +785,12 @@
 
 					//var e_n_sign = get_e_n_sign(key, pass, forsignature, 'ex_alert');
 
-			});
-		});
+			}, "JSON");
+		}
 
 		$('#exNext').bind('click', function () {
 			$('#buyDC').css("display", "none");
-			$('#buyDCPS').css("display", "block");
+			$('#eList').css("display", "block");
 		});
 
 
@@ -823,7 +827,7 @@
 		function getExData() {
 			if (token != "") {
 				$('#refreshEx').html('<img src="/static/img/squares2.gif" style="width:20px; margin:0px">');
-				$.post( 'http://tmp-e.dcoin.club/info.php', {
+				$.post( '{{.ExchangeUrl}}ajax?controllerName=EInfo', {
 					'token': token
 				}, function (data) {
 					$('#refreshEx').html('<i class="fa fa-refresh"></i>');
@@ -848,35 +852,48 @@
 			}
 		}
 
+		//function selectEx(url) {
+
+		//}
 
 
 	</script>
 	<div style="clear: both"></div>
 
-
 <div style="display: inline-table" class="col-lg-3 col-sm-6">
 	<div id="ex_alert"></div>
-	<div class="panel0" id="buyDCPS" style="display: none">
-		Payment system
-		<select id="payment_system" style="width: 100px; display: inline-block" class="form-control" >
-			<option value='btc'>Bitcoin</option>
-			<option value='mobile'>МТС/Билайн/Мегафон/Теле2</option>
-			<option value='pm'>Perfect Money</option>
-		</select>
-		<button class="btn btn-primary" id="exNextPS">Next</button>
+
+	<div style="display: none" id="eList">
+		<table class="table">
+			<tbody><tr><th>Url</th><th>Owner</th><th>+</th><th>-</th><th>Values</th>{{if .Miner}}<th>Voting</th>{{end}}<th>Payment systems</th><th>Buy</th></tr></tbody>
+			{{range $id, $data := .TopExMap}}
+			<tr><td>{{$data.Host}}</td><td>{{$data.UserId}}</td><td>{{$data.Vote1}}</td><td>{{$data.Vote0}}</td><td id="values-{{$id}}"></td>{{if $.Miner}}<td><button onclick="fc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button onclick="fc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>{{end}}<td id="ps-{{$id}}"></td><td><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}')">Buy</button></td></tr>
+			<script>
+				$.get( '{{$data.Host}}ajax?controllerName=EData', {}, function (data) {
+					var patt = /^([\w,\.\s:]+)$/i;
+					if (patt.test(data.values)) {
+						$('values-{{$id}}').val(data.values);
+					}
+					if (patt.test(data.ps)) {
+						$('ps-{{$id}}').val(data.ps);
+					}
+				});
+			</script>
+			{{end}}
+		</table>
 	</div>
 	<div class="panel0" id="buyDC">
-		Buy on <a href="http://tmp-e.dcoin.club" target="_blank">exchange</a> <input type="text" style="width: 60px;display: inline-block" class="form-control" id="exAmount">
+		Buy on exchange <input type="text" style="width: 60px;display: inline-block" class="form-control" id="exAmount">
 		<select id="buy_currency_id" style="width: {{if .Mobile}}80{{else}}100{{end}}px; display: inline-block" class="form-control" >
 			<option value='72'>dUSD</option>
 		</select>
 		<button class="btn btn-primary exNext" id="exNext">Next</button>
 	</div>
-	<form method="get" action="http://tmp-e.dcoin.club/go.php" id="sendForm">
-		<input type="hidden" name="FormExPs">
+	<form method="get" id="sendForm">
 		<input type="hidden" name="FormExAmount">
 		<input type="hidden" name="FormDC">
 		<input type="hidden" name="FormToken">
+		<input type="hidden" name="controllerName" value="ERedirect">
 	</form>
 	<div style="clear: both; margin-bottom: 20px"></div>
 	<div id="tokens">

@@ -1,0 +1,42 @@
+{{define "eRedirect"}}
+<script>
+
+$('#next').bind('click', function () {
+  if ($('#ps_select').val() == 'ik') {
+    document.forms["ik"].submit();
+  }
+  else {
+    document.forms["pm"].submit();
+  }
+});
+
+</script>
+<select id="ps_select" class="form-control">
+  <option value="pm">Perfect Money</option>
+  <option value="ik">МТС, Магафон, Терминалы, W1, Paxum</option>
+</select>
+<button id="next">Next</button>
+<form action="https://perfectmoney.is/api/step1.asp" method="POST" id="pm">
+  <input type="hidden" name="PAYEE_ACCOUNT" value="U6198385">
+  <input type="hidden" name="PAYEE_NAME" value="DcoinSimple">
+  <input type="hidden" name="PAYMENT_ID" value="token-{{.TokenId}}">
+  <input type="hidden" name="PAYMENT_UNITS" value="USD">
+  <input type="hidden" name="STATUS_URL" value="http://DcoinSimple.com/pm.php">
+  <input type="hidden" name="PAYMENT_URL" value="http://DcoinSimple.com">
+  <input type="hidden" name="PAYMENT_URL_METHOD" value="LINK">
+  <input type="hidden" name="NOPAYMENT_URL" value="http://DcoinSimple.com">
+  <input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK">
+  <input type="hidden" name="SUGGESTED_MEMO" value="Dcoins">
+  <input type="hidden" name="BAGGAGE_FIELDS" value="">
+  <input type="hidden" name="PAYMENT_AMOUNT" value="{{.Amount}}">
+</form>
+
+<form name="payment" method="post" action="https://sci.interkassa.com/" enctype="utf-8" id="ik">
+  <input type="hidden" name="ik_co_id" value="53cfd5e2bf4efc831c9fd661" />
+  <input type="hidden" name="ik_pm_no" value="ID_4233" />
+  <input type="hidden" name="ik_cur" value="USD" />
+  <input type="hidden" name="ik_desc" value="token-{{.TokenId}}" />
+  <input type="hidden" name="ik_am" value="{{.Amount}}" >
+</form>
+
+{{end}}

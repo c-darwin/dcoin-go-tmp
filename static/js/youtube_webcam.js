@@ -33,7 +33,7 @@ function onUploadSuccess(event) {
 
     $("#refresh_youtube_div").css("display", "block");
 
-    $.post('ajax/save_video.php', {'video_url' : 'youtu.be/'+event.data.videoId },
+    $.post('ajax?controllerName=saveVideo', {'video_url' : 'youtu.be/'+event.data.videoId },
         function(data) {
         }, "json");
 }

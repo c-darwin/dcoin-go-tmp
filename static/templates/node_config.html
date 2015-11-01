@@ -78,6 +78,7 @@
 				});
 	});
 
+
 	$("#main_div select").addClass( "form-control" );
 	$("#main_div input").addClass( "form-control" );
 	$("#main_div button").addClass( "btn-outline btn-primary" );
@@ -148,5 +149,39 @@
 	<div>
 		<button class="btn" onclick="fc_navigate('rewritePrimaryKey')">rewrite primary key</button>
 	</div>
+
+	<h3>Exchange</h3>
+
+	<label>Enable</label>
+	<input id="e_enable" class="input" type="text" value="{{index .EConfig "enable"}}">
+	<label>Domain</label>
+	<input id="e_domain" class="input" type="text" value="{{index .EConfig "domain"}}">
+	<label>Catalog</label>
+	<input id="e_catalog" class="input" type="text" value="{{index .EConfig "catalog"}}">
+	<label>Payment Systems</label>
+	<input id="e_ps" class="input" type="text" value="{{index .EConfig "ps"}}">
+
+	<button class="btn" id="e_save">{{.Lang.save}}</button>
+
 </div>
+<script>
+	$('#e_save').bind('click', function () {
+
+		var json = JSON.stringify({
+			'save_e_config' : 1,
+			'e_enable' : $('#e_enable').val(),
+			'e_domain' : $('#e_domain').val(),
+			'e_catalog' : $('#e_catalog').val(),
+			'e_ps' : $('#e_ps').val()
+		});
+
+		$.post( 'ajax?controllerName=nodeConfigControl', {
+					parameters: json
+				},
+				function () {
+					fc_navigate ('nodeConfigControl', {'alert': '{{.Lang.saved}}'} );
+				});
+	});
+
+</script>
 {{end}}

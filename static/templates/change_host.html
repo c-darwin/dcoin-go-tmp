@@ -5,7 +5,7 @@
 
 		$("#change_host").css("display", "none");
 		$("#sign").css("display", "block");
-		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#http_host").val()+','+$("#tcp_host").val());
+		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#http_host").val()+','+$("#tcp_host").val()+','+$("#e_host").val());
 		doSign();
 		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 		});
@@ -18,6 +18,7 @@
 						'user_id' : '{{.UserId}}',
 						'http_host' : $('#http_host').val(),
 						'tcp_host' : $('#tcp_host').val(),
+						'e_host' : $('#e_host').val(),
 						'signature1': $('#signature1').val(),
 						'signature2': $('#signature2').val(),
 						'signature3': $('#signature3').val()
@@ -40,6 +41,7 @@
 		<fieldset>
 			<input class="form-control" type="text" placeholder="" id="http_host" value="{{.Data.http_host}}"><br>
 			<input class="form-control" type="text" placeholder="" id="tcp_host" value="{{.Data.tcp_host}}"><br>
+			<input class="form-control" type="text" placeholder="" id="e_host" value="{{.Data.e_host}}"><br>
 			({{.Data.host_status}})<br>
 			<button type="submit" class="btn" id="save">{{.Lang.next}}</button>
 		</fieldset>
