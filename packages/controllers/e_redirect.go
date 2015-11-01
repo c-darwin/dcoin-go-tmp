@@ -14,12 +14,11 @@ type ERedirectPage struct {
 func (c *Controller) ERedirect() (string, error) {
 
 	c.r.ParseForm()
-	ps := c.r.FormValue("FormExPs")
 	token := c.r.FormValue("FormToken")
 	amount := c.r.FormValue("FormExAmount")
 	buyCurrencyId := utils.StrToInt64(c.r.FormValue("FormDC"))
 
-	if !utils.CheckInputData(ps, "string") || !utils.CheckInputData(token, "string") {
+	if !utils.CheckInputData(token, "string") {
 		return "", errors.New("incorrect data")
 	}
 
