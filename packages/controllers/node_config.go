@@ -20,6 +20,7 @@ type nodeConfigPage struct {
 	ConfigIni    string
 	UserId       int64
 	Lang         map[string]string
+	EConfig    map[string]string
 	Users        []map[int64]map[string]string
 }
 
@@ -51,7 +52,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if len(c.Parameters["domain"]) > 0 {
+		if len(c.Parameters["e_domain"]) > 0 {
 			err = c.ExecSql("INSERT INTO e_config ('name', 'value') VALUES (?, ?)", "domain", c.Parameters["e_domain"]);
 			if err != nil {
 				return "", utils.ErrInfo(err)
@@ -156,6 +157,11 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	config["tcp_listening"] = tcp_listening
 
 
+	eConfig, err := c.GetMap(`SELECT * FROM e_config`, "name", "value")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
 	TemplateStr, err := makeTemplate("node_config", "nodeConfig", &nodeConfigPage{
 		Alert:        c.Alert,
 		Lang:         c.Lang,
@@ -166,6 +172,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		MyStatus:     myStatus,
 		MyMode:       myMode,
 		ConfigIni:    string(configIni),
+		EConfig: eConfig,
 		CountSignArr: c.CountSignArr})
 	if err != nil {
 		return "", utils.ErrInfo(err)

@@ -238,6 +238,10 @@ var TxTypes = map[int]string{
 	65: "ChangeMoneyBackTime",
 	// юзер меняет url центров сертификации, где хранятся его приватные ключи
 	66: "ChangeCa",
+	// бан юзера в чате
+	67: "AdminBanUnbanChat",
+	// голосование за биржи
+	68: "VotesExchange",
 }
 
 func init() {

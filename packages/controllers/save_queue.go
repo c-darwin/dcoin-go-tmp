@@ -1380,6 +1380,22 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("days")))...)
 		data = append(data, binSignatures...)
 
+	case "AdminBanUnbanChat":
+
+		data = utils.DecToBin(txType, 1)
+		data = append(data, utils.DecToBin(txTime, 4)...)
+		data = append(data, utils.EncodeLengthPlusData(userId)...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("users_ids")))...)
+		data = append(data, binSignatures...)
+
+	case "VotesExchange":
+
+		data = utils.DecToBin(txType, 1)
+		data = append(data, utils.DecToBin(txTime, 4)...)
+		data = append(data, utils.EncodeLengthPlusData(userId)...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("e_owner")))...)
+		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("result")))...)
+		data = append(data, binSignatures...)
 	}
 
 	md5 := utils.Md5(data)

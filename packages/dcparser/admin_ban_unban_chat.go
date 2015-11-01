@@ -16,7 +16,7 @@ func (p *Parser) AdminBanUnbanChatInit() error {
 	return nil
 }
 
-func (p *Parser) AdminBanUnbanFront() error {
+func (p *Parser) AdminBanUnbanChatFront() error {
 
 	err := p.generalCheckAdmin()
 	if err != nil {
@@ -41,7 +41,7 @@ func (p *Parser) AdminBanUnbanFront() error {
 	return nil
 }
 
-func (p *Parser) AdminBanUnban() error {
+func (p *Parser) AdminBanUnbanChat() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
 
@@ -56,7 +56,7 @@ func (p *Parser) AdminBanUnban() error {
 	return nil
 }
 
-func (p *Parser) AdminBanUnbanRollback() error {
+func (p *Parser) AdminBanUnbanChatRollback() error {
 
 	users_ids := strings.Split(p.TxMaps.String["users_ids"], ",")
 
@@ -69,6 +69,6 @@ func (p *Parser) AdminBanUnbanRollback() error {
 	return nil
 }
 
-func (p *Parser) AdminBanUnbanRollbackFront() error {
+func (p *Parser) AdminBanUnbanChatRollbackFront() error {
 	return nil
 }
