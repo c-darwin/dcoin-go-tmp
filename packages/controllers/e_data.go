@@ -15,29 +15,28 @@ func (c *Controller) EData() (string, error) {
 	if !utils.CheckInputData(token, "string") {
 		return "", errors.New("incorrect token")
 	}
-	// сколько всего продается dUSD
-	tokenMap, err := c.OneRow(`SELECT * FROM e_tokens WHERE token = ?`, token).String()
+
+	// сколько всего продается DC
+	eOrders, err := c.GetAll(`SELECT sell_currency_id, sum(amount) as amount FROM e_orders GROUP BY sell_currency_id WHERE sell_currency_id < 1000`, 100)
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}
-	wallets, err := c.GetAll(`SELECT * FROM e_wallets WHERE user_id = ?`, 100, tokenMap["user_id"])
-	if err!=nil {
-		return "", utils.ErrInfo(err)
+	values := ""
+	for _, data := range eOrders {
+		values = eOrders["amount"]+` `+c.CurrencyList[eOrders["sell_currency_id"]]+`, `
 	}
-	orders, err := c.GetAll(`SELECT * FROM e_orders WHERE user_id = ? ORDER BY time DESC LIMIT 10`, 100, tokenMap["user_id"])
-	if err!=nil {
-		return "", utils.ErrInfo(err)
+	if len(values) > 0 {
+		values = values[:len(values)-2]
 	}
-	withdraw, err := c.GetAll(`SELECT * FROM e_withdraw WHERE user_id = ? ORDER BY open_time DESC LIMIT 10`, 100, tokenMap["user_id"])
+	ps, err := c.Single(`SELECT value FROM e_config WHERE name = 'ps'`).String()
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}
 
-	//print json_encode(array('token'=>$token, 'wallets'=>$wallets, 'orders'=>$orders, 'withdraw'=>$withdraw));
-	jsonData, err := json.Marshal(&EInfoResult{token: tokenMap, wallets: wallets, orders: orders, withdraw: withdraw})
+	jsonData, err := json.Marshal(map[string]string{"values": values, "ps": ps})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
 	return string(jsonData), nil
+
 }

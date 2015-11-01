@@ -305,7 +305,7 @@ func (c *Controller) Home() (string, error) {
 	}
 
 	// майнер ли я?
-	miner_, err := c.Single(`SELCT miner_id FROM miners_data WHERE user_id=?`, c.SessUserId).Int64()
+	miner_, err := c.Single(`SELECT miner_id FROM miners_data WHERE user_id=?`, c.SessUserId).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
