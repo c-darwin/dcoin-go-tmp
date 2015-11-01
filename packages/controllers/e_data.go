@@ -41,10 +41,3 @@ func (c *Controller) EData() (string, error) {
 
 	return string(jsonData), nil
 }
-
-type EInfoResult struct {
-	token map[string]string
-	wallets []map[string]string
-	orders []map[string]string
-	withdraw []map[string]string
-}
