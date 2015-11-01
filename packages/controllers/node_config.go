@@ -42,6 +42,33 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		}
 	}
 
+	if _, ok := c.Parameters["save_e_config"]; ok {
+		err := c.ExecSql("DELETE FROM e_config");
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		err = c.ExecSql("INSERT INTO e_config ('name', 'value') VALUES (?, ?)", "enable", c.Parameters["e_enable"]);
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if len(c.Parameters["domain"]) > 0 {
+			err = c.ExecSql("INSERT INTO e_config ('name', 'value') VALUES (?, ?)", "domain", c.Parameters["e_domain"]);
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+		} else {
+			err = c.ExecSql("INSERT INTO e_config ('name', 'value') VALUES (?, ?)", "catalog", c.Parameters["e_catalog"]);
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+		}
+		err = c.ExecSql("INSERT INTO e_config ('name', 'value') VALUES (?, ?)", "ps", c.Parameters["e_ps"]);
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+	}
+
+
 	if _, ok := c.Parameters["switch_pool_mode"]; ok {
 		dq := c.GetQuotes()
 		log.Debug("c.Community", c.Community)
@@ -127,6 +154,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	config["tcp_listening"] = tcp_listening
+
 
 	TemplateStr, err := makeTemplate("node_config", "nodeConfig", &nodeConfigPage{
 		Alert:        c.Alert,
