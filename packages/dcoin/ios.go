@@ -60,7 +60,7 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	go StartHTTPServer(ListenHttpHost)
 }
 
-func tcpListener(db *utils.DCDB) {
+func tcpListener() {
 
 }
 

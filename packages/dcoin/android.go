@@ -3,7 +3,6 @@
 package dcoin
 
 import (
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"net/http"
 )
 
@@ -16,7 +15,7 @@ func httpListener(ListenHttpHost, BrowserHttpHost string) {
 	}()
 }
 
-func tcpListener(db *utils.DCDB) {
+func tcpListener() {
 
 }
 
