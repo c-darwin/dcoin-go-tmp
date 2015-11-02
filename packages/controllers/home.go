@@ -274,7 +274,7 @@ func (c *Controller) Home() (string, error) {
 	var q string
 	if c.ConfigIni["db_type"] == "postgresql" {
 		//q = "SELECT DISTINCT e_owner_id, e_host, count(votes_exchange.user_id), result from votes_exchange LEFT JOIN miners_data ON votes_exchange.e_owner_id = miners_data.user_id WHERE e_host != '' GROUP BY e_owner_id, result, e_host"
-		q = "SELECT DISTINCT e_owner_id, e_host, count(votes_exchange.user_id), result, miners_data.user_id from miners_data  LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id WHERE e_host != '' AND result >= 0 GROUP BY votes_exchange.e_owner_id, result, e_host"
+		q = "SELECT DISTINCT e_owner_id, e_host, count(votes_exchange.user_id), result, miners_data.user_id from miners_data  LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id WHERE e_host != '' AND result >= 0 GROUP BY e_owner_id, result, e_host"
 	} else {
 		//q = "SELECT e_owner_id, e_host, count(votes_exchange.user_id) as count, result FROM miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id WHERE and e_host != '' GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
 		q = "SELECT e_owner_id, e_host, count(votes_exchange.user_id) as count, result FROM miners_data LEFT JOIN votes_exchange ON votes_exchange.e_owner_id = miners_data.user_id WHERE e_host != '' AND result >= 0 GROUP BY votes_exchange.e_owner_id, votes_exchange.result LIMIT 10"
