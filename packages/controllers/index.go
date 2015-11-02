@@ -119,6 +119,14 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad|Android)", r.UserAgent()); ok {
 		mobile = true
 	}
+	ios := utils.IOS()
+	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad)", r.UserAgent()); ok {
+		ios = true
+	}
+	android := utils.Android()
+	if ok, _ := regexp.MatchString("(?i)(Android)", r.UserAgent()); ok {
+		ios = true
+	}
 
 	var upgrade3 string
 	if len(r.FormValue("upgrade3")) > 0 {
@@ -160,8 +168,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		/*IOS: true,
 		Android: false,
 		Mobile: true})*/
-		IOS:     utils.IOS(),
-		Android: utils.Android(),
+		IOS:     ios,
+		Android: android,
 		Mobile:  mobile})
 	if err != nil {
 		log.Error("%v", err)

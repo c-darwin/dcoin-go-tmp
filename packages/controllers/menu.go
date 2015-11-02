@@ -6,6 +6,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
 	"strings"
+	"regexp"
 )
 
 type menuPage struct {
@@ -123,13 +124,15 @@ func (c *Controller) Menu() (string, error) {
 		}
 	}()
 
+	mobile := utils.Mobile()
+	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad|Android)", c.r.UserAgent()); ok {
+		mobile = true
+	}
+
 	t := template.Must(template.New("template").Parse(string(data)))
-	log.Debug("0")
 	t = template.Must(t.Parse(string(modal)))
-	log.Debug("1")
 	b := new(bytes.Buffer)
-	log.Debug("2")
-	err = t.ExecuteTemplate(b, "menu", &menuPage{Mobile: utils.Mobile(), SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	err = t.ExecuteTemplate(b, "menu", &menuPage{Mobile: mobile, SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
 	log.Debug("ExecuteTemplate")
 	if err != nil {
 		log.Debug("%s", utils.ErrInfo(err))
