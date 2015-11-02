@@ -10,12 +10,6 @@ func (c *Controller) EData() (string, error) {
 
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	c.r.ParseForm()
-	token := c.r.FormValue("token")
-	if !utils.CheckInputData(token, "string") {
-		return "", errors.New("incorrect token")
-	}
-
 	// сколько всего продается DC
 	eOrders, err := c.GetAll(`SELECT sell_currency_id, sum(amount) as amount FROM e_orders GROUP BY sell_currency_id WHERE sell_currency_id < 1000`, 100)
 	if err!=nil {
