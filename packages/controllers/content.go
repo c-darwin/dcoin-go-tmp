@@ -399,6 +399,11 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// писать в чат можно и при апдейте блокчейна
+		if r.FormValue("tpl_name") == "chat" && tplName == "updatingBlockchain" {
+			tplName = "chat"
+		}
+
 		if dbInit && tplName != "updatingBlockchain" && tplName != "setPassword" && tplName != "waitingAcceptNewKey" {
 			html, err := CallController(c, "AlertMessage")
 			if err != nil {
