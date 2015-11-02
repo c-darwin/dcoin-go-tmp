@@ -29,6 +29,10 @@ func (c *Controller) VotesExchange() (string, error) {
 	eOwner := utils.StrToInt64(c.Parameters["e_owner_id"])
 	result := utils.StrToInt64(c.Parameters["result"])
 
+	signData :=    fmt.Sprintf("%d,%d,%d,%d,%d", txTypeId, timeNow, c.SessUserId, eOwner, result)
+	if eOwner == 0 {
+		signData = ""
+	}
 	TemplateStr, err := makeTemplate("votes_exchange", "votesExchange", &VotesExchangePage{
 		Alert:        c.Alert,
 		Lang:         c.Lang,
@@ -40,7 +44,7 @@ func (c *Controller) VotesExchange() (string, error) {
 		TxTypeId:     txTypeId,
 		EOwner: eOwner,
 	Result:result,
-		SignData:     fmt.Sprintf("%d,%d,%d,%d,%d", txTypeId, timeNow, c.SessUserId, eOwner, result)})
+		SignData:     signData})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
