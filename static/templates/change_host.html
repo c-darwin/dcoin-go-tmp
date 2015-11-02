@@ -12,6 +12,10 @@
 
 		$('#send_to_net').bind('click', function () {
 
+			var all = 0;
+			if ( $("#all").is(':checked') ) {
+				all = 1
+			}
 			$.post( 'ajax?controllerName=saveQueue', {
 						'type' : '{{.TxType}}',
 						'time' : '{{.TimeNow}}',
@@ -19,6 +23,7 @@
 						'http_host' : $('#http_host').val(),
 						'tcp_host' : $('#tcp_host').val(),
 						'e_host' : $('#e_host').val(),
+						'all' : all,
 						'signature1': $('#signature1').val(),
 						'signature2': $('#signature2').val(),
 						'signature3': $('#signature3').val()
@@ -42,6 +47,7 @@
 			<input class="form-control" type="text" placeholder="" id="http_host" value="{{.Data.http_host}}"><br>
 			<input class="form-control" type="text" placeholder="" id="tcp_host" value="{{.Data.tcp_host}}"><br>
 			<input class="form-control" type="text" placeholder="" id="e_host" value="{{.Data.e_host}}"><br>
+			{{if .Community}}<input type="checkbox" id="all"> ALL<br>{{end}}
 			({{.Data.host_status}})<br>
 			<button type="submit" class="btn" id="save">{{.Lang.next}}</button>
 		</fieldset>

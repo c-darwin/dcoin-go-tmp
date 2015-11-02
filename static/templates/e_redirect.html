@@ -1,16 +1,11 @@
 {{define "eRedirect"}}
-<script>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="static/js/jquery-1.11.0.js"></script>
+</head>
 
-$('#next').bind('click', function () {
-  if ($('#ps_select').val() == 'ik') {
-    document.forms["ik"].submit();
-  }
-  else {
-    document.forms["pm"].submit();
-  }
-});
-
-</script>
+<body>
 <select id="ps_select" class="form-control">
   <option value="pm">Perfect Money</option>
   <option value="ik">МТС, Магафон, Терминалы, W1, Paxum</option>
@@ -38,5 +33,18 @@ $('#next').bind('click', function () {
   <input type="hidden" name="ik_desc" value="token-{{.TokenId}}" />
   <input type="hidden" name="ik_am" value="{{.Amount}}" >
 </form>
+<script>
 
+  $('#next').bind('click', function () {
+    if ($('#ps_select').val() == 'ik') {
+      document.forms["ik"].submit();
+    }
+    else {
+      document.forms["pm"].submit();
+    }
+  });
+
+</script>
+</body>
+</html>
 {{end}}

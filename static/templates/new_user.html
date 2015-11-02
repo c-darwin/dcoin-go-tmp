@@ -2,6 +2,11 @@
 <script>
 	$('#new_user').bind('click', function () {
 
+		var bText = $(this).html();
+		console.log(bText);
+		$(this).html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+		$(this).prop('disabled', true);
+
 		$.post( 'ajax?controllerName=generateNewPrimaryKey', function (data) {
 			$("#div_new_user_0").css("display", "none");
 			{{if .ShowSignData}}$("#div_new_user_1").css("display", "block");{{end}}
@@ -10,9 +15,14 @@
 			$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$("#public_key").val());
 			doSign();
 			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+
+			$(this).html(bText);
+			$(this).prop('disabled', false);
+
 			}, 'json' );
 
-		} );
+
+	} );
 
 		$('#next').bind('click', function () {
 			$("#div_new_user_1").css("display", "none");
