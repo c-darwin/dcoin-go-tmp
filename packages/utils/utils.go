@@ -3092,7 +3092,11 @@ func ClearNull(str string, n int) string {
 		if len(str[ind+1:]) > 1 {
 			end = n+1
 		}
-		new = str[:ind] + "." + str[ind+1:ind+end]
+		if n > 0 {
+			new = str[:ind] + "." + str[ind+1:ind+end]
+		} else {
+			new = str[:ind]
+		}
 	} else {
 		new = str
 	}
