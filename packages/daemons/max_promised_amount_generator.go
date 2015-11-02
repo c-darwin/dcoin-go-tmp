@@ -112,17 +112,18 @@ BEGIN:
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		for rows.Next() {
 			var currency_id, amount, votes int64
 			err = rows.Scan(&currency_id, &amount, &votes)
 			if err != nil {
+				rows.Close()
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			maxPromisedAmountVotes[currency_id] = append(maxPromisedAmountVotes[currency_id], map[int64]int64{amount: votes})
 			//fmt.Println("currency_id", currency_id)
 		}
+		rows.Close()
 
 		NewMaxPromisedAmountsVotes := make(map[string]int64)
 		for currencyId, amountsAndVotes := range maxPromisedAmountVotes {

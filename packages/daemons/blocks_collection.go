@@ -506,16 +506,17 @@ BEGIN:
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
-				defer rows.Close()
 				for rows.Next() {
 					var data []byte
 					err = rows.Scan(&data)
 					if err != nil {
+						rows.Close()
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					transactions = append(transactions, utils.EncodeLengthPlusData(data)...)
 				}
+				rows.Close()
 				if len(transactions) > 0 {
 					// отмечаем, что эти тр-ии теперь нужно проверять по новой
 					err = d.ExecSql("UPDATE transactions SET verified = 0 WHERE verified = 1 AND used = 0")

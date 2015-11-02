@@ -75,11 +75,11 @@ BEGIN:
 				continue BEGIN
 			}
 
-			defer rows.Close()
 			for rows.Next() {
 				var id, data string
 				err = rows.Scan(&id, &data)
 				if err != nil {
+					rows.Close()
 					file.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
@@ -88,16 +88,19 @@ BEGIN:
 				sizeAndData := append(utils.DecToBin(len(blockData), 5), blockData...)
 				//err := ioutil.WriteFile(*utils.Dir+"/public/blockchain", append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...), 0644)
 				if _, err = file.Write(append(sizeAndData, utils.DecToBin(len(sizeAndData), 5)...)); err != nil {
+					rows.Close()
 					file.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				if err != nil {
+					rows.Close()
 					file.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 			}
+			rows.Close()
 			file.Close()
 		}
 

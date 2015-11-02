@@ -1066,6 +1066,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		http_host := []byte(c.r.FormValue("http_host"))
 		tcp_host := []byte(c.r.FormValue("tcp_host"))
 		e_host := []byte(c.r.FormValue("e_host"))
+		allUsers := c.r.FormValue("all")
 
 		if !utils.CheckInputData(c.r.FormValue("http_host"), "http_host") {
 			return `incorrect http_host`, nil
@@ -1084,7 +1085,7 @@ func (c *Controller) SaveQueue() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
-			if c.Community && node_admin_access {
+			if c.Community && node_admin_access && allUsers=="1" {
 				community, err = c.GetCommunityUsers()
 				if err != nil {
 					return "", utils.ErrInfo(err)

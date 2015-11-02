@@ -142,13 +142,13 @@ BEGIN:
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			defer rows.Close()
 			for rows.Next() {
 				var id, block_id, type_id, currency_id, to_user_id int64
 				var comment_status, comment string
 				var amount float64
 				err = rows.Scan(&id, &block_id, &type_id, &currency_id, &amount, &to_user_id, &comment_status, &comment)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -156,6 +156,7 @@ BEGIN:
 					// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 					err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -165,6 +166,7 @@ BEGIN:
 				// вначале нужно проверить, точно ли есть такой перевод в блоке
 				binaryData, err := d.Single("SELECT data FROM block_chain WHERE id  =  ?", blockId).Bytes()
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -186,16 +188,19 @@ BEGIN:
 
 							block, _ := pem.Decode([]byte(privateKey))
 							if block == nil || block.Type != "RSA PRIVATE KEY" {
+								rows.Close()
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 							private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 							if err != nil {
+								rows.Close()
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
 							decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
 							if err != nil {
+								rows.Close()
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
@@ -203,6 +208,7 @@ BEGIN:
 							// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
 							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
 							if err != nil {
+								rows.Close()
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
@@ -215,6 +221,7 @@ BEGIN:
 						// т.к. средства на нашем счете уже урезались, а  вот те, что после reduction - остались в том виде, в котором пришли
 						lastReduction, err := d.OneRow("SELECT block_id, pct FROM reduction WHERE currency_id  = ? ORDER BY block_id", currency_id).Int64()
 						if err != nil {
+							rows.Close()
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
@@ -246,6 +253,7 @@ BEGIN:
 						client := &http.Client{}
 						req, err := http.NewRequest("POST", myData["shop_callback_url"], bytes.NewBufferString(data.Encode()))
 						if err != nil {
+							rows.Close()
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
@@ -254,6 +262,7 @@ BEGIN:
 
 						resp, err := client.Do(req)
 						if err != nil {
+							rows.Close()
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 							continue BEGIN
 						}
@@ -262,6 +271,7 @@ BEGIN:
 							// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 							err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET merchant_checked = 1 WHERE id = ?", id)
 							if err != nil {
+								rows.Close()
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
@@ -269,6 +279,7 @@ BEGIN:
 					}
 				}
 			}
+			rows.Close()
 		}
 
 		if d.dSleep(d.sleepTime) {

@@ -199,11 +199,11 @@ BEGIN:
 				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			defer rows.Close()
 			for rows.Next() {
 				var hash, data []byte
 				err = rows.Scan(&hash, &data)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -211,11 +211,13 @@ BEGIN:
 				hashHex := utils.BinToHex(hash)
 				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hashHex)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				toBeSent = append(toBeSent, data...)
 			}
+			rows.Close()
 
 			// шлем тр-ии
 			if len(toBeSent) > 0 {

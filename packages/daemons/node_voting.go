@@ -89,19 +89,20 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		if ok := rows.Next(); ok {
 			var vote_id, miner_id int64
 			var user_id, host, row_face_hash, row_profile_hash, photo_block_id, photo_max_miner_id, miners_keepers string
 			err = rows.Scan(&user_id, &host, &row_face_hash, &row_profile_hash, &photo_block_id, &photo_max_miner_id, &miners_keepers, &vote_id, &miner_id)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
 			if CheckDaemonsRestart() {
-				utils.Sleep(1)
+				rows.Close()
+					utils.Sleep(1)
 				break
 			}
 			minersIds := utils.GetMinersKeepers(photo_block_id, photo_max_miner_id, miners_keepers, true)
@@ -121,18 +122,21 @@ BEGIN:
 				profilePath := *utils.Dir + "/public/profile_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_profile.jpg", profilePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				facePath := *utils.Dir + "/public/face_" + user_id + ".jpg"
 				_, err = utils.DownloadToFile(host+"/public/"+user_id+"_user_face.jpg", facePath, 60, DaemonCh, AnswerDaemonCh)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				// хэши скопированных фото
 				profileFile, err := ioutil.ReadFile(profilePath)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -140,6 +144,7 @@ BEGIN:
 				log.Info("%v", "profileHash", profileHash)
 				faceFile, err := ioutil.ReadFile(facePath)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -160,6 +165,7 @@ BEGIN:
 
 					myUserId, err := d.Single("SELECT user_id FROM miners_data WHERE miner_id  =  ?", myMinerId).Int64()
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -169,6 +175,7 @@ BEGIN:
 					forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("VotesNodeNewMiner"), curTime, myUserId, vote_id, vote)
 					binSign, err := d.GetBinSign(forSign, myUserId)
 					if err != nil {
+						rows.Close()
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -181,6 +188,7 @@ BEGIN:
 
 					err = d.InsertReplaceTxInQueue(data)
 					if err != nil {
+						rows.Close()
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -191,10 +199,12 @@ BEGIN:
 			// отмечаем, чтобы больше не брать эту строку
 			err = d.ExecSql("UPDATE votes_miners SET cron_checked_time = ? WHERE id = ?", utils.Time(), vote_id)
 			if err != nil {
+				rows.Close()
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 		}
+		rows.Close()
 		d.dbUnlock()
 
 		if d.dSleep(d.sleepTime) {

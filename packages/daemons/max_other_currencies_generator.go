@@ -111,16 +111,17 @@ BEGIN:
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		for rows.Next() {
 			var currency_id, count, votes int64
 			err = rows.Scan(&currency_id, &count, &votes)
 			if err != nil {
+				rows.Close()
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			maxOtherCurrenciesVotes[currency_id] = append(maxOtherCurrenciesVotes[currency_id], map[int64]int64{count: votes})
 		}
+		rows.Close()
 
 		newMaxOtherCurrenciesVotes := make(map[string]int64)
 		for currencyId, countAndVotes := range maxOtherCurrenciesVotes {

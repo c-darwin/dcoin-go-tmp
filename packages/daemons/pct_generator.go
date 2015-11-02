@@ -104,12 +104,12 @@ BEGIN:
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			defer rows.Close()
 			for rows.Next() {
 				var currency_id, votes int64
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
 				if err != nil {
+					rows.Close()
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -122,6 +122,7 @@ BEGIN:
 				}
 				pctVotes[currency_id]["miner_pct"][pct] = votes
 			}
+			rows.Close()
 
 			// берем все голоса user_pct
 			rows, err = d.Query("SELECT currency_id, pct, count(user_id) as votes FROM votes_user_pct GROUP BY currency_id, pct ORDER BY currency_id, pct ASC")
@@ -129,12 +130,12 @@ BEGIN:
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			defer rows.Close()
 			for rows.Next() {
 				var currency_id, votes int64
 				var pct string
 				err = rows.Scan(&currency_id, &pct, &votes)
 				if err != nil {
+					rows.Close()
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -147,6 +148,7 @@ BEGIN:
 				}
 				pctVotes[currency_id]["user_pct"][pct] = votes
 			}
+			rows.Close()
 
 			newPct := make(map[string]map[string]map[string]string)
 			newPct["currency"] = make(map[string]map[string]string)
@@ -206,16 +208,17 @@ BEGIN:
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
-				defer rows.Close()
 				for rows.Next() {
 					var level_, votes int64
 					err = rows.Scan(&level_, &votes)
 					if err != nil {
+						rows.Close()
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					votesReferral = append(votesReferral, map[int64]int64{level_: votes})
 				}
+				rows.Close()
 				newPct_.Referral[level] = (utils.GetMaxVote(votesReferral, 0, 30, 10))
 			}
 			jsonData, err := json.Marshal(newPct_)

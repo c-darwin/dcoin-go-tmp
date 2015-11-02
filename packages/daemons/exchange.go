@@ -125,12 +125,12 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		for rows.Next() {
 			var pct float64
 			var currencyId, rTime, blockId int64
 			err = rows.Scan(&pct, &currencyId, &rTime, &blockId)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
@@ -158,12 +158,12 @@ BEGIN:
 					?
 				)`, rTime, blockId, currencyId, pct)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-
 		}
-
+		rows.Close()
 
 		// ++++++++++++ DC ++++++++++++
 		/*
@@ -199,19 +199,20 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		for rows.Next() {
 			var amount float64
 			var id, blockId, typeId, currencyId, toUserId, txTime int64
 			var comment string
 			err = rows.Scan(&amount, &id, &blockId, &typeId, &currencyId, &toUserId, &txTime, &comment)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
 			// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
 			err = d.ExecSql(`UPDATE my_dc_transactions SET merchant_checked = 1 WHERE id = ?`, id)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
@@ -219,6 +220,7 @@ BEGIN:
 			// вначале нужно проверить, точно ли есть такой перевод в блоке
 			binaryData, err := d.Single(`SELECT data FROM block_chain WHERE id = ?`, blockId).Bytes()
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
@@ -237,16 +239,19 @@ BEGIN:
 					// расшифруем коммент
 					block, _ := pem.Decode([]byte(nodePrivateKey))
 					if block == nil || block.Type != "RSA PRIVATE KEY" {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 					decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -254,6 +259,7 @@ BEGIN:
 					// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
 					err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -268,6 +274,7 @@ BEGIN:
 					// т.к. средства на нашем счете уже урезались, а  вот те, что после reduction - остались в том виде, в котором пришли
 					lastReduction, err := d.OneRow("SELECT block_id, pct FROM reduction WHERE currency_id  = ? ORDER BY block_id", currencyId).Int64()
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
@@ -303,12 +310,14 @@ BEGIN:
 							?
 						)`, uid, currencyId, txTime, amount)
 					if err != nil {
+						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
 				}
 			}
 		}
+		rows.Close()
 
 		/*
 		 * Обновляем проценты
@@ -321,12 +330,12 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
-		defer rows.Close()
 		for rows.Next() {
 			var pct float64
 			var pTime, blockId, currencyId int64
 			err = rows.Scan(&pTime, &blockId, &currencyId, &pct)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
@@ -344,6 +353,7 @@ BEGIN:
 					?
 				)`, pTime, blockId, currencyId, pct)
 		}
+		rows.Close()
 
 		if d.dSleep(d.sleepTime) {
 			break BEGIN
