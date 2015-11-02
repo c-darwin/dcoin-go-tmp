@@ -16,7 +16,7 @@ func (c *Controller) EData() (string, error) {
 	}
 	values := ""
 	for _, data := range eOrders {
-		values += ClearNull(data["amount"], 0)+` `+c.CurrencyList[utils.StrToInt64(data["sell_currency_id"])]+`, `
+		values += utils.ClearNull(data["amount"], 0)+` `+c.CurrencyList[utils.StrToInt64(data["sell_currency_id"])]+`, `
 	}
 	if len(values) > 0 {
 		values = values[:len(values)-2]
