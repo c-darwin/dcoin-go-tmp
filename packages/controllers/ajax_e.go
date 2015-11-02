@@ -62,7 +62,11 @@ func AjaxE(w http.ResponseWriter, r *http.Request) {
 		log.Error("%v", err)
 	}
 	c.ECommission = utils.StrToFloat64(c.EConfig["commission"])
-
+	// валюты
+	c.CurrencyList, err = c.GetCurrencyList(false)
+	if err != nil {
+		log.Error("%v", err)
+	}
 	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ELogout|ESignLogin|ECheckSign|ERedirect|EInfo|EData$`, controllerName); !ok {
 		html = "Access denied 0"
 	} else {
