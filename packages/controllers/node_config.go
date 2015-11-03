@@ -63,17 +63,12 @@ func (c *Controller) NodeConfigControl() (string, error) {
 				return "", utils.ErrInfo(err)
 			}
 		}
-		err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, "ps", c.Parameters["e_ps"]);
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, "pm_s_key", c.Parameters["pm_s_key"]);
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, "ik_s_key", c.Parameters["ik_s_key"]);
-		if err != nil {
-			return "", utils.ErrInfo(err)
+		params := []string{"ps", "pm_s_key", "ik_s_key", "pm_id", "ik_id"}
+		for _, data := range params {
+			err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, data, c.Parameters[data]);
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
 		}
 	}
 

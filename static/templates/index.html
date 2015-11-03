@@ -487,6 +487,9 @@
 </script>
 
 <script type="text/javascript" >
+
+	var intervalIdArray = [];
+
 	//window.location.href += "#mypara";
 	//location.reload();
 
@@ -533,6 +536,13 @@
 			else if (page=='upgrade4') {
 				window.open('/#upgrade4', '', '')
 			}*/
+
+			console.log("intervalIdArray", intervalIdArray)
+			if (typeof intervalIdArray != "undefined") {
+				for (i=0; i<intervalIdArray.length; i++)
+					clearInterval(intervalIdArray[i]);
+			}
+
 
 			if (page=='upgrade1'|| page=='upgrade2')
 				user_photo_navigate(page);

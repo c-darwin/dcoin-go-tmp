@@ -102,14 +102,14 @@ func (c *Controller) EMyFinance() (string, error) {
 		</select>
 			<div style="display:block" id="pm_form">
 				<form action="https://perfectmoney.is/api/step1.asp" method="POST">
-					<input type="hidden" name="PAYEE_ACCOUNT" value="U8777532">
-					<input type="hidden" name="PAYEE_NAME" value="DcoinSimple">
+					<input type="hidden" name="PAYEE_ACCOUNT" value="`+c.EConfig["pm_id"]+`">
+					<input type="hidden" name="PAYEE_NAME" value="Dcoin">
 					<input type="hidden" name="PAYMENT_ID" value="`+utils.Int64ToStr(c.SessUserId)+`">
 					<input type="hidden" name="PAYMENT_UNITS" value="USD">
-					<input type="hidden" name="STATUS_URL" value="http://DcoinSimple.com/pm.php">
-					<input type="hidden" name="PAYMENT_URL" value="http://DcoinSimple.com">
+					<input type="hidden" name="STATUS_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EGatePm">
+					<input type="hidden" name="PAYMENT_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=ESuccess">
 					<input type="hidden" name="PAYMENT_URL_METHOD" value="LINK">
-					<input type="hidden" name="NOPAYMENT_URL" value="http://DcoinSimple.com">
+					<input type="hidden" name="NOPAYMENT_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EFailure">
 					<input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK">
 					<input type="hidden" name="SUGGESTED_MEMO" value="Dcoins">
 					<input type="hidden" name="BAGGAGE_FIELDS" value="">
@@ -126,9 +126,12 @@ func (c *Controller) EMyFinance() (string, error) {
 			</div>
 			<div style="display:none" id="ik_form">
 				<form id="payment" name="payment" method="post" action="https://sci.interkassa.com/" enctype="utf-8">
-				    <input type="hidden" name="ik_co_id" value="53cfd5e2bf4efc831c9fd661" />
-					<input type="hidden" name="ik_pm_no" value="ID_4233" />
+				    <input type="hidden" name="ik_co_id" value="`+c.EConfig["ik_id"]+`" />
+					<input type="hidden" name="ik_pm_no" value="ik_pm_no" />
 					<input type="hidden" name="ik_cur" value="USD" />
+					<input type="hidden" name="ik_ia_u" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EGateIk" />
+					<input type="hidden" name="ik_suc_u" value=""http://`+c.EConfig["domain"]+`/ajax?controllerName=ESuccess" />
+					<input type="hidden" name="ik_fal_u" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EFailure" />
 					<input type="hidden" name="ik_desc" value="`+utils.Int64ToStr(c.SessUserId)+`" />
 				<table class="table_out">
 				<tbody>

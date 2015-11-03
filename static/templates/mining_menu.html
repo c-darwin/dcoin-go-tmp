@@ -4,13 +4,7 @@
 		$( "#progress_bar" ).load( "ajax?controllerName=progressBar" );
 	});
 </script>
-<script>
-	if (typeof intervalIdArray != "undefined") {
-		for (i=0; i<intervalIdArray.length; i++)
-			clearInterval(intervalIdArray[i]);
-	}
-	var intervalIdArray = [];
-</script>
+
 <h1 class="page-header">{{.Lang.mining}}</h1>
 
 {{template "alertSuccess".}}

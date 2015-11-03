@@ -5,13 +5,7 @@
 	var userId = {{.UserId}}
 </script>
 <script src="/static/js/chat.js"></script>
-<script>
-	if (typeof intervalIdArray != "undefined") {
-		for (i=0; i<intervalIdArray.length; i++)
-			clearInterval(intervalIdArray[i]);
-	}
-	var intervalIdArray = [];
-</script>
+
 <style>
 	#chat img{width: 50px; float: left; margin-right: 10px}
 	#chatLock { padding: 3px 7px; font-size: 20px; }
