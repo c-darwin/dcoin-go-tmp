@@ -119,14 +119,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad|Android)", r.UserAgent()); ok {
 		mobile = true
 	}
-	mobile = true
+
 	ios := utils.IOS()
 	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad)", r.UserAgent()); ok {
 		ios = true
 	}
+	
 	android := utils.Android()
 	if ok, _ := regexp.MatchString("(?i)(Android)", r.UserAgent()); ok {
-		ios = true
+		android = true
 	}
 
 	var upgrade3 string
