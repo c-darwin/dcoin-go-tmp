@@ -28,7 +28,7 @@ func (c *Controller) EGateIk() (string, error) {
 	for _, names := range ikNames {
 		ikValues = append(ikValues, c.r.Form[names][0])
 	}
-	ikValues = append(ikValues, c.EConfig["ik_key"])
+	ikValues = append(ikValues, "aZNwrkXK1eptH3qM")
 	fmt.Println(ikValues)
 	sign := strings.Join(ikValues, ":")
 	fmt.Println(sign)
