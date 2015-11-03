@@ -13,14 +13,20 @@ func (c *Controller) EGateIk() (string, error) {
 	var body []byte
 	fmt.Println(c.r.Body.Read(body))
 	fmt.Println(c.r.Form)
-	var ikArr []string
-	for name, values := range c.r.Form {
+	var ikNames []string
+	for name, _ := range c.r.Form {
 		if name[:2] == "ik" && name!="ik_sign" {
-			ikArr = append(ikArr, values[0])
+			ikNames = append(ikNames, name)
 		}
 	}
-	sort.Strings(ikArr)
-	fmt.Println(ikArr)
+	sort.Strings(ikNames)
+	fmt.Println(ikNames)
+
+	var ikValues []string
+	for _, names := range ikNames {
+		ikValues = append(ikValues, c.r.Form[names][0])
+	}
+	fmt.Println(ikValues)
 
 	//map[ik_co_rfn:[100] ik_cur:[RUB] ik_co_prs_id:[406295558666] ik_inv_crt:[2015-11-03 19:35:46] ik_inv_prc:[2015-11-03 19:35:46] ik_inv_st:[success] ik_pm_no:[ID_4233] ik_am:[100] ik_trn_id:[] ik_pw_via:[test_interkassa_test_xts] ik_ps_price:[103] ik_desc:[Event Description] ik_sign:[FKIE3rf+ULdnh1AZAYzjKw==] controllerName:[EGateIk] ik_co_id:[560ecc4e3d1eaf52348b4567] ik_inv_id:[41977100]]
 
