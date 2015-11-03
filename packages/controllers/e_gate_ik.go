@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	//"strings"
+	"strings"
 	//"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"sort"
+	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"encoding/base64"
 )
 
 func (c *Controller) EGateIk() (string, error) {
@@ -26,7 +28,13 @@ func (c *Controller) EGateIk() (string, error) {
 	for _, names := range ikNames {
 		ikValues = append(ikValues, c.r.Form[names][0])
 	}
+	ikValues = append(ikValues, c.EConfig["ik_key"])
 	fmt.Println(ikValues)
+	sign := strings.Join(ikValues, ":")
+	fmt.Println(sign)
+	sign = base64.StdEncoding.EncodeToString(utils.HexToBin(utils.Md5(sign)))
+	fmt.Println(sign)
+
 
 	//map[ik_co_rfn:[100] ik_cur:[RUB] ik_co_prs_id:[406295558666] ik_inv_crt:[2015-11-03 19:35:46] ik_inv_prc:[2015-11-03 19:35:46] ik_inv_st:[success] ik_pm_no:[ID_4233] ik_am:[100] ik_trn_id:[] ik_pw_via:[test_interkassa_test_xts] ik_ps_price:[103] ik_desc:[Event Description] ik_sign:[FKIE3rf+ULdnh1AZAYzjKw==] controllerName:[EGateIk] ik_co_id:[560ecc4e3d1eaf52348b4567] ik_inv_id:[41977100]]
 
