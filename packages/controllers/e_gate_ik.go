@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	//"strings"
+	//"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"sort"
 )
 
 func (c *Controller) EGateIk() (string, error) {
@@ -10,9 +13,20 @@ func (c *Controller) EGateIk() (string, error) {
 	var body []byte
 	fmt.Println(c.r.Body.Read(body))
 	fmt.Println(c.r.Form)
-	/*
-	sign := strings.ToUpper(utils.Md5(c.r.FormValue("PAYMENT_ID")+":"+c.r.FormValue("PAYEE_ACCOUNT")+":"+c.r.FormValue("PAYMENT_AMOUNT")+":"+c.r.FormValue("PAYMENT_UNITS")+":"+c.r.FormValue("PAYMENT_BATCH_NUM")+":"+c.r.FormValue("PAYER_ACCOUNT")+":"+strings.ToUpper(utils.Md5(c.EConfig["pm_s_key"]))+":"+c.r.FormValue("TIMESTAMPGMT")))
+	var ikArr []string
+	for name, values := range c.r.Form {
+		if name[:2] == "ik" && name!="ik_sign" {
+			ikArr = append(ikArr, values[0])
+		}
+	}
+	sort.Strings(ikArr)
+	fmt.Println(ikArr)
 
+	//map[ik_co_rfn:[100] ik_cur:[RUB] ik_co_prs_id:[406295558666] ik_inv_crt:[2015-11-03 19:35:46] ik_inv_prc:[2015-11-03 19:35:46] ik_inv_st:[success] ik_pm_no:[ID_4233] ik_am:[100] ik_trn_id:[] ik_pw_via:[test_interkassa_test_xts] ik_ps_price:[103] ik_desc:[Event Description] ik_sign:[FKIE3rf+ULdnh1AZAYzjKw==] controllerName:[EGateIk] ik_co_id:[560ecc4e3d1eaf52348b4567] ik_inv_id:[41977100]]
+
+/*
+	sign := strings.ToUpper(utils.Md5(c.r.FormValue("ik_co_rfn")+":"+c.r.FormValue("ik_cur")+":"+c.r.FormValue("ik_co_prs_id")+":"+c.r.FormValue("ik_inv_crt")+":"+c.r.FormValue("ik_inv_prc")+":"+c.r.FormValue("ik_inv_st")+":"+c.r.FormValue("ik_pm_no")+":"+c.r.FormValue("ik_am")+":"+c.r.FormValue("ik_trn_id")+":"+c.r.FormValue("ik_pw_via")+":"+c.r.FormValue("ik_ps_price")+":"+c.r.FormValue("ik_desc")+":"+strings.ToUpper(utils.Md5(c.EConfig["pm_s_key"]))+":"+c.r.FormValue("TIMESTAMPGMT")))
+/*
 	txTime := utils.StrToInt64(c.r.FormValue("TIMESTAMPGMT"));
 
 	if sign != c.r.FormValue("V2_HASH") {
