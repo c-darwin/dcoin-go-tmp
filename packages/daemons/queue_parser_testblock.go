@@ -72,7 +72,7 @@ BEGIN:
 			continue
 		}
 		if len(data) == 0 {
-			if d.unlockPrintSleep(utils.ErrInfo(errors.New("len(data) == 0")), d.sleepTime) {	break BEGIN }
+			if d.unlockPrintSleepInfo(utils.ErrInfo(errors.New("len(data) == 0")), d.sleepTime) {	break BEGIN }
 			continue
 		}
 

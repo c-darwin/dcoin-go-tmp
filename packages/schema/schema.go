@@ -2748,7 +2748,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[2] = map[string]string{"name": "time", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"token"}
-	s1["comment"] = "Токены длы получения инфы с какой-то центральной биржы"
+	s1["comment"] = "Токены для получения инфы с какой-то центральной биржы"
 	s["[my_prefix]my_tokens"] = s1
 	schema.S = s
 	schema.PrintSchema()

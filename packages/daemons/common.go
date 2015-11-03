@@ -77,15 +77,22 @@ func (d *daemon) unlockPrintSleep(err error, sleep int) bool {
 	return false
 }
 
-func (d *daemon) unlockPrintSleepInfo(err error, sleep time.Duration) {
+func (d *daemon) unlockPrintSleepInfo(err error, sleep int) bool {
 	if err != nil {
-		log.Error("%v", err)
+		log.Debug("%v", err)
 	}
 	err = d.DbUnlock(d.goRoutineName)
 	if err != nil {
 		log.Error("%v", err)
 	}
-	utils.Sleep(sleep)
+
+	for i := 0; i < sleep; i++ {
+		if CheckDaemonsRestart() {
+			return true
+		}
+		utils.Sleep(1)
+	}
+	return false
 }
 
 func (d *daemon) notMinerSetSleepTime(sleep int) error {

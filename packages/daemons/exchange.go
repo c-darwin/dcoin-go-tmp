@@ -40,11 +40,6 @@ func Exchange() {
 		return
 	}
 
-	err = d.notMinerSetSleepTime(1800)
-	if err != nil {
-		log.Error("%v", err)
-		return
-	}
 
 BEGIN:
 	for {
