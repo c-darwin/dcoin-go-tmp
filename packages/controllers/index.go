@@ -124,7 +124,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.MatchString("(?i)(iPod|iPhone|iPad)", r.UserAgent()); ok {
 		ios = true
 	}
-	
+
 	android := utils.Android()
 	if ok, _ := regexp.MatchString("(?i)(Android)", r.UserAgent()); ok {
 		android = true
