@@ -5,7 +5,6 @@ import (
 	"github.com/astaxie/beego/config"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/op/go-logging"
-	"time"
 	"os"
 	"errors"
 )
