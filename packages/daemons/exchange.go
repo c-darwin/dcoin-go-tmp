@@ -119,7 +119,7 @@ BEGIN:
 		}
 
 		// если уже прошло 10 блоков с момента обнаружения reduction, то производим сокращение объема монет
-		rows, err := d.Query(d.FormatQuery(`SELECT * FROM reduction WHERE block_id > ? AND
+		rows, err := d.Query(d.FormatQuery(`SELECT pct, currency_id, time, block_id FROM reduction WHERE block_id > ? AND
 	block_id < ?`), maxReductionBlock, blockId-confirmations)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
