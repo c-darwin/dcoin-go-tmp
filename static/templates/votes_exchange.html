@@ -4,12 +4,13 @@
 	{{if ne .EOwner 0}}
 	var e_owner = '{{.EOwner}}';
 	var result = '{{.Result}}';
+	{{if .ShowSignData}}$("#main").css("display", "none");$("#sign").css("display", "block");{{end}}
+
 	{{else}}
 	var e_owner = "";
 	var result = "";
 	{{end}}
 
-	{{if .ShowSignData}}$("#main").css("display", "none");$("#sign").css("display", "block");{{end}}
 
 	$('#save').bind('click', function () {
 
@@ -22,7 +23,9 @@
 			$("#sign").css("display", "block");
 			$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+e_owner+','+result);
 			doSign();
-			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+		{{if .ShowSignData}}$("#main").css("display", "none");$("#sign").css("display", "block");{{end}}
+
+		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 
 		{{end}}
 	});

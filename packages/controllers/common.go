@@ -482,14 +482,14 @@ func userLock(userId int64) error {
 }
 
 
-func (c *Controller) newForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCurrencyId int64, orderType string) error {
+func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCurrencyId int64, orderType string, eCommission float64) error {
 	log.Debug("userId: %v / amount: %v / sellRate: %v / float64: %v / sellCurrencyId: %v / buyCurrencyId: %v / orderType: %v ", userId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType)
 	curTime := utils.Time()
 	err := userLock(userId)
 	if err!=nil {
 		return utils.ErrInfo(err)
 	}
-	commission := amount * (c.ECommission/100)
+	commission := amount * (eCommission/100)
 	newAmount := amount - commission
 	if newAmount < commission {
 		commission = 0

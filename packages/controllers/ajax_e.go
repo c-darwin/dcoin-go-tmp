@@ -61,13 +61,13 @@ func AjaxE(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("%v", err)
 	}
-	c.ECommission = utils.StrToFloat64(c.EConfig["commission"])
+	c.ECommission = utils.StrToMoney(c.EConfig["commission"])
 	// валюты
 	c.CurrencyList, err = c.GetCurrencyList(false)
 	if err != nil {
 		log.Error("%v", err)
 	}
-	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ELogout|ESignLogin|ECheckSign|ERedirect|EInfo|EData$`, controllerName); !ok {
+	if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ELogout|ESignLogin|ECheckSign|ERedirect|EInfo|EData|EGatePm|EGateIk$`, controllerName); !ok {
 		html = "Access denied 0"
 	} else {
 		if ok, _ := regexp.MatchString(`^(?i)ESaveOrder|ESignUp|ELogin|ESignLogin|ECheckSign|ERedirect|EInfo|EData$`, controllerName); !ok && c.SessUserId <= 0 {

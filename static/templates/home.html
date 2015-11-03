@@ -865,19 +865,19 @@
 
 	<div style="display: none" id="eList">
 		<table class="table">
-			<tbody><tr><th>Url</th><th>Owner</th><th>+</th><th>-</th><th>Values</th>{{if .Miner}}<th>Voting</th>{{end}}<th>Payment systems</th><th>Buy</th></tr></tbody>
+			<tbody><tr><th>Url</th><th>Owner</th><th>+</th><th>-</th><th style="min-width: 100px">Values</th>{{if .Miner}}<th>Voting</th>{{end}}<th>Payment systems</th><th>Buy</th></tr></tbody>
 			{{range $id, $data := .TopExMap}}
 			<tr><td>{{$data.Host}}</td><td>{{$data.UserId}}</td><td>{{$data.Vote1}}</td><td>{{$data.Vote0}}</td><td id="values-{{$id}}"></td>{{if $.Miner}}<td><button onclick="fc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button onclick="fc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>{{end}}<td id="ps-{{$id}}"></td><td><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}')">Buy</button></td></tr>
 			<script>
 				$.get( '{{$data.Host}}ajax?controllerName=EData', {}, function (data) {
 					var patt = /^([\w,\.\s:]+)$/i;
 					if (patt.test(data.values)) {
-						$('values-{{$id}}').val(data.values);
+						$('#values-{{$id}}').html(data.values);
 					}
 					if (patt.test(data.ps)) {
-						$('ps-{{$id}}').val(data.ps);
+						$('#ps-{{$id}}').html(data.ps);
 					}
-				});
+				}, 'JSON');
 			</script>
 			{{end}}
 		</table>

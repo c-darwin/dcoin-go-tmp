@@ -51,7 +51,7 @@ func (c *Controller) ESaveOrder() (string, error) {
 		return "", errors.New(c.Lang["not_enough_money"]+" ("+utils.Float64ToStr(userAmountAndProfit)+"<"+utils.Float64ToStr(amount)+")"+strings.Replace(c.Lang["add_funds_link"], "[currency]", "USD", -1))
 	}
 
-	err = c.newForexOrder(c.SessUserId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType)
+	err = NewForexOrder(c.SessUserId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType, utils.StrToMoney(c.EConfig["commission"]))
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	} else {
