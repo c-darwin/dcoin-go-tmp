@@ -7,7 +7,7 @@ import (
 
 type ERedirectPage struct {
 	Lang           map[string]string
-	Econfig map[string]string
+	EConfig map[string]string
 	TokenId string
 	Amount string
 }
@@ -36,7 +36,7 @@ func (c *Controller) ERedirect() (string, error) {
 
 	TemplateStr, err := makeTemplate("e_redirect", "eRedirect", &ERedirectPage{
 		Lang:           c.Lang,
-		Econfig : c.EConfig,
+		EConfig : c.EConfig,
 		TokenId: tokenId,
 		Amount: amount})
 	if err != nil {
