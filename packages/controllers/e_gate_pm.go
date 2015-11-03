@@ -23,6 +23,10 @@ func (c *Controller) EGatePm() (string, error) {
 	if c.r.FormValue("PAYMENT_UNITS") == "USD" {
 		currencyId = 1001
 	}
+	if currencyId == 0 {
+		return "", errors.New("Incorrect currencyId")
+	}
+
 	amount := utils.StrToFloat64(c.r.FormValue("PAYMENT_AMOUNT"))
 	pmId := utils.StrToInt64(c.r.FormValue("PAYMENT_BATCH_NUM"))
 	// проверим, не зачисляли ли мы уже это платеж

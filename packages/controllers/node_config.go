@@ -67,6 +67,14 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
+		err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, "pm_s_key", c.Parameters["pm_s_key"]);
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, "ik_s_key", c.Parameters["ik_s_key"]);
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 	}
 
 
