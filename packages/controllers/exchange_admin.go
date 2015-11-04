@@ -41,6 +41,7 @@ func (c *Controller) ExchangeAdmin() (string, error) {
 			if err!=nil {
 				return "", utils.ErrInfo(err)
 			}
+			lock =  utils.Time()
 		}
 
 	}
