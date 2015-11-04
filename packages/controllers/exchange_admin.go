@@ -20,7 +20,7 @@ func (c *Controller) ExchangeAdmin() (string, error) {
 
 	log.Debug("c.Parameters", c.Parameters)
 
-	withdraw, err := c.GetAll(`SELECT e_withdraw.id, open_time, close_time, user_id, currency_id, account, amount,  wd_amount, method, email
+	withdraw, err := c.GetAll(`SELECT e_withdraw.id, open_time, close_time, e_users.user_id, currency_id, account, amount,  wd_amount, method, email
     		FROM e_withdraw
     		LEFT JOIN e_users on e_users.id = e_withdraw.user_id
    			ORDER BY open_time DESC`, 100)
