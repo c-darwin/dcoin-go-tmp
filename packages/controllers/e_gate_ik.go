@@ -13,7 +13,6 @@ func (c *Controller) EGateIk() (string, error) {
 
 	c.r.ParseForm()
 	var body []byte
-	fmt.Println(c.r.Body.Read(body))
 	fmt.Println(c.r.Form)
 	var ikNames []string
 	for name, _ := range c.r.Form {

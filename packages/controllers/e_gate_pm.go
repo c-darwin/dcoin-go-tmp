@@ -5,11 +5,15 @@ import (
 	"errors"
 	"strings"
 	"regexp"
+	"fmt"
 )
 
 func (c *Controller) EGatePm() (string, error) {
 
 	c.r.ParseForm()
+
+	fmt.Println(c.r.Form)
+
 	sign := strings.ToUpper(string(utils.Md5(c.r.FormValue("PAYMENT_ID")+":"+c.r.FormValue("PAYEE_ACCOUNT")+":"+c.r.FormValue("PAYMENT_AMOUNT")+":"+c.r.FormValue("PAYMENT_UNITS")+":"+c.r.FormValue("PAYMENT_BATCH_NUM")+":"+c.r.FormValue("PAYER_ACCOUNT")+":"+strings.ToUpper(string(utils.Md5(c.EConfig["pm_s_key"])))+":"+c.r.FormValue("TIMESTAMPGMT"))))
 
 	txTime := utils.StrToInt64(c.r.FormValue("TIMESTAMPGMT"));
