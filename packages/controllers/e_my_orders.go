@@ -34,6 +34,7 @@ func (c *Controller) EMyOrders() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		//var time, emptyTime, sellCurrencyId, buyCurrencyId int64
 		//var amount, beginAmount, sellRate, total float64

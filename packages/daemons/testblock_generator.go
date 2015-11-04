@@ -322,8 +322,9 @@ BEGIN:
 			var thirdVar string
 			err = rows.Scan(&data, &hash, &txType, &txUserId, &thirdVar)
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-				continue
+				continue BEGIN
 			}
 			log.Debug("data %v", data)
 			log.Debug("hash %v", hash)
@@ -341,15 +342,17 @@ BEGIN:
 
 			exists, err := d.Single("SELECT hash FROM transactions_testblock WHERE hex(hash) = ?", hashMd5).String()
 			if err != nil {
+				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-				continue
+				continue BEGIN
 			}
 			if len(exists) == 0 {
 				err = d.ExecSql(`INSERT INTO transactions_testblock (hash, data, type, user_id, third_var) VALUES ([hex], [hex], ?, ?, ?)`,
 					hashMd5, dataHex, txType, txUserId, thirdVar)
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-					continue
+					continue BEGIN
 				}
 			}
 			if configIni["db_type"] == "postgresql" {
@@ -358,6 +361,7 @@ BEGIN:
 				usedTransactions += "x'" + hash + "',"
 			}
 		}
+		rows.Close()
 
 		if len(mrklArray) == 0 {
 			mrklArray = append(mrklArray, []byte("0"))

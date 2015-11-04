@@ -538,7 +538,7 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
-
+	defer rows.Close()
 	for rows.Next() {
 		var rowId, rowUserId, rowBuyCurrencyId, rowSellCurrencyId int64
 		var rowAmount, rowSellRate float64

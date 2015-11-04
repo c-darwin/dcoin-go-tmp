@@ -132,6 +132,7 @@ BEGIN:
 			var currency_id string
 			err = rows.Scan(&currency_id, &pct, &votes)
 			if err != nil {
+				rows.Close()
 				if d.unlockPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
@@ -143,6 +144,7 @@ BEGIN:
 				// проверим, прошло ли 2 недели с последнего урезания
 				reductionTime, err := d.Single("SELECT max(time) FROM reduction WHERE currency_id  =  ? AND type  =  'manual'", currency_id).Int64()
 				if err != nil {
+					rows.Close()
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
@@ -155,6 +157,7 @@ BEGIN:
 				}
 			}
 		}
+		rows.Close()
 
 		// =======  авто-урезание денежной массы из-за малого объема обещанных сумм
 

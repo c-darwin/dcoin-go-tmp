@@ -34,6 +34,7 @@ func (c *Controller) EMyHistory() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		myHist := new(EmyHistory)
 		err = rows.Scan(&myHist.Time, &myHist.Amount, &myHist.SellRate)

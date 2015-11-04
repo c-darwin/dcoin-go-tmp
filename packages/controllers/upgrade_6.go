@@ -142,6 +142,7 @@ func (c *Controller) Upgrade6() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	pools := make(map[string]string)
 	for rows.Next() {
 		var user_id, http_host string

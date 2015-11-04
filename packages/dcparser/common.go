@@ -273,6 +273,7 @@ func (p *Parser) GetBlocks(blockId int64, host string, userId int64, rollbackBlo
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var data []byte
 		err = rows.Scan(&data)
@@ -361,6 +362,7 @@ func (p *Parser) GetBlocks(blockId int64, host string, userId int64, rollbackBlo
 				if err != nil {
 					return p.ErrInfo(err)
 				}
+				defer rows.Close()
 				for rows.Next() {
 					var data []byte
 					err = rows.Scan(&data)
@@ -1017,6 +1019,7 @@ func (p *Parser) RollbackToBlockId(blockId int64) error {
 		var data, id []byte
 		err = rows.Scan(&id, &data)
 		if err != nil {
+			rows.Close()
 			return p.ErrInfo(err)
 		}
 		blocks = append(blocks, map[string][]byte{"id": id, "data": data})

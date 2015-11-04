@@ -183,6 +183,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
 		err = rows.Scan(&Finance.Amount, &Finance.WdAmount, &Finance.CloseTime, &Finance.CurrencyId, &Finance.Method, &Finance.OpenTime)
@@ -212,6 +213,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
 		err = rows.Scan(&Finance.Amount,  &Finance.AddTime, &Finance.CurrencyId)
@@ -235,6 +237,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
 		err = rows.Scan(&Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)
@@ -259,6 +262,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
 		err = rows.Scan(&Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)

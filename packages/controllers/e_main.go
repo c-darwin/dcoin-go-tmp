@@ -70,6 +70,7 @@ func (c *Controller) EMain() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var sellCurrencyId, eTime int64
 		var sellRate, amount float64
@@ -109,6 +110,7 @@ func (c *Controller) EMain() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	// мин. цена покупки
 	var buyMin float64
 	for rows.Next() {
@@ -139,6 +141,7 @@ func (c *Controller) EMain() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	// мин. цена продажи
 	var sellMax float64
 	for rows.Next() {
@@ -205,6 +208,7 @@ func eGetCurrencyPair() (map[int64][]int64, error) {
 	if err != nil {
 		return currencyList, utils.ErrInfo(err)
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var id, currency, dc_currency int64
 		err = rows.Scan(&id, &currency, &dc_currency)
