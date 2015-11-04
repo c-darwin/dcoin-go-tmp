@@ -10,7 +10,7 @@ func (c *Controller) EData() (string, error) {
 	c.w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// сколько всего продается DC
-	eOrders, err := c.GetAll(`SELECT sell_currency_id, sum(amount) as amount FROM e_orders  WHERE sell_currency_id < 1000 GROUP BY sell_currency_id`, 100)
+	eOrders, err := c.GetAll(`SELECT sell_currency_id, sum(amount) as amount FROM e_orders  WHERE sell_currency_id < 1000 AND empty_time = 0 GROUP BY sell_currency_id`, 100)
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}

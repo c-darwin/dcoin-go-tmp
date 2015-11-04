@@ -212,6 +212,7 @@ BEGIN:
 				continue BEGIN
 			}
 
+
 			// вначале нужно проверить, точно ли есть такой перевод в блоке
 			binaryData, err := d.Single(`SELECT data FROM block_chain WHERE id = ?`, blockId).Bytes()
 			if err != nil {
@@ -225,6 +226,18 @@ BEGIN:
 			for _, txMap := range p.TxMapsArr {
 				// пропускаем все ненужные тр-ии
 				if txMap.Int64["type"] != utils.TypeInt("SendDc") {
+					continue
+				}
+
+				// если что-то случится с таблой my_dc_transactions, то все ввода на бирджу будут зачислены по новой
+				// поэтому нужно проверять e_adding_funds
+				exists, err := d.Single(`SELECT id FROM e_adding_funds WHERE hex(tx_hash) = ?`, txMap.String["md5hash"]).Int64()
+				if err != nil {
+					rows.Close()
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+					continue BEGIN
+				}
+				if exists != 0 {
 					continue
 				}
 
@@ -296,14 +309,16 @@ BEGIN:
 							user_id,
 							currency_id,
 							time,
-							amount
+							amount,
+							tx_hash
 						)
 						VALUES (
 							?,
 							?,
 							?,
+							?,
 							?
-						)`, uid, currencyId, txTime, amount)
+						)`, uid, currencyId, txTime, amount, txMap.String["md5hash"])
 					if err != nil {
 						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }

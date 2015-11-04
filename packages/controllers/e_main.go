@@ -91,7 +91,7 @@ func (c *Controller) EMain() (string, error) {
 			eTotal = amount
 		}
 		t := time.Unix(eTime, 0)
-		tradeHistory = append(tradeHistory, map[string]string{"Time": t.Format(c.TimeFormat), "Type": eType, "SellRate": utils.ClearNull(utils.Float64ToStr(sellRate), 2), "Amount": utils.ClearNull(utils.Float64ToStr(eAmount), 2), "Total": utils.ClearNull(utils.Float64ToStr(eTotal), 2)})
+		tradeHistory = append(tradeHistory, map[string]string{"Time": t.Format(c.TimeFormat), "Type": eType, "SellRate": utils.ClearNull(utils.Float64ToStr(sellRate), 4), "Amount": utils.ClearNull(utils.Float64ToStr(eAmount), 4), "Total": utils.ClearNull(utils.Float64ToStr(eTotal), 4)})
 	}
 
 	// активные ордеры на продажу
