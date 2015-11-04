@@ -3150,7 +3150,7 @@ func UpdEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
 			return ErrInfo(err)
 		}
 	} else {
-		err = DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ?", amount, lastUpdate, userId)
+		err = DB.ExecSql("UPDATE e_wallets SET amount = amount + ?, last_update = ? WHERE user_id = ?", amount, lastUpdate, userId)
 		if err != nil {
 			eWallets.Unlock()
 			return ErrInfo(err)

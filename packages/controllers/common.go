@@ -469,9 +469,9 @@ func userLock(userId int64) error {
 	var affect int64
 	var err error
 	// даем время, чтобы lock освободился от другого запроса
-	for i:=0; i<4; i++ {
+	for i:=0; i < 4; i++ {
 		affect, err = utils.DB.ExecSqlGetAffect(`UPDATE e_users SET lock = ? WHERE id = ? AND lock = 0`, utils.Time(), userId)
-		if affect > 1 {
+		if affect > 0 {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
