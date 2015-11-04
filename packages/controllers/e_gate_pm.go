@@ -68,25 +68,35 @@ func EPayment(paymentInfo string, currencyId, txTime int64, amount float64, paym
 		if err!=nil {
 			return utils.ErrInfo(err)
 		}
+		// тут user_id - это из dcoin
 		data, err := utils.DB.OneRow(`SELECT user_id, buy_currency_id FROM e_tokens WHERE id = ?`, token).Int64()
 		if err!=nil {
 			return utils.ErrInfo(err)
 		}
-		userId = data["user_id"]
+		// берем user_id с биржи
+		userId, err = utils.DB.Single(`SELECT id FROM e_users WHERE user_id = ?`, data["user_id"]).Int64()
+		if err!=nil {
+			return utils.ErrInfo(err)
+		}
+
 		buyCurrencyId = data["buy_currency_id"]
 	}
 	err := utils.DB.ExecSql(`INSERT INTO e_adding_funds_`+paymentSystem+` (id, user_id, currency_id, time, amount) VALUES (?, ?, ?, ?, ?)`, paymentId, userId, currencyId, txTime, amount)
 	if err!=nil {
 		return utils.ErrInfo(err)
 	}
-	err = utils.UpdEWallet(userId, currencyId, utils.Time(), amount)
-	if err!=nil {
-		return utils.ErrInfo(err)
-	}
 	if userId > 0 {
-		err = NewForexOrder(userId, amount, 1, currencyId, buyCurrencyId, "buy", eCommission)
+		err = utils.UpdEWallet(userId, currencyId, utils.Time(), amount)
 		if err!=nil {
 			return utils.ErrInfo(err)
+		}
+
+		// автоматом создаем ордер, если это запрос через кошель Dcoin
+		if len(token) > 0 {
+			err = NewForexOrder(userId, amount, 1, currencyId, buyCurrencyId, "buy", eCommission)
+			if err!=nil {
+				return utils.ErrInfo(err)
+			}
 		}
 	}
 	return nil
