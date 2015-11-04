@@ -68,16 +68,11 @@ func EPayment(paymentInfo string, currencyId, txTime int64, amount float64, paym
 		if err!=nil {
 			return utils.ErrInfo(err)
 		}
-		// тут user_id - это из dcoin
 		data, err := utils.DB.OneRow(`SELECT user_id, buy_currency_id FROM e_tokens WHERE id = ?`, token).Int64()
 		if err!=nil {
 			return utils.ErrInfo(err)
 		}
-		// берем user_id с биржи
-		userId, err = utils.DB.Single(`SELECT id FROM e_users WHERE user_id = ?`, data["user_id"]).Int64()
-		if err!=nil {
-			return utils.ErrInfo(err)
-		}
+		userId = data["user_id"]
 
 		buyCurrencyId = data["buy_currency_id"]
 	}

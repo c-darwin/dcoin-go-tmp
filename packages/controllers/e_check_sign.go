@@ -57,7 +57,7 @@ func (c *Controller) ECheckSign() (string, error) {
 			return "{\"result\":0}", err
 		}
 		if eUserId == 0 {
-			eUserId, err = c.ExecSqlGetLastInsertId(`INSERT INTO e_users (user_id) VALUES (?)`, "user_id", userId)
+			eUserId, err = c.ExecSqlGetLastInsertId(`INSERT INTO e_users (user_id) VALUES (?)`, "id", userId)
 			if err != nil {
 				return "{\"result\":0}", err
 			}

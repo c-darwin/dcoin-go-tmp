@@ -4,6 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
 	"encoding/json"
+	"fmt"
 )
 
 func (c *Controller) EInfo() (string, error) {
@@ -15,10 +16,12 @@ func (c *Controller) EInfo() (string, error) {
 	if !utils.CheckInputData(token, "string") {
 		return "", errors.New("incorrect token")
 	}
+	fmt.Println("token",token)
 	tokenMap, err := c.OneRow(`SELECT * FROM e_tokens WHERE token = ?`, token).String()
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}
+	fmt.Println("tokenMap",tokenMap)
 	wallets, err := c.GetAll(`SELECT * FROM e_wallets WHERE user_id = ?`, 100, tokenMap["user_id"])
 	if err!=nil {
 		return "", utils.ErrInfo(err)
@@ -37,7 +40,7 @@ func (c *Controller) EInfo() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
+	fmt.Println("jsonData", jsonData)
 	return string(jsonData), nil
 }
 
