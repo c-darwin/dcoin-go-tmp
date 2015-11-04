@@ -10,6 +10,7 @@ type ERedirectPage struct {
 	EConfig map[string]string
 	TokenId string
 	Amount string
+	EURL string
 }
 
 func (c *Controller) ERedirect() (string, error) {
@@ -38,6 +39,7 @@ func (c *Controller) ERedirect() (string, error) {
 		Lang:           c.Lang,
 		EConfig : c.EConfig,
 		TokenId: tokenId,
+		EURL: c.EURL,
 		Amount: amount})
 	if err != nil {
 		return "", utils.ErrInfo(err)

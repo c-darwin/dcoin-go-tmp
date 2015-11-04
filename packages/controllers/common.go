@@ -64,6 +64,7 @@ type Controller struct {
 	Races            map[int64]string
 	EConfig          map[string]string
 	ECommission float64
+	EURL string
 }
 
 var (

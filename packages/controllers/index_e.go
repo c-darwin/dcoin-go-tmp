@@ -6,6 +6,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"html/template"
 	"net/http"
+	"regexp"
 )
 
 type indexE struct {
@@ -13,6 +14,7 @@ type indexE struct {
 	Lang      map[string]string
 	Nav       template.JS
 	UserId    int64
+	EHost string
 }
 
 func IndexE(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +50,24 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		c.EConfig, err = c.GetMap(`SELECT * FROM e_config`, "name", "value")
+		if err != nil {
+			log.Error("%v", err)
+		}
+		eHost := c.EConfig["domain"]
+		if len(eHost) == 0 {
+			http_host, err := c.Single(`SELECT http_host FROM config`).String()
+			if err != nil {
+				w.Write([]byte(utils.ErrInfo(err).Error()))
+				log.Error("%v", err)
+				return
+			}
+			re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
+			match := re.FindStringSubmatch(http_host)
+			if len(match) != 0 {
+				eHost = match[1]+"/"+c.EConfig["catalog"]
+			}
+		}
 		data, err := static.Asset("static/templates/index_e.html")
 		if err != nil {
 			w.Write([]byte(utils.ErrInfo(err).Error()))
@@ -62,7 +82,7 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		b := new(bytes.Buffer)
-		err = t.Execute(b, &indexE{MyWallets: myWallets, Lang: c.Lang, UserId: c.SessUserId})
+		err = t.Execute(b, &indexE{MyWallets: myWallets, Lang: c.Lang, UserId: c.SessUserId, EHost: eHost})
 		if err != nil {
 			log.Error("%v", err)
 			w.Write([]byte(utils.ErrInfo(err).Error()))

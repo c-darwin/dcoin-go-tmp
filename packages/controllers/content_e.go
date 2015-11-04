@@ -54,6 +54,17 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Error("%v", err)
 		}
+		c.EURL = c.EConfig["domain"]
+		if len(c.EURL) == 0 {
+			eHost, err := c.Single(`SELECT http_host FROM config`).String()
+			if err != nil {
+				log.Error("%v", err)
+			}
+			eHost += c.EConfig["catalog"]
+			c.EURL = eHost
+		} else {
+			c.EURL = "http://"+c.EURL+"/"
+		}
 		html := ""
 		if ok, _ := regexp.MatchString(`^(?i)emain|EMyOrders|EMyHistory|EMyFinance`, tplName); !ok {
 			html = "Access denied"

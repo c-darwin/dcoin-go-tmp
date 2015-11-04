@@ -106,10 +106,10 @@ func (c *Controller) EMyFinance() (string, error) {
 					<input type="hidden" name="PAYEE_NAME" value="Dcoin">
 					<input type="hidden" name="PAYMENT_ID" value="`+utils.Int64ToStr(c.SessUserId)+`">
 					<input type="hidden" name="PAYMENT_UNITS" value="USD">
-					<input type="hidden" name="STATUS_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EGatePm">
-					<input type="hidden" name="PAYMENT_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=ESuccess">
+					<input type="hidden" name="STATUS_URL" value="`+c.EURL+`ajax?controllerName=EGatePm">
+					<input type="hidden" name="PAYMENT_URL" value="`+c.EURL+`ajax?controllerName=ESuccess">
 					<input type="hidden" name="PAYMENT_URL_METHOD" value="LINK">
-					<input type="hidden" name="NOPAYMENT_URL" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EFailure">
+					<input type="hidden" name="NOPAYMENT_URL" value="`+c.EURL+`ajax?controllerName=EFailure">
 					<input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK">
 					<input type="hidden" name="SUGGESTED_MEMO" value="Dcoins">
 					<input type="hidden" name="BAGGAGE_FIELDS" value="">
@@ -129,9 +129,9 @@ func (c *Controller) EMyFinance() (string, error) {
 				    <input type="hidden" name="ik_co_id" value="`+c.EConfig["ik_id"]+`" />
 					<input type="hidden" name="ik_pm_no" value="ik_pm_no" />
 					<input type="hidden" name="ik_cur" value="USD" />
-					<input type="hidden" name="ik_ia_u" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EGateIk" />
-					<input type="hidden" name="ik_suc_u" value=""http://`+c.EConfig["domain"]+`/ajax?controllerName=ESuccess" />
-					<input type="hidden" name="ik_fal_u" value="http://`+c.EConfig["domain"]+`/ajax?controllerName=EFailure" />
+					<input type="hidden" name="ik_ia_u" value="`+c.EURL+`ajax?controllerName=EGateIk" />
+					<input type="hidden" name="ik_suc_u" value=""`+c.EURL+`ajax?controllerName=ESuccess" />
+					<input type="hidden" name="ik_fal_u" value="`+c.EURL+`ajax?controllerName=EFailure" />
 					<input type="hidden" name="ik_desc" value="`+utils.Int64ToStr(c.SessUserId)+`" />
 				<table class="table_out">
 				<tbody>
