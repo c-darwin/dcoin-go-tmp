@@ -131,7 +131,7 @@ func (c *Controller) Menu() (string, error) {
 	}
 
 	var exchangeEnable bool
-	exchangeEnable_, err := c.Single(`SELECT value FROM e_config WHERE name="enable"`).Int64()
+	exchangeEnable_, err := c.Single(`SELECT value FROM e_config WHERE name='enable'`).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
