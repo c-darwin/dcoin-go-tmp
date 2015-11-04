@@ -27,6 +27,7 @@ type menuPage struct {
 	FaceUrls      string
 	Restricted    int64
 	Mobile        bool
+	ExchangeEnable bool
 }
 
 func (c *Controller) Menu() (string, error) {
@@ -129,10 +130,19 @@ func (c *Controller) Menu() (string, error) {
 		mobile = true
 	}
 
+	var exchangeEnable bool
+	exchangeEnable_, err := c.Single(`SELECT value FROM e_config WHERE name="enable"`).Int64()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	if exchangeEnable_ == 1 {
+		exchangeEnable = true
+	}
+
 	t := template.Must(template.New("template").Parse(string(data)))
 	t = template.Must(t.Parse(string(modal)))
 	b := new(bytes.Buffer)
-	err = t.ExecuteTemplate(b, "menu", &menuPage{Mobile: mobile, SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
+	err = t.ExecuteTemplate(b, "menu", &menuPage{ExchangeEnable: exchangeEnable, Mobile: mobile, SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
 	log.Debug("ExecuteTemplate")
 	if err != nil {
 		log.Debug("%s", utils.ErrInfo(err))

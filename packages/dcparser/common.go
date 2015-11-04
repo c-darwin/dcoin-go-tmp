@@ -4304,7 +4304,11 @@ func (p *Parser) TxParser(hash, binaryTx []byte, myTx bool) error {
 	}
 	if err != nil {
 		log.Error("err: %v", err)
-		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hex(hash) = ?", fmt.Sprintf("%s", err), hashHex)
+		errText := fmt.Sprintf("%s", err)
+		if len(errText) > 255 {
+			errText = errText[:255]
+		}
+		err = p.ExecSql("UPDATE transactions_status SET error = ? WHERE hex(hash) = ?", errText, hashHex)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
