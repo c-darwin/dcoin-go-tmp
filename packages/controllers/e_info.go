@@ -36,7 +36,13 @@ func (c *Controller) EInfo() (string, error) {
 	}
 
 	//print json_encode(array('token'=>$token, 'wallets'=>$wallets, 'orders'=>$orders, 'withdraw'=>$withdraw));
-	jsonData, err := json.Marshal(&EInfoResult{token: tokenMap, wallets: wallets, orders: orders, withdraw: withdraw})
+	m := EInfoResult{
+		token: tokenMap,
+		wallets: wallets,
+		orders: orders,
+		withdraw: withdraw,
+	}
+	jsonData, err := json.Marshal(m)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
