@@ -65,7 +65,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		}
 		params := []string{"commission", "ps", "pm_s_key", "ik_s_key", "pm_id", "ik_id"}
 		for _, data := range params {
-			err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, data, c.Parameters[data]);
+			err = c.ExecSql(`INSERT INTO e_config (name, value) VALUES (?, ?)`, data, c.Parameters["e_"+data]);
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
