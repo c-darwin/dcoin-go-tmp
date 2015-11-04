@@ -37,10 +37,10 @@ func (c *Controller) EInfo() (string, error) {
 
 	//print json_encode(array('token'=>$token, 'wallets'=>$wallets, 'orders'=>$orders, 'withdraw'=>$withdraw));
 	m := EInfoResult{
-		token: tokenMap,
-		wallets: wallets,
-		orders: orders,
-		withdraw: withdraw,
+		Token: tokenMap,
+		Wallets: wallets,
+		Orders: orders,
+		Withdraw: withdraw,
 	}
 	jsonData, err := json.Marshal(m)
 	if err != nil {
@@ -51,8 +51,8 @@ func (c *Controller) EInfo() (string, error) {
 }
 
 type EInfoResult struct {
-	token map[string]string
-	wallets []map[string]string
-	orders []map[string]string
-	withdraw []map[string]string
+	Token map[string]string
+	Wallets []map[string]string
+	Orders []map[string]string
+	Withdraw []map[string]string
 }
