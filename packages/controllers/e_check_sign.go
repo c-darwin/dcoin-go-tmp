@@ -58,6 +58,7 @@ func (c *Controller) ECheckSign() (string, error) {
 	} else {
 		userId_, err := c.GetUserIdByPublicKey(publicKey)
 		userId = utils.StrToInt64(userId_)
+		publicKey = utils.HexToBin(publicKey)
 		log.Debug("userId %d", userId)
 		if err != nil {
 			return "{\"result\":0}", err
@@ -87,14 +88,19 @@ func (c *Controller) ECheckSign() (string, error) {
 				return "{\"result\":0}", err
 			}
 		}
-		token := utils.RandSeq(30)
-		err = c.ExecSql(`INSERT INTO e_tokens (token, user_id) VALUES (?, ?)`, token, eUserId)
-		if err != nil {
-			return "{\"result\":0}", err
-		}
-		log.Debug(`{"result":"1", "token":"`+token+`"}`)
-		return `{"result":"1", "token":"`+token+`"}`, nil
+		if len(c.r.FormValue("user_id")) > 0 {
+			token := utils.RandSeq(30)
+			err = c.ExecSql(`INSERT INTO e_tokens (token, user_id) VALUES (?, ?)`, token, eUserId)
+			if err != nil {
+				return "{\"result\":0}", err
+			}
+			log.Debug(`{"result":"1", "token":"`+token+`"}`)
 
+			return `{"result":"1", "token":"`+token+`"}`, nil
+		} else {
+			c.sess.Set("e_user_id", eUserId)
+			return `{"result":1}`, nil
+		}
 	} else {
 		return "{\"result\":0}", nil
 	}

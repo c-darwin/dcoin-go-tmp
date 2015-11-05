@@ -68,7 +68,7 @@ func (p *Parser) ChangeCreditPart() error {
 }
 
 func (p *Parser) ChangeCreditPartRollback() error {
-	return p.selectiveRollback([]string{"credit_part"}, "users", "id="+utils.Int64ToStr(p.TxUserID), false)
+	return p.selectiveRollback([]string{"credit_part"}, "users", "user_id="+utils.Int64ToStr(p.TxUserID), false)
 
 }
 
