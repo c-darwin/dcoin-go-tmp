@@ -333,13 +333,18 @@ func exhangeHttpListener(HandleHttpHost string) {
 			http.HandleFunc(eConfig["domain"]+"/content", controllers.ContentE)
 			http.HandleFunc(eConfig["domain"]+"/ajax", controllers.AjaxE)
 			http.Handle(eConfig["domain"]+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
-
+			if len(eConfig["static_file_path"]) > 0 {
+				http.HandleFunc(eConfig["domain"]+"/"+eConfig["static_file_path"], controllers.EStaticFile)
+			}
 		} else {
 			eConfig["catalog"] = strings.Replace(eConfig["catalog"], "/", "", -1)
 			fmt.Println("E host", HandleHttpHost+"/"+eConfig["catalog"]+"/")
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/", controllers.IndexE)
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/content", controllers.ContentE)
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/ajax", controllers.AjaxE)
+			if len(eConfig["static_file_path"]) > 0 {
+				http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/"+eConfig["static_file_path"], controllers.EStaticFile)
+			}
 		}
 	}
 }

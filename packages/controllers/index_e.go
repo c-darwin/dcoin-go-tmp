@@ -18,6 +18,14 @@ type indexE struct {
 	EHost string
 }
 
+func EStaticFile(w http.ResponseWriter, r *http.Request) {
+	static_file, err := utils.DB.Single(`SELECT value FROM e_config WHERE name='static_file'`).Bytes()
+	if err != nil {
+		log.Error("%v", err)
+	}
+	w.Write(static_file)
+}
+
 func IndexE(w http.ResponseWriter, r *http.Request) {
 
 	var err error
