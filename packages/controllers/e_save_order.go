@@ -55,7 +55,7 @@ func (c *Controller) ESaveOrder() (string, error) {
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	} else {
-		utils.JsonAnswer("success", c.Lang["order_created"])
+		return utils.JsonAnswer(c.Lang["order_created"], "success").String(), nil
 	}
 
 	return ``, nil

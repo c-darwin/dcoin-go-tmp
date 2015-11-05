@@ -3083,6 +3083,10 @@ func TCPGetSizeAndData(conn net.Conn, maxSize int64) ([]byte, error) {
 
 
 
+func ClearNullFloat64(number float64, n int) float64 {
+	return StrToFloat64(ClearNull(Float64ToStr(number), n))
+}
+
 func ClearNull(str string, n int) string {
 	//str := Float64ToStr(num)
 	ind := strings.Index(str, ".")
@@ -3120,6 +3124,7 @@ func EUserAmountAndProfit(userId, currencyId int64) float64 {
 		return 0
 	}
 	profit, err := DB.CalcProfitGen(UserCurrencyId, UserAmount, 0, UserLastUpdate, Time(), "wallet")
+	log.Debug("profit: %v / UserCurrencyId: %v / UserAmount: %v / UserLastUpdate: %v", profit, UserCurrencyId, UserAmount, UserLastUpdate)
 	return UserAmount + profit
 }
 
@@ -3136,9 +3141,9 @@ func EGetCurrencyList() (map[int64]string, error) {
 }
 
 
-func UpdEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
+func UpdEWallet(userId, currencyId, lastUpdate int64, amount float64, newAmount bool) error {
 	eWallets.Lock()
-	exists, err := DB.Single(`SELECT user_id FROM e_wallets WHERE user_id = ?`, userId).Int64()
+	exists, err := DB.Single(`SELECT user_id FROM e_wallets WHERE user_id = ? AND currency_id = ?`, userId, currencyId).Int64()
 	if err!=nil {
 		eWallets.Unlock()
 		return ErrInfo(err)
@@ -3150,7 +3155,11 @@ func UpdEWallet(userId, currencyId, lastUpdate int64, amount float64) error {
 			return ErrInfo(err)
 		}
 	} else {
-		err = DB.ExecSql("UPDATE e_wallets SET amount = amount + ?, last_update = ? WHERE user_id = ?", amount, lastUpdate, userId)
+		if newAmount {
+			err = DB.ExecSql("UPDATE e_wallets SET amount = ?, last_update = ? WHERE user_id = ? AND currency_id = ?", amount, lastUpdate, userId, currencyId)
+		} else {
+			err = DB.ExecSql("UPDATE e_wallets SET amount = amount + ?, last_update = ? WHERE user_id = ? AND currency_id = ?", amount, lastUpdate, userId, currencyId)
+		}
 		if err != nil {
 			eWallets.Unlock()
 			return ErrInfo(err)

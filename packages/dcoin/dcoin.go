@@ -328,13 +328,15 @@ func exhangeHttpListener(HandleHttpHost string) {
 
 	if eConfig["enable"] == "1" {
 		if len(eConfig["domain"]) > 0 {
-			fmt.Println("domain", eConfig["domain"])
+			fmt.Println("E host", eConfig["domain"])
 			http.HandleFunc(eConfig["domain"]+"/", controllers.IndexE)
 			http.HandleFunc(eConfig["domain"]+"/content", controllers.ContentE)
 			http.HandleFunc(eConfig["domain"]+"/ajax", controllers.AjaxE)
 			http.Handle(eConfig["domain"]+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
 
 		} else {
+			eConfig["catalog"] = strings.Replace(eConfig["catalog"], "/", "", -1)
+			fmt.Println("E host", HandleHttpHost+"/"+eConfig["catalog"]+"/")
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/", controllers.IndexE)
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/content", controllers.ContentE)
 			http.HandleFunc(HandleHttpHost+"/"+eConfig["catalog"]+"/ajax", controllers.AjaxE)

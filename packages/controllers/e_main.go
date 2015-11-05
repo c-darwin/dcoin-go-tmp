@@ -122,7 +122,8 @@ func (c *Controller) EMain() (string, error) {
 		if orders.Sell == nil {
 			orders.Sell = make(map[float64]float64)
 		}
-		orders.Sell[sellRate] = orders.Sell[sellRate] + amount
+		sellRate = utils.ClearNullFloat64(1/sellRate, 6)
+		orders.Sell[sellRate] = utils.ClearNullFloat64(orders.Sell[sellRate] + amount, 6)
 		if buyMin == 0 {
 			buyMin = sellRate
 		} else if sellRate < buyMin {
@@ -156,7 +157,8 @@ func (c *Controller) EMain() (string, error) {
 		if orders.Buy == nil {
 			orders.Buy = make(map[float64]float64)
 		}
-		orders.Buy[sellRate] = orders.Buy[sellRate] + amount*(1/sellRate)
+		sellRate = utils.ClearNullFloat64(sellRate, 6)
+		orders.Buy[sellRate] = utils.ClearNullFloat64(orders.Buy[sellRate] + amount*(1/sellRate), 6)
 		if sellMax == 0 {
 			sellMax = sellRate
 		} else if sellRate < sellMax {

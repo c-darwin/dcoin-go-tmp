@@ -36,7 +36,6 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 
 		lang := GetLang(w, r, c.Parameters)
 		c.Lang = globalLangReadOnly[lang]
-		log.Debug("c.Lang:", c.Lang)
 		c.LangInt = int64(lang)
 		if lang == 42 {
 			c.TimeFormat = "2006-01-02 15:04:05"

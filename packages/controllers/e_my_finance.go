@@ -93,7 +93,9 @@ func (c *Controller) EMyFinance() (string, error) {
 	}
 
 
-	currency["1001"] = make(map[string]string)
+	if currency["1001"] == nil {
+		currency["1001"] = make(map[string]string)
+	}
 	currency["1001"]["name"] = "USD"
 	currency["1001"]["input"] = `<div class="pull-left"><h4>`+c.Lang["deposit0"]+` USD</h4>
 		<select id="ps_select" class="form-control">
@@ -168,6 +170,7 @@ func (c *Controller) EMyFinance() (string, error) {
 			</tr>
 			</tbody></table><div id="alerts-1001"></div><button class="btn btn-outline btn-primary" onclick="withdraw(1001, 'Perfect-money')">`+c.Lang["withdrawal"]+`</button>
 			</div><div class="pull-left" style="margin-left:30px; margin-top:43px; border-left: 4px solid #ccc; padding:7px 7px; width:350px">`+c.Lang["withdrawal_within_hours"]+`</div>`
+
 
 	types := map[string]string{"withdraw": c.Lang["withdraw0"], "adding_funds": c.Lang["deposit0"]}
 

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 type indexE struct {
@@ -62,10 +63,11 @@ func IndexE(w http.ResponseWriter, r *http.Request) {
 				log.Error("%v", err)
 				return
 			}
-			re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/`)
+			re := regexp.MustCompile(`^https?:\/\/([0-9a-z\_\.\-:]+)\/?`)
 			match := re.FindStringSubmatch(http_host)
 			if len(match) != 0 {
-				eHost = match[1]+"/"+c.EConfig["catalog"]
+				c.EConfig["catalog"] = strings.Replace(c.EConfig["catalog"], "/", "", -1)
+				eHost = match[1]+"/"+c.EConfig["catalog"]+"/"
 			}
 		}
 		data, err := static.Asset("static/templates/index_e.html")
@@ -110,8 +112,9 @@ func (c*Controller) getMyWallets() ([]map[string]string, error) {
 			if err != nil {
 				return myWallets, utils.ErrInfo(err)
 			}
-			myWallets = append(myWallets, map[string]string{"amount": utils.Float64ToStr(amount + profit), "currency_id": data["currency_name"], "last_update": wallet["last_update"]})
+			myWallets = append(myWallets, map[string]string{"amount": utils.ClearNull(utils.Float64ToStr(amount + profit), 2), "currency_name": data["currency_name"], "last_update": wallet["last_update"]})
 		}
 	}
+
 	return myWallets, nil
 }

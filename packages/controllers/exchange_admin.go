@@ -36,6 +36,7 @@ func (c *Controller) ExchangeAdmin() (string, error) {
 			if err!=nil {
 				return "", utils.ErrInfo(err)
 			}
+			lock = 0
 		} else {
 			err := c.ExecSql(`INSERT INTO e_reduction_lock (time) VALUES (?)`, utils.Time())
 			if err!=nil {
@@ -46,10 +47,10 @@ func (c *Controller) ExchangeAdmin() (string, error) {
 
 	}
 
-	withdraw, err := c.GetAll(`SELECT e_withdraw.id, open_time, close_time, e_users.user_id, currency_id, account, amount,  wd_amount, method, email
+	withdraw, err := c.GetAll(`SELECT e_withdraw.id as e_withdraw_id, open_time, close_time, e_users.user_id, currency_id, account, amount,  wd_amount, method, email
     		FROM e_withdraw
     		LEFT JOIN e_users on e_users.id = e_withdraw.user_id
-   			ORDER BY id DESC`, 100)
+   			ORDER BY e_withdraw.id DESC`, 100)
 	if err!=nil {
 		return "", utils.ErrInfo(err)
 	}

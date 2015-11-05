@@ -301,7 +301,7 @@ BEGIN:
 					userAmountAndProfit := utils.EUserAmountAndProfit(uid, currencyId)
 					newAmount_ := userAmountAndProfit + amount
 
-					utils.UpdEWallet(uid, currencyId, utils.Time(), newAmount_)
+					utils.UpdEWallet(uid, currencyId, utils.Time(), newAmount_, true)
 
 					// для отчетности запишем в историю
 					err = d.ExecSql(`

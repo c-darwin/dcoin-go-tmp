@@ -81,7 +81,7 @@ func EPayment(paymentInfo string, currencyId, txTime int64, amount float64, paym
 		return utils.ErrInfo(err)
 	}
 	if userId > 0 {
-		err = utils.UpdEWallet(userId, currencyId, utils.Time(), amount)
+		err = utils.UpdEWallet(userId, currencyId, utils.Time(), amount, false)
 		if err!=nil {
 			return utils.ErrInfo(err)
 		}

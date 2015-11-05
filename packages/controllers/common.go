@@ -141,7 +141,7 @@ func CallController(c *Controller, name string) (string, error) {
 	log.Debug("Controller %v", name)
 	html, err := CallMethod(c, name)
 	if err != nil {
-		log.Debug("err: %v / Controller: %v", err, name)
+		log.Error("err: %v / Controller: %v", err, name)
 		html = fmt.Sprintf(`{"error":%q}`, err)
 		log.Debug("%v", html)
 	}
@@ -484,14 +484,14 @@ func userLock(userId int64) error {
 
 
 func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCurrencyId int64, orderType string, eCommission float64) error {
-	log.Debug("userId: %v / amount: %v / sellRate: %v / float64: %v / sellCurrencyId: %v / buyCurrencyId: %v / orderType: %v ", userId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType)
+	log.Debug("userId: %v / amount: %v / sellRate: %v / sellCurrencyId: %v / buyCurrencyId: %v / orderType: %v ", userId, amount, sellRate, sellCurrencyId, buyCurrencyId, orderType)
 	curTime := utils.Time()
 	err := userLock(userId)
 	if err!=nil {
 		return utils.ErrInfo(err)
 	}
-	commission := amount * (eCommission/100)
-	newAmount := amount - commission
+	commission := utils.StrToFloat64(utils.ClearNull(utils.Float64ToStr(amount * (eCommission/100)), 6))
+	newAmount := utils.StrToFloat64(utils.ClearNull(utils.Float64ToStr(amount - commission), 6))
 	if newAmount < commission {
 		commission = 0
 		newAmount = amount
@@ -501,7 +501,7 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 		userAmount := utils.EUserAmountAndProfit(1, sellCurrencyId)
 		newAmount_ := userAmount + commission
 		// наисляем комиссию системе
-		err = utils.UpdEWallet(1, sellCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(1, sellCurrencyId, utils.Time(), newAmount_, true)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -513,11 +513,13 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 		}
 	}
 	// обратный курс. нужен для поиска по ордерам
-	reverseRate := utils.Round(1/sellRate, 6)
+	reverseRate := utils.StrToFloat64(utils.ClearNull(utils.Float64ToStr(1/sellRate), 6))
+	log.Debug("sellRate %v", sellRate)
+	log.Debug("reverseRate %v", reverseRate)
 
 	var totalBuyAmount, totalSellAmount float64
 	if orderType == "buy" {
-		totalBuyAmount = newAmount + reverseRate
+		totalBuyAmount = newAmount * reverseRate
 	} else {
 		totalSellAmount = newAmount
 	}
@@ -617,7 +619,7 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 		// начисляем валюту, которую продавец получил (R)
 		userAmount := utils.EUserAmountAndProfit(rowUserId, rowBuyCurrencyId)
 		newAmount_ := userAmount + sellerBuyAmount
-		err = utils.UpdEWallet(rowUserId, rowBuyCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(rowUserId, rowBuyCurrencyId, utils.Time(), newAmount_, true)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -627,7 +629,7 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 		// списываем валюту, которую мы продали (R)
 		userAmount = utils.EUserAmountAndProfit(userId, rowBuyCurrencyId)
 		newAmount_ = userAmount - sellerBuyAmount
-		err = utils.UpdEWallet(userId, rowBuyCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(userId, rowBuyCurrencyId, utils.Time(), newAmount_, true)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -635,7 +637,7 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 		// начисляем валюту, которую мы получили (U)
 		userAmount = utils.EUserAmountAndProfit(userId, rowSellCurrencyId)
 		newAmount_ = userAmount + sellerSellAmount
-		err = utils.UpdEWallet(userId, rowSellCurrencyId, utils.Time(), newAmount_)
+		err = utils.UpdEWallet(userId, rowSellCurrencyId, utils.Time(), newAmount_, true)
 		if err != nil {
 			return utils.ErrInfo(err)
 		}
@@ -644,12 +646,14 @@ func NewForexOrder(userId int64, amount, sellRate float64, sellCurrencyId, buyCu
 			totalBuyAmount-=rowAmount
 			if totalBuyAmount <= 0 {
 				userUnlock(rowUserId)
+				log.Debug("total_buy_amount == 0 break")
 				break; // проход по ордерам прекращаем, т.к. наш запрос удовлетворен
 			}
 		} else {
 			totalSellAmount-=rowAmount/rowSellRate
 			if totalSellAmount <= 0 {
 				userUnlock(rowUserId)
+				log.Debug("total_sell_amount == 0 break")
 				break; // проход по ордерам прекращаем, т.к. наш запрос удовлетворен
 			}
 		}
