@@ -20,6 +20,21 @@ func (c *Controller) ECheckSign() (string, error) {
 		return `{"result":"incorrect user_id"}`, nil
 	}
 
+	var publicKey []byte
+	if userId == 0 {
+		n := []byte(c.r.FormValue("n"))
+		e := []byte(c.r.FormValue("e"))
+		if !utils.CheckInputData(n, "hex") {
+			return `{"result":"incorrect n"}`, nil
+		}
+		if !utils.CheckInputData(e, "hex") {
+			return `{"result":"incorrect e"}`, nil
+		}
+		log.Debug("n %v / e %v", n, e)
+		publicKey = utils.MakeAsn1(n, e)
+		log.Debug("publicKey %s", publicKey)
+	}
+
 	RemoteAddr := utils.RemoteAddrFix(c.r.RemoteAddr)
 	re := regexp.MustCompile(`(.*?):[0-9]+$`)
 	match := re.FindStringSubmatch(RemoteAddr)
@@ -34,9 +49,19 @@ func (c *Controller) ECheckSign() (string, error) {
 		return "{\"result\":0}", err
 	}
 
-	publicKey, err := c.GetUserPublicKey(userId)
-	if err != nil {
-		return "{\"result\":0}", err
+	if userId > 0 {
+		publicKey_, err := c.GetUserPublicKey(userId)
+		publicKey = []byte(publicKey_)
+		if err != nil {
+			return "{\"result\":0}", err
+		}
+	} else {
+		userId_, err := c.GetUserIdByPublicKey(publicKey)
+		userId = utils.StrToInt64(userId_)
+		log.Debug("userId %d", userId)
+		if err != nil {
+			return "{\"result\":0}", err
+		}
 	}
 
 	log.Debug("userId %v", userId)
