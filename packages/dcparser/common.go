@@ -789,6 +789,7 @@ func (p *Parser) CheckBlockHeader() error {
 // и она каждый раз успешно проходила бы фронтальную проверку
 func (p *Parser) CheckLogTx(tx_binary []byte) error {
 	hash, err := p.Single(`SELECT hash FROM log_transactions WHERE hex(hash) = ?`, utils.Md5(tx_binary)).String()
+	log.Debug("SELECT hash FROM log_transactions WHERE hex(hash) = %s", utils.Md5(tx_binary))
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -987,15 +988,15 @@ func (p *Parser) ParseDataRollback() error {
 
 func (p *Parser) RollbackToBlockId(blockId int64) error {
 
-	err := p.ExecSql("SET GLOBAL net_read_timeout = 86400")
+	/*err := p.ExecSql("SET GLOBAL net_read_timeout = 86400")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 	err = p.ExecSql("SET GLOBAL max_connections  = 86400")
 	if err != nil {
 		return p.ErrInfo(err)
-	}
-	err = p.RollbackTransactions()
+	}*/
+	err := p.RollbackTransactions()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -1788,9 +1789,9 @@ func (p *Parser) ParseDataFull() error {
 			}
 			//log.Debug("transactionBinaryData", transactionBinaryData)
 			p.TxHash = utils.Md5(transactionBinaryData)
-			log.Debug("p.TxHash", p.TxHash)
+			log.Debug("p.TxHash %s", p.TxHash)
 			p.TxSlice, err = p.ParseTransaction(&transactionBinaryData)
-			log.Debug("p.TxSlice", p.TxSlice)
+			log.Debug("p.TxSlice %v", p.TxSlice)
 			if err != nil {
 				p.RollbackTo(txForRollbackTo, true, false)
 				return err

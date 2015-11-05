@@ -548,6 +548,7 @@ func (db *DCDB) OneRow(query string, args ...interface{}) *oneRow {
 func (db *DCDB) InsertInLogTx(binaryTx []byte, time int64) error {
 	txMD5 := Md5(binaryTx)
 	err := db.ExecSql("INSERT INTO log_transactions (hash, time) VALUES ([hex], ?)", txMD5, time)
+	log.Debug("INSERT INTO log_transactions (hash, time) VALUES ([hex], %s)", txMD5)
 	if err != nil {
 		return ErrInfo(err)
 	}

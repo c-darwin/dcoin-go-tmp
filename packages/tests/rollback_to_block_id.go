@@ -15,7 +15,7 @@ func main() {
 	db := tests_utils.DbConn()
 	parser := new(dcparser.Parser)
 	parser.DCDB = db
-	err := parser.RollbackToBlockId(257600)
+	err := parser.RollbackToBlockId(261950)
 	if err!=nil {
 		fmt.Println(err)
 	}
