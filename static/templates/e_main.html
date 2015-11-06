@@ -132,7 +132,7 @@
 							</thead>
 							<tbody>
 							{{range $sell_rate, $amount := .Orders.Sell}}
-								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
+								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 6}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
@@ -167,7 +167,7 @@
 							</thead>
 							<tbody>
 							{{range $sell_rate, $amount := .Orders.Buy}}
-								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 2}}</td></tr>
+								<tr><td>{{$sell_rate}}</td><td>{{$amount}}</td><td>{{round (mult $sell_rate $amount) 6}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>

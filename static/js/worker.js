@@ -74,6 +74,7 @@ onmessage = function (obj) {
         decrypt_key: decrypt_PEM,
         error: error
     };
+    console.log("result", result);
 
     postMessage(result);
 }

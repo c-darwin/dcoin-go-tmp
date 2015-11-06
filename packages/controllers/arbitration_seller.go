@@ -29,7 +29,7 @@ func (c *Controller) ArbitrationSeller() (string, error) {
 
 	log.Debug("ArbitrationSeller")
 
-	txType := "change_seller_hold_back"
+	txType := "ChangeSellerHoldBack"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
@@ -61,7 +61,7 @@ func (c *Controller) ArbitrationSeller() (string, error) {
 		}
 	}
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_seller_hold_back", "money_back"}), 3, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeSellerHoldBack", "MoneyBack"}), 3, c.TimeFormat)
 	lastTxFormatted := ""
 	var pendingTx_ map[int64]int64
 	if len(last_tx) > 0 {

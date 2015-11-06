@@ -154,6 +154,8 @@
 
 	<label>Enable</label>
 	<input id="e_enable" class="input" type="text" value="{{index .EConfig "enable"}}">
+	<label>Commission</label>
+	<input id="e_commission" class="input" type="text" value="{{index .EConfig "commission"}}">
 	<label>Domain</label>
 	<input id="e_domain" class="input" type="text" value="{{index .EConfig "domain"}}">
 	<label>Catalog</label>
@@ -161,15 +163,23 @@
 	<label>Payment Systems</label>
 	<input id="e_ps" class="input" type="text" value="{{index .EConfig "ps"}}">
 	<label>Perfect money key (PM_S_KEY)</label>
-	<input id="pm_s_key" class="input" type="text" value="{{index .EConfig "pm_s_key"}}">
+	<input id="e_pm_s_key" class="input" type="text" value="{{index .EConfig "pm_s_key"}}">
 	<label>Interkassa key (IK_S_KEY)</label>
-	<input id="ik_s_key" class="input" type="text" value="{{index .EConfig "ik_s_key"}}">
+	<input id="e_ik_s_key" class="input" type="text" value="{{index .EConfig "ik_s_key"}}">
 	<label>Perfect money ID</label>
-	<input id="pm_id" class="input" type="text" value="{{index .EConfig "pm_id"}}">
+	<input id="e_pm_id" class="input" type="text" value="{{index .EConfig "pm_id"}}">
 	<label>Interkassa ID</label>
-	<input id="ik_id" class="input" type="text" value="{{index .EConfig "ik_id"}}">
+	<input id="e_ik_id" class="input" type="text" value="{{index .EConfig "ik_id"}}">
+	<label>static_file_path</label>
+	<input id="e_static_file_path" class="input" type="text" value="{{index .EConfig "static_file_path"}}">
+	<label>static_file</label>
+	<input id="e_static_file" class="input" type="text" value="{{index .EConfig "static_file"}}">
 
-	<button class="btn" id="e_save">{{.Lang.save}}</button>
+	<button class="btn" id="e_save">{{.Lang.save}}</button><br><br>
+
+	<button class="btn" onclick="fc_navigate('exchangeAdmin')">Exchange admin</button>
+
+
 
 </div>
 <script>
@@ -181,10 +191,13 @@
 			'e_domain' : $('#e_domain').val(),
 			'e_catalog' : $('#e_catalog').val(),
 			'e_ps' : $('#e_ps').val(),
-			'pm_s_key' : $('#pm_s_key').val(),
-			'ik_s_key' : $('#ik_s_key').val(),
-			'pm_id' : $('#pm_id').val(),
-			'ik_id' : $('#ik_id').val()
+			'e_commission' : $('#e_commission').val(),
+			'e_pm_s_key' : $('#e_pm_s_key').val(),
+			'e_ik_s_key' : $('#e_ik_s_key').val(),
+			'e_pm_id' : $('#e_pm_id').val(),
+			'e_ik_id' : $('#e_ik_id').val(),
+			'e_static_file_path' : $('#e_static_file_path').val(),
+			'e_static_file' : $('#e_static_file').val()
 		});
 
 		$.post( 'ajax?controllerName=nodeConfigControl', {

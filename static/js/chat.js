@@ -56,7 +56,7 @@
 			var workerAjax = new Worker("/static/js/worker.js");
 			workerAjax.onmessage  = function(event) {
 				if (typeof event.data.error != "undefined") {
-					$("#chat_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+error+'</p></div>');
+					$("#chat_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+event.data.error+'</p></div>');
 					$('#sendToChat').prop('disabled', false);
 					$('#sendToChat').html('Send');
 				} else {

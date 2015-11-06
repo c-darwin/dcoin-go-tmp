@@ -538,7 +538,7 @@ function foattoupper(x) {
 				<div class="clearfix"></div>
 
 				{{if .LastTxFormatted}}
-					{{.LastTxFormatted}}
+					{{noescape .LastTxFormatted}}
 				{{end}}
 
 				{{if .MyDcTransactions}}

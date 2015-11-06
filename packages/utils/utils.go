@@ -2649,7 +2649,7 @@ func MakeLastTx(lastTx []map[string]string, lng map[string]string) (string, map[
 	for _, data := range lastTx {
 		result += "<tr>"
 		result += "<td class='unixtime'>" + data["time_int"] + "</td>"
-		if len(data["block_id"]) > 0 {
+		if StrToInt64(data["block_id"]) > 0 {
 			result += "<td>" + lng["in_the_block"] + " " + data["block_id"] + "</td>"
 		} else if len(data["error"]) > 0 {
 			result += "<td>Error: " + data["error"] + "</td>"

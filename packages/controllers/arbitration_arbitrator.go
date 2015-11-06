@@ -36,14 +36,14 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 						 status = 'refund'
 			ORDER BY time DESC
 			LIMIT 20
-	`, 20, c.SessUserId)
+	`, 20, c.SessUserId, c.SessUserId, c.SessUserId, c.SessUserId, c.SessUserId)
 	for k, data := range myOrders {
 		if c.SessRestricted == 0 {
 			data_, err := c.OneRow(`
 						SELECT comment,
 									 comment_status
 						FROM `+c.MyPrefix+`my_comments
-						WHERE id = {$row['id']} AND
+						WHERE id = ? AND
 									 type = 'arbitrator'
 						LIMIT 1
 				`, data["id"]).String()
@@ -56,7 +56,7 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 		myOrders[k] = data
 	}
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_arbitrator_conditions", "money_back"}), 3, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeArbitratorConditions", "MoneyBack"}), 3, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(last_tx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)

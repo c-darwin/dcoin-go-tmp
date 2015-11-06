@@ -32,7 +32,7 @@ func (c *Controller) PromisedAmountList() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount", "change_promised_amount", "del_promised_amount", "for_repaid_fix", "actualization_promised_amounts", "mining"}), 3, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewPromisedAmount", "ChangePromisedAmount", "DelPromisedAmount", "ForRepaidFix", "ActualizationPromisedAmounts", "Mining"}), 3, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(last_tx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)

@@ -84,6 +84,15 @@
 			<input id="credit_part" type="text" class="form-control" style="width: 100px" value="{{.CreditPart}}"/>
 			<button type="button" class="btn btn-default" id="credit_part_save">{{.Lang.save}}</button>
 		</div>
+
+
+		<div style=" max-width: 600px;" id="tx_history">
+
+			{{noescape .LastTxFormatted}}
+
+
+		</div>
+
 	</div>
 
 </div>

@@ -80,11 +80,11 @@
 					<th>{{.Lang.delete}}</th>
 				</tr>
 				<tbody>
-				{{range .MyTrustList}}
+				{{range $id, $data := .MyTrustList}}
 				<tr>
-					<td class='arbitrator_id'>{{.Arbitrator_user_id}}</td>
-					{{if .Url}}<td><a href='{{.Url}}' target='_blank'><i class='fa fa-external-link'></i></a></td>{{else}}<td></td>{{end}}
-					<td>{{.Count}}</td>
+					<td class='arbitrator_id'>{{index $data "arbitrator_user_id"}}</td>
+					{{if ne (index $data "url") "0"}}<td><a href='{{index $data "url"}}' target='_blank'><i class='fa fa-external-link'></i></a></td>{{else}}<td></td>{{end}}
+					<td>{{index $data "count"}}</td>
 					<td><button class='btn btn-default btn_del'>del</button></td>
 				</tr>
 				{{end}}
@@ -95,7 +95,7 @@
 			</div>
 			<div id="pending" style="{{if eq .PendingTx 0}}display:none{{else}}display:block{{end}}">
 				<div class="alert alert-success">
-					{{.Lang.being_processed}}{{.PendingTx}}
+					{{.Lang.being_processed}}
 				</div>
 			</div>
 		</div>
@@ -122,7 +122,7 @@
 			{{range .Arbitrators}}
 			<tr>
 			<td>{{.Arbitrator_user_id}}</td>
-			{{if .Url}}<td><a href='{{.Url}}' target='_blank'><i class='fa fa-external-link'></i></a></td>{{else}}<td></td>{{end}}
+			{{if ne .Url "0"}}<td><a href='{{.Url}}' target='_blank'><i class='fa fa-external-link'></i></a></td>{{else}}<td></td>{{end}}
 			<td>{{.Count}}</td>
 			<td>{{.Refund_data_count}}</td>
 			<td>{{if gt .Refund_data_count 0}}{{round (div .Refund_data_sum .Refund_data_count) 2}}{{else}}0{{end}}</td>
@@ -131,7 +131,7 @@
 			{{end}}
 		</table>
 
-		{{.LastTxFormatted}}
+		{{noescape .LastTxFormatted}}
 
 	</div>
 

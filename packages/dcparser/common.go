@@ -791,8 +791,10 @@ func (p *Parser) CheckLogTx(tx_binary []byte) error {
 	hash, err := p.Single(`SELECT hash FROM log_transactions WHERE hex(hash) = ?`, utils.Md5(tx_binary)).String()
 	log.Debug("SELECT hash FROM log_transactions WHERE hex(hash) = %s", utils.Md5(tx_binary))
 	if err != nil {
+		log.Error("%s", utils.ErrInfo(err))
 		return utils.ErrInfo(err)
 	}
+	log.Debug("hash %x", hash)
 	if len(hash) > 0 {
 		return utils.ErrInfo(fmt.Errorf("double log_transactions %s", utils.Md5(tx_binary)))
 	}
@@ -1539,8 +1541,10 @@ func (p *Parser) ParseDataGate(onlyTx bool) error {
 
 		// проверим, есть ли такой тип тр-ий
 		if len(consts.TxTypes[p.dataType]) == 0 {
-			return errors.New("Incorrect tx type")
+			return p.ErrInfo("Incorrect tx type "+utils.IntToStr(p.dataType))
 		}
+
+		log.Debug("p.dataType %v", p.dataType)
 		transactionBinaryData = append(utils.DecToBin(int64(p.dataType), 1), transactionBinaryData...)
 		transactionBinaryDataFull = transactionBinaryData
 

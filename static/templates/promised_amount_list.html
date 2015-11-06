@@ -96,7 +96,7 @@
 
 	<a href="#newPromisedAmount" type="button" class="btn btn-outline btn-primary">{{.Lang.add_note}}</a>
 
-	{{.LastTxFormatted}}
+	{{noescape .LastTxFormatted}}
 
 	{{if .ActualizationPromisedAmounts}}
 		<button  onclick="fc_navigate('promisedAmountActualization')" class="btn">{{.Lang.actualize_promised_amounts}}</button>

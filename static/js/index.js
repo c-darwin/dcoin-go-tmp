@@ -85,7 +85,12 @@ function login_ok (result) {
         $('.modal-backdrop').remove();
         $('.modal-backdrop').css('display', 'none');
 
-        if (typeof(get_key_and_sign)==='undefined' || get_key_and_sign=='null') {
+        if ($('#exchangeTemplate').val() == "1") {
+
+            $('#SigninKeyModal').modal('hide');
+            window.location.href = $('#Ehost').val();
+
+        } else if (typeof(get_key_and_sign)==='undefined' || get_key_and_sign=='null') {
 
             var tpl_name = $('#tpl_name').val();
             if (!tpl_name || tpl_name=='installStep0' || tpl_name=='installStep6')
@@ -138,6 +143,8 @@ function save_key () {
     console.log("$('#wrapper').spin();");
     $('#modal_alert').html( "" );
     $('#key').text( $("#modal_key").val() );
+    console.log("modal_key", $("#modal_key").val());
+    console.log($('#key').text());
     $('#password').text( $("#modal_password").val() );
     $('#setup_password').text( $("#modal_setup_password").val() );
     if ($("#modal_save_key").is(':checked')) {
@@ -427,6 +434,7 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
 
 
         } catch(e) {
+            console.log(e)
            decrypt_PEM = 'invalid base64 code';
        }
     }
@@ -504,7 +512,11 @@ function doSign_(type) {
     else {
         if (key) {
             // авторизация с ключем и паролем
-            var forsignature = $.getValues("ajax?controllerName=signLogin");
+            if ($('#exchangeTemplate').val() == "1") {
+                var forsignature = $.getValues("ajax?controllerName=ESignLogin");
+            } else {
+                var forsignature = $.getValues("ajax?controllerName=signLogin");
+            }
             SIGN_LOGIN = true;
         }
     }
@@ -512,6 +524,8 @@ function doSign_(type) {
     console.log('forsignature='+forsignature);
 
     if (forsignature) {
+        console.log('key='+key);
+        console.log('pass='+pass);
         var e_n_sign = get_e_n_sign(key, pass, forsignature, 'modal_alert');
 	}
 	if (SIGN_LOGIN) {
@@ -524,8 +538,14 @@ function doSign_(type) {
                 if (save_key == "1") {
                     privKey = e_n_sign['decrypt_key']
                 }
+
+                if ($('#exchangeTemplate').val() == "1") {
+                    var check_url = 'ajax?controllerName=ECheckSign'
+                } else {
+                    var check_url = 'ajax?controllerName=check_sign'
+                }
 				// шлем подпись на сервер на проверку
-				$.post( 'ajax?controllerName=check_sign', {
+				$.post( check_url, {
 							'sign': e_n_sign['hSig'],
 							'n' : e_n_sign['modulus'],
 							'e': e_n_sign['exp'],

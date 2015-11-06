@@ -1,0 +1,71 @@
+{{define "exchangeAdmin"}}
+<script>
+
+	$('#single_mode').bind('click', function () {
+		fc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
+	});
+
+</script>
+
+<div id="main_div">
+	<h1 class="page-header">Exchange admin</h1>
+	{{template "alertSuccess".}}
+
+	<p>lock: {{.Lock}} <button onclick="fc_navigate('exchangeAdmin', {'change_reduction_lock':1})">change</button></p>
+
+	<h3 class="page-header">Withdraw</h3>
+	<table class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+			<th>#</th>
+			<th>open_time</th>
+			<th>close_time</th>
+			<th>user_id</th>
+			<th>email</th>
+			<th>currency_id</th>
+			<th>amount</th>
+			<th>wd_amount</th>
+			<th>method</th>
+			<th>account</th>
+		</tr>
+		</thead>
+		<tbody>
+		{{range $id, $data := .Withdraw}}
+			<tr><td>{{index $data "id"}}</td><td class="unixtime">{{index $data "open_time"}}</td>
+
+				{{if eq (index $data "close_time") "0"}}
+					<td><button onclick="fc_navigate('exchangeAdmin', {'withdraw_id':{{index $data "id"}}})">close</button></td>
+				{{else}}
+					<td class="unixtime">{{index $data "close_time"}}</td>
+				{{end}}
+
+
+				<td>{{index $data "user_id"}}</td><td>{{index $data "email"}}</td><td>{{index $data "currency_id"}}</td><td>{{index $data "amount"}}</td><td>{{index $data "wd_amount"}}</td><td>{{index $data "method"}}</td><td>{{index $data "account"}}</td></tr>
+		{{end}}
+		</tbody>
+	</table>
+
+
+	<h3 class="page-header">Users</h3>
+	<table class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+			<th>#</th>
+			<th>email</th>
+			<th>ip</th>
+			<th>lock</th>
+			<th>user_id</th>
+		</tr>
+		</thead>
+		<tbody>
+		{{range $id, $data := .Users}}
+		<tr><td>{{index $data "id"}}</td><td>{{index $data "email"}}</td><td>{{index $data "ip"}}</td><td>{{index $data "lock"}}</td><td>{{index $data "user_id"}}</td></tr>
+		{{end}}
+		</tbody>
+	</table>
+
+</div>
+
+<script src="static/js/unixtime.js"></script>
+
+{{end}}

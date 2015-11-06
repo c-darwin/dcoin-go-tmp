@@ -111,7 +111,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 			WHERE user_id =  ? AND
 						 empty_block_id = 0 AND
 						 del_block_id = 0
-						 `, 100, c.SessRestricted)
+						 `, 100, c.SessUserId)
 
 	rows, err := c.Query(c.FormatQuery(`
 			SELECT amount, currency_id, last_update
@@ -145,59 +145,7 @@ func (c *Controller) CurrencyExchange() (string, error) {
 		walletsAmounts[currency_id] = amount
 	}
 
-	/*
-		data, err := static.Asset("static/templates/currency_exchange.html")
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		alert_success, err := static.Asset("static/templates/alert_success.html")
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		signatures, err := static.Asset("static/templates/signatures.html")
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		funcMap := template.FuncMap{
-			"mult": func(a, b string) float64 {
-				return utils.StrToFloat64(a)*utils.StrToFloat64(b)
-			},
-			"div": func(a, b interface{}) float64 {
-				return utils.InterfaceToFloat64(a)/utils.InterfaceToFloat64(b)
-			},
-			"round": func(a float64, num int) float64 {
-				return utils.Round(a, num)
-			},
-		}
-		t := template.Must(template.New("template").Funcs(funcMap).Parse(string(data)))
-		t = template.Must(t.Parse(string(alert_success)))
-		t = template.Must(t.Parse(string(signatures)))
-		b := new(bytes.Buffer)
-		err = t.ExecuteTemplate(b, "currencyExchange", &currencyExchangePage{
-			Lang: c.Lang,
-			CountSignArr: c.CountSignArr,
-			ShowSignData: c.ShowSignData,
-			WalletsAmounts: walletsAmounts,
-			CurrencyListName: currencyListName,
-			BuyCurrencyId: buyCurrencyId,
-			SellCurrencyId: sellCurrencyId,
-			BuyCurrencyName: buyCurrencyName,
-			SellCurrencyName: sellCurrencyName,
-			CurrencyListFullName : currencyListFullName,
-			ConfigCommission: c.ConfigCommission,
-			TimeNow: timeNow,
-			SellOrders: sellOrders,
-			BuyOrders: buyOrders,
-			MyOrders: myOrders,
-			UserId: c.SessUserId,
-			TxType: txType,
-			TxTypeId: txTypeId,
-			SignData: ""})
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		return b.String(), nil
-	*/
+
 
 	TemplateStr, err := makeTemplate("currency_exchange", "currencyExchange", &currencyExchangePage{
 		Lang:                 c.Lang,

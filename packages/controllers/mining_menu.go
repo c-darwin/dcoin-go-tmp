@@ -52,7 +52,7 @@ func (c *Controller) MiningMenu() (string, error) {
 		}
 		if len(commission) == 0 {
 			// возможно юзер уже отправил запрос на добавление комиссии
-			last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_commission"}), 1, c.TimeFormat)
+			last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeCommission"}), 1, c.TimeFormat)
 			if err != nil {
 				return utils.ErrInfo(err)
 			}
@@ -140,7 +140,7 @@ func (c *Controller) MiningMenu() (string, error) {
 			}
 			if promisedAmount == 0 {
 				// возможно юзер уже отправил запрос на добавление обещенной суммы
-				last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount"}), 1, c.TimeFormat)
+				last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewPromisedAmount"}), 1, c.TimeFormat)
 				if len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0) {
 					// установлена ли комиссия
 					err = checkCommission()
@@ -200,7 +200,7 @@ func (c *Controller) MiningMenu() (string, error) {
 	} else if result == "full_mining_menu" {
 		tplName = "mining_menu"
 		tplTitle = "miningMenu"
-		last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_user", "new_miner", "new_promised_amount", "change_promised_amount", "votes_miner", "change_geolocation", "votes_promised_amount", "del_promised_amount", "cash_request_out", "cash_request_in", "votes_complex", "for_repaid_fix", "new_holidays", "actualization_promised_amounts", "mining", "new_miner_update", "change_host", "change_commission"}), 3, c.TimeFormat)
+		last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewUser", "NewMiner", "NewPromisedAmount", "ChangePromisedAmount", "VotesMiner", "ChangeGeolocation", "VotesPromisedAmount", "DelPromisedAmount", "CashRequestOut", "CashRequestIn", "VotesComplex", "ForRepaidFix", "NewHolidays", "ActualizationPromisedAmounts", "Mining", "NewMinerUpdate", "ChangeHost", "ChangeCommission"}), 3, c.TimeFormat)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

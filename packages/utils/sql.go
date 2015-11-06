@@ -1011,7 +1011,7 @@ func (db *DCDB) GetLastBlockData() (map[string]int64, error) {
 	}
 	log.Debug("%v", "confirmedBlockId", confirmedBlockId)
 	// получим время из последнего подвержденного блока
-	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id =?", confirmedBlockId).Bytes()
+	lastBlockBin, err := db.Single("SELECT data FROM block_chain WHERE id = ?", confirmedBlockId).Bytes()
 	if err != nil || len(lastBlockBin) == 0 {
 		return result, ErrInfo(err)
 	}

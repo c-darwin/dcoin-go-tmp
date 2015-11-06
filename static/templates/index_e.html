@@ -22,8 +22,41 @@
   <script language="javascript" type="text/javascript" src="/static/js/index.js"></script>
 
 
+  <script language="JavaScript" type="text/javascript" src="/static/js/md5.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/jsbn.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/jsbn2.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/rsa.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/rsa2.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/sha1.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/sha256.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/base64.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/rsapem-1.1.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/rsasign-1.2.min.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/static/js/asn1hex-1.1.min.js"></script>
+
+
+  <script src="/static/js/sha256.js"></script>
+
+  <script type="text/javascript" src="/static/js/rijndael.js"></script>
+  <script type="text/javascript" src="/static/js/mcrypt.js"></script>
+
+
+  <script src="/static/js/index.js"></script>
+
+  <script src="/static/js/js.js"></script>
+
+  <script src="/static/js/aes.js"></script>
+  <script src="/static/js/enc-base64-min.js"></script>
+
+  <script src="/static/js/crypto-js-aes.js"></script>
+  <script src="/static/js/crypto-js-mode-ecb.js"></script>
+  <script src="/static/js/crypto-js-pad-iso10126.js"></script>
 
   <script>
+
+    function doSign(type){
+      doSign_(type);
+    }
     function navigate (page, parameters) {
       $.post("content?controllerName="+page, { tpl_name: page, parameters: parameters },
               function(data) {
@@ -34,7 +67,7 @@
     }
 
     function get_balance() {
-      $.post( 'ajax?controllerName=getBalance', {}, function(data) {
+      $.post( 'ajax?controllerName=EGetBalance', {}, function(data) {
         if (data.html)
           $('#your_balance').html(data.html);
       }, 'JSON');
@@ -43,7 +76,7 @@
     function logout () {
       $.get("ajax?controllerName=ELogout",
               function() {
-                window.location.href = "/e/";
+                window.location.href = "http://{{.EHost}}";
               });
     }
   </script>
@@ -84,10 +117,10 @@
           <span class="icon-bar"></span>
         </button>
         <a class="navbar-brand particular-link" href="#" style="display: block; /* or inline-block; I think IE would respect it since a link is an inline-element */
-	                   background: url(/static/img/logo.png) center left no-repeat;
+	                   background: url(/static/img/logo-small.png) center left no-repeat;
 	                   text-align: center;
 	                   background-size: 30px 30px;
-	                   padding-left: 40px; margin-left: 15px; margin-right: 50px" onclick="fc_navigate('EMain')">tmp-e.dcoin.club</a>
+	                   padding-left: 40px; margin-left: 15px; margin-right: 50px" onclick="fc_navigate('EMain')">{{.EHost}}</a>
       </div>
 
       <div class="sidebar-collapse">
@@ -134,6 +167,11 @@
           </li>
           {{else}}
 
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="showSigninKeyModal">
+              <i class="fa fa-sign-in fa-fw"></i> Key</a>
+            </a>
+          </li>
           <li class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="showSigninModal">
               <i class="fa fa-sign-in fa-fw"></i> {{.Lang.sign_in}}</a>
@@ -189,7 +227,7 @@
           <div class="panel-body" id="your_balance">
             {{if .MyWallets}}
               {{range $id, $data := .MyWallets}}
-                <strong>{{$data.Amount}}</strong> {{$data.CurrencyName}}<br>
+                <strong>{{index $data "amount"}}</strong> {{index $data "currency_name"}}<br>
               {{end}}
             {{else}}
               <strong>0</strong>
@@ -254,9 +292,15 @@
     $('#dataTables-example').dataTable();
   });
 
+
+  $('#showSigninKeyModal').bind('click', function () {
+    $('#SigninKeyModal').modal('show');
+  });
+
   $('#showSigninModal').bind('click', function () {
     $('#SigninModal').modal('show');
   });
+
   $('#showSignupModal').bind('click', function () {
     $('#SignupModal').modal('show');
   });
@@ -274,7 +318,7 @@
         $('#signup-alert').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
       else {
         $('#SignupModal').modal('hide');
-        window.location.href = "/e/";
+        window.location.href = "http://{{.EHost}}";
       }
     }, 'JSON');
   }
@@ -288,10 +332,92 @@
         $('#signin-alert').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
       else {
         $('#SigninModal').modal('hide');
-        window.location.href = "/e/";
+        window.location.href = "http://{{.EHost}}";
       }
     }, 'JSON');
   }
+
+  function show_text_key () {
+    $("#modal_key").css("display", "block");
+    $("#key_div").css("display", "none");
+    $("#key_selector").html('<a href="#" onclick="show_file_key()">{{.Lang.from_file}}</a>');
+    return false;
+  }
+
+  function show_file_key () {
+    $("#modal_key").css("display", "none");
+    $("#key_div").css("display", "block");
+    $("#key_selector").html('<a href="#" onclick="show_text_key()">{{.Lang.text}}</a>');
+    return false;
+  }
+
+
+  function handleFileSelect2(evt) {
+    $('#key_file_name').html(this.value);
+    var f = evt.target.files[0];
+    handleFileSelect(f);
+  }
+
+  var handleFileSelect = function(f) {
+
+    $('#key_file_name').html(f.name);
+    var reader = new FileReader();
+    if (f.type.substr(0,5) =='image') {
+      reader.onload = (function(theFile) {
+        return function(e) {
+          console.log('img2key');
+          img2key(e.target.result, 'modal_key');
+        };
+      })(f);
+      reader.readAsDataURL(f);
+    }
+    else {
+      reader.onload = (function(theFile) {
+        return function(e) {
+          console.log(e.target.result);
+          $('#modal_key').val(e.target.result);
+        };
+      })(f);
+      reader.readAsText(f);
+    }
+  };
+
+  $( document ).ready(function() {
+    if (window.FileReader === undefined) {
+      $("#modal_key").css("display", "block");
+      $("#key_div").css("display", "none");
+      $("#key_selector").css("display", "none");
+    }
+    document.getElementById('upload_hidden').addEventListener('change', handleFileSelect2, false);
+  });
+
+
+  $('#key_div').on(
+          'dragover',
+          function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+  )
+  $('#key_div').on(
+          'dragenter',
+          function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+  )
+  $('#key_div').on(
+          'drop',
+          function(e){
+            if(e.originalEvent.dataTransfer){
+              if(e.originalEvent.dataTransfer.files.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleFileSelect(e.originalEvent.dataTransfer.files[0]);
+              }
+            }
+          }
+  );
 
 </script>
 <!-- Modal -->
@@ -330,6 +456,43 @@
 </div>
 <!-- /.modal -->
 
+
+<!--Sign in Key Modal -->
+
+<div class="modal fade" id="SigninKeyModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title">{{.Lang.login_title}}</h4>
+      </div>
+      <div class="modal-body">
+
+        <div id="modal_alert"></div>
+
+        <input type="hidden" id="incorrect_key_or_password" value="{{.Lang.incorrect_key_or_password}}">
+
+        <fieldset>
+          <span id="key_selector" style="float:right"><a href="#" onclick="show_text_key()">{{.Lang.text}}</a></span><div class="clearfix"></div>
+          <input multiple type="file" name="upload" id="upload_hidden" style="position: absolute; display: block; overflow: hidden; width: 0; height: 0; border: 0; padding: 0;" />
+          <div style="width:100%;  border:2px dashed black; display: flex;  height: 100px; padding: 15px 0px 15px 0px" id="key_div">
+            <div style="margin:auto; text-align:center; line-height:22px">
+              <p style="margin-bottom:0px"  id="key_file_name" onclick="document.getElementById('upload_hidden').click();"></p>
+              <button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('upload_hidden').click();">{{.Lang.select_key}}</button>
+              <p>{{.Lang.or_drag_and_drop_key}}</p>
+            </div>
+          </div>
+          <textarea rows="3" id="modal_key" class="form-control" style="display:none"></textarea><br>
+          <label>{{.Lang.key_password}}</label>
+          <input type="password" id="modal_password" class="form-control">
+        </fieldset>
+      </div>
+      <div class="modal-footer">
+        <button id="saveKeyAndLogin" type="button" class="btn btn-success  btn-lg btn-block" data-toggle="button">{{.Lang.login}}</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal SIGN UP-->
 <div style="display: none;" class="modal fade" id="SignupModal" tabindex="-1" role="dialog" aria-labelledby="SignupModalLabel" aria-hidden="true">
@@ -419,8 +582,28 @@
   })(jQuery);
 
   //$('#wrapper').spin();
-
+  $('#saveKeyAndLogin').bind('click', function () {
+    console.log("saveKeyAndLogin")
+    save_key();
+    $(this).html('Wait...');
+    $(this).addClass( "disabled" );
+    setTimeout(function() {
+      doSign('login');
+      $('#saveKeyAndLogin').html('{{.Lang.login}}');
+      $('#saveKeyAndLogin').removeClass( "disabled" )
+    }, 500);
+  });
 </script>
+<div style="display: none;">
+  <div id="key">key</div>
+  <div id="password">password</div>
+  <div id="setup_password">setup_password</div>
+  <div id="save_key">save_key</div>
+  <img  id="image_key">
+  <canvas  id="canvas_key"></canvas>
+  <input type="hidden" id="exchangeTemplate" value="1">
+  <input type="hidden" id="EHost" value="http://{{.EHost}}">
+</div>
 </body>
 
 </html>

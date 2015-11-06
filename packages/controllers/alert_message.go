@@ -192,7 +192,7 @@ func (c *Controller) AlertMessage() (string, error) {
 	if logId == 0 {
 		text := ""
 		// проверим, есть ли запросы на смену в тр-ях
-		lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"changePrimaryKey"}), 1, c.TimeFormat)
+		lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangePrimaryKey"}), 1, c.TimeFormat)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

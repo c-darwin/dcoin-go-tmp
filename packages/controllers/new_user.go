@@ -181,7 +181,7 @@ func (c *Controller) NewUser() (string, error) {
 		refPhotos[user_id] = hosts
 	}
 
-	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_user"}), 1, c.TimeFormat)
+	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewUser"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(lastTx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(lastTx, c.Lang)

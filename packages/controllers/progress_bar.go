@@ -46,7 +46,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_primary_key"}), 1, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangePrimaryKey"}), 1, c.TimeFormat)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
@@ -117,7 +117,7 @@ func (c *Controller) ProgressBar() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	// возможно юзер уже отправил запрос на добавление обещенной суммы
-	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"new_promised_amount"}), 1, c.TimeFormat)
+	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewPromisedAmount"}), 1, c.TimeFormat)
 	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || promisedAmount > 0 {
 		progressBar["promised_amount"] = 1
 	}
@@ -128,7 +128,7 @@ func (c *Controller) ProgressBar() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	// возможно юзер уже отправил запрос на добавление комиссии
-	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_commission"}), 1, c.TimeFormat)
+	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeCommission"}), 1, c.TimeFormat)
 	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || len(commission) > 0 {
 		progressBar["commission"] = 1
 	}
@@ -138,7 +138,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"votes_complex"}), 1, c.TimeFormat)
+	last_tx, err = c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"VotesComplex"}), 1, c.TimeFormat)
 	if (len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0)) || vote > 0 {
 		progressBar["vote"] = 1
 	}

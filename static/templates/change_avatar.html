@@ -2,7 +2,7 @@
 <script>
 
 	{{if ne .Avatar "0"}}
-		$("#img_avatar").css("background", "url({{.Avatar}}) 50% 50%");
+		$("#img_avatar").css("background", "url({{if not .Avatar}}static/img/noavatar.png{{else}}{{.Avatar}}{{end}}) 50% 50%");
 		$("#img_avatar").css("background-size", "100px Auto");
 	{{else}}
 		get_img(0);
@@ -78,7 +78,7 @@
 		</fieldset>
 	</form>
 
-	{{.LastTxFormatted}}
+	{{noescape .LastTxFormatted}}
 
 </div>
 

@@ -69,10 +69,12 @@ func (c *Controller) ChangeArbitratorConditions() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	arbitratorConditionsMap_ := make(map[string][5]string)
-	err = json.Unmarshal(arbitratorConditionsJson, &arbitratorConditionsMap_)
-	// арбитр к этому моменту мог передумать и убрать свои условия, уйдя из арбитров для новых сделок поставив [0] что вызовет тут ошибку
-	if err != nil {
-		return "", utils.ErrInfo(err)
+	if len(arbitratorConditionsJson) > 0 {
+		err = json.Unmarshal(arbitratorConditionsJson, &arbitratorConditionsMap_)
+		// арбитр к этому моменту мог передумать и убрать свои условия, уйдя из арбитров для новых сделок поставив [0] что вызовет тут ошибку
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 	}
 	arbitratorConditionsMap := make(map[int64][5]string)
 	for k, v := range arbitratorConditionsMap_ {
@@ -83,7 +85,7 @@ func (c *Controller) ChangeArbitratorConditions() (string, error) {
 		arbitratorConditionsMap[23] = [5]string{"0.01", "0", "0.01", "0", "0.1"}
 	}
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_arbitrator_conditions"}), 3, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeArbitratorConditions"}), 3, c.TimeFormat)
 	lastTxFormatted := ""
 	var pendingTx_ map[int64]int64
 	if len(last_tx) > 0 {

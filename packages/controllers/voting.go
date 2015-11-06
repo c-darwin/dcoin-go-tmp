@@ -162,7 +162,7 @@ func (c *Controller) Voting() (string, error) {
 	}
 	jsPct = jsPct[:len(jsPct)-1] + "}"
 
-	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"votes_complex"}), 1, c.TimeFormat)
+	lastTx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"VotesComplex"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(lastTx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(lastTx, c.Lang)

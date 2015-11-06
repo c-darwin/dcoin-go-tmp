@@ -490,8 +490,11 @@
 
 	var intervalIdArray = [];
 
-	//window.location.href += "#mypara";
-	//location.reload();
+	console.log("intervalIdArray", intervalIdArray)
+	if (typeof intervalIdArray != "undefined") {
+		for (i=0; i<intervalIdArray.length; i++)
+			clearInterval(intervalIdArray[i]);
+	}
 
 	var lastLinkEvent;
 	function dcNavHash(e) {

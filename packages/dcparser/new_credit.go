@@ -33,10 +33,10 @@ func (p *Parser) NewCreditFront() error {
 	}
 
 	// является ли данный юзер майнером
-	err = p.checkMiner(p.TxUserID)
+	/*err = p.checkMiner(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
-	}
+	}*/
 	// нельзя давать кредит самому себе
 	if p.TxMaps.Int64["user_id"] == p.TxMaps.Int64["to_user_id"] {
 		return p.ErrInfo("user_id = to_user_id")

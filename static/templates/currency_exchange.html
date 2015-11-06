@@ -263,8 +263,8 @@
 		<table class="table" id="my_orders">
 			<thead><tr><th>Order id</th><th>Sell_currency_id</th><th>sell_rate</th><th>amount</th><th>buy_currency_id</th><th>commission</th><th>del</th></tr></thead>
 			<tbody>
-			{{if .BuyOrders}}
-				{{range $data := .BuyOrders}}
+			{{if .MyOrders}}
+				{{range $data := .MyOrders}}
 					<tr><td>{{$data.id}}</td><td>{{$data.sell_currency_id}}</td><td>{{$data.sell_rate}}</td><td>{{$data.amount}}</td><td>{{$data.buy_currency_id}}</td><td>{{$data.commission}}</td><td><a href='#' onclick="fc_navigate('currencyExchangeDelete', {'del_id':'{{$data.id}}'})">Del</a></td></tr>
 				{{end}}
 			{{end}}

@@ -718,10 +718,11 @@
 			$(".exNext").css("margin-top", "10px");
 		}
 
-		function selectEx(url, user_id) {
+		function selectEx(url, user_id, bId) {
 
-			$('#exNextPS').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
-			$('#exNextPS').prop('disabled', true);
+			$('#'+bId).html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+			$('#'+bId).prop('disabled', true);
+			$("#"+bId).css("background-color", "#ccc");
 
 			$.post( url+'ajax?controllerName=ESignLogin', {
 				}, function (forsignature) {
@@ -739,8 +740,8 @@
 						if(typeof event.data.error != "undefined") {
 							$("#wrapper").spin(false);
 							$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>'+event.data.error+'</p></div>');
-							$('#exNextPS').prop('disabled', false);
-							$('#exNextPS').html('Next');
+							$('#'+bId).prop('disabled', false);
+							$('#'+bId).html('Buy');
 						} else {
 							console.log(url+'ajax?controllerName=ECheckSign');
 							$.get( url+'ajax?controllerName=ECheckSign', {
@@ -765,8 +766,8 @@
 									} else {
 										$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
 									}
-									$('#exNextPS').prop('disabled', false);
-									$('#exNextPS').html('Next');
+									//$('#'+bId).prop('disabled', false);
+									//$('#'+bId).html('Buy');
 							}, "JSON");
 						}
 					};
@@ -824,43 +825,61 @@
 					'token': token
 				}, function (data) {
 					$('#refreshEx').html('<i class="fa fa-refresh"></i>');
-					if (typeof data != "undefined") {
+					if (typeof data.Token != "undefined") {
 						$('#tokens').css("display", "block");
-						$('#tokensTable').append("<tr><td>Покупка " + data.token.amount_fiat + " " + currency_name[data.token.buy_currency_id] + "</td><td>" + data.token.status + "</td></tr>");
+						$('#tokensTable').html("<tr><td>Покупка " + data.Token.amount_fiat + " " + currency_name[data.Token.buy_currency_id] + "</td><td>" + data.Token.status + "</td></tr>");
 					}
-					for (var i=0; i < data.wallets.length; i++) {
-						$('#balancesTable').append("<tr><td>"+currency_name[data.wallets[i].currency_id]+"</td><td>"+data.wallets[i].amount+"</td></tr>");
+					$('#balancesTable').html("");
+					for (var i=0; i < data.Wallets.length; i++) {
+						$('#balancesTable').append("<tr><td>"+currency_name[data.Wallets[i].currency_id]+"</td><td>"+data.Wallets[i].amount+"</td></tr>");
 					}
-					for (var i=0; i < data.orders.length; i++) {
-						$('#ordersTable').append("<tr><td>"+currency_name[data.orders[i].buy_currency_id]+"/"+currency_name[data.orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount * (1/data.orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.orders[i].amount/data.orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
+					$('#ordersTable').html("");
+					for (var i=0; i < data.Orders.length; i++) {
+						$('#ordersTable').append("<tr><td>"+currency_name[data.Orders[i].buy_currency_id]+"/"+currency_name[data.Orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.Orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount * (1/data.Orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.Orders[i].amount/data.Orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
 					}
-					for (var i=0; i < data.withdraw.length; i++) {
+					$('#withdrawTable').html("");
+					for (var i=0; i < data.Withdraw.length; i++) {
 						var status = "wait"
-						if (typeof data.withdraw[i].close_time != "undefined") {
+						if (typeof data.Withdraw[i].close_time != "undefined") {
 							status = "complete"
 						}
-						$('#withdrawTable').append("<tr><td>"+data.withdraw[i].open_time+"</td><td>"+data.withdraw[i].amount+"</td><td>"+status+"</td></tr>");
+						$('#withdrawTable').append("<tr><td>"+data.Withdraw[i].open_time+"</td><td>"+data.Withdraw[i].amount+"</td><td>"+status+"</td></tr>");
 					}
 				}, 'JSON');
 			}
 		}
 
-		//function selectEx(url) {
-
-		//}
-
 
 	</script>
 	<div style="clear: both"></div>
 
-<div style="display: inline-table" class="col-lg-3 col-sm-6">
+<div style="display: inline-table" class="col-sm-6">
 	<div id="ex_alert"></div>
 
 	<div style="display: none" id="eList">
 		<table class="table">
-			<tbody><tr><th>Url</th><th>Owner</th><th>+</th><th>-</th><th style="min-width: 100px">Values</th>{{if .Miner}}<th>Voting</th>{{end}}<th>Payment systems</th><th>Buy</th></tr></tbody>
+			<tbody><tr>
+				<th>Payment systems</th>
+				<th>Buy</th>
+				<th>Url</th>
+				<th>Owner</th>
+				<th>+</th>
+				<th>-</th>
+				<th style="min-width: 100px">In stock</th>
+				{{if .Miner}}<th>Voting</th>{{end}}
+			</tr></tbody>
 			{{range $id, $data := .TopExMap}}
-			<tr><td>{{$data.Host}}</td><td>{{$data.UserId}}</td><td>{{$data.Vote1}}</td><td>{{$data.Vote0}}</td><td id="values-{{$id}}"></td>{{if $.Miner}}<td><button onclick="fc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button onclick="fc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>{{end}}<td id="ps-{{$id}}"></td><td><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}')">Buy</button></td></tr>
+			<tr>
+				<td id="ps-{{$id}}"></td>
+				<td><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}', 'btn-{{$id}}')" id="btn-{{$id}}" class="btn btn-default">Buy</button></td>
+				<td>{{$data.Host}}</td>
+				<td>{{$data.UserId}}</td>
+				<td>{{$data.Vote1}}</td>
+				<td>{{$data.Vote0}}</td>
+				<td id="values-{{$id}}"></td>
+				{{if $.Miner}}<td><button class="btn btn-default btn-xs" onclick="fc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button class="btn btn-default btn-xs" onclick="fc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>
+				{{end}}
+			</tr>
 			<script>
 				$.get( '{{$data.Host}}ajax?controllerName=EData', {}, function (data) {
 					var patt = /^([\w,\.\s:]+)$/i;
@@ -880,7 +899,7 @@
 		<select id="buy_currency_id" style="width: {{if .Mobile}}80{{else}}100{{end}}px; display: inline-block" class="form-control" >
 			<option value='72'>dUSD</option>
 		</select>
-		<button class="btn btn-primary exNext" id="exNext">Next</button>
+		<button class="btn btn-primary exNext" id="exNext" style="vertical-align: top;">Next</button>
 	</div>
 	<form method="get" id="sendForm">
 		<input type="hidden" name="FormExAmount">
@@ -889,8 +908,8 @@
 		<input type="hidden" name="controllerName" value="ERedirect">
 	</form>
 	<div style="clear: both; margin-bottom: 20px"></div>
-	<div id="tokens">
-		<table class="table" style="max-width: 340px; display: none">
+	<div>
+		<table class="table" style="max-width: 340px; display: none" id="tokens">
 			<tbody><tr><th>Операция</th><th>Статус</th></tr></tbody>
 			<tbody id="tokensTable"></tbody>
 		</table>
@@ -899,7 +918,7 @@
 	</div>
 </div>
 
-<div style="display: none" id="exOrders" class="col-lg-3 col-sm-6">
+<div style="display: none" id="exOrders" class="col-sm-6">
 
 	<h3>Orders</h3>
 	<table class="table table-striped table-bordered table-hover">
@@ -916,7 +935,7 @@
 		</tbody>
 	</table>
 </div>
-<div style="display: none" id="exBalances" class="col-lg-3 col-sm-6">
+<div style="display: none" id="exBalances" class="col-sm-6">
 	<h3>Balances</h3>
 	<table class="table table-striped table-bordered table-hover">
 		<thead>
@@ -930,7 +949,7 @@
 	</table>
 
 </div>
-<div style="display: none" id="exWithdraw" class="col-lg-3 col-sm-6">
+<div style="display: none" id="exWithdraw" class="col-sm-6">
 	<h3>История операций</h3>
 	<table class="table table-striped table-bordered table-hover">
 		<thead>
@@ -1277,6 +1296,7 @@
 
 </div>
 
+<!--
 <div style="clear: both"></div>
 <h3  title="{{.Lang.home_ex_text}}">{{.Lang.applications_from_exchange}}</h3>
 <div class="ex">
@@ -1324,7 +1344,7 @@
 	<div class="clearfix"></div>
 	<div id="map_canvas" style="width: 100%; height:500px;"></div>
 {{end}}
-
+-->
 	<style>
 		.ibox {
 			clear: both;

@@ -76,7 +76,7 @@ func (c *Controller) ChangeCommission() (string, error) {
 		commission[1000] = []float64{0.1, 0.01, 0}
 	}
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"change_arbitrator_conditions", "money_back"}), 3, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"ChangeArbitratorConditions", "MoneyBack"}), 3, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(last_tx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)

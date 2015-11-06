@@ -96,7 +96,7 @@ func (c *Controller) WalletsList() (string, error) {
 	//parameters := c.r.FormValue("parameters")
 	cfProjectId := int64(utils.StrToFloat64(c.Parameters["projectId"]))
 
-	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"send_dc"}), 1, c.TimeFormat)
+	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"SendDc"}), 1, c.TimeFormat)
 	lastTxFormatted := ""
 	if len(last_tx) > 0 {
 		lastTxFormatted, _ = utils.MakeLastTx(last_tx, c.Lang)
