@@ -1,4 +1,4 @@
-// +build android ios
+// +build android
 
 package main
 
