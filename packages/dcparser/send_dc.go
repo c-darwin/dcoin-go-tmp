@@ -69,7 +69,7 @@ func (p *Parser) SendDcFront() error {
 
 	// проверим, удовлетворяет ли нас комиссия, которую предлагает юзер
 	if p.TxMaps.Float64["commission"] < nodeCommission {
-		return p.ErrInfo("commission")
+		return p.ErrInfo(fmt.Sprintf("commission %v<%v", p.TxMaps.Float64["commission"], nodeCommission))
 	}
 
 	if p.BlockData != nil && p.BlockData.BlockId <= consts.ARBITRATION_BLOCK_START {
