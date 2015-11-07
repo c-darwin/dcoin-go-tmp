@@ -316,10 +316,6 @@ func (c *Controller) Home() (string, error) {
 		miner = true
 	}
 
-///////////////////
-	miner = true
-///////////////////
-
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
 		CountSignArr:          c.CountSignArr,
 		CountSign:             c.CountSign,

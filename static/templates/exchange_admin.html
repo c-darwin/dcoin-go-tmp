@@ -31,7 +31,7 @@
 		</thead>
 		<tbody>
 		{{range $id, $data := .Withdraw}}
-			<tr><td>{{index $data "id"}}</td><td class="unixtime">{{index $data "open_time"}}</td>
+			<tr><td>{{index $data "e_withdraw_id"}}</td><td class="unixtime">{{index $data "open_time"}}</td>
 
 				{{if eq (index $data "close_time") "0"}}
 					<td><button onclick="fc_navigate('exchangeAdmin', {'withdraw_id':{{index $data "id"}}})">close</button></td>
