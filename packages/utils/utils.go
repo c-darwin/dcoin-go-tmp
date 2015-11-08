@@ -65,7 +65,7 @@ type prevBlockType struct {
 }
 
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
-var LogLevel = flag.String("LogLevel", "ERROR", "Dcoin LogLevel")
+var LogLevel = flag.String("LogLevel", "", "Dcoin LogLevel")
 var Console = flag.Int64("console", 0, "Start from console")
 var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")

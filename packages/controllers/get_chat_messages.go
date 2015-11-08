@@ -35,11 +35,12 @@ func (c *Controller) GetChatMessages() (string, error) {
 		ids = `AND id NOT IN(` + strings.Join(utils.IntSliceToStr(chatIds[c.SessUserId]), ",") + `)`
 	}
 	var result string
-	chatData, err := c.GetAll(`SELECT * FROM chat WHERE room = ? AND lang = ?  `+ids+` ORDER BY id ASC LIMIT 100`, 100, room, lang)
+	chatData, err := c.GetAll(`SELECT * FROM chat WHERE room = ? AND lang = ?  `+ids+` ORDER BY id DESC LIMIT 100`, 100, room, lang)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	for _, data := range chatData {
+	for i:=len(chatData)-1; i>=0; i-- {
+		data := chatData[i]
 		status := data["status"]
 		message := data["message"]
 		receiver := utils.StrToInt64(data["receiver"])
@@ -84,7 +85,7 @@ func (c *Controller) GetChatMessages() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		// возможно юзер забанен
-		if nameAvaBan["name"] == "1" {
+		if nameAvaBan["chat_ban"] == "1" {
 			continue
 		}
 		if len(nameAvaBan["name"]) > 0 {

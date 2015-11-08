@@ -67,9 +67,11 @@ func Start(dir string) {
 	}()
 
 	if dir != "" {
+		fmt.Println("dir", dir)
 		*utils.Dir = dir
 	}
 	IosLog("dir:" + dir)
+	fmt.Println("utils.Dir", *utils.Dir)
 
 	// убьем ранее запущенный Dcoin
 	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
@@ -82,6 +84,7 @@ func Start(dir string) {
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 		}
+		fmt.Println("old PID ("+*utils.Dir+"/dcoin.pid"+"):", pidMap["pid"])
 		err = syscall.Kill(utils.StrToInt(pidMap["pid"]), syscall.SIGTERM)
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
@@ -159,10 +162,17 @@ func Start(dir string) {
 	}
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
-	logLevel, err := logging.LogLevel(*utils.LogLevel)
+
+	logLevel_ := "ERROR"
+	if *utils.LogLevel == "" {
+		logLevel_ = configIni["log_level"]
+	}
+
+	logLevel, err := logging.LogLevel(logLevel_)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 	}
+
 
 	log.Debug("logLevel: %v", logLevel)
 	backendLeveled.SetLevel(logLevel, "")

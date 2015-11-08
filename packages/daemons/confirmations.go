@@ -79,7 +79,7 @@ func Confirmations() {
 			s = 0 // 2 минуты отчитываем с начала
 		}
 		if startBlockId == 0 {
-			startBlockId = LastBlockId
+			startBlockId = LastBlockId-1
 		}
 		log.Debug("startBlockId: %d / LastBlockId: %d", startBlockId, LastBlockId)
 

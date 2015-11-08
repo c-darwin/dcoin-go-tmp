@@ -24,7 +24,7 @@ const MIN_CONFIRMED_NODES = 1
 const VERSION = "1.0.1a3"
 
 // примерный текущий крайний блок
-const LAST_BLOCK = 260000
+const LAST_BLOCK = 270000
 
 // примерный размер блокчейна
 const BLOCKCHAIN_SIZE = 65000000

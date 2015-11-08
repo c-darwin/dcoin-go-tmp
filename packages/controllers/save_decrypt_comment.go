@@ -57,7 +57,7 @@ func (c *Controller) SaveDecryptComment() (string, error) {
 				SET enc_message = message,
 					message = ?,
 					status = ?
-				WHERE id = ? AND receiver = ?`, comment, "decrypted", id, c.SessUserId)
+				WHERE id = ? AND receiver = ?`, comment, 2, id, c.SessUserId)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
