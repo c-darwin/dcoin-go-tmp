@@ -235,7 +235,7 @@ func signals(countDaemons int) {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 		}
-		err = os.Remove(*utils.Dir+"dcoin.pid")
+		err = os.Remove(*utils.Dir+"/dcoin.pid")
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
