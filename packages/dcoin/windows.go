@@ -4,10 +4,9 @@ package dcoin
 
 import (
 	"os/exec"
-	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
-func KillPid(pid int) error {
+func KillPid(pid string) error {
 	exec.Command("taskkill","/pid", pid)
 	return nil
 }

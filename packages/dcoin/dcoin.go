@@ -99,7 +99,7 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
-		err = KillPid(utils.StrToInt(pidMap["pid"]))
+		err = KillPid(pidMap["pid"])
 		if nil != err {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
