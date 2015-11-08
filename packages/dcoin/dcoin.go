@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 	"regexp"
+	"encoding/json"
+	"io/ioutil"
+	"syscall"
 )
 
 var (
@@ -66,34 +69,49 @@ func Start(dir string) {
 	if dir != "" {
 		*utils.Dir = dir
 	}
-
 	IosLog("dir:" + dir)
+
+	// убьем ранее запущенный Dcoin
+	if _, err := os.Stat(*utils.Dir+"dcoin.pid"); err == nil {
+		dat, err := ioutil.ReadFile(*utils.Dir+"dcoin.pid")
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}
+		var pidMap map[string]string
+		err = json.Unmarshal(dat, &pidMap)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}
+		err = syscall.Kill(utils.StrToInt(pidMap["pid"]), syscall.SIGTERM)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}
+		// даем 10 сек, чтобы завершиться предыдущему процессу
+		for i:=0;i<10;i++ {
+			if _, err := os.Stat(*utils.Dir+"dcoin.pid"); err == nil {
+				utils.Sleep(1)
+			} else { // если dcoin.pid нет, значит завершился
+				break
+			}
+		}
+	}
+
+	// сохраним текущий pid и версию
+	pid := os.Getpid()
+	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+	}
+	err = ioutil.WriteFile(*utils.Dir+"dcoin.pid", PidAndVer, 0644)
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+		panic(err)
+	}
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
+
 	// читаем config.ini
-	/*if _, err := os.Stat(*utils.Dir + "/config.ini"); os.IsNotExist(err) {
-		d1 := []byte(`
-error_log=1
-log=1
-sql_log=0
-log_block_id_begin=0
-log_block_id_end=0
-bad_tx_log=1
-nodes_ban_exit=0
-log_tables=
-log_fns=
-sign_hash=ip
-db_user=
-db_host=
-db_port=
-db_password=
-log_level=DEBUG
-log_output=file
-db_name=`)
-		ioutil.WriteFile(*utils.Dir+"/config.ini", d1, 0644)
-		IosLog("config ok")
-	}*/
 	configIni := make(map[string]string)
 	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
 	if err != nil {
@@ -240,6 +258,11 @@ db_name=`)
 					log.Debug("answer: %v", answer)
 				}
 				err := utils.DB.Close()
+				if err != nil {
+					log.Error("%v", utils.ErrInfo(err))
+					panic(err)
+				}
+				err = os.Remove(*utils.Dir+"dcoin.pid")
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					panic(err)
