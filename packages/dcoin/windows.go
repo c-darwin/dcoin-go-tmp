@@ -4,9 +4,15 @@ package dcoin
 
 import (
 	"os/exec"
+	"fmt"
 )
 
 func KillPid(pid string) error {
-	exec.Command("taskkill","/pid", pid)
+	var rez []byte
+	rez, err := exec.Command("taskkill","/pid", pid).Output()
+	if err!=nil {
+		return err
+	}
+	fmt.Printf("taskkill /pid %s: %s\n", pid, rez)
 	return nil
 }
