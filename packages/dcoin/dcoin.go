@@ -284,7 +284,7 @@ func Start(dir string) {
 				err := utils.DB.Close()
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
-					panic(err)
+					//panic(err)
 				}
 				fmt.Println("DB Closed")
 				err = os.Remove(*utils.Dir+"/dcoin.pid")

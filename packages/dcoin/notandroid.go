@@ -236,7 +236,7 @@ func signals(countDaemons int) {
 		fmt.Println("DB Closed")
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
-			panic(err)
+			//panic(err)
 		}
 		err = os.Remove(*utils.Dir+"/dcoin.pid")
 		if err != nil {
