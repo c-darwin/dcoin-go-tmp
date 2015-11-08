@@ -89,12 +89,17 @@ func Start(dir string) {
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
-		kp, err := os.FindProcess(utils.StrToInt(pidMap["pid"]))
+		/*kp, err := os.FindProcess(utils.StrToInt(pidMap["pid"]))
 		if nil != err {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
 		err = kp.Kill()
+		if nil != err {
+			fmt.Println(err)
+			log.Error("%v", utils.ErrInfo(err))
+		}*/
+		err = KillPid(utils.StrToInt(pidMap["pid"]))
 		if nil != err {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
