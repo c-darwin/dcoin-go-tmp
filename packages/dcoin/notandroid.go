@@ -232,11 +232,13 @@ func signals(countDaemons int) {
 			log.Debug("answer: %v", answer)
 		}
 		fmt.Println("Daemons killed")
-		err := utils.DB.Close()
-		fmt.Println("DB Closed")
-		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
-			//panic(err)
+		if utils.DB != nil && utils.DB.DB != nil {
+			err := utils.DB.Close()
+			fmt.Println("DB Closed")
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+				//panic(err)
+			}
 		}
 		err = os.Remove(*utils.Dir+"/dcoin.pid")
 		if err != nil {
