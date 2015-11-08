@@ -86,9 +86,10 @@ func Start(dir string) {
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 		}
-		// даем 10 сек, чтобы завершиться предыдущему процессу
-		for i:=0;i<10;i++ {
+		// даем 15 сек, чтобы завершиться предыдущему процессу
+		for i:=0;i<15;i++ {
 			if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
+				fmt.Println("waiting killer")
 				utils.Sleep(1)
 			} else { // если dcoin.pid нет, значит завершился
 				break
@@ -250,23 +251,28 @@ func Start(dir string) {
 			}
 			log.Debug("dExtit: %d", dExists)
 			if dExists > 0 {
+				fmt.Println("Stop_daemons from DB!")
 				log.Debug("countDaemons: %d", countDaemons)
+				fmt.Printf("countDaemons %v\n", countDaemons)
 				for i := 0; i < countDaemons; i++ {
 					daemons.DaemonCh <- true
 					log.Debug("daemons.DaemonCh <- true")
 					answer := <-daemons.AnswerDaemonCh
 					log.Debug("answer: %v", answer)
 				}
+				fmt.Println("Daemons killed")
 				err := utils.DB.Close()
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					panic(err)
 				}
+				fmt.Println("DB Closed")
 				err = os.Remove(*utils.Dir+"/dcoin.pid")
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 					panic(err)
 				}
+				fmt.Println("removed "+*utils.Dir+"/dcoin.pid")
 				os.Exit(1)
 			}
 			utils.Sleep(1)

@@ -224,13 +224,16 @@ func signals(countDaemons int) {
 		signal.Notify(SigChan, os.Interrupt, os.Kill, Term)
 		<-SigChan
 		log.Debug("countDaemons %v", countDaemons)
+		fmt.Printf("countDaemons %v\n", countDaemons)
 		for i := 0; i < countDaemons; i++ {
 			daemons.DaemonCh <- true
 			log.Debug("daemons.DaemonCh <- true")
 			answer := <-daemons.AnswerDaemonCh
 			log.Debug("answer: %v", answer)
 		}
+		fmt.Println("Daemons killed")
 		err := utils.DB.Close()
+		fmt.Println("DB Closed")
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
@@ -240,6 +243,7 @@ func signals(countDaemons int) {
 			log.Error("%v", utils.ErrInfo(err))
 			panic(err)
 		}
+		fmt.Println("removed "+*utils.Dir+"/dcoin.pid")
 		os.Exit(1)
 	}()
 }
