@@ -72,8 +72,8 @@ func Start(dir string) {
 	IosLog("dir:" + dir)
 
 	// убьем ранее запущенный Dcoin
-	if _, err := os.Stat(*utils.Dir+"dcoin.pid"); err == nil {
-		dat, err := ioutil.ReadFile(*utils.Dir+"dcoin.pid")
+	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
+		dat, err := ioutil.ReadFile(*utils.Dir+"/dcoin.pid")
 		if err != nil {
 			log.Error("%v", utils.ErrInfo(err))
 		}
@@ -88,7 +88,7 @@ func Start(dir string) {
 		}
 		// даем 10 сек, чтобы завершиться предыдущему процессу
 		for i:=0;i<10;i++ {
-			if _, err := os.Stat(*utils.Dir+"dcoin.pid"); err == nil {
+			if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
 				utils.Sleep(1)
 			} else { // если dcoin.pid нет, значит завершился
 				break
@@ -102,7 +102,7 @@ func Start(dir string) {
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 	}
-	err = ioutil.WriteFile(*utils.Dir+"dcoin.pid", PidAndVer, 0644)
+	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
