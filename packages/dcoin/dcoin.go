@@ -23,7 +23,7 @@ import (
 	"regexp"
 	"encoding/json"
 	"io/ioutil"
-	"syscall"
+	//"syscall"
 )
 
 var (
@@ -85,8 +85,18 @@ func Start(dir string) {
 			log.Error("%v", utils.ErrInfo(err))
 		}
 		fmt.Println("old PID ("+*utils.Dir+"/dcoin.pid"+"):", pidMap["pid"])
-		err = syscall.Kill(utils.StrToInt(pidMap["pid"]), syscall.SIGTERM)
+		/*err = syscall.Kill(utils.StrToInt(pidMap["pid"]), syscall.SIGTERM)
 		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}*/
+		kp, err := os.FindProcess(utils.StrToInt(pidMap["pid"]))
+		if nil != err {
+			fmt.Println(err)
+			log.Error("%v", utils.ErrInfo(err))
+		}
+		err = kp.Kill()
+		if nil != err {
+			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
 		// даем 15 сек, чтобы завершиться предыдущему процессу
