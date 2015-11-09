@@ -26,8 +26,8 @@ onmessage = function (obj) {
     var key = obj.data.key;
     var pass = obj.data.pass;
 
-    console.log(key);
-    console.log(pass);
+   // console.log(key);
+  //  console.log(pass);
     key = key.trim();
     // ключ может быть незашифрованным, но без BEGIN RSA PRIVATE KEY
     if (key.substr(0,4) == 'MIIE')
@@ -45,7 +45,7 @@ onmessage = function (obj) {
             var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
             decrypt_PEM = hex2a(decrypted.toString());
         } catch(e) {
-            decrypt_PEM = 'invalid base64 code';
+            decrypt_PEM = 'invalid decrypt ('+e+')';
         }
     } else {
         decrypt_PEM = key
@@ -53,15 +53,18 @@ onmessage = function (obj) {
 
     if (typeof decrypt_PEM != "string" || decrypt_PEM.indexOf('RSA PRIVATE KEY') == -1) {
         error = "incorrect_key (size="+decrypt_PEM.length+")";
+        if (decrypt_PEM.length < 100) {
+            error+=decrypt_PEM
+        }
     } else {
         var rsa = new RSAKey();
         var a = rsa.readPrivateKeyFromPEMString(decrypt_PEM);
         modulus = a[1];
         exp = a[2];
         if (obj.data.forsign != "") {
-            console.log(obj.data.forsign)
+            //console.log(obj.data.forsign)
             hSig = rsa.signString(obj.data.forsign, 'sha1');
-            console.log(hSig)
+            //console.log(hSig)
         }
         delete rsa;
     }
@@ -74,7 +77,7 @@ onmessage = function (obj) {
         decrypt_key: decrypt_PEM,
         error: error
     };
-    console.log("result", result);
+  //  console.log("result", result);
 
     postMessage(result);
 }

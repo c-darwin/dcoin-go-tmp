@@ -32,6 +32,10 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
+[UninstallRun]
+Filename: taskkill.exe; Parameters: "/im dcoin.exe";
+
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
@@ -47,101 +51,29 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFil
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: shellexec postinstall skipifsilent
 
-[UninstallDelete]
-Type: files; Name: "{app}\*.*"
 
-[InstallDelete]
+[InstallDelete]     
 Type: filesandordirs; Name: {group}\*;
 
 [code]
 
-procedure DeleteDcoin(ADirName: string);
+
+function InitializeSetup(): boolean;
 var
-  FindRec: TFindRec;
+  ResultCode: integer;
 begin
-  if FindFirst(ADirName + '\*.*', FindRec) then begin
-    try
-      repeat
-        if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
-          if (FindRec.Name <> '.') and (FindRec.Name <> '..') then begin
-            DeleteDcoin(ADirName + '\' + FindRec.Name);
-            RemoveDir(ADirName + '\' + FindRec.Name);
-          end;
-        end else 
-          DeleteFile(ADirName + '\' + FindRec.Name);
-      until not FindNext(FindRec);
-    finally
-      FindClose(FindRec);
-    end;
-  end;
-end;
 
-
-
-
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-begin
-  if CurUninstallStep = usUninstall then begin
-      DeleteDcoin(ExpandConstant('{app}'));   
-  end;
-end;
-
-
-/////////////////////////////////////////////////////////////////////
-function GetUninstallString(): String;
-var
-  sUnInstPath: String;
-  sUnInstallString: String;
-begin
-  sUnInstPath := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
-  sUnInstallString := '';
-  if not RegQueryStringValue(HKLM, sUnInstPath, 'UninstallString', sUnInstallString) then
-    RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
-  Result := sUnInstallString;
-end;
-
-
-/////////////////////////////////////////////////////////////////////
-function IsUpgrade(): Boolean;
-begin
-  Result := (GetUninstallString() <> '');
-end;
-
-
-/////////////////////////////////////////////////////////////////////
-function UnInstallOldVersion(): Integer;
-var
-  sUnInstallString: String;
-  iResultCode: Integer;
-begin
-// Return Values:
-// 1 - uninstall string is empty
-// 2 - error executing the UnInstallString
-// 3 - successfully executed the UnInstallString
-
-  // default return value
-  Result := 0;
-
-  // get the uninstall string of the old app
-  sUnInstallString := GetUninstallString();
-  if sUnInstallString <> '' then begin
-    sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
-      Result := 3
-    else
-      Result := 2;
-  end else
-    Result := 1;
-end;
-
-/////////////////////////////////////////////////////////////////////
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if (CurStep=ssInstall) then
+  // Launch Notepad and wait for it to terminate
+  if Exec(ExpandConstant('taskkill.exe'), '/IM dcoin.exe', '', SW_SHOW,
+     ewWaitUntilTerminated, ResultCode) then
   begin
-    if (IsUpgrade()) then
-    begin
-      UnInstallOldVersion();
-    end;
+    // handle success if necessary; ResultCode contains the exit code
+  end
+  else begin
+    // handle failure if necessary; ResultCode contains the error code
   end;
+
+  // Proceed Setup
+  Result := True;
+
 end;

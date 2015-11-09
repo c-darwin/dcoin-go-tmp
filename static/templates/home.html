@@ -35,7 +35,7 @@
 			}
 		);*/
 
-		$.ajax({
+		/*$.ajax({
 			url: "http://dcoinsimple.com/api.php",
 			type: 'GET',
 			dataType: "json",
@@ -62,7 +62,7 @@
 				if(typeof data.max_buy_rate[58] != "undefined")
 					$('#drub_ex_buy_rate').html('1 dRUB = $'+Math.round(data.max_buy_rate[58]*1000)/1000);
 			}
-		});
+		});*/
 
 	});
 	{{if and (or (eq .MyNotice.account_status "user") (eq .MyNotice.account_status "miner") ) (not .UserId)}}
