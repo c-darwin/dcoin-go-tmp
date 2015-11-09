@@ -40,6 +40,9 @@ func (c *Controller) CashRequestOut() (string, error) {
 	var availableCurrency []int64
 	// список отравленных нами запросов
 	myCashRequests, err := c.GetAll("SELECT * FROM "+c.MyPrefix+"my_cash_requests WHERE to_user_id != ?", -1, c.SessUserId)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	// получаем список кошельков, на которых есть FC
 	rows, err := c.Query(c.FormatQuery("SELECT amount, currency_id, last_update FROM wallets WHERE user_id = ? AND currency_id < 1000"), c.SessUserId)
 	if err != nil {
@@ -68,7 +71,7 @@ func (c *Controller) CashRequestOut() (string, error) {
 	//jsonCurrencyWallets = "\""
 	log.Debug("jsonCurrencyWallets", jsonCurrencyWallets)
 	code := utils.Md5(utils.RandSeq(50))
-	hashCode := utils.DSha256(utils.RandSeq(50))
+	hashCode := utils.DSha256(code)
 
 	TemplateStr, err := makeTemplate("cash_request_out", "cashRequestOut", &cashRequestOutPage{
 		Alert:               c.Alert,

@@ -39,7 +39,7 @@ func (c *Controller) Upgrade4() (string, error) {
 		videoUrl = "http://www.youku.com/embed/" + data["video_url_id"]
 	}
 
-	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "4", -1)
+	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "6", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(4)
 
 	var userVideoMp4 string

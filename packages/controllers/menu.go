@@ -143,9 +143,8 @@ func (c *Controller) Menu() (string, error) {
 	t = template.Must(t.Parse(string(modal)))
 	b := new(bytes.Buffer)
 	err = t.ExecuteTemplate(b, "menu", &menuPage{ExchangeEnable: exchangeEnable, Mobile: mobile, SetupPassword: false, MyModalIdName: "myModal", Lang: c.Lang, PoolAdmin: c.PoolAdmin, Community: c.Community, MinerId: minerId, Name: name, LangInt: c.LangInt, UserId: c.SessUserId, Restricted: c.SessRestricted, DaemonsStatus: daemonsStatus, MyNotice: c.MyNotice, BlockId: blockId, Avatar: avatar, NoAvatar: noAvatar, FaceUrls: strings.Join(face_urls, ",")})
-	log.Debug("ExecuteTemplate")
 	if err != nil {
-		log.Debug("%s", utils.ErrInfo(err))
+		log.Error("%s", utils.ErrInfo(err))
 		return "", utils.ErrInfo(err)
 	}
 	log.Debug("b.String():\n %s", b.String())

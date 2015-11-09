@@ -9,6 +9,8 @@
 
 		sha256 = hex_sha256(hex_sha256(code));
 		if ( sha256 != hash_code && hash_code!='' ) {
+			console.log(sha256);
+			console.log(hash_code);
 			error_message = '{{.Lang.invalid_code}}';
 		}
 		if (error_message!='') {
@@ -20,9 +22,9 @@
 			$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},'+$('#cash_request_id').val()+','+$('#code').val());
 			doSign();
 			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
-			}
+		}
 
-		} );
+	});
 
 		$('#send_to_net').bind('click', function () {
 
@@ -68,8 +70,8 @@
 <div id="wallets">
 
 	<table class="table" style="width:500px">
-		<tr><td><strong>User_id</strong></td><td><a href='#' onclick='show_profile({{.ActualData.fromUserId}});return false'>{{.ActualData.fromUserId}}</a></td></tr>
-		<tr><td><strong>{{.Lang.currency}}</strong></td><td>{{.CurrencyList (strToInt64 .ActualData.currency_id)}}</td></tr>
+		<tr><td><strong>User_id</strong></td><td><a href='#' onclick='show_profile({{.ActualData.from_user_id}});return false'>{{.ActualData.from_user_id}}</a></td></tr>
+		<tr><td><strong>{{.Lang.currency}}</strong></td><td>{{index .CurrencyList (strToInt64 .ActualData.currency_id)}}</td></tr>
 		<tr><td><strong>{{.Lang.amount}}</strong></td><td>{{.ActualData.amount}}</td></tr>
 		<tr><td><strong>{{.Lang.contact}}</strong></td>
 		{{if eq .ActualData.comment_status "decrypted"}}
@@ -101,11 +103,11 @@
 			{{else}}
 				<td></td>
 			{{end}}
-			<td>{{.CurrencyList (strToInt64 .ActualData.currency_id)}}</td><td>{{$data.to_user_id}}</td><td>{{$data.amount}}</td>
+			<td>{{index $.CurrencyList (strToInt64 (index $.ActualData "currency_id"))}}</td><td>{{$data.to_user_id}}</td><td>{{$data.amount}}</td>
 			{{if eq $data.comment_status  "decrypted"}}
 				<td>{{$data.comment}}</td>
 			{{else}}
-				<td><div id="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment({{$data.id}}, 'cash_requests')">{{.Lang.decrypt}}</button></div></td>
+				<td><div id="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment({{$data.id}}, 'cash_requests')">{{$.Lang.decrypt}}</button></div></td>
 			{{end}}
 			<td>{{index $.CashRequestsStatus $data.status}}</td></tr>
 		{{end}}

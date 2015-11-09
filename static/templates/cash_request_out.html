@@ -39,7 +39,7 @@
 		else {
 			$.post( 'ajax?controllerName=encryptComment', {
 
-				'to_user_id' : to_user_id,
+				'to_id' : to_user_id,
 				'type' : 'cash_request',
 				'comment' :  $("#comment").val()
 
@@ -226,7 +226,7 @@
 
 	<div id="wallets">
 		<h3>{{.Lang.send_request}}</h3>
-		<table style="width: 380px" class="table">
+		<table style="max-width: 600px" class="table">
 			<tr><td>{{.Lang.to}}</td><td><span id="to_user_id"></span></td></tr>
 			<tr><td>{{.Lang.available}}</td><td><span id="available"></span><input id="currency_id" type="hidden"></td></tr>
 			<tr><td>{{.Lang.you_send}}</td><td><input type="text" id="send_amount" class="input-mini"> D<span id="currency_name"></span></td></tr>
@@ -249,14 +249,14 @@
 			<h3>{{.Lang.you_requests}}</h3>
 			<table class="table" style="width:500px">
 			<tr><th>{{.Lang.time}}</th><th>{{.Lang.currency}}</th><th>{{.Lang.recipient}}</th><th>{{.Lang.amount}}</th><th>{{.Lang.secret_code}}</th><th>{{.Lang.comment}}</th><th>{{.Lang.status}}</th></tr>
-			{{range $key, $data := .MyCashRequests}}
+			{{range $id, $data := .MyCashRequests}}
 				<tr>
-				{{if $data.time}}
-					<td>{{$data.time}}</td>
+				{{if ne (index $data "time") "0"}}
+					<td class="unixtime">{{index $data "time"}}</td>
 				{{else}}
 					<td></td>
 				{{end}}
-				<td>{{index .CurrencyList $data.currency_id}}</td><td>{{$data.to_user_id}}</td><td>{{$data.amount}}</td><td>{{$data.code}}</td><td>{{$data.comment}}</td><td>{{index $.CashRequestsStatus $data.status}}</td></tr>
+				<td>{{index $.CurrencyList (strToInt64 (index $data "currency_id"))}}</td><td>{{index $data "to_user_id"}}</td><td>{{index $data "amount"}}</td><td>{{index $data "code"}}</td><td>{{index $data "comment"}}</td><td>{{index $.CashRequestsStatus (index $data "status")}}</td></tr>
 			{{end}}
 			</table>
 		{{end}}

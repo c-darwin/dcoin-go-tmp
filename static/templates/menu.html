@@ -1,5 +1,9 @@
 {{define "menu"}}
 <script>
+	if (typeof intervalIdArray != "undefined") {
+		for (i=0; i<intervalIdArray.length; i++)
+			clearInterval(intervalIdArray[i]);
+	}
 	$('#start_daemons').bind('click', function () {
 		$.post( 'ajax/start_daemons.php', { } ,
 				function () {

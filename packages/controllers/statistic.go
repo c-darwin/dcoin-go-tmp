@@ -182,6 +182,7 @@ func (c *Controller) Statistic() (string, error) {
 		reduction[i]["time"] = t.Format(c.TimeFormat)
 	}
 
+
 	TemplateStr, err := makeTemplate("statistic", "statistic", &StatisticPage{
 		Lang:                       c.Lang,
 		CurrencyList:               c.CurrencyListCf,

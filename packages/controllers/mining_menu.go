@@ -29,7 +29,10 @@ type miningMenuPage struct {
 func (c *Controller) MiningMenu() (string, error) {
 
 	var err error
-
+	log.Debug("first_select: %v", c.Parameters["first_select"])
+	if c.Parameters["first_select"] == "1" {
+		c.ExecSql(`UPDATE ` + c.MyPrefix + `my_table SET first_select=1`)
+	}
 	if len(c.Parameters["skip_promised_amount"]) > 0 {
 		err = c.ExecSql("UPDATE " + c.MyPrefix + "my_table SET hide_first_promised_amount = 1")
 		if err != nil {

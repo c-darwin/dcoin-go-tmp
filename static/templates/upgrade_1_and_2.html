@@ -274,7 +274,7 @@
 						'type': '{{.PhotoType}}'
 					}, function (data) {
 						console.log('ok');
-						{{if eq .NextStep "3"}}
+						{{if and (eq .NextStep "3") .IOS}}
 							document.getElementById("gotoupgrade3").click();
 						{{else}}
 							user_photo_navigate('upgrade{{.NextStep}}');
@@ -284,7 +284,7 @@
 			}
 		}
 		else {
-			{{if eq .NextStep "3"}}
+			{{if and (eq .NextStep "3") .IOS}}
 				document.getElementById("gotoupgrade3").click();
 			{{else}}
 				user_photo_navigate('upgrade{{.NextStep}}');

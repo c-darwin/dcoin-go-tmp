@@ -93,7 +93,7 @@ func (c *Controller) Upgrade7() (string, error) {
 		nodePublicKey = string(utils.BinToHex([]byte(nodePublicKey)))
 	}
 
-	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
+	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "9", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(7)
 
 	var noExistsMp4 bool

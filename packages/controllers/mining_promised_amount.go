@@ -44,7 +44,7 @@ func (c *Controller) MiningPromisedAmount() (string, error) {
 		TimeNow:          timeNow,
 		TxType:           txType,
 		TxTypeId:         txTypeId,
-		SignData:         fmt.Sprintf("%d,%d,%d,%s,%s", txTypeId, timeNow, c.SessUserId, promisedAmountId, amount),
+		SignData:         fmt.Sprintf("%v,%v,%v,%v,%v", txTypeId, timeNow, c.SessUserId, promisedAmountId, amount),
 		Amount:           amount,
 		PromisedAmountId: promisedAmountId})
 	if err != nil {

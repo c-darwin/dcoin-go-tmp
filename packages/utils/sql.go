@@ -2299,10 +2299,10 @@ func (db *DCDB) GetAiId(table string) (string, error) {
 	} else {
 		switch db.ConfigIni["db_type"] {
 		case "sqlite":
-			err := db.QueryRow("SELECT id FROM " + table).Scan(&exists)
+			err := db.QueryRow(db.FormatQuery("SELECT id FROM " + table)).Scan(&exists)
 			if err != nil {
 				if fmt.Sprintf("%x", err) == fmt.Sprintf("%x", fmt.Errorf("no such column: id")) {
-					err = db.QueryRow("SELECT log_id FROM " + table).Scan(&exists)
+					err = db.QueryRow(db.FormatQuery("SELECT log_id FROM " + table)).Scan(&exists)
 					if err != nil {
 						if ok, _ := regexp.MatchString(`no rows`, fmt.Sprintf("%s", err)); ok {
 							column = "log_id"

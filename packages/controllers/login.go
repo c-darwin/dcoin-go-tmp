@@ -63,7 +63,7 @@ func (c *Controller) Login() (string, error) {
 	} else {
 		pool_tech_works = 0
 	}
-	t.ExecuteTemplate(b, "login", &loginStruct{
+	err = t.ExecuteTemplate(b, "login", &loginStruct{
 		Lang:          c.Lang,
 		MyModalIdName: "myModalLogin",
 		UserID:        c.UserId,
@@ -71,5 +71,8 @@ func (c *Controller) Login() (string, error) {
 		SetupPassword: setupPassword,
 		Community:     c.Community,
 		Mobile:        utils.Mobile()})
+	if err != nil {
+		return "", err
+	}
 	return b.String(), nil
 }

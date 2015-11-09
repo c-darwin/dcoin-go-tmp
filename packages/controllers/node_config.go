@@ -72,6 +72,15 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		}
 	}
 
+	tcp_listening, err := c.Single(`SELECT tcp_listening FROM ` + c.MyPrefix + `my_table`).String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	config, err := c.GetNodeConfig()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	config["tcp_listening"] = tcp_listening
 
 	if _, ok := c.Parameters["switch_pool_mode"]; ok {
 		dq := c.GetQuotes()
@@ -149,15 +158,8 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	config, err := c.GetNodeConfig()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	tcp_listening, err := c.Single(`SELECT tcp_listening FROM ` + c.MyPrefix + `my_table`).String()
-	if err != nil {
-		return "", utils.ErrInfo(err)
-	}
-	config["tcp_listening"] = tcp_listening
+
+
 
 
 	eConfig, err := c.GetMap(`SELECT * FROM e_config`, "name", "value")

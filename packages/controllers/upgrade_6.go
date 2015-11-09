@@ -52,6 +52,10 @@ func (c *Controller) Upgrade6() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
+		if len(hostData) == 0 {
+			hostData["http_host"] = "null http_host in miners_data"
+			hostData["tcp_host"] = "null tcp_host in miners_data"
+		}
 	} else {
 		// если смогли подключиться из вне
 		ip, err := utils.GetHttpTextAnswer("http://api.ipify.org")
@@ -158,7 +162,7 @@ func (c *Controller) Upgrade6() (string, error) {
 	}
 	poolsJs = poolsJs[:len(poolsJs)-1]
 
-	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "7", -1)
+	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "8", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(6)
 
 	TemplateStr, err := makeTemplate("upgrade_6", "upgrade6", &upgrade6Page{

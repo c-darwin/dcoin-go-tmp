@@ -151,7 +151,11 @@
 			if ($(".sidebar-collapse").is(":visible") && $(".navbar-toggle").is(":visible")) {
 				$('.sidebar-collapse').collapse('toggle');
 			}*/
+			{{if .IOS}}
 			document.getElementById("gotoupgrade4").click();
+			{{else}}
+			fc_navigate('upgrade4');
+			{{end}}
 		});
 	</script>
 </div>

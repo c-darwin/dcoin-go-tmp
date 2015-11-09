@@ -65,11 +65,12 @@ type prevBlockType struct {
 }
 
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
-var LogLevel = flag.String("LogLevel", "", "Dcoin LogLevel")
+var LogLevel = flag.String("logLevel", "", "Dcoin LogLevel")
 var Console = flag.Int64("console", 0, "Start from console")
 var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var EndBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
+var RollbackToBlockId = flag.Int64("rollbackToBlockId", 0, "Rollback to block_id")
 
 var eWallets = &sync.Mutex{}
 
@@ -1236,6 +1237,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		}
 	case "photo_hash", "sha256":
 		if ok, _ := regexp.MatchString("^[0-9a-z]{64}$", data); ok {
+			return true
+		}
+	case "cash_code":
+		if ok, _ := regexp.MatchString("^[0-9a-z]{32}$", data); ok {
 			return true
 		}
 	case "alert":

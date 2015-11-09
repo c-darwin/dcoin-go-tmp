@@ -22,6 +22,7 @@ type upgrade3Page struct {
 	UserFace        string
 	ExamplePoints   map[string]string
 	Mobile          bool
+	IOS          bool
 }
 
 func (c *Controller) Upgrade3() (string, error) {
@@ -63,7 +64,7 @@ func (c *Controller) Upgrade3() (string, error) {
 		profileCoords = data["profile_coords"]
 	}
 
-	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "4", -1)
+	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "5", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(3)
 
 	TemplateStr, err := makeTemplate("upgrade_3", "upgrade3", &upgrade3Page{
@@ -79,6 +80,7 @@ func (c *Controller) Upgrade3() (string, error) {
 		UserProfile:     userProfile,
 		UserFace:        userFace,
 		ExamplePoints:   examplePoints,
+		IOS:          	 utils.IOS(),
 		Mobile:          utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
