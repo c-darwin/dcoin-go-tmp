@@ -149,6 +149,7 @@ BEGIN:
 		}
 
 		p := new(dcparser.Parser)
+		p.DCDB = d.DCDB
 		err = p.TxParser(utils.HexToBin(utils.Md5(data)), data, true)
 		if err != nil {
 			if d.unlockPrintSleep(err, d.sleepTime) {	break BEGIN }
