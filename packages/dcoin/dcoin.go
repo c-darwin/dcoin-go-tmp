@@ -346,22 +346,15 @@ func Start(dir string) {
 
 		httpListener(ListenHttpHost, BrowserHttpHost)
 
+		utils.Sleep(1)
+		if *utils.Console == 0 && !utils.Mobile() {
+			openBrowser(BrowserHttpHost)
+		}
 	}()
 
 	// ожидает появления свежих записей в чате, затем ждет появления коннектов
 	// (заносятся из демеона connections и от тех, кто сам подключился к ноде)
 	go utils.ChatOutput(utils.ChatNewTx)
-
-	utils.Sleep(3)
-
-
-	IosLog("Sleep")
-
-	fmt.Printf("BrowserHttpHost: %v, HandleHttpHost: %v, ListenHttpHost: %v", BrowserHttpHost, HandleHttpHost, ListenHttpHost)
-
-	if *utils.Console == 0 && !utils.Mobile() {
-		openBrowser(BrowserHttpHost)
-	}
 
 	log.Debug("ALL RIGHT")
 	IosLog("ALL RIGHT")
