@@ -31,6 +31,10 @@ func IosLog(text string) {
 	}
 }
 
+func KillPid(pid string) error {
+	return nil
+}
+
 func StartHTTPServer(ListenHttpHost string) {
 	originalListener, err := net.Listen("tcp", ListenHttpHost)
 	if err != nil {
