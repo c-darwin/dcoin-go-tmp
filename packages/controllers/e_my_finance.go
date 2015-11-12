@@ -26,7 +26,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	var err error
 
 	if c.SessUserId == 0 {
-		return `<script language="javascript"> window.location.href = "/e/"</script>If you are not redirected automatically, follow the <a href="/e/">/e/</a>`, nil
+		return `<script language="javascript"> window.location.href = "`+c.EURL+`"</script>If you are not redirected automatically, follow the <a href="`+c.EURL+`">`+c.EURL+`</a>`, nil
 	}
 
 	confirmations := c.EConfig["confirmations"]
