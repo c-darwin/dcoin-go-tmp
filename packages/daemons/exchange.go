@@ -183,7 +183,7 @@ BEGIN:
 			continue BEGIN
 		}
 
-		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, tx_time, comment FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' ORDER BY id DESC`), blockId-confirmations)
+		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, time, comment FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' ORDER BY id DESC`), blockId-confirmations)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
