@@ -329,6 +329,7 @@ BEGIN:
 		// максимальный номер блока для процентов. Чтобы брать только новые
 		maxPctBlock, err := d.Single(`SELECT max(block_id) FROM e_user_pct`).Int64()
 
+		log.Debug(`SELECT time, block_id, currency_id, user FROM pct WHERE  block_id < `+utils.Int64ToStr(blockId-confirmations)+` AND block_id > `+utils.Int64ToStr(maxPctBlock))
 		rows, err = d.Query(d.FormatQuery(`SELECT time, block_id, currency_id, user FROM pct WHERE  block_id < ? AND block_id > ?`), blockId-confirmations, maxPctBlock)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
