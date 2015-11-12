@@ -119,9 +119,7 @@
 							</thead>
 							<tbody>
 							{{range $id, $data := .MyFinanceHistory}}
-								{{range $time, $array := $data}}
-									<tr><td>{{index $data "id"}}</td><td>{{index $data "type"}}</td><td>{{index $data "addTime"}}</td><td>{{index $data "method"}}</td><td>{{index $data "amount"}}</td><td>{{index $data "status"}}</td></tr>
-								{{end}}
+								<tr><td>{{$data.Id}}</td><td>{{$data.Ftype}}</td><td>{{$data.AddTime}}</td><td>{{$data.Method}}</td><td>{{$data.Amount}}</td><td>{{$data.Sstatus}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>

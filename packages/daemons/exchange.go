@@ -302,6 +302,7 @@ BEGIN:
 						continue
 					}
 					log.Debug("user %s", user[1])
+					// user_id с биржевой таблы
 					uid := utils.StrToInt64(user[1])
 					userAmountAndProfit := utils.EUserAmountAndProfit(uid, currencyId)
 					newAmount_ := userAmountAndProfit + amount

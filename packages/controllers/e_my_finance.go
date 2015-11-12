@@ -18,7 +18,7 @@ type eMyFinancePage struct {
 type EmyFinanceType struct {
 	Ftype, Status, AddType, Method string
 	Amount, WdAmount float64
-	CurrencyId, AddTime, CloseTime, OpenTime int64
+	Id, CurrencyId, AddTime, CloseTime, OpenTime int64
 }
 
 func (c *Controller) EMyFinance() (string, error) {
@@ -177,7 +177,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	// история вывода средств
 	myFinanceHistory_ := make(map[int64][]*EmyFinanceType)
 	rows, err := c.Query(c.FormatQuery(`
-			SELECT amount, wd_amount, close_time, currency_id, method, open_time
+			SELECT id, amount, wd_amount, close_time, currency_id, method, open_time
 			FROM e_withdraw
 			WHERE user_id = ?
 			ORDER BY open_time DESC
@@ -189,7 +189,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
-		err = rows.Scan(&Finance.Amount, &Finance.WdAmount, &Finance.CloseTime, &Finance.CurrencyId, &Finance.Method, &Finance.OpenTime)
+		err = rows.Scan(&Finance.Id, &Finance.Amount, &Finance.WdAmount, &Finance.CloseTime, &Finance.CurrencyId, &Finance.Method, &Finance.OpenTime)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
