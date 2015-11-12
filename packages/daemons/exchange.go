@@ -215,6 +215,7 @@ BEGIN:
 				continue BEGIN
 			}
 			p := new(dcparser.Parser)
+			p.DCDB = d.DCDB
 			p.BinaryData = binaryData
 			p.ParseDataLite()
 			for _, txMap := range p.TxMapsArr {
