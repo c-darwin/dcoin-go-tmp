@@ -68,12 +68,7 @@ BEGIN:
 			}
 			myPrefix = utils.Int64ToStr(adminUserId)+"_"
 		} else {
-			userId, err := d.Single(`SELECT user_id FROM my_table`).String()
-			if err != nil {
-				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-				continue BEGIN
-			}
-			myPrefix = userId+"_"
+			myPrefix = ""
 		}
 
 		eConfig, err := d.GetMap(`SELECT * FROM e_config`, "name", "value")
@@ -164,7 +159,6 @@ BEGIN:
 		/*
 		 * Важно! отключать в кроне при обнулении данных в БД
 		 *
-		 * По крону даем 5 минут, чтобы скрипт успел всё сделать
 		 * 1. Получаем инфу о входящих переводах и начисляем их на счета юзеров
 		 * 2. Обновляем проценты
 		 * 3. Чистим кол-во отправленных смс-ок
