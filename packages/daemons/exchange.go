@@ -239,9 +239,9 @@ BEGIN:
 					continue
 				}
 
-				log.Debug("user_id = %d / typeId = %d / currency_id = %d / currencyId = %d / amount = %f / amount = %f / comment = %s / comment = %s / to_user_id = %d / toUserId = %d ", utils.BytesToInt64(txMap["user_id"]), typeId, utils.BytesToInt64(txMap["currency_id"]), currencyId, utils.BytesToFloat64(txMap["amount"]), amount , string(txMap["comment"]), comment, utils.BytesToInt64(txMap["to_user_id"]), toUserId)
+				log.Debug("user_id = %d / typeId = %d / currency_id = %d / currencyId = %d / amount = %f / amount = %f / comment = %s / comment = %s / to_user_id = %d / toUserId = %d ", utils.BytesToInt64(txMap["user_id"]), typeId, utils.BytesToInt64(txMap["currency_id"]), currencyId, utils.BytesToFloat64(txMap["amount"]), amount , string(utils.BinToHex(txMap["comment"])), comment, utils.BytesToInt64(txMap["to_user_id"]), toUserId)
 				// сравнение данных из таблы my_dc_transactions с тем, что в блоке
-				if utils.BytesToInt64(txMap["user_id"]) == typeId && utils.BytesToInt64(txMap["currency_id"]) == currencyId && utils.BytesToFloat64(txMap["amount"]) == amount && string(txMap["comment"]) == comment && utils.BytesToInt64(txMap["to_user_id"]) == toUserId {
+				if utils.BytesToInt64(txMap["user_id"]) == typeId && utils.BytesToInt64(txMap["currency_id"]) == currencyId && utils.BytesToFloat64(txMap["amount"]) == amount && string(utils.BinToHex(txMap["comment"])) == comment && utils.BytesToInt64(txMap["to_user_id"]) == toUserId {
 
 					decryptedComment := comment
 					if commentStatus == "encrypted" {
