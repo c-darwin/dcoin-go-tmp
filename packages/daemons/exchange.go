@@ -258,7 +258,7 @@ BEGIN:
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 							continue BEGIN
 						}
-						decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
+						decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, utils.HexToBin(comment))
 						if err != nil {
 							rows.Close()
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
