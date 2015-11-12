@@ -18,7 +18,7 @@
 
 		var buy_price = Number($("#buy_price").val());
 		sell_currency_id = $("#sell_currency_id").val();
-		sell_rate = 1/buy_price;
+		sell_rate = buy_price;
 		sell_rate = sell_rate.toFixed(10);
 		sell_amount = Number($("#buy_amount").val()) * buy_price;
 		sell_amount = sell_amount.toFixed(2);
@@ -41,7 +41,7 @@
 
 		var sell_price = Number($("#sell_price").val());
 		sell_currency_id = $("#buy_currency_id").val();
-		sell_rate = sell_price;
+		sell_rate = 1/sell_price;
 		sell_rate = sell_rate.toFixed(10);
 		sell_amount =  Number($("#sell_amount").val()) ;
 		sell_amount = sell_amount.toFixed(2);
@@ -183,18 +183,18 @@
 				<select id="buy_currency_id" style="width: 100px; display: inline-block" class="form-control" >
 					{{range $id, $name := .CurrencyListName}}
 						{{if eq $id $.BuyCurrencyId}}
-							<option value='{{$id}}' selected>{{$name}}</option>
+							<option value='{{$id}}' selected>d{{$name}}</option>
 						{{else}}
-							<option value='{{$id}}'>{{$name}}</option>
+							<option value='{{$id}}'>d{{$name}}</option>
 						{{end}}
 					{{end}}
 				</select> <a href="#currencyExchange/buy_currency_id={{.SellCurrencyId}}/sell_currency_id={{.BuyCurrencyId}}"><i class="fa  fa-exchange  fa-fw"></i></a> {{.Lang.order_sell}}
 				<select id="sell_currency_id" style="width: 100px; display: inline-block" class="form-control" >
 					{{range $id, $name := .CurrencyListName}}
 						{{if eq $id $.SellCurrencyId}}
-							<option value='{{$id}}' selected>{{$name}}</option>
+							<option value='{{$id}}' selected>d{{$name}}</option>
 						{{else}}
-							<option value='{{$id}}'>{{$name}}</option>
+							<option value='{{$id}}'>d{{$name}}</option>
 						{{end}}
 					{{end}}
 				</select>
@@ -207,19 +207,19 @@
 
 		<div style="float: left">
 			<table>
-				<caption><strong>{{.Lang.buy}} {{.BuyCurrencyName}}</strong></caption>
-				<tr><td>{{.Lang.amount_currency}} {{.BuyCurrencyName}}: </td><td><input type="text" id="buy_amount" class="input-mini form-control"></td></tr>
-				<tr><td>{{.Lang.price_per}} {{.BuyCurrencyName}}: </td><td><input type="text" id="buy_price" class="input-mini form-control"> {{.SellCurrencyName}}:</td></tr>
-				<tr style="height: 40px"><td>{{.Lang.total}}: </td><td><span id="buy_total">0</span> {{.SellCurrencyName}}</td></tr>
-				<tr><td>{{.Lang.commission}}: </td><td><input type="text" id="buy_commission" class="input-mini form-control"> {{.SellCurrencyName}}</td></tr>
-				<tr style="height: 40px"><td>Your balance: </td><td>{{index .WalletsAmounts .SellCurrencyId}} {{.SellCurrencyName}}</td></tr>
+				<caption><strong>{{.Lang.buy}} d{{.BuyCurrencyName}}</strong></caption>
+				<tr><td>{{.Lang.amount_currency}} d{{.BuyCurrencyName}}: </td><td><input type="text" id="buy_amount" class="input-mini form-control"></td></tr>
+				<tr><td>{{.Lang.price_per}} d{{.BuyCurrencyName}}: </td><td><input type="text" id="buy_price" class="input-mini form-control"> d{{.SellCurrencyName}}</td></tr>
+				<tr style="height: 40px"><td>{{.Lang.total}}: </td><td><span id="buy_total">0</span> d{{.SellCurrencyName}}</td></tr>
+				<tr><td>{{.Lang.commission}}: </td><td><input type="text" id="buy_commission" class="input-mini form-control"> d{{.SellCurrencyName}}</td></tr>
+				<tr style="height: 40px"><td>Your balance: </td><td>{{index .WalletsAmounts .SellCurrencyId}} d{{.SellCurrencyName}}</td></tr>
 			</table>
-			<button class="btn" id="buy_button">{{.Lang.buy}} {{.BuyCurrencyName}}</button>
+			<button class="btn" id="buy_button">{{.Lang.buy}} d{{.BuyCurrencyName}}</button>
 			<br><br>
 
 			<div style="width: 330px; max-height: 500px; overflow: auto;">
 				<table class="table" style="width: 330px"><caption>{{.Lang.sell_orders}}</caption>
-					<thead><tr><th>{{.Lang.price}}</th><th>{{.BuyCurrencyName}}</th><th>{{.SellCurrencyName}}</th></tr></thead>
+					<thead><tr><th>{{.Lang.price}}</th><th>d{{.BuyCurrencyName}}</th><th>d{{.SellCurrencyName}}</th></tr></thead>
 					<tbody>
 					{{if .SellOrders}}
 						{{range $data := .SellOrders}}
@@ -233,19 +233,19 @@
 		</div>
 		<div style="float: left">
 			<table>
-				<caption><strong>{{.Lang.sell}} {{.BuyCurrencyName}}</strong></caption>
-				<tr><td>{{.Lang.amount_currency}} {{.BuyCurrencyName}}: </td><td><input type="text" id="sell_amount" class="input-mini form-control"></td></tr>
-				<tr><td>{{.Lang.price_per}} {{.BuyCurrencyName}}: </td><td><input type="text" id="sell_price" class="input-mini form-control"> {{.SellCurrencyName}}</td></tr>
-				<tr style="height: 40px"><td>{{.Lang.total}}: </td><td><span id="sell_total">0</span> {{.SellCurrencyName}}</td></tr>
-				<tr><td>{{.Lang.commission}}: </td><td><input type="text" id="sell_commission" class="input-mini form-control"> {{.BuyCurrencyName}}</td></tr>
-				<tr style="height: 40px"><td>Your balance: </td><td>{{index .WalletsAmounts .BuyCurrencyId}} {{.BuyCurrencyName}}</td></tr>
+				<caption><strong>{{.Lang.sell}} d{{.BuyCurrencyName}}</strong></caption>
+				<tr><td>{{.Lang.amount_currency}} d{{.BuyCurrencyName}}: </td><td><input type="text" id="sell_amount" class="input-mini form-control"></td></tr>
+				<tr><td>{{.Lang.price_per}} d{{.BuyCurrencyName}}: </td><td><input type="text" id="sell_price" class="input-mini form-control"> d{{.SellCurrencyName}}</td></tr>
+				<tr style="height: 40px"><td>{{.Lang.total}}: </td><td><span id="sell_total">0</span> d{{.SellCurrencyName}}</td></tr>
+				<tr><td>{{.Lang.commission}}: </td><td><input type="text" id="sell_commission" class="input-mini form-control"> d{{.BuyCurrencyName}}</td></tr>
+				<tr style="height: 40px"><td>Your balance: </td><td>{{index .WalletsAmounts .BuyCurrencyId}} d{{.BuyCurrencyName}}</td></tr>
 			</table>
-			<button class="btn" id="sell_button">{{.Lang.sell}} {{.BuyCurrencyName}}</button>
+			<button class="btn" id="sell_button">{{.Lang.sell}} d{{.BuyCurrencyName}}</button>
 			<br><br>
 
 			<div style="width: 330px; max-height: 500px; overflow: auto;">
 				<table class="table" style="width: 330px"><caption>{{.Lang.buy_orders}}</caption>
-					<thead><tr><th>{{.Lang.price}}</th><th>{{.BuyCurrencyName}}</th><th>{{.SellCurrencyName}}</th></tr></thead>
+					<thead><tr><th>{{.Lang.price}}</th><th>d{{.BuyCurrencyName}}</th><th>d{{.SellCurrencyName}}</th></tr></thead>
 					<tbody>
 					{{if .BuyOrders}}
 						{{range $data := .BuyOrders}}

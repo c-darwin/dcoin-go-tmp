@@ -154,6 +154,9 @@
 
 	<label>Enable</label>
 	<input id="e_enable" class="input" type="text" value="{{index .EConfig "enable"}}">
+
+	<label>DC Account number</label>
+	<input id="e_main_dc_account" class="input" type="text" value="{{index .EConfig "main_dc_account"}}">
 	<label>Commission</label>
 	<input id="e_commission" class="input" type="text" value="{{index .EConfig "commission"}}">
 	<label>Domain</label>
@@ -188,6 +191,7 @@
 		var json = JSON.stringify({
 			'save_e_config' : 1,
 			'e_enable' : $('#e_enable').val(),
+			'e_main_dc_account' : $('#e_main_dc_account').val(),
 			'e_domain' : $('#e_domain').val(),
 			'e_catalog' : $('#e_catalog').val(),
 			'e_ps' : $('#e_ps').val(),
@@ -198,6 +202,7 @@
 			'e_ik_id' : $('#e_ik_id').val(),
 			'e_static_file_path' : $('#e_static_file_path').val(),
 			'e_static_file' : $('#e_static_file').val()
+
 		});
 
 		$.post( 'ajax?controllerName=nodeConfigControl', {

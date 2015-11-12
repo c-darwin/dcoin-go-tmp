@@ -34,11 +34,10 @@
 			<tr><td>{{index $data "e_withdraw_id"}}</td><td class="unixtime">{{index $data "open_time"}}</td>
 
 				{{if eq (index $data "close_time") "0"}}
-					<td><button onclick="fc_navigate('exchangeAdmin', {'withdraw_id':{{index $data "id"}}})">close</button></td>
+					<td><button onclick="fc_navigate('exchangeAdmin', {'withdraw_id':{{$data.e_withdraw_id}}})">close</button></td>
 				{{else}}
 					<td class="unixtime">{{index $data "close_time"}}</td>
 				{{end}}
-
 
 				<td>{{index $data "user_id"}}</td><td>{{index $data "email"}}</td><td>{{index $data "currency_id"}}</td><td>{{index $data "amount"}}</td><td>{{index $data "wd_amount"}}</td><td>{{index $data "method"}}</td><td>{{index $data "account"}}</td></tr>
 		{{end}}
