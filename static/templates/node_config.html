@@ -129,7 +129,7 @@
 	<br><br>
 
 	<div>
-		<div class="alert alert-success" id="wait" style="display:none"></div>
+		{{if .ModeError}}<div class="alert alert-danger" id="mode_error">{{.ModeError}}</div>{{end}}
 		Mode: <span id="mode">{{.MyMode}}</span><br>
 		<button class="btn" id="single_mode">Single mode</button> 	<button class="btn" id="pool_mode">Pool mode</button>
 	</div>

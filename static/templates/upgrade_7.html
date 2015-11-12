@@ -60,10 +60,10 @@
 <div id="main_div">
 	<h1 class="page-header">{{.Lang.upgrade_title}}</h1>
 	{{if not .Mobile}}
-	<ol class="breadcrumb">
+	<ol class="breadcrumb" style="position: relative;">
 		<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
 		<li class="active">{{.Lang.upgrade_title}}</li>
-	</ol>
+	<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 	{{end}}
 
 	<div class="row seven-cols">

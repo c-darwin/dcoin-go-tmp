@@ -501,14 +501,17 @@ BEGIN:
 
 				// получим наши транзакции в 1 бинарнике, просто для удобства
 				var transactions []byte
+				utils.WriteSelectiveLog("SELECT data FROM transactions WHERE verified = 1 AND used = 0")
 				rows, err := d.Query("SELECT data FROM transactions WHERE verified = 1 AND used = 0")
 				if err != nil {
+					utils.WriteSelectiveLog(err)
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				for rows.Next() {
 					var data []byte
 					err = rows.Scan(&data)
+					utils.WriteSelectiveLog(utils.BinToHex(data))
 					if err != nil {
 						rows.Close()
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
@@ -519,11 +522,14 @@ BEGIN:
 				rows.Close()
 				if len(transactions) > 0 {
 					// отмечаем, что эти тр-ии теперь нужно проверять по новой
-					err = d.ExecSql("UPDATE transactions SET verified = 0 WHERE verified = 1 AND used = 0")
+					utils.WriteSelectiveLog("UPDATE transactions SET verified = 0 WHERE verified = 1 AND used = 0")
+					affect, err := d.ExecSqlGetAffect("UPDATE transactions SET verified = 0 WHERE verified = 1 AND used = 0")
 					if err != nil {
+						utils.WriteSelectiveLog(err)
 						if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
+					utils.WriteSelectiveLog("affect: "+utils.Int64ToStr(affect))
 					// откатываем по фронту все свежие тр-ии
 					parser.BinaryData = transactions
 					err = parser.ParseDataRollbackFront(false)

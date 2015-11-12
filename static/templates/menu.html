@@ -152,6 +152,18 @@
 					<div style="" class="text-center"><a href="#changeAvatar"><strong>{{.Name}}</strong></a></div>
 				</li>
 				{{end}}
+
+				{{if .Admin}}
+				<li>
+					<a href="#"><i class="fa  fa-key  fa-fw"></i> Admin<span class="fa arrow"></span></a>
+					<ul class="nav nav-second-level">
+						<li>
+							<a href="#adminVariables">Variables</a>
+						</li>
+					</ul>
+				</li>
+				{{end}}
+
 				<li>
 					<a href="#home"><i class="fa  fa-home  fa-fw"></i> Home</a>
 				</li>

@@ -26,7 +26,10 @@
 
 
 <script>
-
+	if (typeof intervalIdArray != "undefined") {
+		for (i=0; i<intervalIdArray.length; i++)
+			clearInterval(intervalIdArray[i]);
+	}
 	$(function() {
 		check_key_and_show_modal();
 		/*$('[title!=""]').qtip( {
@@ -677,7 +680,7 @@
 	                    <i class="fa fa-bell"></i>
 	                </span>
 			<div class="box-info">
-				<p class="size-h2"><a href="#cash_requests_in">{{.CashRequests}}</a></p>
+				<p class="size-h2"><a href="#cashRequestIn">{{.CashRequests}}</a></p>
 				<p class="text-muted"><span data-i18n="New users">{{.Lang.inbox}}</span></p>
 			</div>
 		</div>

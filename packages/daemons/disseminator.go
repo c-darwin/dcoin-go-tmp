@@ -150,13 +150,16 @@ BEGIN:
 			}
 
 			// возьмем хэши тр-ий
+			//utils.WriteSelectiveLog("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0")
 			transactions, err := d.GetAll("SELECT hash, high_rate FROM transactions WHERE sent = 0 AND for_self_use = 0", -1)
 			if err != nil {
+				utils.WriteSelectiveLog(err)
 				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
 			if len(transactions) == 0 {
-				log.Debug("len(transactions) == 0")
+				//utils.WriteSelectiveLog("len(transactions) == 0")
+				//log.Debug("len(transactions) == 0")
 				if d.dSleep(d.sleepTime) {
 					break BEGIN
 				}
@@ -166,11 +169,14 @@ BEGIN:
 				hexHash := utils.BinToHex([]byte(data["hash"]))
 				toBeSent = append(toBeSent, utils.DecToBin(utils.StrToInt64(data["high_rate"]), 1)...)
 				toBeSent = append(toBeSent, []byte(data["hash"])...)
-				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hexHash)
+				utils.WriteSelectiveLog("UPDATE transactions SET sent = 1 WHERE hex(hash) = "+string(hexHash))
+				affect, err := d.ExecSqlGetAffect("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hexHash)
 				if err != nil {
+					utils.WriteSelectiveLog(err)
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
+				utils.WriteSelectiveLog("affect: "+utils.Int64ToStr(affect))
 			}
 
 			// отправляем блок и хэши тр-ий, если есть что отправлять
@@ -194,8 +200,10 @@ BEGIN:
 
 			var toBeSent []byte // сюда пишем все тр-ии, которые будем слать другим нодам
 			// возьмем хэши и сами тр-ии
+			utils.WriteSelectiveLog("SELECT hash, data FROM transactions WHERE sent  =  0")
 			rows, err := d.Query("SELECT hash, data FROM transactions WHERE sent  =  0")
 			if err != nil {
+				utils.WriteSelectiveLog(err)
 				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
@@ -209,12 +217,15 @@ BEGIN:
 				}
 				log.Debug("hash %x", hash)
 				hashHex := utils.BinToHex(hash)
-				err = d.ExecSql("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hashHex)
+				utils.WriteSelectiveLog("UPDATE transactions SET sent = 1 WHERE hex(hash) = "+string(hashHex))
+				affect,err := d.ExecSqlGetAffect("UPDATE transactions SET sent = 1 WHERE hex(hash) = ?", hashHex)
 				if err != nil {
+					utils.WriteSelectiveLog(err)
 					rows.Close()
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
+				utils.WriteSelectiveLog("affect: "+utils.Int64ToStr(affect))
 				toBeSent = append(toBeSent, data...)
 			}
 			rows.Close()
@@ -390,12 +401,15 @@ func (d *daemon) DisseminatorType1(host string, userId int64, node_public_key st
 			}
 			txHash = utils.BinToHex(txHash)
 			log.Debug("txHash %s", txHash)
+			utils.WriteSelectiveLog("SELECT data FROM transactions WHERE hex(hash) = "+string(txHash))
 			tx, err := d.Single("SELECT data FROM transactions WHERE hex(hash) = ?", txHash).Bytes()
 			log.Debug("tx %x", tx)
 			if err != nil {
+				utils.WriteSelectiveLog(err)
 				log.Error("%v", utils.ErrInfo(err))
 				return
 			}
+			utils.WriteSelectiveLog("tx: "+string(utils.BinToHex(tx)))
 			if len(tx) > 0 {
 				binaryTx = append(binaryTx, utils.EncodeLengthPlusData(tx)...)
 			}

@@ -24,7 +24,7 @@ func (c *Controller) PromisedAmountActualization() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	TemplateStr, err := makeTemplate("promised_amount_actualization", "promisedAmountsActualization", &PromisedAmountActualizationPage{
+	TemplateStr, err := makeTemplate("promised_amount_actualization", "promisedAmountActualization", &PromisedAmountActualizationPage{
 		Alert:        c.Alert,
 		Lang:         c.Lang,
 		CountSignArr: c.CountSignArr,

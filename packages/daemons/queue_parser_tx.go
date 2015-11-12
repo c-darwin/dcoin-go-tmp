@@ -68,11 +68,14 @@ BEGIN:
 		}
 
 		// чистим зацикленные
-		err = d.ExecSql("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
+		utils.WriteSelectiveLog("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
+		affect, err := d.ExecSqlGetAffect("DELETE FROM transactions WHERE verified = 0 AND used = 0 AND counter > 10")
 		if err != nil {
+			utils.WriteSelectiveLog(err)
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
+		utils.WriteSelectiveLog("affect: "+utils.Int64ToStr(affect))
 
 		p := new(dcparser.Parser)
 		p.DCDB = d.DCDB

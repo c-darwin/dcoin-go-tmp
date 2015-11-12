@@ -259,6 +259,9 @@
 		</div>
 		<div class="clearfix"></div>
 
+		{{noescape .LastTxFormatted}}
+
+
 		<h2>My orders</h2>
 		<table class="table" id="my_orders">
 			<thead><tr><th>Order id</th><th>Sell_currency_id</th><th>sell_rate</th><th>amount</th><th>buy_currency_id</th><th>commission</th><th>del</th></tr></thead>
@@ -296,6 +299,8 @@
 	}
 </style>
 <script src="static/js/stacktable.js"></script>
+<script src="static/js/unixtime.js"></script>
+
 <script>
 	$( document ).ready(function() {
 		$('#my_orders').stacktable();

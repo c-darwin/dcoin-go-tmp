@@ -32,11 +32,11 @@
 </script>
 <div id="main_div">
 	<h1 class="page-header">{{.Lang.credit_creation}}</h1>
-	<ol class="breadcrumb">
+	<ol class="breadcrumb" style="position: relative;">
 		<li><a href="#walletsList">{{.Lang.wallets}}</a></li>
 		<li><a href="#credits">{{.Lang.credits}}</a></li>
 		<li class="active">{{.Lang.credit_creation}}</li>
-	</ol>
+	<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 
 	<div id="main_data">
 		<div class="row" style="padding:0 15px">

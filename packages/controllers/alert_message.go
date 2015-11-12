@@ -151,17 +151,28 @@ func (c *Controller) AlertMessage() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if len(myNodeKey) == 0 && myMinerId > 0 {
+
+		// возможно юзер новенький на пуле и у него разные нод-ключи
+		nodePublicKey, err :=c.GetNodePublicKey(c.SessUserId)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		myNodePublicKey, err :=c.GetMyNodePublicKey(c.MyPrefix)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		if (len(myNodeKey) == 0 && myMinerId > 0) || string(nodePublicKey) != myNodePublicKey {
 			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				     <h4>Warning!</h4>
 				     <div>` + c.Lang["alert_change_node_key"] + `</div>
 				     </div>`
 		}
+
 	}
 
 	// просто информируем, что в данном разделе у юзера нет прав
 	skipCommunity := []string{"nodeConfig", "nulling", "startStop"}
-	skipRestrictedUsers := []string{"nodeConfig", "changeNodeKey", "nulling", "startStop", "cashRequestsIn", "cashRequestsOut", "upgrade", "notifications", "interface"}
+	skipRestrictedUsers := []string{"nodeConfig", "changeNodeKey", "nulling", "startStop", "cashRequestIn", "cashRequestOut", "upgrade", "notifications", "interface"}
 	if (!c.NodeAdmin && utils.InSliceString(c.TplName, skipCommunity)) || (c.SessRestricted != 0 && utils.InSliceString(c.TplName, skipRestrictedUsers)) {
 		result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 			  <h4>Warning!</h4>
@@ -170,7 +181,7 @@ func (c *Controller) AlertMessage() (string, error) {
 	}
 
 	// информируем, что у юзера нет прав и нужно стать майнером
-	minersOnly := []string{"myCfProjects", "newCfProject", "cashRequestsIn", "cashRequestsOut", "changeNodeKey", "voting", "geolocation", "promisedAmountList", "promisedAmountAdd", "holidaysList", "newHolidays", "points", "tasks", "changeHost", "newUser", "changeCommission"}
+	minersOnly := []string{"myCfProjects", "newCfProject", "cashRequestIn", "cashRequestOut", "changeNodeKey", "voting", "geolocation", "promisedAmountList", "promisedAmountAdd", "holidaysList", "newHolidays", "points", "tasks", "changeHost", "newUser", "changeCommission"}
 	if utils.InSliceString(c.TplName, minersOnly) {
 		minerId, err := c.Single("SELECT miner_id FROM users LEFT JOIN miners_data ON users.user_id  =  miners_data.user_id WHERE users.user_id  =  ?", c.SessUserId).Int64()
 		if err != nil {

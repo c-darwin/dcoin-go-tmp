@@ -10,6 +10,7 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"github.com/mcuadros/go-version"
+	"fmt"
 )
 
 type homePage struct {
@@ -78,7 +79,8 @@ func (c *Controller) Home() (string, error) {
 			return "", err
 		}
 		publicKey = utils.BinToHex(publicKey)
-		cashRequests, err = c.Single("SELECT count(id) FROM cash_requests WHERE to_user_id  =  ? AND status  =  'pending' AND for_repaid_del_block_id  =  0 AND del_block_id  =  0", c.SessUserId).Int64()
+		cashRequests, err = c.Single("SELECT count(id) FROM cash_requests WHERE to_user_id  =  ? AND status  =  'pending' AND for_repaid_del_block_id  =  0 AND del_block_id  =  0 and time > ?", c.SessUserId, utils.Time()-c.Variables.Int64["cash_request_time"]).Int64()
+		fmt.Println("cashRequests", cashRequests)
 		if err != nil {
 			return "", err
 		}

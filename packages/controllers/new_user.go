@@ -36,10 +36,14 @@ func (c *Controller) NewUser() (string, error) {
 	refPhotos := make(map[int64][]string)
 	myRefsKeys := make(map[int64]map[string]string)
 	if c.SessRestricted == 0 {
+		join := c.MyPrefix + `my_new_users.user_id`
+		if c.ConfigIni["db_type"] == "sqlite" || c.ConfigIni["db_type"] == "postgresql" {
+			join = `"`+c.MyPrefix + `my_new_users".user_id`
+		}
 		rows, err := c.Query(c.FormatQuery(`
 				SELECT users.user_id,	private_key,  log_id
 				FROM ` + c.MyPrefix + `my_new_users
-				LEFT JOIN users ON users.user_id = ` + c.MyPrefix + `my_new_users.user_id
+				LEFT JOIN users ON users.user_id = `+join+`
 				WHERE status = 'approved'
 				`))
 		if err != nil {
@@ -55,7 +59,7 @@ func (c *Controller) NewUser() (string, error) {
 			}
 			// проверим, не сменил ли уже юзер свой ключ
 			StrUserId := utils.Int64ToStr(user_id)
-			if log_id == 0 {
+			if log_id != 0 {
 				myRefsKeys[user_id] = map[string]string{"user_id": StrUserId}
 			} else {
 				myRefsKeys[user_id] = map[string]string{"user_id": StrUserId, "private_key": private_key}

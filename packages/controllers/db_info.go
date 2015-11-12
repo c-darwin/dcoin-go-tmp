@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 type DbInfoPage struct {
@@ -14,6 +15,9 @@ type DbInfoPage struct {
 	TransactionsTestblock int64
 	Transactions          int64
 	Lang                  map[string]string
+	AllTransactions	[]map[string]string
+	AllQueueTx	[]map[string]string
+	TxTypes		map[int]string
 }
 
 func (c *Controller) DbInfo() (string, error) {
@@ -62,6 +66,18 @@ func (c *Controller) DbInfo() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
+	// проверенные транзакции
+	allTransactions, err := c.GetAll("SELECT hex(hash) as hex_hash, *  FROM transactions", 100);
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+	// непроверенные транзакции
+	allQueueTx, err := c.GetAll("SELECT hex(hash) as hex_hash, high_rate FROM queue_tx", 100);
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
 	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage{
 		Lang:                  c.Lang,
 		TimeNow:               timeNow,
@@ -71,6 +87,9 @@ func (c *Controller) DbInfo() (string, error) {
 		Variables:             variables,
 		QueueTx:               queueTx,
 		TransactionsTestblock: transactionsTestblock,
+		AllTransactions:       allTransactions,
+		AllQueueTx:       allQueueTx,
+		TxTypes				:  consts.TxTypes,
 		Transactions:          transactions})
 	if err != nil {
 		return "", utils.ErrInfo(err)

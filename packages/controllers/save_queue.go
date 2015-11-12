@@ -1397,6 +1397,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("e_owner")))...)
 		data = append(data, utils.EncodeLengthPlusData([]byte(c.r.FormValue("result")))...)
 		data = append(data, binSignatures...)
+
 	}
 
 	md5 := utils.Md5(data)

@@ -91,7 +91,7 @@ BEGIN:
 		curTime := utils.Time()
 		var reductionType string
 		var reductionCurrencyId int
-		var reductionPct float64
+		var reductionPct int64
 
 		// ===== ручное урезание денежной массы
 		// получаем кол-во обещанных сумм у разных юзеров по каждой валюте. start_time есть только у тех, у кого статус mining/repaid
@@ -127,8 +127,7 @@ BEGIN:
 			continue BEGIN
 		}
 		for rows.Next() {
-			var votes int64
-			var pct float64
+			var votes, pct int64
 			var currency_id string
 			err = rows.Scan(&currency_id, &pct, &votes)
 			if err != nil {
@@ -243,6 +242,7 @@ BEGIN:
 
 			_, myUserId, _, _, _, _, err := d.TestBlock()
 			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
+			log.Debug("forSign: %s", forSign)
 			binSign, err := d.GetBinSign(forSign, myUserId)
 			if err != nil {
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
@@ -252,7 +252,7 @@ BEGIN:
 			data = append(data, utils.DecToBin(curTime, 4)...)
 			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(myUserId))...)
 			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(int64(reductionCurrencyId)))...)
-			data = append(data, utils.EncodeLengthPlusData(utils.Float64ToBytes(reductionPct))...)
+			data = append(data, utils.EncodeLengthPlusData(utils.Int64ToByte(reductionPct))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(reductionType))...)
 			data = append(data, utils.EncodeLengthPlusData([]byte(binSign))...)
 

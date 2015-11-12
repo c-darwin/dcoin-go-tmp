@@ -35,6 +35,29 @@
 </table>
 
 
+<table class="table table-bordered" style="width:600px"><caption>transactions</caption>
+	<thead><tr><th>hash</th><th>verified</th><th>used</th><th>high_rate</th><th>for_self_use</th><th>type</th><th>user_id</th><th>third_var</th><th>counter</th><th>sent</th></thead>
+	<tbody>
+	{{if .AllTransactions}}
+	{{range $k, $data := .AllTransactions}}
+	<tr><td>{{$data.hex_hash}}</td><td>{{$data.verified}}</td><td>{{$data.used}}</td><td>{{$data.high_rate}}</td><td>{{$data.for_self_use}}</td><td>{{index $.TxTypes (strToInt $data.type)}}</td><td>{{$data.user_id}}</td><td>{{$data.third_var}}</td><td>{{$data.counter}}</td><td>{{$data.sent}}</td></tr>
+	{{end}}
+	{{end}}
+	</tbody>
+</table>
+
+<table class="table table-bordered" style="width:600px"><caption>QueueTx</caption>
+	<thead><tr><th>hash</th><th>high_rate</th></thead>
+	<tbody>
+	{{if .AllQueueTx}}
+	{{range $k, $data := .AllQueueTx}}
+	<tr><td>{{$data.hex_hash}}</td><td>{{$data.high_rate}}</td></tr>
+	{{end}}
+	{{end}}
+	</tbody>
+</table>
+
+
 <table class="table table-bordered" style="width:600px"><caption>other</caption>
 <thead><tr><th>name</th><th>value</th></thead>
 <tbody>

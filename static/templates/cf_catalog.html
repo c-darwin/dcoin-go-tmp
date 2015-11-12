@@ -9,14 +9,14 @@
 </style>
 <h1 class="page-header">{{.Lang.cf_projects_title}}</h1>
 {{if .CurCategory}}
-<ol class="breadcrumb">
+<ol class="breadcrumb" style="position: relative;">
 	{{if gt .UserId 0}}
 		<li><a href='#'>CrowdFunding</a></li><li><a href='#' onclick="fc_navigate('cfCatalog')">{{.Lang.catalog}}</a></li>
 	{{else}}
 		<li><a href='{{.CfUrl}}'>{{.Lang.catalog}}</a></li>
 	{{end}}
 	<li class="active">{{cfCategoryLang .Lang .CategoryId}}</li>
-</ol>
+<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 {{end}}
 
 <!--	<div class="width_max" style="margin-bottom:70px">

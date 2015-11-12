@@ -22,6 +22,7 @@ type nodeConfigPage struct {
 	Lang         map[string]string
 	EConfig    map[string]string
 	Users        []map[int64]map[string]string
+	ModeError string
 }
 
 func (c *Controller) NodeConfigControl() (string, error) {
@@ -82,35 +83,64 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	}
 	config["tcp_listening"] = tcp_listening
 
+	myMode := ""
+	modeError := ""
 	if _, ok := c.Parameters["switch_pool_mode"]; ok {
 		dq := c.GetQuotes()
 		log.Debug("c.Community", c.Community)
 		if !c.Community { // сингл-мод
 
-			// переключаемся в пул-мод
 			myUserId, err := c.GetMyUserId("")
-			for _, table := range consts.MyTables {
-
-				err = c.ExecSql("ALTER TABLE " + dq + table + dq + " RENAME TO " + dq + utils.Int64ToStr(myUserId) + "_" + table + dq)
-				if err != nil {
-					return "", utils.ErrInfo(err)
-				}
-			}
-			err = c.ExecSql("INSERT INTO community (user_id) VALUES (?)", myUserId)
-			if err != nil {
-				return "", utils.ErrInfo(err)
-			}
 			commission, err := c.Single("SELECT commission FROM commission WHERE user_id = ?", myUserId).String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
+			// без комиссии не получится генерить блоки и пр., TestBlock() будет выдавать ошибку
+			if len(commission) == 0 {
+				modeError = "empty commission"
+				myMode = "Single"
+			} else {
+				// переключаемся в пул-мод
+				for _, table := range consts.MyTables {
 
-			log.Debug("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
-			err = c.ExecSql("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
-			if err != nil {
-				return "", utils.ErrInfo(err)
+					err = c.ExecSql("ALTER TABLE " + dq + table + dq + " RENAME TO " + dq + utils.Int64ToStr(myUserId) + "_" + table + dq)
+					if err != nil {
+						return "", utils.ErrInfo(err)
+					}
+				}
+				err = c.ExecSql("INSERT INTO community (user_id) VALUES (?)", myUserId)
+				if err != nil {
+					return "", utils.ErrInfo(err)
+				}
+
+
+				log.Debug("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
+				err = c.ExecSql("UPDATE config SET pool_admin_user_id = ?, pool_max_users = 100, commission = ?", myUserId, commission)
+				if err != nil {
+					return "", utils.ErrInfo(err)
+				}
+
+				// восстановим тех, кто ранее был на пуле
+				backup_community, err := c.Single("SELECT data FROM backup_community").Bytes()
+				if err != nil {
+					return "", utils.ErrInfo(err)
+				}
+				if len(backup_community) > 0 {
+					var community []int
+					err = json.Unmarshal(backup_community, &community)
+					if err != nil {
+						return "", utils.ErrInfo(err)
+					}
+					for i := 0; i< len(community); i++ {
+						// тут дубль при инсерте, поэтому без обработки ошибок
+						c.ExecSql("INSERT INTO community (user_id) VALUES (?)", community[i])
+					}
+				}
+				myMode = "Pool"
 			}
 		} else {
+
+			// бэкап, чтобы при возврате пул-мода, можно было восстановить
 			communityUsers := c.CommunityUsers
 			jsonData, _ := json.Marshal(communityUsers)
 			backup_community, err := c.Single("SELECT data FROM backup_community").String()
@@ -139,8 +169,10 @@ func (c *Controller) NodeConfigControl() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
+			myMode = "Single"
 		}
 	}
+
 	scriptName, err := c.Single("SELECT script_name FROM main_lock").String()
 	if err != nil {
 		return "", utils.ErrInfo(err)
@@ -149,9 +181,10 @@ func (c *Controller) NodeConfigControl() (string, error) {
 	if scriptName == "my_lock" {
 		myStatus = "OFF"
 	}
-	myMode := "Single"
-	if c.Community {
+	if myMode == "" && c.Community {
 		myMode = "Pool"
+	} else if myMode == "" {
+		myMode = "Single"
 	}
 
 	configIni, err := ioutil.ReadFile(*utils.Dir + "/config.ini")
@@ -178,6 +211,7 @@ func (c *Controller) NodeConfigControl() (string, error) {
 		MyMode:       myMode,
 		ConfigIni:    string(configIni),
 		EConfig: eConfig,
+		ModeError: modeError,
 		CountSignArr: c.CountSignArr})
 	if err != nil {
 		return "", utils.ErrInfo(err)

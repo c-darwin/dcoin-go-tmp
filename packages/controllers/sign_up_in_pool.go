@@ -111,10 +111,22 @@ func (c *Controller) SignUpInPool() (string, error) {
 	schema_.GetSchema()
 
 	prefix := utils.Int64ToStr(userId) + "_"
-	err = c.ExecSql("INSERT INTO "+prefix+"my_table ( user_id, email ) VALUES ( ?, ? )", userId, email)
+	minerId, err := c.GetMyMinerId(userId)
 	if err != nil {
 		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 	}
+	if minerId > 0 {
+		err = c.ExecSql("INSERT INTO "+prefix+"my_table ( user_id, miner_id, status, email ) VALUES  (?, ?, ?, ?)", userId, minerId, "miner", email)
+		if err != nil {
+			return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
+		}
+	} else {
+		err = c.ExecSql("INSERT INTO "+prefix+"my_table ( user_id, status, email ) VALUES (?, ?, ?)", userId, "miner", email)
+		if err != nil {
+			return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
+		}
+	}
+
 	publicKey, err := c.GetUserPublicKey(userId)
 	err = c.ExecSql("INSERT INTO "+prefix+"my_keys ( public_key, status ) VALUES ( [hex], 'approved' )", utils.BinToHex(publicKey))
 	if err != nil {

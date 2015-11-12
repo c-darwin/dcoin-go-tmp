@@ -18,11 +18,11 @@
 
 </script>
 <h1 class="page-header">{{.Lang.del_cf_project_title}} {{.ProjectCurrencyName}}</h1>
-<ol class="breadcrumb">
+<ol class="breadcrumb" style="position: relative;">
 	<li><a href="#">CrowdFunding</a></li>
 	<li><a href="#myCfProjects">{{.Lang.my_projects}}</a></li>
 	<li class="active">{{.Lang.del_cf_project_title}} {{.ProjectCurrencyName}}</li>
-</ol>
+<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 
 
 {{template "alertSuccess".}}

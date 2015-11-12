@@ -75,10 +75,10 @@
 {{end}}
 
 {{if gt .BlockId 0}}
-<ol class="breadcrumb">
+<ol class="breadcrumb" style="position: relative;">
 	<li><a href="#blockExplorer">Block explorer</a></li>
 	<li class="active">{{.BlockId}}</li>
-</ol>
+<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 {{end}}
 {{noescape .Data}}
 

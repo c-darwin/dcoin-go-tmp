@@ -1387,6 +1387,15 @@ func (db *DCDB) GetNodePrivateKey(myPrefix string) (string, error) {
 	return key, nil
 }
 
+func (db *DCDB) GetMyNodePublicKey(myPrefix string) (string, error) {
+	var key string
+	key, err := db.Single("SELECT public_key FROM " + myPrefix + "my_node_keys WHERE block_id = (SELECT max(block_id) FROM " + myPrefix + "my_node_keys)").String()
+	if err != nil {
+		return "", ErrInfo(err)
+	}
+	return key, nil
+}
+
 func (db *DCDB) GetMaxPromisedAmount(currencyId int64) (float64, error) {
 	result, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currency_id = ? ORDER BY time DESC", currencyId).Float64()
 	if err != nil {
@@ -1644,7 +1653,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 		if len(cashRequestPending) > 0 && currency_id > 1 && status == "mining" {
 			status = "for_repaid"
 			// и заодно проверим, можно ли делать актуализацию обещанных сумм
-			actualizationPromisedAmounts, err = db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?", userId, time.Now().Unix()-cash_request_time).Int64()
+			actualizationPromisedAmounts, err = db.Single("SELECT id FROM promised_amount WHERE status = 'mining' AND user_id = ? AND currency_id > 1 AND del_block_id = 0 AND del_mining_block_id = 0 AND (cash_request_out_time > 0 AND cash_request_out_time < ?)", userId, time.Now().Unix()-cash_request_time).Int64()
 			if err != nil {
 				return 0, nil, nil, err
 			}
@@ -1675,7 +1684,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 			tdc = tdc_amount
 		}
 
-		status_text := "status_text"
+		status_text := status
 		maxAmount, err := db.Single("SELECT amount FROM max_promised_amounts WHERE currency_id  =  ? ORDER BY block_id DESC", currency_id).Float64()
 		if err != nil {
 			return 0, nil, nil, err
@@ -1799,54 +1808,45 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 		// т.к. это приведет к попаднию в блок некорректной тр-ии, что приведет к сбою пула
 		if checkCommission {
 			// комиссия на пуле
-			rows, err := db.Query("SELECT commission FROM config")
+			commissionJson, err := db.Single("SELECT commission FROM config").Bytes()
 			if err != nil {
 				return usersIds, err
 			}
-			defer rows.Close()
-			for rows.Next() {
-				var commissionJson []byte
-				err = rows.Scan(&commissionJson)
+			if err != nil {
+				return usersIds, err
+			}
+            var commissionPoolMap map[string][]float64
+			err = json.Unmarshal(commissionJson, &commissionPoolMap)
+			if err != nil {
+				return usersIds, err
+			}
+            rows2, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN (" + strings.Join(SliceInt64ToString(usersIds), ",") + ")")
+			if err != nil {
+				return usersIds, err
+			}
+			defer rows2.Close()
+			for rows2.Next() {
+				var uid int64
+				var commJson []byte
+				err = rows2.Scan(&uid, &commJson)
 				if err != nil {
 					return usersIds, err
 				}
-
-				var commissionPoolMap map[string][]float64
-				err := json.Unmarshal(commissionJson, &commissionPoolMap)
-				if err != nil {
-					return usersIds, err
-				}
-
-				rows2, err := db.Query("SELECT user_id, commission FROM commission WHERE user_id IN (" + strings.Join(SliceInt64ToString(usersIds), ",") + ")")
-				if err != nil {
-					return usersIds, err
-				}
-				defer rows2.Close()
-				for rows2.Next() {
-					var uid int64
-					var commJson []byte
-					err = rows2.Scan(&uid, &commJson)
+				if len(commJson) > 0 {
+					var commissionUserMap map[string][]float64
+					err := json.Unmarshal(commJson, &commissionUserMap)
 					if err != nil {
 						return usersIds, err
 					}
-					if len(commJson) > 0 {
-						var commissionUserMap map[string][]float64
-						err := json.Unmarshal(commJson, &commissionUserMap)
-						if err != nil {
-							return usersIds, err
-						}
-
-						for currencyId, Commissions := range commissionUserMap {
-							if len(commissionPoolMap[currencyId]) > 0 {
-								if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
-									log.Debug("DelUserIdFromArray %v > %v || %v > %v / %v", Commissions[0], commissionPoolMap[currencyId][0], Commissions[1], commissionPoolMap[currencyId][1], uid)
-									DelUserIdFromArray(&usersIds, uid)
-								}
+            					for currencyId, Commissions := range commissionUserMap {
+						if len(commissionPoolMap[currencyId]) > 0 {
+							if Commissions[0] > commissionPoolMap[currencyId][0] || Commissions[1] > commissionPoolMap[currencyId][1] {
+								log.Debug("DelUserIdFromArray %v > %v || %v > %v / %v", Commissions[0], commissionPoolMap[currencyId][0], Commissions[1], commissionPoolMap[currencyId][1], uid)
+								DelUserIdFromArray(&usersIds, uid)
 							}
 						}
 					}
 				}
-
 			}
 		}
 		// нельзя чтобы блок сгенерировал майнер, чьего нодовского приватного ключа нет у нас,
@@ -1864,11 +1864,13 @@ func (db *DCDB) GetMyUsersIds(checkCommission, checkNodeKey bool) ([]int64, erro
 				if err != nil {
 					return usersIds, err
 				}
-				publicKey, err := db.Single("SELECT public_key FROM " + uid + "_my_node_keys").String()
+
+				publicKey, err := db.GetMyNodePublicKey(uid + "_")
 				if err != nil {
 					return usersIds, err
 				}
 				if publicKey != nodePublicKey {
+					log.Debug("publicKey != nodePublicKey (%d)", uid)
 					DelUserIdFromArray(&usersIds, StrToInt64(uid))
 					//log.Debug("DelUserIdFromArray publicKey != nodePublicKey (%x != %x) %v / %v", publicKey, nodePublicKey, uid, usersIds)
 				}

@@ -150,10 +150,10 @@ BEGIN:
 						continue BEGIN
 					}
 					if table == "cf_currency" {
-						if d.ConfigIni["db_type"] == "postgresql" {
-							err = d.SetAI("cf_currency", 1000)
-						} else {
+						if d.ConfigIni["db_type"] == "sqlite" {
 							err = d.SetAI("cf_currency", 999)
+						} else {
+							err = d.SetAI("cf_currency", 1000)
 						}
 						if err != nil {
 							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
@@ -167,10 +167,10 @@ BEGIN:
 						}
 					} else {
 						log.Debug("SET AI %s", table)
-						if d.ConfigIni["db_type"] == "postgresql" {
-							err = d.SetAI(table, 1)
-						} else {
+						if d.ConfigIni["db_type"] == "sqlite" {
 							err = d.SetAI(table, 0)
+						} else {
+							err = d.SetAI(table, 1)
 						}
 						if err != nil {
 							log.Error("%v", err)

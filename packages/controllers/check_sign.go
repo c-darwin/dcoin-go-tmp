@@ -193,6 +193,9 @@ func (c *Controller) Check_sign() (string, error) {
 
 				// получим данные для подписи
 				forSign, err := c.DCDB.GetDataAuthorization(hash)
+				if err != nil {
+					return "{\"result\":0}", err
+				}
 				log.Debug("forSign", forSign)
 				log.Debug("publicKey %x\n", utils.HexToBin(publicKey))
 				log.Debug("sign_", string(sign))
@@ -210,9 +213,23 @@ func (c *Controller) Check_sign() (string, error) {
 					if err != nil {
 						return "{\"result\":0}", err
 					}
+					minerId, err := c.GetMyMinerId(utils.StrToInt64(userId))
+					if err != nil {
+						return "{\"result\":0}", err
+					}
 					//myUserId, err := c.GetMyUserId("")
 					//if myUserId > 0 {
-					c.ExecSql("UPDATE my_table SET user_id=?, status = 'user'", userId)
+					if minerId > 0 {
+						err = c.ExecSql("UPDATE my_table SET user_id = ?, miner_id = ?, status = 'miner'", userId, minerId)
+						if err != nil {
+							return "{\"result\":0}", err
+						}
+					} else {
+						err = c.ExecSql("UPDATE my_table SET user_id = ?, status = 'user'", userId)
+						if err != nil {
+							return "{\"result\":0}", err
+						}
+					}
 					//} else {
 					//	c.ExecSql("INSERT INTO my_table (user_id, status) VALUES (?, 'user')", userId)
 					//}

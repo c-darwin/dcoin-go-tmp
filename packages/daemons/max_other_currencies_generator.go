@@ -132,6 +132,7 @@ BEGIN:
 
 		_, myUserId, _, _, _, _, err := d.TestBlock()
 		forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewMaxOtherCurrencies"), curTime, myUserId, jsonData)
+		log.Debug("forSign: %s", forSign)
 		binSign, err := d.GetBinSign(forSign, myUserId)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }

@@ -84,16 +84,22 @@
 				);
 			}
 		}
+
+		$('#refreshTpl').bind('click', function () {
+			console.log("refreshTpl");
+			fc_navigate($('#tpl_name').val())
+		});
+
 </script>
 <style>
 	.ref .fa{margin-right: 5px;margin-left: 5px;}
 </style>
 
 <h1 class="page-header">{{.Lang.reg_users}}</h1>
-<ol class="breadcrumb">
+<ol class="breadcrumb" style="position: relative;">
 	<li><a href="#miningMenu">{{.Lang.mining}}</a></li>
 	<li class="active">{{.Lang.reg_users}}</li>
-</ol>
+<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
 
 {{template "alertSuccess".}}
 

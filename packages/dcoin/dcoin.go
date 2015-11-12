@@ -107,7 +107,9 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
-		if fmt.Sprint("%s", err) != "no such process" {
+
+		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
+		if fmt.Sprintf("%s", err) != "no such process" {
 			// даем 15 сек, чтобы завершиться предыдущему процессу
 			for i := 0; i<15; i++ {
 				if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
@@ -145,19 +147,7 @@ func Start(dir string) {
 		configIni, err = configIni_.GetSection("default")
 	}
 
-	// откат БД до указанного блока
-	if *utils.RollbackToBlockId > 0 {
-		utils.DB, err = utils.NewDbConnect(configIni)
-		parser := new(dcparser.Parser)
-		parser.DCDB = utils.DB
-		err = parser.RollbackToBlockId(*utils.RollbackToBlockId)
-		if err!=nil {
-			fmt.Println(err)
-			panic(err)
-		}
-		fmt.Print("complete")
-		os.Exit(0)
-	}
+
 
 	controllers.SessInit()
 	controllers.ConfigInit()
@@ -214,6 +204,20 @@ func Start(dir string) {
 	logging.SetBackend(backendLeveled)
 
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	// откат БД до указанного блока
+	if *utils.RollbackToBlockId > 0 {
+		utils.DB, err = utils.NewDbConnect(configIni)
+		parser := new(dcparser.Parser)
+		parser.DCDB = utils.DB
+		err = parser.RollbackToBlockId(*utils.RollbackToBlockId)
+		if err!=nil {
+			fmt.Println(err)
+			panic(err)
+		}
+		fmt.Print("complete")
+		os.Exit(0)
+	}
 
 	log.Debug("public")
 	IosLog("public")

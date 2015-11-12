@@ -42,6 +42,9 @@ func (c *Controller) PromisedAmountList() (string, error) {
 	limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["limit_promised_amount_period"]], -1)
 
 	actualizationPromisedAmounts, promisedAmountListAccepted, _, err := c.GetPromisedAmounts(c.SessUserId, c.Variables.Int64["cash_request_time"])
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 
 	TemplateStr, err := makeTemplate("promised_amount_list", "promisedAmountList", &promisedAmountListPage{
 		Alert:                        c.Alert,

@@ -309,8 +309,10 @@ BEGIN:
 		var usedTransactions string
 		var mrklRoot []byte
 		// берем все данные из очереди. Они уже были проверены ранее, и можно их не проверять, а просто брать
+		utils.WriteSelectiveLog("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1")
 		rows, err := d.Query(d.FormatQuery("SELECT data, hex(hash), type, user_id, third_var FROM transactions WHERE used = 0 AND verified = 1"))
 		if err != nil {
+			utils.WriteSelectiveLog(err)
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue
 		}
@@ -326,6 +328,7 @@ BEGIN:
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
+			utils.WriteSelectiveLog("hash: "+string(hash))
 			log.Debug("data %v", data)
 			log.Debug("hash %v", hash)
 			transactionType := data[1:2]
@@ -429,11 +432,14 @@ BEGIN:
 		if len(usedTransactions) > 0 {
 			usedTransactions := usedTransactions[:len(usedTransactions)-1]
 			log.Debug("usedTransactions %v", usedTransactions)
-			err = d.ExecSql("UPDATE transactions SET used=1 WHERE hash IN (" + usedTransactions + ")")
+			utils.WriteSelectiveLog("UPDATE transactions SET used=1 WHERE hash IN (" + usedTransactions + ")")
+			affect, err := d.ExecSqlGetAffect("UPDATE transactions SET used=1 WHERE hash IN (" + usedTransactions + ")")
 			if err != nil {
+				utils.WriteSelectiveLog(err)
 				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
+			utils.WriteSelectiveLog("affect: "+utils.Int64ToStr(affect))
 			// для теста удаляем, т.к. она уже есть в transactions_testblock
 			/*  $db->query( __FILE__, __LINE__,  __FUNCTION__,  __CLASS__, __METHOD__, "
 			DELETE FROM `".DB_PREFIX."transactions`
