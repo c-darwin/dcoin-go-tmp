@@ -77,6 +77,7 @@ BEGIN:
 			continue BEGIN
 		}
 		confirmations := utils.StrToInt64(eConfig["confirmations"])
+		mainDcAccount := utils.StrToInt64(eConfig["main_dc_account"])
 
 		// все валюты, с которыми работаем
 		currencyList, err := utils.EGetCurrencyList()
@@ -183,7 +184,7 @@ BEGIN:
 			continue BEGIN
 		}
 
-		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, time, comment FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' ORDER BY id DESC`), blockId-confirmations)
+		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, time, comment, comment_status FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' AND to_user_id = ? ORDER BY id DESC`), blockId-confirmations, mainDcAccount)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -191,8 +192,8 @@ BEGIN:
 		for rows.Next() {
 			var amount float64
 			var id, blockId, typeId, currencyId, toUserId, txTime int64
-			var comment string
-			err = rows.Scan(&amount, &id, &blockId, &typeId, &currencyId, &toUserId, &txTime, &comment)
+			var comment, commentStatus string
+			err = rows.Scan(&amount, &id, &blockId, &typeId, &currencyId, &toUserId, &txTime, &comment, &commentStatus)
 			if err != nil {
 				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
@@ -242,36 +243,40 @@ BEGIN:
 				// сравнение данных из таблы my_dc_transactions с тем, что в блоке
 				if utils.BytesToInt64(txMap["user_id"]) == typeId && utils.BytesToInt64(txMap["currency_id"]) == currencyId && utils.BytesToFloat64(txMap["amount"]) == amount && string(txMap["comment"]) == comment && utils.BytesToInt64(txMap["to_user_id"]) == toUserId {
 
-					// расшифруем коммент
-					block, _ := pem.Decode([]byte(nodePrivateKey))
-					if block == nil || block.Type != "RSA PRIVATE KEY" {
-						rows.Close()
-						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-						continue BEGIN
-					}
-					private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-					if err != nil {
-						rows.Close()
-						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-						continue BEGIN
-					}
-					decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
-					if err != nil {
-						rows.Close()
-						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-						continue BEGIN
-					}
-					decryptedComment := string(decryptedComment_)
-					// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
-					err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
-					if err != nil {
-						rows.Close()
-						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-						continue BEGIN
+					decryptedComment := comment
+					if commentStatus == "encrypted" {
+						// расшифруем коммент
+						block, _ := pem.Decode([]byte(nodePrivateKey))
+						if block == nil || block.Type != "RSA PRIVATE KEY" {
+							rows.Close()
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
+							continue BEGIN
+						}
+						private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+						if err != nil {
+							rows.Close()
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
+							continue BEGIN
+						}
+						decryptedComment_, err := rsa.DecryptPKCS1v15(rand.Reader, private_key, []byte(comment))
+						if err != nil {
+							rows.Close()
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
+							continue BEGIN
+						}
+						decryptedComment = string(decryptedComment_)
+						// запишем расшифрованный коммент, чтобы потом можно было найти перевод в ручном режиме
+						err = d.ExecSql("UPDATE "+myPrefix+"my_dc_transactions SET comment = ?, comment_status = 'decrypted' WHERE id = ?", decryptedComment, id)
+						if err != nil {
+							rows.Close()
+							if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+							continue BEGIN
+						}
 					}
 
 					// возможно юзер сделал перевод в той валюте, которая у нас на бирже еще не торгуется
 					if len(currencyList[currencyId]) == 0 {
+						log.Error("currencyId %d not trading", currencyId)
 						continue
 					}
 
@@ -293,8 +298,10 @@ BEGIN:
 					r, _ := regexp.Compile(`(?i)\s*#\s*([0-9]+)\s*`)
 					user := r.FindStringSubmatch(decryptedComment)
 					if len(user) == 0 {
+						log.Error("len(user) == 0")
 						continue
 					}
+					log.Debug("user %s", user[1])
 					uid := utils.StrToInt64(user[1])
 					userAmountAndProfit := utils.EUserAmountAndProfit(uid, currencyId)
 					newAmount_ := userAmountAndProfit + amount
