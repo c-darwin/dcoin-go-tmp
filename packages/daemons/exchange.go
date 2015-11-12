@@ -222,8 +222,9 @@ BEGIN:
 				if txMap.Int64["type"] != utils.TypeInt("SendDc") {
 					continue
 				}
+				log.Debug("md5hash %s", txMap.String["md5hash"])
 
-				// если что-то случится с таблой my_dc_transactions, то все ввода на бирджу будут зачислены по новой
+				// если что-то случится с таблой my_dc_transactions, то все ввода на биржу будут зачислены по новой
 				// поэтому нужно проверять e_adding_funds
 				exists, err := d.Single(`SELECT id FROM e_adding_funds WHERE hex(tx_hash) = ?`, txMap.String["md5hash"]).Int64()
 				if err != nil {
@@ -231,10 +232,12 @@ BEGIN:
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
+				log.Debug("exists %d", exists)
 				if exists != 0 {
 					continue
 				}
 
+				log.Debug("user_id = %d / typeId = %d / currency_id = %d / currencyId = %d / amount = %f / amount = %f / comment = %s / comment = %s / to_user_id = %d / toUserId = %d ", txMap.Int64["user_id"], typeId, txMap.Int64["currency_id"], currencyId, txMap.Money["amount"], amount , txMap.String["comment"], comment, txMap.Int64["to_user_id"], toUserId)
 				// сравнение данных из таблы my_dc_transactions с тем, что в блоке
 				if txMap.Int64["user_id"] == typeId && txMap.Int64["currency_id"] == currencyId && txMap.Money["amount"] == amount && txMap.String["comment"] == comment && txMap.Int64["to_user_id"] == toUserId {
 
