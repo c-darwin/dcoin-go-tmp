@@ -218,16 +218,16 @@ BEGIN:
 			p.DCDB = d.DCDB
 			p.BinaryData = binaryData
 			p.ParseDataLite()
-			for _, txMap := range p.TxMapsArr {
+			for _, txMap := range p.TxMapArr {
 				// пропускаем все ненужные тр-ии
-				if txMap.Int64["type"] != utils.TypeInt("SendDc") {
+				if utils.BytesToInt64(txMap["type"]) != utils.TypeInt("SendDc") {
 					continue
 				}
-				log.Debug("md5hash %s", txMap.String["md5hash"])
+				log.Debug("md5hash %s", txMap["md5hash"])
 
 				// если что-то случится с таблой my_dc_transactions, то все ввода на биржу будут зачислены по новой
 				// поэтому нужно проверять e_adding_funds
-				exists, err := d.Single(`SELECT id FROM e_adding_funds WHERE hex(tx_hash) = ?`, txMap.String["md5hash"]).Int64()
+				exists, err := d.Single(`SELECT id FROM e_adding_funds WHERE hex(tx_hash) = ?`, string(txMap["md5hash"])).Int64()
 				if err != nil {
 					rows.Close()
 					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
@@ -238,9 +238,9 @@ BEGIN:
 					continue
 				}
 
-				log.Debug("user_id = %d / typeId = %d / currency_id = %d / currencyId = %d / amount = %f / amount = %f / comment = %s / comment = %s / to_user_id = %d / toUserId = %d ", txMap.Int64["user_id"], typeId, txMap.Int64["currency_id"], currencyId, txMap.Money["amount"], amount , txMap.String["comment"], comment, txMap.Int64["to_user_id"], toUserId)
+				log.Debug("user_id = %d / typeId = %d / currency_id = %d / currencyId = %d / amount = %f / amount = %f / comment = %s / comment = %s / to_user_id = %d / toUserId = %d ", txMap["user_id"], typeId, txMap["currency_id"], currencyId, txMap["amount"], amount , txMap["comment"], comment, txMap["to_user_id"], toUserId)
 				// сравнение данных из таблы my_dc_transactions с тем, что в блоке
-				if txMap.Int64["user_id"] == typeId && txMap.Int64["currency_id"] == currencyId && txMap.Money["amount"] == amount && txMap.String["comment"] == comment && txMap.Int64["to_user_id"] == toUserId {
+				if utils.BytesToInt64(txMap["user_id"]) == typeId && utils.BytesToInt64(txMap["currency_id"]) == currencyId && utils.BytesToFloat64(txMap["amount"]) == amount && string(txMap["comment"]) == comment && utils.BytesToInt64(txMap["to_user_id"]) == toUserId {
 
 					// расшифруем коммент
 					block, _ := pem.Decode([]byte(nodePrivateKey))
@@ -316,7 +316,7 @@ BEGIN:
 							?,
 							?,
 							?
-						)`, uid, currencyId, txTime, amount, txMap.String["md5hash"])
+						)`, uid, currencyId, txTime, amount, string(txMap["md5hash"]))
 					if err != nil {
 						rows.Close()
 						if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }

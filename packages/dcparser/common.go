@@ -1427,7 +1427,7 @@ func (p *Parser) ParseDataLite() error {
 			}
 			p.TxMap["md5hash"] = utils.Md5(transactionBinaryDataFull)
 			p.TxMapArr = append(p.TxMapArr, p.TxMap)
-			p.TxMapsArr = append(p.TxMapsArr, p.TxMaps)
+			//p.TxMapsArr = append(p.TxMapsArr, p.TxMaps)
 			if len(p.BinaryData) == 0 {
 				break
 			}
