@@ -1572,12 +1572,12 @@ func (db *DCDB) FormatQuery(q string) string {
 		case "sqlite":
 			newQ = strings.Replace(newQ, "[hex]", "?", -1)
 			newQ = strings.Replace(newQ, "user,", "`user`,", -1)
-			newQ = strings.Replace(newQ, ", user", ", `user`", -1)
+			newQ = strings.Replace(newQ, ", user ", ", `user` ", -1)
 		case "postgresql":
 			newQ = strings.Replace(newQ, "[hex]", "decode(?,'HEX')", -1)
 			newQ = strings.Replace(newQ, " authorization", ` "authorization"`, -1)
 			newQ = strings.Replace(newQ, "user,", `"user",`, -1)
-			newQ = strings.Replace(newQ, ", user", `, "user"`, -1)
+			newQ = strings.Replace(newQ, ", user ", `, "user" `, -1)
 			newQ = ReplQ(newQ)
 		case "mysql":
 			newQ = strings.Replace(newQ, "[hex]", "UNHEX(?)", -1)
