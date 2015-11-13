@@ -3211,3 +3211,12 @@ func WriteSelectiveLog(text interface{}) {
 		panic(err)
 	}
 }
+
+func IPwoPort(ipport string) string {
+	r, _ := regexp.Compile(`^([0-9\.]+)`)
+	match := r.FindStringSubmatch(ipport)
+	if len(match) == 0 {
+		return ""
+	}
+	return match[1]
+}

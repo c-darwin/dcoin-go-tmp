@@ -14,8 +14,9 @@ func (c *Controller) EGatePayeer() (string, error) {
 
 	fmt.Println(c.r.Form)
 
-	if c.r.RemoteAddr != "37.59.221.23" {
-		return "", errors.New("Incorrect RemoteAddr "+ c.r.RemoteAddr)
+
+	if utils.IPwoPort(c.r.RemoteAddr) != "37.59.221.23" {
+		return "", errors.New("Incorrect RemoteAddr "+ utils.IPwoPort(c.r.RemoteAddr))
 	}
 
 	if len(c.r.FormValue("m_operation_id")) > 0 && len(c.r.FormValue("m_sign")) > 0 {
