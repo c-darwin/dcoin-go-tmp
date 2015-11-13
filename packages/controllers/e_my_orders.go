@@ -24,7 +24,7 @@ func (c *Controller) EMyOrders() (string, error) {
 	var myOrders []*EmyOrders
 
 	rows, err := c.Query(c.FormatQuery(`
-			SELECT time, empty_time, amount, begin_amount, sell_currency_id, buy_currency_id, sell_rate, begin_amount
+			SELECT id, time, empty_time, amount, begin_amount, sell_currency_id, buy_currency_id, sell_rate, begin_amount
 			FROM e_orders
 			WHERE user_id = ? AND
 						 del_time = 0
@@ -36,12 +36,8 @@ func (c *Controller) EMyOrders() (string, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		//var time, emptyTime, sellCurrencyId, buyCurrencyId int64
-		//var amount, beginAmount, sellRate, total float64
-		//var status, orderType, pair string
 		myOrder := new(EmyOrders)
-		//err = rows.Scan(&emyOrder.time, &emptyTime, &amount, &beginAmount, &sellCurrencyId, &buyCurrencyId, &sellRate, &beginAmount)
-		err = rows.Scan(&myOrder.Time, &myOrder.EmptyTime, &myOrder.Amount, &myOrder.BeginAmount, &myOrder.SellCurrencyId, &myOrder.BuyCurrencyId, &myOrder.SellRate, &myOrder.BeginAmount)
+		err = rows.Scan(&myOrder.Id, &myOrder.Time, &myOrder.EmptyTime, &myOrder.Amount, &myOrder.BeginAmount, &myOrder.SellCurrencyId, &myOrder.BuyCurrencyId, &myOrder.SellRate, &myOrder.BeginAmount)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -83,7 +79,7 @@ func (c *Controller) EMyOrders() (string, error) {
 }
 
 type EmyOrders struct {
-	Time, EmptyTime, SellCurrencyId, BuyCurrencyId int64
+	Id, Time, EmptyTime, SellCurrencyId, BuyCurrencyId int64
 	Amount, BeginAmount, SellRate, Total, OrderComplete float64
 	Status, OrderType, Pair string
 }
