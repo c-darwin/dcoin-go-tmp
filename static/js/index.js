@@ -85,13 +85,10 @@ function login_ok (result) {
         $('.modal-backdrop').remove();
         $('.modal-backdrop').css('display', 'none');
 
-        console.log("$('#exchangeTemplate').val()", $('#exchangeTemplate').val());
-
         if ($('#exchangeTemplate').val() == "1") {
 
             $('#SigninKeyModal').modal('hide');
-            console.log("window.location.href", $('#Ehost').val());
-            //window.location.href = $('#Ehost').val();
+            window.location.href = $('#EHost').val();
 
         } else if (typeof(get_key_and_sign)==='undefined' || get_key_and_sign=='null') {
 
