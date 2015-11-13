@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
+	//"fmt"
 )
 
 type eMyHistoryPage struct {
@@ -21,11 +22,14 @@ func (c *Controller) EMyHistory() (string, error) {
 	}
 
 	currencyList, err := utils.EGetCurrencyList()
-
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	//fmt.Println("currencyList", currencyList)
 	var myHistory []*EmyHistory
 
 	rows, err := c.Query(c.FormatQuery(`
-			SELECT id, time, amount, sell_rate
+			SELECT id, time, amount, sell_rate, sell_currency_id, buy_currency_id
 			FROM e_trade
 			WHERE user_id = ?
 			ORDER BY time DESC
@@ -37,7 +41,7 @@ func (c *Controller) EMyHistory() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		myHist := new(EmyHistory)
-		err = rows.Scan(&myHist.Id, &myHist.Time, &myHist.Amount, &myHist.SellRate)
+		err = rows.Scan(&myHist.Id, &myHist.Time, &myHist.Amount, &myHist.SellRate, &myHist.SellCurrencyId, &myHist.BuyCurrencyId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
