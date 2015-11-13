@@ -25,7 +25,7 @@ func (c *Controller) EMyHistory() (string, error) {
 	var myHistory []*EmyHistory
 
 	rows, err := c.Query(c.FormatQuery(`
-			SELECT time, amount, sell_rate
+			SELECT id, time, amount, sell_rate
 			FROM e_trade
 			WHERE user_id = ?
 			ORDER BY time DESC
@@ -37,11 +37,10 @@ func (c *Controller) EMyHistory() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		myHist := new(EmyHistory)
-		err = rows.Scan(&myHist.Time, &myHist.Amount, &myHist.SellRate)
+		err = rows.Scan(&myHist.Id, &myHist.Time, &myHist.Amount, &myHist.SellRate)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-
 
 		// определим тип ордера и пару
 		if myHist.SellCurrencyId < 1000 {
@@ -72,7 +71,7 @@ func (c *Controller) EMyHistory() (string, error) {
 }
 
 type EmyHistory struct {
-	Time, SellCurrencyId, BuyCurrencyId int64
+	Id, Time, SellCurrencyId, BuyCurrencyId int64
 	Amount, SellRate, Total float64
 	OrderType, Pair string
 }
