@@ -207,7 +207,7 @@ func (c *Controller) EMyFinance() (string, error) {
 
 	// история ввода средств
 	rows, err = c.Query(c.FormatQuery(`
-			SELECT amount, time, currency_id
+			SELECT id, amount, time, currency_id
 			FROM e_adding_funds
 			WHERE user_id = ?
 			ORDER BY time DESC
@@ -219,7 +219,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
-		err = rows.Scan(&Finance.Amount,  &Finance.AddTime, &Finance.CurrencyId)
+		err = rows.Scan(&Finance.Id, &Finance.Amount,  &Finance.AddTime, &Finance.CurrencyId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -231,7 +231,7 @@ func (c *Controller) EMyFinance() (string, error) {
 
 	// история ввода средств IK
 	rows, err = c.Query(c.FormatQuery(`
-			SELECT amount, time, currency_id
+			SELECT id, amount, time, currency_id
 			FROM e_adding_funds_ik
 			WHERE user_id = ?
 			ORDER BY time DESC
@@ -243,7 +243,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
-		err = rows.Scan(&Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)
+		err = rows.Scan(&Finance.Id, &Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -256,7 +256,7 @@ func (c *Controller) EMyFinance() (string, error) {
 
 	// история ввода средств PM
 	rows, err = c.Query(c.FormatQuery(`
-			SELECT amount, time, currency_id
+			SELECT id, amount, time, currency_id
 			FROM e_adding_funds_pm
 			WHERE user_id = ?
 			ORDER BY time DESC
@@ -268,7 +268,7 @@ func (c *Controller) EMyFinance() (string, error) {
 	defer rows.Close()
 	for rows.Next() {
 		Finance := new(EmyFinanceType)
-		err = rows.Scan(&Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)
+		err = rows.Scan(&Finance.Id, &Finance.Amount, &Finance.AddTime, &Finance.CurrencyId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

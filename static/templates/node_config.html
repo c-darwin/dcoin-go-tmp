@@ -173,6 +173,10 @@
 	<input id="e_pm_id" class="input" type="text" value="{{index .EConfig "pm_id"}}">
 	<label>Interkassa ID</label>
 	<input id="e_ik_id" class="input" type="text" value="{{index .EConfig "ik_id"}}">
+	<label>DC withdraw commission</label>
+	<input id="e_dc_commission" class="input" type="text" value="{{index .EConfig "dc_commission"}}">
+	<label>PM withdraw commission</label>
+	<input id="e_pm_commission" class="input" type="text" value="{{index .EConfig "pm_commission"}}">
 	<label>static_file_path</label>
 	<input id="e_static_file_path" class="input" type="text" value="{{index .EConfig "static_file_path"}}">
 	<label>static_file</label>
@@ -200,9 +204,10 @@
 			'e_ik_s_key' : $('#e_ik_s_key').val(),
 			'e_pm_id' : $('#e_pm_id').val(),
 			'e_ik_id' : $('#e_ik_id').val(),
+			'e_dc_commission' : $('#e_dc_commission').val(),
+			'e_pm_commission' : $('#e_pm_commission').val(),
 			'e_static_file_path' : $('#e_static_file_path').val(),
 			'e_static_file' : $('#e_static_file').val()
-
 		});
 
 		$.post( 'ajax?controllerName=nodeConfigControl', {

@@ -1277,6 +1277,14 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 				return true
 			}
 		}
+	case "account":
+		if ok, _ := regexp.MatchString(`^[0-9a-zA-Z\-\s_\+\#\:]{1,30}$`, data); ok {
+			return true
+		}
+	case "method":
+		if ok, _ := regexp.MatchString(`^[0-9a-zA-Z\-\_]{1,30}$`, data); ok {
+			return true
+		}
 	}
 
 	return false

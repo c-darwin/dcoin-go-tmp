@@ -17,7 +17,7 @@
 
 	function withdraw(currency_id, method) {
 
-		$.post( 'ajax/withdraw.php', {
+		$.post( 'ajax?controllerName=EWithdraw', {
 			'currency_id': currency_id,
 			'amount': $('#amount-'+currency_id).val(),
 			'method': method,
@@ -25,10 +25,11 @@
 			'code': $('#code-'+currency_id).val()
 		}, function(data) {
 			console.log(data);
-			if (data.error)
-				$('#alerts-'+currency_id).html('<div class="alert alert-danger alert-dismissable" style="width:380px"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
-			else
-				$('#alerts-'+currency_id).html('<div class="alert alert-success alert-dismissable" style="width:380px"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.success+'</div>');
+			if (data.error) {
+				$('#alerts-' + currency_id).html('<div class="alert alert-danger alert-dismissable" style="width:380px"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>' + data.error + '</div>');
+			} else {
+				$('#alerts-' + currency_id).html('<div class="alert alert-success alert-dismissable" style="width:380px"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>' + data.success + '</div>');
+			}
 				//navigate('my_finance',  {'status':'success'});
 		}, 'JSON');
 	}
@@ -119,7 +120,7 @@
 							</thead>
 							<tbody>
 							{{range $id, $data := .MyFinanceHistory}}
-								<tr><td>{{$data.Id}}</td><td>{{$data.Ftype}}</td><td>{{$data.AddTime}}</td><td>{{$data.Method}}</td><td>{{$data.Amount}}</td><td>{{$data.Status}}</td></tr>
+								<tr><td>{{$data.Id}}</td><td>{{$data.Ftype}}</td><td>{{$data.AddTime}}</td><td>{{$data.Method}}</td><td>{{$data.Amount}}</td><td>{{noescape $data.Status}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
