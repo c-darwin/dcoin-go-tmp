@@ -21,7 +21,7 @@
 							</thead>
 							<tbody>
 							{{range $id, $data := .MyHistory}}
-								<tr><td>{{$data.Id}}</td><td>{{$data.Pair}}</td><td>{{$data.Time}}</td><td class="text-{{if eq $data.Type "sell"}}danger{{else}}success{{end}}"><strong>{{$data.Type}}</strong></td><td>{{$data.SellRate}}</td><td>{{$data.Amount}}</td><td>{{$data.Total}}</td></tr>
+								<tr><td>{{$data.Id}}</td><td>{{$data.Pair}}</td><td>{{$data.Time}}</td><td class="text-{{if eq $data.Type "sell"}}danger{{else}}success{{end}}"><strong>{{$data.OrderType}}</strong></td><td>{{$data.SellRate}}</td><td>{{$data.Amount}}</td><td>{{$data.Total}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
