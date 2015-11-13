@@ -103,6 +103,7 @@ func (c *Controller) EMyFinance() (string, error) {
 		<select id="ps_select" class="form-control">
 		  <option value="pm">Perfect Money</option>
 		  <option value="ik">Mobile, Yandex</option>
+		  <option value="payeer">BTC</option>
 		</select>
 			<div style="display:block" id="pm_form">
 				<form action="https://perfectmoney.is/api/step1.asp" method="POST">
