@@ -97,11 +97,12 @@ func (c *Controller) EMyFinance() (string, error) {
 	if currency["1001"] == nil {
 		currency["1001"] = make(map[string]string)
 	}
+
 	currency["1001"]["name"] = "USD"
 	currency["1001"]["input"] = `<div class="pull-left"><h4>`+c.Lang["deposit0"]+` USD</h4>
 		<select id="ps_select" class="form-control">
 		  <option value="pm">Perfect Money</option>
-		  <option value="ik">МТС, Магафон, Терминалы, W1, Paxum</option>
+		  <option value="ik">Mobile, Yandex</option>
 		</select>
 			<div style="display:block" id="pm_form">
 				<form action="https://perfectmoney.is/api/step1.asp" method="POST">
@@ -145,9 +146,40 @@ func (c *Controller) EMyFinance() (string, error) {
 					<tr>
 				 </tbody>
 				 </table>
-
-					</form>
+				</form>
 			</div>
+			<script>
+			$('#payeer_sign').bind('click', function () {
+				$.post( 'ajax?controllerName=EPayeerSign', {
+					m_orderid: $('#m_orderid').val(),
+					m_desc: $('#m_desc').val(),
+					m_amount: $('#m_amount').val()
+				},
+				function (data) {
+					$('#m_sign').val(data);
+					$("#payeer_form").submit();
+				});
+			});
+			</script>
+			<div style="display:none" id="payeer_form">
+				<form id="payment" name="payment" method="post" action="https://payeer.com/merchant/" enctype="utf-8">
+				   	<input type="hidden" name="m_shop" value="`+c.EConfig["payeer_id"]+`">
+					<input type="hidden" name="m_orderid" value="1234">
+					<input type="hidden" name="m_curr" value="USD">
+					<input type="hidden" name="m_desc" value="`+utils.Int64ToStr(c.SessUserId)+`">
+					<input type="hidden" name="m_sign" value="">
+				<table class="table_out">
+				<tbody>
+					<tr>
+					<td>`+c.Lang["amount_to_pay"]+`</td>
+					<td class="form-inline" style="line-height: 35px;"><input name="m_amount" class="form-control" type="text" style="margin-right:5px; width:120px"><input id="payeer_sign" type="button" value="`+c.Lang["deposit"]+`" class="btn btn-outline btn-success"></td>
+					</tr>
+					<tr>
+				 </tbody>
+				 </table>
+				</form>
+			</div>
+
 			</div>`
 
 	currency["1001"]["output"] = `<div class="pull-left"><h4>`+c.Lang["withdraw0"]+` USD</h4>

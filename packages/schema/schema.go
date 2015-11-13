@@ -2837,6 +2837,25 @@ func (schema *SchemaStruct) GetSchema() {
 	s["e_adding_funds_pm"] = s1
 	schema.S = s
 	schema.PrintSchema()
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_adding_funds_payeer_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name": "user_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "currency_id", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[3] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[4] = map[string]string{"name": "amount", "mysql": "decimal(10,4) NOT NULL DEFAULT '0'", "sqlite": "decimal(10,4) NOT NULL DEFAULT '0'", "postgresql": "decimal(10,4) NOT NULL DEFAULT '0'", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"id"}
+	s1["AI"] = "id"
+	s1["comment"] = ""
+	s["e_adding_funds_payeer"] = s1
+	schema.S = s
+	schema.PrintSchema()
 
 	s = make(Recmap)
 	s1 = make(Recmap)
