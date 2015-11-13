@@ -158,12 +158,12 @@ func (c *Controller) EMyFinance() (string, error) {
 				},
 				function (data) {
 					$('#m_sign').val(data);
-					$("#payeer_form").submit();
+					$("#payeer_form_data").submit();
 				});
 			});
 			</script>
 			<div style="display:none" id="payeer_form">
-				<form id="payment" name="payment" method="post" action="https://payeer.com/merchant/" enctype="utf-8">
+				<form id="payeer_form_data" name="payment" method="post" action="https://payeer.com/merchant/" enctype="utf-8">
 				   	<input type="hidden" name="m_shop" value="`+c.EConfig["payeer_id"]+`">
 					<input type="hidden" name="m_orderid" value="1234">
 					<input type="hidden" name="m_curr" value="USD">
