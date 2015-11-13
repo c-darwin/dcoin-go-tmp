@@ -54,8 +54,11 @@ func (c *Controller) EWithdraw() (string, error) {
 	}
 	wdAmount := utils.ClearNull(utils.Float64ToStr(amount * (1-commission/100)), 2)
 
-	c.ExecSql(`INSERT INTO e_withdraw(open_time, user_id, currency_id, account, amount, wd_amount, method) VALUES (?, ?, ?, ?, ?, ?, ?)`, curTime, c.SessUserId, account, amount, wdAmount, method)
+	err = c.ExecSql(`INSERT INTO e_withdraw (open_time, user_id, currency_id, account, amount, wd_amount, method) VALUES (?, ?, ?, ?, ?, ?, ?)`, curTime, c.SessUserId, currencyId, account, amount, wdAmount, method)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
 	userUnlock(c.SessUserId)
 
-	return utils.JsonAnswer("success", c.Lang["request_is_created"]).String(), nil
+	return utils.JsonAnswer(c.Lang["request_is_created"], "success").String(), nil
 }
