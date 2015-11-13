@@ -33,7 +33,7 @@
 							</thead>
 							<tbody>
 							{{range $id, $data := .MyOrders}}
-								<tr><td>{{$data.Id}}</td><td>{{$data.Pair}}</td><td>{{$data.Time}}</td><td class="text-{{if eq $data.Type "sell"}}danger{{else}}success{{end}}"><strong>{{$data.Type}}</strong></td><td>{{$data.SellRate}}</td><td>{{$data.Amount}}</td><td>{{$data.Total}}</td><td title="{{$data.OrderComplete}}%"><div class="progress"><div class="progress-bar progress-bar-success" style="width: {{$data.OrderComplete}}%;"></div></div></td><td>{{$data.Status}}</td>
+								<tr><td>{{$data.Id}}</td><td>{{$data.Pair}}</td><td>{{$data.Time}}</td><td class="text-{{if eq $data.OrderType "sell"}}danger{{else}}success{{end}}"><strong>{{$data.OrderType}}</strong></td><td>{{$data.SellRate}}</td><td>{{$data.Amount}}</td><td>{{$data.Total}}</td><td title="{{$data.OrderComplete}}%"><div class="progress"><div class="progress-bar progress-bar-success" style="width: {{$data.OrderComplete}}%;"></div></div></td><td>{{$data.Status}}</td>
 
 								{{if and (eq $data.EmptyTime 0) (eq $data.DelTime 0)}}
 									<td><button type="button" class="btn btn-default btn-xs" onclick='del_order({{$data.Id}})'>{{$.Lang.delete}}</button></td>
