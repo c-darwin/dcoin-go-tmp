@@ -91,12 +91,12 @@ function login_ok (result) {
 
             $('#SigninKeyModal').modal('hide');
             console.log("window.location.href", $('#Ehost').val());
-            window.location.href = $('#Ehost').val();
+            //window.location.href = $('#Ehost').val();
 
         } else if (typeof(get_key_and_sign)==='undefined' || get_key_and_sign=='null') {
 
             var tpl_name = $('#tpl_name').val();
-            if (!tpl_name || tpl_name=='installStep0' || tpl_name=='installStep6')
+            if (!tpl_name || typeof(tpl_name)==='undefined' || tpl_name=='installStep0' || tpl_name=='installStep6')
                 tpl_name = 'home';
 
             if ($("#mobileos").val() == "1") {
