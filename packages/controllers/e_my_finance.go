@@ -152,12 +152,12 @@ func (c *Controller) EMyFinance() (string, error) {
 			<script>
 			$('#payeer_sign').bind('click', function () {
 				$.post( 'ajax?controllerName=EPayeerSign', {
-					m_orderid: $('#m_orderid').val(),
-					m_desc: $('#m_desc').val(),
-					m_amount: $('#m_amount').val()
+					m_orderid: $('form[name="m_orderid"]').val(),
+					m_desc: $('form[name="m_desc"]').val(),
+					m_amount: $('form[name="m_amount"]').val()
 				},
 				function (data) {
-					$('#m_sign').val(data);
+					$('form[name="m_sign"]').val(data);
 					$("#payeer_form_data").submit();
 				});
 			});
