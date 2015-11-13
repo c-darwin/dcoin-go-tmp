@@ -16,7 +16,7 @@ type eMyFinancePage struct {
 }
 
 type EmyFinanceType struct {
-	Ftype, Status, AddType, Method string
+	Ftype, Status, Method string
 	Amount, WdAmount float64
 	Id, CurrencyId, AddTime, CloseTime, OpenTime int64
 }
@@ -223,7 +223,7 @@ func (c *Controller) EMyFinance() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		Finance.AddType = types["adding_funds"]
+		Finance.Ftype = types["adding_funds"]
 		Finance.Status = `<span class="text-success"><strong>`+c.Lang["ready"]+`</strong></span>`
 		Finance.Method = `Dcoin (`+currencyList[Finance.CurrencyId]+`)`
 		myFinanceHistory_[Finance.AddTime] = append(myFinanceHistory_[Finance.AddTime], Finance)
@@ -247,7 +247,7 @@ func (c *Controller) EMyFinance() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		Finance.AddType = types["adding_funds"]
+		Finance.Ftype = types["adding_funds"]
 		Finance.Status = `<span class="text-success"><strong>`+c.Lang["ready"]+`</strong></span>`
 		Finance.Method = `Interkassa (`+currencyList[Finance.CurrencyId]+`)`
 		myFinanceHistory_[Finance.AddTime] = append(myFinanceHistory_[Finance.AddTime], Finance)
@@ -272,7 +272,7 @@ func (c *Controller) EMyFinance() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		Finance.AddType = types["adding_funds"]
+		Finance.Ftype = types["adding_funds"]
 		Finance.Status = `<span class="text-success"><strong>`+c.Lang["ready"]+`</strong></span>`
 		Finance.Method = `PerfectMoney (`+currencyList[Finance.CurrencyId]+`)`
 		myFinanceHistory_[Finance.AddTime] = append(myFinanceHistory_[Finance.AddTime], Finance)
