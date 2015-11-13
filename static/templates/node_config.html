@@ -170,7 +170,7 @@
 	<label>Interkassa key (IK_S_KEY)</label>
 	<input id="e_ik_s_key" class="input" type="text" value="{{index .EConfig "ik_s_key"}}">
 	<label>Payeer key (PAYEER_S_KEY)</label>
-	<input id="e_ik_s_key" class="input" type="text" value="{{index .EConfig "payeer_s_key"}}">
+	<input id="e_payeer_s_key" class="input" type="text" value="{{index .EConfig "payeer_s_key"}}">
 	<label>Perfect money ID</label>
 	<input id="e_pm_id" class="input" type="text" value="{{index .EConfig "pm_id"}}">
 	<label>Interkassa ID</label>
@@ -206,8 +206,10 @@
 			'e_commission' : $('#e_commission').val(),
 			'e_pm_s_key' : $('#e_pm_s_key').val(),
 			'e_ik_s_key' : $('#e_ik_s_key').val(),
+			'e_payeer_s_key' : $('#e_payeer_s_key').val(),
 			'e_pm_id' : $('#e_pm_id').val(),
 			'e_ik_id' : $('#e_ik_id').val(),
+			'e_payeer_id' : $('#e_payeer_id').val(),
 			'e_dc_commission' : $('#e_dc_commission').val(),
 			'e_pm_commission' : $('#e_pm_commission').val(),
 			'e_static_file_path' : $('#e_static_file_path').val(),
