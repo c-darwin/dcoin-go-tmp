@@ -120,7 +120,7 @@
 							</thead>
 							<tbody>
 							{{range $id, $data := .MyFinanceHistory}}
-								<tr><td>{{$data.Id}}</td><td>{{$data.Ftype}}</td><td>{{$data.AddTime}}</td><td>{{$data.Method}}</td><td>{{$data.Amount}}</td><td>{{noescape $data.Status}}</td></tr>
+								<tr><td>{{$data.Id}}</td><td>{{$data.Ftype}}</td><td class="unixtime">{{$data.AddTime}}</td><td>{{$data.Method}}</td><td>{{$data.Amount}}</td><td>{{noescape $data.Status}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>

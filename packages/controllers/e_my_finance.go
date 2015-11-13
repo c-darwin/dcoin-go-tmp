@@ -4,6 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"sort"
+	"time"
 )
 
 type eMyFinancePage struct {
@@ -195,10 +196,13 @@ func (c *Controller) EMyFinance() (string, error) {
 		}
 		Finance.Ftype = types["withdraw"]
 		Finance.Amount = Finance.WdAmount
+		Finance.AddTime = Finance.OpenTime;
 		if Finance.CloseTime == 0 {
 			Finance.Status = c.Lang["in_process"]
 		} else {
-			Finance.Status = `<span class="text-success"><strong>`+c.Lang["ready"]+`</strong></span> (`+utils.Int64ToStr(Finance.CloseTime)+`)`
+			t := time.Unix(Finance.CloseTime, 0)
+			timeFormated := t.Format(c.TimeFormat)
+			Finance.Status = `<span class="text-success"><strong>`+c.Lang["ready"]+`</strong></span> (`+timeFormated+`)`
 		}
 		Finance.Method = Finance.Method + ` (`+currencyList[Finance.CurrencyId]+`)`
 		myFinanceHistory_[Finance.OpenTime] = append(myFinanceHistory_[Finance.OpenTime], Finance)
