@@ -151,8 +151,8 @@ function save_key () {
         console.log("save_key 1")
         $('#save_key').text("1");
     } else {
-        console.log("save_key 0")
-        console.log($("#modal_save_key").val())
+        console.log("save_key 0");
+        console.log("modal_save_key:", $("#modal_save_key").val())
         $('#save_key').text("0");
     }
 }
@@ -553,7 +553,7 @@ function doSign_(type) {
                             'setup_password': setup_password
 						}, function (data) {
 							// залогинились
-							console.log(data.result);
+							console.log("data.result: ", data.result);
 							login_ok( data.result );
 
 						}, 'JSON'
