@@ -157,8 +157,9 @@ func (c *Controller) EMyFinance() (string, error) {
 					m_amount: $('form[name="m_amount"]').val()
 				},
 				function (data) {
+					console.log("data", data)
 					$('form[name="m_sign"]').val(data);
-					$("#payeer_form_data").submit();
+					//$("#payeer_form_data").submit();
 				});
 			});
 			</script>
