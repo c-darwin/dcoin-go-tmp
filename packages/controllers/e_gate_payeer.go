@@ -19,7 +19,7 @@ func (c *Controller) EGatePayeer() (string, error) {
 	}
 
 	if len(c.r.FormValue("m_operation_id")) > 0 && len(c.r.FormValue("m_sign")) > 0 {
-		sign := strings.ToUpper(string(utils.Sha256(c.r.FormValue("m_operation_id")+":"+c.r.FormValue("m_operation_ps")+":"+c.r.FormValue("m_operation_date")+":"+c.r.FormValue("m_operation_pay_date")+":"+c.r.FormValue("m_shop")+":"+c.r.FormValue("m_orderid")+":"+c.r.FormValue("m_amount")+":"+c.r.FormValue("m_curr")+":"+base64.StdEncoding.EncodeToString(c.r.FormValue("m_desc"))+":"+c.r.FormValue("m_status")+":"+c.EConfig["payeer_s_key"])))
+		sign := strings.ToUpper(string(utils.Sha256(c.r.FormValue("m_operation_id")+":"+c.r.FormValue("m_operation_ps")+":"+c.r.FormValue("m_operation_date")+":"+c.r.FormValue("m_operation_pay_date")+":"+c.r.FormValue("m_shop")+":"+c.r.FormValue("m_orderid")+":"+c.r.FormValue("m_amount")+":"+c.r.FormValue("m_curr")+":"+base64.StdEncoding.EncodeToString([]byte(c.r.FormValue("m_desc")))+":"+c.r.FormValue("m_status")+":"+c.EConfig["payeer_s_key"])))
 		if c.r.FormValue("m_sign") == sign && c.r.FormValue("m_status") == "success" {
 
 			txTime := utils.Time()

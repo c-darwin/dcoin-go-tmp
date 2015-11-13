@@ -9,6 +9,6 @@ import (
 func (c *Controller) EPayeerSign() (string, error) {
 
 	c.r.ParseForm()
-	sign := strings.ToUpper(string(utils.Sha256(c.EConfig["payeer_id"]+":"+c.r.FormValue("m_orderid")+":"+c.r.FormValue("m_amount")+":USD:"+base64.StdEncoding.EncodeToString(c.r.FormValue("m_desc"))+":"+c.EConfig["payeer_s_key"])))
+	sign := strings.ToUpper(string(utils.Sha256(c.EConfig["payeer_id"]+":"+c.r.FormValue("m_orderid")+":"+c.r.FormValue("m_amount")+":USD:"+base64.StdEncoding.EncodeToString([]byte(c.r.FormValue("m_desc")))+":"+c.EConfig["payeer_s_key"])))
 	return sign, nil
 }
