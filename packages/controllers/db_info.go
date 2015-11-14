@@ -19,6 +19,7 @@ type DbInfoPage struct {
 	AllQueueTx	[]map[string]string
 	TxTypes		map[int]string
 	Testblock []map[string]string
+	BlockGeneratorSleepTime int64
 }
 
 func (c *Controller) DbInfo() (string, error) {
@@ -85,7 +86,25 @@ func (c *Controller) DbInfo() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
+	prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange, err := c.TestBlock()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	log.Debug("%v %v %v %v %v %v", prevBlock, myUserId, myMinerId, currentUserId, level, levelsRange)
 
+	var blockGeneratorSleepTime int64
+	if myMinerId > 0 {
+		sleep, err := c.GetGenSleep(prevBlock, level)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		// сколько прошло сек с момента генерации прошлого блока
+		diff := utils.Time() - prevBlock.Time
+		log.Debug("diff %v", diff)
+		// вычитаем уже прошедшее время
+		utils.SleepDiff(&sleep, diff)
+		blockGeneratorSleepTime = sleep
+	}
 
 	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage{
 		Lang:                  c.Lang,
@@ -100,7 +119,8 @@ func (c *Controller) DbInfo() (string, error) {
 		AllQueueTx:       allQueueTx,
 		TxTypes				:  consts.TxTypes,
 		Transactions:          transactions,
-		Testblock:          testblock})
+		Testblock:          testblock,
+		BlockGeneratorSleepTime: blockGeneratorSleepTime})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
