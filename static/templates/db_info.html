@@ -35,6 +35,17 @@
 </table>
 
 
+<table class="table table-bordered" style="width:600px"><caption>testblock</caption>
+	<thead><tr><th>block_id</th><th>time</th><th>level</th><th>user_id</th><th>header_hash_hex</th><th>mrkl_root_hex</th><th>status</th><th>sent</th></thead>
+	<tbody>
+	{{if .Testblock}}
+		{{range $k, $data := .Testblock}}
+		<tr><td>{{$data.block_id}}</td><td>{{$data.time}}</td><td>{{$data.level}}</td><td>{{$data.user_id}}</td><td>{{$data.header_hash_hex}}</td><td>{{$data.mrkl_root_hex}}</td><td>{{$data.status}}</td><td>{{$data.sent}}</td></tr>
+		{{end}}
+	{{end}}
+	</tbody>
+</table>
+
 <table class="table table-bordered" style="width:600px"><caption>transactions</caption>
 	<thead><tr><th>hash</th><th>verified</th><th>used</th><th>high_rate</th><th>for_self_use</th><th>type</th><th>user_id</th><th>third_var</th><th>counter</th><th>sent</th></thead>
 	<tbody>

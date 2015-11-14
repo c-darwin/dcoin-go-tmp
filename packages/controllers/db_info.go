@@ -18,6 +18,7 @@ type DbInfoPage struct {
 	AllTransactions	[]map[string]string
 	AllQueueTx	[]map[string]string
 	TxTypes		map[int]string
+	Testblock []map[string]string
 }
 
 func (c *Controller) DbInfo() (string, error) {
@@ -78,6 +79,14 @@ func (c *Controller) DbInfo() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
+	// testblock
+	testblock, err := c.GetAll("SELECT hex(header_hash) as header_hash_hex, hex(mrkl_root) as mrkl_root_hex, * FROM testblock", 100);
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
+
+
 	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage{
 		Lang:                  c.Lang,
 		TimeNow:               timeNow,
@@ -90,7 +99,8 @@ func (c *Controller) DbInfo() (string, error) {
 		AllTransactions:       allTransactions,
 		AllQueueTx:       allQueueTx,
 		TxTypes				:  consts.TxTypes,
-		Transactions:          transactions})
+		Transactions:          transactions,
+		Testblock:          testblock})
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
