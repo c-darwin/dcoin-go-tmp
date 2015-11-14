@@ -159,7 +159,7 @@ func (c *Controller) EMyFinance() (string, error) {
 				function (data) {
 					console.log("data", data)
 					$('#m_sign').val(data);
-					//$("#payeer_form_data").submit();
+					$("#payeer_form_data").submit();
 				});
 			});
 			</script>
