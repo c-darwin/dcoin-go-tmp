@@ -152,29 +152,29 @@ func (c *Controller) EMyFinance() (string, error) {
 			<script>
 			$('#payeer_sign').bind('click', function () {
 				$.post( 'ajax?controllerName=EPayeerSign', {
-					m_orderid: $('#m_orderid').val(),
-					m_desc: $('#m_desc').val(),
-					m_amount: $('#m_amount').val()
+					m_orderid: $('input[name=m_orderid]').val(),
+					m_desc: $('input[name=m_desc]').val(),
+					m_amount: $('input[name=m_amount]').val()
 				},
 				function (data) {
 					console.log("data", data)
-					$('#m_sign').val(data);
+					$('input[name=m_sign]').val(data);
 					$("#payeer_form_data").submit();
 				});
 			});
 			</script>
 			<div style="display:none" id="payeer_form">
 				<form id="payeer_form_data" name="payment" method="post" action="https://payeer.com/merchant/" enctype="utf-8">
-				   	<input type="hidden" id="m_shop" value="`+c.EConfig["payeer_id"]+`">
-					<input type="hidden" id="m_orderid" value="1234">
-					<input type="hidden" id="m_curr" value="USD">
-					<input type="hidden" id="m_desc" value="`+utils.Int64ToStr(c.SessUserId)+`">
-					<input type="hidden" id="m_sign" value="">
+				   	<input type="hidden" id="m_shop" name="m_shop" value="`+c.EConfig["payeer_id"]+`">
+					<input type="hidden" id="m_orderid" name="m_orderid" value="1234">
+					<input type="hidden" id="m_curr" name="m_curr" value="USD">
+					<input type="hidden" id="m_desc" name="m_desc" value="`+utils.Int64ToStr(c.SessUserId)+`">
+					<input type="hidden" id="m_sign" name="m_sign" value="">
 				<table class="table_out">
 				<tbody>
 					<tr>
 					<td>`+c.Lang["amount_to_pay"]+`</td>
-					<td class="form-inline" style="line-height: 35px;"><input id="m_amount" class="form-control" type="text" style="margin-right:5px; width:120px"><input id="payeer_sign" type="button" value="`+c.Lang["deposit"]+`" class="btn btn-outline btn-success"></td>
+					<td class="form-inline" style="line-height: 35px;"><input id="m_amount" name="m_amount" class="form-control" type="text" style="margin-right:5px; width:120px"><input id="payeer_sign" type="button" value="`+c.Lang["deposit"]+`" class="btn btn-outline btn-success"></td>
 					</tr>
 					<tr>
 				 </tbody>
