@@ -1757,8 +1757,8 @@ func GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId int64) [][][]int64
 }
 
 func FindMinerIdLevel(minersIds []int64, levelsRange [][][]int64) (int64, int64) {
-	for _, minerId := range minersIds {
-		for level, ranges := range levelsRange {
+	for level, ranges := range levelsRange {
+		for _, minerId := range minersIds {
 			if minerId >= ranges[0][0] && minerId <= ranges[0][1] {
 				return minerId, int64(level)
 			}
