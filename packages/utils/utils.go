@@ -51,9 +51,11 @@ type BlockData struct {
 	Time     int64
 	UserId   int64
 	Level    int64
+	CurrentUserId int64
 	Sign     []byte
 	Hash     []byte
 	HeadHash []byte
+
 }
 
 type prevBlockType struct {

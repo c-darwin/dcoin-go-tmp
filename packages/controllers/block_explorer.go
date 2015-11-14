@@ -39,7 +39,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 						ORDER BY id ASC
 						LIMIT ` + utils.Int64ToStr(start-1) + `, 100`
 		}
-		data += `<table class="table"><tr><th>Block</th><th>Hash</th><th>Time</th><th><nobr>User id</nobr></th><th>Level</th><th>Transactions</th></tr>`
+		data += `<table class="table"><tr><th>Block</th><th>Hash</th><th>Time</th><th><nobr>User id</nobr></th><th><nobr>Miner id</nobr></th><th>Level</th><th>Transactions</th></tr>`
 		blocksChain, err := c.GetAll(sql, -1)
 		if err != nil {
 			return "", utils.ErrInfo(err)
@@ -52,14 +52,18 @@ func (c *Controller) BlockExplorer() (string, error) {
 			parser.BinaryData = binaryData
 			err = parser.ParseDataLite()
 			parser.BlockData.Sign = utils.BinToHex(parser.BlockData.Sign)
-			data += fmt.Sprintf(`<tr><td><a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId, parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, parser.BlockData.Level)
+			minerId, err := c.GetMyMinerId(parser.BlockData.UserId)
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			data += fmt.Sprintf(`<tr><td><a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId, parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, minerId, parser.BlockData.Level)
 			data += utils.IntToStr(len(parser.TxMapArr))
 			data += "</td></tr>"
 		}
 		data += "</table>"
 	} else if blockId > 0 {
 		data += `<table class="table">`
-		blockChain, err := c.OneRow("SELECT data, hash FROM block_chain WHERE id = ?", blockId).String()
+		blockChain, err := c.OneRow("SELECT data, hash, cur_0l_miner_id, max_miner_id FROM block_chain WHERE id = ?", blockId).String()
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -70,15 +74,36 @@ func (c *Controller) BlockExplorer() (string, error) {
 		parser.DCDB = c.DCDB
 		parser.BinaryData = []byte(binaryData)
 		err = parser.ParseDataLite()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 		parser.BlockData.Sign = utils.BinToHex(parser.BlockData.Sign)
 		previous := parser.BlockData.BlockId - 1
 		next := parser.BlockData.BlockId + 1
+		levelsRange := utils.GetBlockGeneratorMinerIdRange(utils.StrToInt64(blockChain["cur_0l_miner_id"]), utils.StrToInt64(blockChain["max_miner_id"]))
+		minerId, err := c.GetMyMinerId(parser.BlockData.UserId)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+
+		_, _, _, CurrentUserId, _, _, _ := c.TestBlock()
+		maxMinerId, err := c.Single("SELECT max(miner_id) FROM miners").Int64()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		currentMinerId, err := c.Single("SELECT miner_id FROM miners_data WHERE user_id = ?", CurrentUserId).Int64()
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		NextBlockLevelsRange := utils.GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId)
+
 		data += fmt.Sprintf(`<tr><td><strong>Raw&nbsp;data</strong></td><td><a href='ajax?controllerName=getBlock&id=%d&download=1' target='_blank'>Download</a></td></tr>`, parser.BlockData.BlockId)
 		data += fmt.Sprintf(`<tr><td><strong>Block_id</strong></td><td>%d (<a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">Previous</a> / <a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">Next</a> )</td></tr>`, parser.BlockData.BlockId, previous, next)
 		data += fmt.Sprintf(`<tr><td><strong>Hash</strong></td><td>%s</td></tr>`, hash)
 		data += fmt.Sprintf(`<tr><td><strong>Time</strong></td><td><span class='unixtime'>%d</span> / %d</td></tr>`, parser.BlockData.Time, parser.BlockData.Time)
 		data += fmt.Sprintf(`<tr><td><strong>User_id</strong></td><td>%d</td></tr>`, parser.BlockData.UserId)
-		data += fmt.Sprintf(`<tr><td><strong>Level</strong></td><td>%d</td></tr>`, parser.BlockData.Level)
+		data += fmt.Sprintf(`<tr><td><strong>Miner_Id</strong></td><td>%d</td></tr>`, minerId)
+		data += fmt.Sprintf(`<tr><td><strong>Level</strong></td><td>%d (%v) next: %v</td></tr>`, parser.BlockData.Level, levelsRange, NextBlockLevelsRange)
 		data += fmt.Sprintf(`<tr><td><strong>Sign</strong></td><td>%s</td></tr>`, parser.BlockData.Sign)
 		if len(parser.TxMapArr) > 0 {
 			data += `<tr><td><strong>Transactions</strong></td><td><div><pre style='width: 700px'>`

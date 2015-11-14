@@ -198,7 +198,12 @@ BEGIN:
 								file.Close()
 								continue BEGIN
 							}
-							parser.InsertIntoBlockchain()
+							err = parser.InsertIntoBlockchain()
+							if err != nil {
+								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+								file.Close()
+								continue BEGIN
+							}
 
 							// отметимся, чтобы не спровоцировать очистку таблиц
 							err = parser.UpdMainLock()
@@ -556,7 +561,11 @@ BEGIN:
 			parser.BinaryData = binaryBlockFull
 			err = parser.ParseDataFull()
 			if err == nil {
-				parser.InsertIntoBlockchain()
+				err = parser.InsertIntoBlockchain()
+				if err != nil {
+					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+					continue BEGIN
+				}
 			}
 			// начинаем всё с начала уже с другими нодами. Но у нас уже могут быть новые блоки до $block_id, взятые от нода, которого с в итоге мы баним
 			if err != nil {

@@ -14,6 +14,7 @@ import (
 )
 
 type homePage struct {
+	Community bool
 	Lang                  map[string]string
 	Title                 string
 	Msg                   string
@@ -319,6 +320,7 @@ func (c *Controller) Home() (string, error) {
 	}
 
 	TemplateStr, err := makeTemplate("home", "home", &homePage{
+		Community: c.Community,
 		CountSignArr:          c.CountSignArr,
 		CountSign:             c.CountSign,
 		CalcTotal:             calcTotal,

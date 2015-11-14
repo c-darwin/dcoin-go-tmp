@@ -990,7 +990,7 @@
 			</table>
 		</div>
 		<input type="hidden" id="chatUserIdReceiver" value="0">
-		<button class="btn btn-default"  onclick="lock_unlock(); return false" id="chatLock" style="display: inline-block; margin: 5px; width: 40px"><i id="chatLockIco" class="fa fa-unlock fa-lg"></i></button>
+		{{if not .Community}}<button class="btn btn-default"  onclick="lock_unlock(); return false" id="chatLock" style="display: inline-block; margin: 5px; width: 40px"><i id="chatLockIco" class="fa fa-unlock fa-lg"></i></button>{{end}}
 		<span id="selectReceiver" style="display: none;vertical-align: middle;">Please, select receiver</span>
 		<input type="text" class="form-control" id="myChatMessage" style="display: inline-block;vertical-align: middle; width: 200px" placeholder="{{.MyChatName}}:" onfocus="this.placeholder = ''" onblur="this.placeholder = '{{.MyChatName}}:'">
 		<button class="btn btn-primary" id="sendToChat" style="display: inline-block">Send</button>
