@@ -78,11 +78,19 @@ BEGIN:
 		log.Debug("nodesIds: %v", nodesIds)
 
 		// получим хосты майнеров, которые на нашем уровне
-		hosts, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN (" + strings.Join(utils.SliceInt64ToString(nodesIds), `,`) + ")").String()
+		hosts_, err := d.GetList("SELECT tcp_host FROM miners_data WHERE miner_id IN (" + strings.Join(utils.SliceInt64ToString(nodesIds), `,`) + ")").String()
 		if err != nil {
 			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue
 		}
+
+		hosts := []string{}
+		for _, host := range hosts_ {
+			if !stringInSlice(host, hosts) {
+				hosts = append(hosts, host)
+			}
+		}
+
 		log.Debug("hosts: %v", hosts)
 
 		// шлем block_id, user_id, mrkl_root, signature
@@ -233,4 +241,13 @@ BEGIN:
 		}
 	}
 
+}
+
+func stringInSlice(str string, list []string) bool {
+	for _, v := range list {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }

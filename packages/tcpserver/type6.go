@@ -75,8 +75,12 @@ func (t *TcpServer) Type6() {
 		exists, err := t.Single(`
 				SELECT block_id
 				FROM testblock
-				WHERE status = "active"
+				WHERE status = 'active'
 				`).Int64()
+		if err != nil {
+			t.PrintSleep(utils.ErrInfo(err), 0)
+			return
+		}
 		if exists == 0 {
 			t.PrintSleep(utils.ErrInfo("null testblock"), 0)
 			return
@@ -140,7 +144,7 @@ func (t *TcpServer) Type6() {
 							hex(mrkl_root) as mrkl_root,
 							hex(signature) as signature
 				FROM testblock
-				WHERE status = "active"
+				WHERE status = 'active'
 				`).String()
 		if len(myTestblock) > 0 {
 			if err != nil {
