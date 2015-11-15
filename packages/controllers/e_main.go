@@ -15,8 +15,8 @@ type eMainPage struct {
 	Members       int64
 	SellMax       float64
 	BuyMin        float64
-	EOrdersSell []map[float64]float64
-	EOrdersBuy []map[float64]float64
+	EOrdersSell []map[string]float64
+	EOrdersBuy []map[string]float64
 	UserId	int64
 	DcCurrency    string
 	Currency      string
@@ -138,9 +138,9 @@ func (c *Controller) EMain() (string, error) {
 		keys = append(keys, k)
 	}
 	sort.Float64s(keys)
-	var eOrdersSell []map[float64]float64
+	var eOrdersSell []map[string]float64
 	for _, k := range keys {
-		eOrdersSell = append(eOrdersSell,  map[float64]float64{k: orders.Sell[k]})
+		eOrdersSell = append(eOrdersSell, map[string]float64{"sell_rate": k, "amount": orders.Sell[k]})
 	}
 
 	// активные ордеры на покупку
@@ -181,9 +181,9 @@ func (c *Controller) EMain() (string, error) {
 		keys = append(keys, k)
 	}
 	sort.Float64s(keys)
-	var eOrdersBuy []map[float64]float64
+	var eOrdersBuy []map[string]float64
 	for _, k := range keys {
-		eOrdersBuy = append(eOrdersBuy,  map[float64]float64{k: orders.Buy[k]})
+		eOrdersBuy = append(eOrdersBuy, map[string]float64{"sell_rate": k, "amount": orders.Buy[k]})
 	}
 
 	// комиссия
