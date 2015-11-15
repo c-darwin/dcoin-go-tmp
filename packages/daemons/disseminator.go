@@ -92,8 +92,8 @@ BEGIN:
 			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue
 		}
-		log.Debug(myUsersIds)
-		log.Debug(myMinersIds)
+		log.Debug("%v", myUsersIds)
+		log.Debug("%v", myMinersIds)
 
 		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться
 		// т.к. при некорректном нодовском ключе придет зашифрованый запрос на отдачу данных, а мы его не сможем расшифровать т.к. ключ у нас неверный
