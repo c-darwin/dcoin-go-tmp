@@ -177,13 +177,13 @@ func (c *Controller) EMain() (string, error) {
 			sellMax = sellRate
 		}
 	}
-	keys = []float64{}
+	var keysR sort.Float64Slice
 	for k := range orders.Buy {
-		keys = append(keys, k)
+		keysR = append(keysR, k)
 	}
-	sort.Float64s(keys)
+	sort.Sort(sort.Reverse(keysR))
 	var eOrdersBuy []map[string]float64
-	for _, k := range keys {
+	for _, k := range keysR {
 		eOrdersBuy = append(eOrdersBuy, map[string]float64{"sell_rate": k, "amount": orders.Buy[k]})
 	}
 
