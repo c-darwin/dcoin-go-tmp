@@ -139,7 +139,7 @@ func (c *Controller) EMain() (string, error) {
 					empty_time = 0 AND
 					del_time = 0 AND
 					amount > 0
-			ORDER BY sell_rate DESC
+			ORDER BY sell_rate ASC
 			LIMIT 100
 			`), currencyId, dcCurrencyId)
 	if err != nil {
