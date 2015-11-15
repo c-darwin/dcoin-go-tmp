@@ -167,7 +167,7 @@
 							</thead>
 							<tbody>
 							{{range $k, $data := .EOrdersBuy}}
-								<tr><td>{{$data.sell_rate}}</td><td>{{data.amount}}</td><td>{{round (mult data.sell_rate data.amount) 6}}</td></tr>
+								<tr><td>{{$data.sell_rate}}</td><td>{{$data.amount}}</td><td>{{round (mult $data.sell_rate $data.amount) 6}}</td></tr>
 							{{end}}
 							</tbody>
 						</table>
