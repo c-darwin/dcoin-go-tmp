@@ -356,44 +356,14 @@ var currency_commission = [];
 {{end}}
 
 
-$('#amount, #cf_amount, #currency_id').bind("keyup change", function(e) {
+$('#m_amount').bind("keyup change", function(e) {
 
-	if (this.id=='cf_amount')
-		var add='cf_';
-	else
-		var add='';
-
-	var amount = $("#"+add+"amount").val();
+	var amount = $("#m_amount").val();
 	if (amount > 0) {
-		var currency_id = $("#currency_id").val();
-		if (currency_id>=1000)
-			currency_id=1000;
-		console.log("currency_commission");
-		if (typeof currency_commission[currency_id] !== "undefined" && typeof currency_commission[currency_id] !== "undefined") {
-			var commission_pct = Number(currency_commission[currency_id][0]);
-			var min_commission = Number(currency_commission[currency_id][1]);
-		} else {
-			var commission_pct = 0.1
-			var min_commission = 0.01
-		}
-		console.log(commission_pct + '/' + min_commission);
-		var amount_ = '';
 		amount_ = parseFloat(amount.replace(",", "."));
 		amount_ = amount_.toFixed(2);
 
-		if (amount.indexOf(",") != -1) {
-			$("#" + add + "amount").val(amount_);
-		}
-		amount = amount_;
-
-		var commission = amount * (commission_pct / 100);
-		commission = foattoupper(commission);
-		if (commission < min_commission)
-			commission = min_commission;
-		commission = parseFloat(commission);
-		amount = parseFloat(amount);
-		commission = parseFloat(commission);
-		$("#" + add + "commission").val(commission);
+		$("#m_amount").val(amount_);
 	}
 });
 
