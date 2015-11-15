@@ -24,7 +24,7 @@ func (c *Controller) EPages() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		title = data["title"]
-		text = data["title"]
+		text = data["text"]
 	}
 
 	TemplateStr, err := makeTemplate("e_pages", "ePages", &ePages{
