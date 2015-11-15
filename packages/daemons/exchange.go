@@ -184,7 +184,15 @@ BEGIN:
 			continue BEGIN
 		}
 
-		rows, err = d.Query(d.FormatQuery(`SELECT amount, id, block_id, type_id, currency_id, to_user_id, time, comment, comment_status FROM my_dc_transactions WHERE type = 'from_user' AND block_id < ? AND merchant_checked = 0 AND status = 'approved' AND to_user_id = ? ORDER BY id DESC`), blockId-confirmations, mainDcAccount)
+		rows, err = d.Query(d.FormatQuery(`
+				SELECT amount, id, block_id, type_id, currency_id, to_user_id, time, comment, comment_status
+				FROM my_dc_transactions
+				WHERE type = 'from_user' AND
+					  block_id < ? AND
+					  exchange_checked = 0 AND
+					  status = 'approved' AND
+					  to_user_id = ?
+				ORDER BY id DESC`), blockId-confirmations, mainDcAccount)
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
@@ -199,14 +207,13 @@ BEGIN:
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
-			// отметим merchant_checked=1, чтобы больше не брать эту тр-ию
-			err = d.ExecSql(`UPDATE my_dc_transactions SET merchant_checked = 1 WHERE id = ?`, id)
+			// отметим exchange_checked=1, чтобы больше не брать эту тр-ию
+			err = d.ExecSql(`UPDATE my_dc_transactions SET exchange_checked = 1 WHERE id = ?`, id)
 			if err != nil {
 				rows.Close()
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {    break BEGIN }
 				continue BEGIN
 			}
-
 
 			// вначале нужно проверить, точно ли есть такой перевод в блоке
 			binaryData, err := d.Single(`SELECT data FROM block_chain WHERE id = ?`, blockId).Bytes()
@@ -294,6 +301,7 @@ BEGIN:
 						k0 := (100 - lastReduction["pct"]) / 100
 						amount = amount * float64(k0)
 					}
+
 					// начисляем средства на счет того, чей id указан в комменте
 					r, _ := regexp.Compile(`(?i)\s*#\s*([0-9]+)\s*`)
 					user := r.FindStringSubmatch(decryptedComment)

@@ -171,21 +171,21 @@ BEGIN:
 					continue BEGIN
 				}
 				p := new(dcparser.Parser)
+				p.DCDB = d.DCDB
 				p.BinaryData = binaryData
 				p.ParseDataLite()
 				for _, txMap := range p.TxMapsArr {
 
 					// пропускаем все ненужные тр-ии
-					if txMap.Int64["type"] != utils.TypeInt("SendDc") {
+					if utils.BytesToInt64(txMap["type"]) != utils.TypeInt("SendDc") {
 						continue
 					}
 
 					// сравнение данных из таблы my_dc_transactions с тем, что в блоке
-					if txMap.Int64["user_id"] == userId && txMap.Int64["currency_id"] == currency_id && txMap.Money["amount"] == amount && txMap.Int64["to_user_id"] == to_user_id {
-						decryptedComment := ""
+					if utils.BytesToInt64(txMap["user_id"]) == userId && utils.BytesToInt64(txMap["currency_id"]) == currency_id && utils.BytesToFloat64(txMap["amount"]) == amount && string(utils.BinToHex(txMap["comment"])) == comment && utils.BytesToInt64(txMap["to_user_id"]) == to_user_id {
+						decryptedComment := comment
 						// расшифруем коммент
 						if comment_status == "encrypted" {
-
 							block, _ := pem.Decode([]byte(privateKey))
 							if block == nil || block.Type != "RSA PRIVATE KEY" {
 								rows.Close()
@@ -212,8 +212,6 @@ BEGIN:
 								if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 								continue BEGIN
 							}
-						} else {
-							decryptedComment = comment
 						}
 
 						// возможно, что чуть раньше было reduction, а это значит, что все тр-ии,

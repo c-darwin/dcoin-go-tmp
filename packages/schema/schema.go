@@ -152,6 +152,7 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[12] = map[string]string{"name": "comment", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": "Если это перевод средств между юзерами или это комиссия, то тут будет расшифрованный комментарий"}
 	s2[13] = map[string]string{"name": "comment_status", "mysql": "enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "sqlite": "varchar(100)  NOT NULL DEFAULT 'decrypted'", "postgresql": "enum('encrypted','decrypted') NOT NULL DEFAULT 'decrypted'", "comment": ""}
 	s2[14] = map[string]string{"name": "merchant_checked", "mysql": "tinyint(1) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(1)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[15] = map[string]string{"name": "exchange_checked", "mysql": "tinyint(1) unsigned NOT NULL DEFAULT '0'", "sqlite": "tinyint(1)  NOT NULL DEFAULT '0'", "postgresql": "smallint  NOT NULL DEFAULT '0'", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
