@@ -133,7 +133,7 @@ func (c *Controller) EMain() (string, error) {
 		}
 	}
 
-	var keys []float64
+	keys := []float64{}
 	for k := range orders.Sell {
 		keys = append(keys, k)
 	}
@@ -151,7 +151,7 @@ func (c *Controller) EMain() (string, error) {
 					empty_time = 0 AND
 					del_time = 0 AND
 					amount > 0
-			ORDER BY sell_rate ASC
+			ORDER BY sell_rate DESC
 			LIMIT 100
 			`), currencyId, dcCurrencyId)
 	if err != nil {
@@ -177,6 +177,7 @@ func (c *Controller) EMain() (string, error) {
 			sellMax = sellRate
 		}
 	}
+	keys = []float64{}
 	for k := range orders.Buy {
 		keys = append(keys, k)
 	}
