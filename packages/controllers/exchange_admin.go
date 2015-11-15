@@ -25,7 +25,7 @@ func (c *Controller) ExchangeAdmin() (string, error) {
 
 
 	if _, ok := c.Parameters["e_pages_about_title"]; ok {
-		err := c.ExecSql("DELETE FROM e_pages");
+		err := c.ExecSql("DELETE FROM e_pages WHERE lang = ?", c.LangInt);
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
