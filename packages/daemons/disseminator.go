@@ -21,7 +21,7 @@ func Disseminator() {
 	}()
 
 
-	GoroutineName := "Disseminator"
+	const GoroutineName = "Disseminator"
 	d := new(daemon)
 	d.DCDB = DbConnect()
 	if d.DCDB == nil {
@@ -69,6 +69,7 @@ BEGIN:
 				if d.dSleep(d.sleepTime) {
 					break BEGIN
 				}
+				log.Debug("len(hosts) == 0")
 				continue
 			}
 		} else {
@@ -82,7 +83,17 @@ BEGIN:
 		}
 
 		myUsersIds, err := d.GetMyUsersIds(false, false)
+		if err != nil {
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+			continue
+		}
 		myMinersIds, err := d.GetMyMinersIds(myUsersIds)
+		if err != nil {
+			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+			continue
+		}
+		log.Debug(myUsersIds)
+		log.Debug(myMinersIds)
 
 		// если среди тр-ий есть смена нодовского ключа, то слать через отправку хэшей с последющей отдачей данных может не получиться
 		// т.к. при некорректном нодовском ключе придет зашифрованый запрос на отдачу данных, а мы его не сможем расшифровать т.к. ключ у нас неверный
@@ -104,6 +115,8 @@ BEGIN:
 
 		// если я майнер и работаю в обычном режиме, то должен слать хэши
 		if len(myMinersIds) > 0 && len(nodeConfig["local_gate_ip"]) == 0 && changeNodeKey == 0 {
+
+			log.Debug("0")
 
 			dataType = 1
 
@@ -157,12 +170,14 @@ BEGIN:
 				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 				continue BEGIN
 			}
-			if len(transactions) == 0 {
+			// нет ни транзакций, ни блока для отправки...
+			if len(transactions) == 0 && len(toBeSent) < 10 {
 				//utils.WriteSelectiveLog("len(transactions) == 0")
 				//log.Debug("len(transactions) == 0")
 				if d.dSleep(d.sleepTime) {
 					break BEGIN
 				}
+				log.Debug("len(transactions) == 0 && len(toBeSent) == 0")
 				continue BEGIN
 			}
 			for _, data := range transactions {
@@ -186,6 +201,9 @@ BEGIN:
 				}
 			}
 		} else {
+
+			log.Debug("1")
+
 			var remoteNodeHost string
 			// если просто юзер или работаю в защищенном режиме, то шлю тр-ии целиком. слать блоки не имею права.
 			if len(nodeConfig["local_gate_ip"]) > 0 {
