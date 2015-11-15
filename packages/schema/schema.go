@@ -2947,35 +2947,20 @@ func (schema *SchemaStruct) GetSchema() {
 	schema.PrintSchema()
 
 
-	s = make(Recmap)
-	s1 = make(Recmap)
-	s2 = make(Recmapi)
-	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_faq_id_seq')", "comment": ""}
-	s2[1] = map[string]string{"name": "lang", "mysql": "char(2) NOT NULL DEFAULT ''", "sqlite": "char(2) NOT NULL DEFAULT ''", "postgresql": "char(2) NOT NULL DEFAULT ''", "comment": ""}
-	s2[2] = map[string]string{"name": "question", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
-	s2[3] = map[string]string{"name": "answer", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
-	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"id"}
-	s1["AI"] = "id"
-	s1["comment"] = ""
-	s["e_faq"] = s1
-	schema.S = s
-	schema.PrintSchema()
-
 
 	s = make(Recmap)
 	s1 = make(Recmap)
 	s2 = make(Recmapi)
-	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_news_id_seq')", "comment": ""}
-	s2[1] = map[string]string{"name": "lang", "mysql": "char(2) NOT NULL DEFAULT ''", "sqlite": "char(2) NOT NULL DEFAULT ''", "postgresql": "char(2) NOT NULL DEFAULT ''", "comment": ""}
-	s2[2] = map[string]string{"name": "date", "mysql": "bigint(20) NOT NULL DEFAULT ''", "sqlite": "bigint(20) NOT NULL DEFAULT ''", "postgresql": "bigint(20) NOT NULL DEFAULT ''", "comment": ""}
+	s2[0] = map[string]string{"name": "id", "mysql": "bigint(20) NOT NULL AUTO_INCREMENT DEFAULT '0'", "sqlite": "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL", "postgresql": "bigint NOT NULL  default nextval('e_pages_id_seq')", "comment": ""}
+	s2[1] = map[string]string{"name": "name", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
+	s2[2] = map[string]string{"name": "lang", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": ""}
 	s2[3] = map[string]string{"name": "title", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": ""}
 	s2[4] = map[string]string{"name": "text", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"id"}
 	s1["AI"] = "id"
 	s1["comment"] = ""
-	s["e_news"] = s1
+	s["e_pages"] = s1
 	schema.S = s
 	schema.PrintSchema()
 

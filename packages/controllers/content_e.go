@@ -65,7 +65,7 @@ func ContentE(w http.ResponseWriter, r *http.Request) {
 			c.EURL = "http://"+c.EURL+"/"
 		}
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)emain|EMyOrders|EMyHistory|EMyFinance`, tplName); !ok {
+		if ok, _ := regexp.MatchString(`^(?i)EPages|emain|EMyOrders|EMyHistory|EMyFinance`, tplName); !ok {
 			html = "Access denied"
 		} else {
 			// вызываем контроллер в зависимости от шаблона

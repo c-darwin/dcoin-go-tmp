@@ -133,13 +133,23 @@
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="http://dcoin.club/" onclick="location.href='http://dcoin.club'">
-              <i class="fa    fa-question   fa-fw"></i> {{.Lang.about_dcoin}}</a>
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'about'})">
+              <i class="fa fa-desktop"></i> {{.Lang.about_exchange}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" href="mailto:admin@dcoin.club">
-              <i class="fa  fa-envelope-o   fa-fw"></i> {{.Lang.support}}</a>
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'rules'})">
+              <i class="fa fa-file-text-o"></i> {{.Lang.rules}}</a>
+            </a>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'faq'})">
+              <i class="fa fa-question-circle"></i> {{.Lang.faq}}</a>
+            </a>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'contacts'})">
+              <i class="fa  fa-envelope-o   fa-fw"></i> {{.Lang.contacts}}</a>
             </a>
           </li>
 

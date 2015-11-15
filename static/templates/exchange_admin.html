@@ -63,7 +63,55 @@
 		</tbody>
 	</table>
 
+	<h3>Pages</h3>
+
+	<label>About</label><br>
+	<input id="e_pages_about_title" class="input" type="text" value="{{.EPages.about.title}}">
+	<br>
+	<textarea id="e_pages_about">{{.EPages.about.text}}</textarea><br><br>
+
+	<label>Rules</label><br>
+	<input id="e_pages_rules_title" class="input" type="text" value="{{.EPages.rules.title}}">
+	<br>
+	<textarea id="e_pages_rules">{{.EPages.rules.text}}</textarea><br><br>
+
+	<label>FAQ</label><br>
+	<input id="e_pages_faq_title" class="input" type="text" value="{{.EPages.faq.title}}">
+	<br>
+	<textarea id="e_pages_faq">{{.EPages.faq.text}}</textarea><br><br>
+
+	<label>Contacts</label><br>
+	<input id="e_pages_contacts_title" class="input" type="text" value="{{.EPages.contacts.title}}">
+	<br>
+	<textarea id="e_pages_contacts">{{.EPages.contacts.text}}</textarea><br><br>
+
+	<button class="btn" id="e_save">{{.Lang.save}}</button>
+
+
 </div>
+<script>
+	$('#e_save').bind('click', function () {
+
+		var json = JSON.stringify({
+			'e_pages_about_title' : $('#e_pages_about_title').val(),
+			'e_pages_about' : $('#e_pages_about').val(),
+			'e_pages_rules_title' : $('#e_pages_rules_title').val(),
+			'e_pages_rules' : $('#e_pages_rules').val(),
+			'e_pages_faq_title' : $('#e_pages_faq_title').val(),
+			'e_pages_faq' : $('#e_pages_faq').val(),
+			'e_pages_contacts_title' : $('#e_pages_contacts_title').val(),
+			'e_pages_contacts' : $('#e_pages_contacts').val()
+		});
+
+		$.post( 'ajax?controllerName=exchangeAdmin', {
+					parameters: json
+				},
+				function () {
+					fc_navigate ('exchangeAdmin', {'alert': '{{.Lang.saved}}'} );
+				});
+	});
+
+</script>
 
 <script src="static/js/unixtime.js"></script>
 

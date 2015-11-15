@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+/*
+Задержки во времени генерации из-за main_lock во время sleep
+*/
+
 var err error
 
 func TestblockGenerator() {
@@ -53,6 +57,8 @@ func TestblockGenerator() {
 
 BEGIN:
 	for {
+
+
 		log.Info(GoroutineName)
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
