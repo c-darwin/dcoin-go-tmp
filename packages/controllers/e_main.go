@@ -5,6 +5,7 @@ import (
 	"time"
 	"strings"
 	"sort"
+	"fmt"
 )
 
 type eMainPage struct {
@@ -181,11 +182,14 @@ func (c *Controller) EMain() (string, error) {
 	for k := range orders.Buy {
 		keysR = append(keysR, k)
 	}
+	fmt.Println(keysR)
 	sort.Sort(sort.Reverse(keysR))
+	fmt.Println(keysR)
 	var eOrdersBuy []map[string]float64
 	for _, k := range keysR {
 		eOrdersBuy = append(eOrdersBuy, map[string]float64{"sell_rate": k, "amount": orders.Buy[k]})
 	}
+	fmt.Println(eOrdersBuy)
 
 	// комиссия
 	commission := c.EConfig["commission"]
