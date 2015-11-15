@@ -174,7 +174,7 @@ BEGIN:
 				p.DCDB = d.DCDB
 				p.BinaryData = binaryData
 				p.ParseDataLite()
-				for _, txMap := range p.TxMapsArr {
+				for _, txMap := range p.TxMapArr {
 
 					// пропускаем все ненужные тр-ии
 					if utils.BytesToInt64(txMap["type"]) != utils.TypeInt("SendDc") {
@@ -237,14 +237,14 @@ BEGIN:
 							orderId = utils.StrToInt(order[1])
 						}
 						txId := id
-						sign := fmt.Sprintf("%v:%v:%v:%v:%v:%v:%v:%v", amount, currencyList[currency_id], orderId, decryptedComment, txMap.Int64["user_id"], blockId, txId, myData["shop_secret_key"])
+						sign := fmt.Sprintf("%v:%v:%v:%v:%v:%v:%v:%v", amount, currencyList[currency_id], orderId, decryptedComment, txMap["user_id"], blockId, txId, myData["shop_secret_key"])
 						data := url.Values{}
 						data.Add("amount", utils.Float64ToStrPct(amount))
 						data.Add("currency", currencyList[currency_id])
 						data.Add("order_id", utils.IntToStr(orderId))
 						data.Add("message", decryptedComment)
-						data.Add("user_id", utils.Int64ToStr(txMap.Int64["user_id"]))
-						data.Add("block_id", utils.Int64ToStr(txMap.Int64["block_id"]))
+						data.Add("user_id", string(txMap["user_id"]))
+						data.Add("block_id", string(txMap["block_id"]))
 						data.Add("tx_id", utils.Int64ToStr(txId))
 						data.Add("sign", sign)
 
