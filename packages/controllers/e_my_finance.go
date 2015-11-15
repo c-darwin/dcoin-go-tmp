@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sort"
 	"time"
+	"encoding/base64"
 )
 
 type eMyFinancePage struct {
@@ -168,7 +169,7 @@ func (c *Controller) EMyFinance() (string, error) {
 				   	<input type="hidden" id="m_shop" name="m_shop" value="`+c.EConfig["payeer_id"]+`">
 					<input type="hidden" id="m_orderid" name="m_orderid" value="1234">
 					<input type="hidden" id="m_curr" name="m_curr" value="USD">
-					<input type="hidden" id="m_desc" name="m_desc" value="`+utils.Int64ToStr(c.SessUserId)+`">
+					<input type="hidden" id="m_desc" name="m_desc" value="`+base64.StdEncoding.EncodeToString(utils.Int64ToByte(c.SessUserId))+`">
 					<input type="hidden" id="m_sign" name="m_sign" value="">
 				<table class="table_out">
 				<tbody>
