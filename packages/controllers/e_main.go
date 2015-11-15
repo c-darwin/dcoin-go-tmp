@@ -4,6 +4,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"time"
 	"strings"
+	"sort"
 )
 
 type eMainPage struct {
@@ -14,7 +15,8 @@ type eMainPage struct {
 	Members       int64
 	SellMax       float64
 	BuyMin        float64
-	Orders        eOrders
+	EOrdersSell []map[float64]float64
+	EOrdersBuy []map[float64]float64
 	UserId	int64
 	DcCurrency    string
 	Currency      string
@@ -131,6 +133,16 @@ func (c *Controller) EMain() (string, error) {
 		}
 	}
 
+	var keys []float64
+	for k := range orders.Sell {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+	var eOrdersSell []map[float64]float64
+	for _, k := range keys {
+		eOrdersSell = append(eOrdersSell,  map[float64]float64{k: orders.Sell[k]})
+	}
+
 	// активные ордеры на покупку
 	rows, err = c.Query(c.FormatQuery(`
 			SELECT sell_rate, amount
@@ -165,6 +177,14 @@ func (c *Controller) EMain() (string, error) {
 			sellMax = sellRate
 		}
 	}
+	for k := range orders.Buy {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+	var eOrdersBuy []map[float64]float64
+	for _, k := range keys {
+		eOrdersBuy = append(eOrdersBuy,  map[float64]float64{k: orders.Buy[k]})
+	}
 
 	// комиссия
 	commission := c.EConfig["commission"]
@@ -183,7 +203,8 @@ func (c *Controller) EMain() (string, error) {
 		Members:      members,
 		SellMax:      sellMax,
 		BuyMin:       buyMin,
-		Orders:       orders,
+		EOrdersSell:       eOrdersSell,
+		EOrdersBuy:       eOrdersBuy,
 		DcCurrency:   dcCurrency,
 		Currency:     currency,
 		DcCurrencyId: dcCurrencyId,
