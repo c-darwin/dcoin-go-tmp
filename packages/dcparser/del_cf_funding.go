@@ -115,5 +115,5 @@ func (p *Parser) DelCfFundingRollback() error {
 }
 
 func (p *Parser) DelCfFundingRollbackFront() error {
-	return p.limitRequestsRollback("name")
+	return nil
 }
