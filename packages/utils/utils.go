@@ -66,6 +66,7 @@ type prevBlockType struct {
 	Level    int64
 }
 
+var TestRollBack = flag.Int64("testRollBack", 0, "testRollBack")
 var Dir = flag.String("dir", GetCurrentDir(), "Dcoin directory")
 var OldFileName = flag.String("oldFileName", "", "")
 var LogLevel = flag.String("logLevel", "", "Dcoin LogLevel")

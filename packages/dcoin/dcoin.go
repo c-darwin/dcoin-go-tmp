@@ -246,7 +246,9 @@ func Start(dir string) {
 	daemonsStart := map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "TestblockIsReady": daemons.TestblockIsReady, "TestblockGenerator": daemons.TestblockGenerator, "TestblockDisseminator": daemons.TestblockDisseminator, "Shop": daemons.Shop, "ReductionGenerator": daemons.ReductionGenerator, "QueueParserTx": daemons.QueueParserTx, "QueueParserTestblock": daemons.QueueParserTestblock, "QueueParserBlocks": daemons.QueueParserBlocks, "PctGenerator": daemons.PctGenerator, "Notifications": daemons.Notifications, "NodeVoting": daemons.NodeVoting, "MaxPromisedAmountGenerator": daemons.MaxPromisedAmountGenerator, "MaxOtherCurrenciesGenerator": daemons.MaxOtherCurrenciesGenerator, "ElectionsAdmin": daemons.ElectionsAdmin, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "CfProjects": daemons.CfProjects, "BlocksCollection": daemons.BlocksCollection, "Exchange": daemons.Exchange}
 	if utils.Mobile() {
 		daemonsStart = map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "QueueParserTx": daemons.QueueParserTx, "Notifications": daemons.Notifications, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "BlocksCollection": daemons.BlocksCollection}
-
+	}
+	if *utils.TestRollBack == 1 {
+		daemonsStart = map[string]func(){"BlocksCollection": daemons.BlocksCollection}
 	}
 
 	countDaemons := 0
