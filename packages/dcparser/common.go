@@ -93,6 +93,7 @@ func (p *Parser) GetOldBlocks(userId, blockId int64, host string, hostUserId int
 	log.Debug("userId", userId, "blockId", blockId)
 	err := p.GetBlocks(blockId, host, hostUserId, "rollback_blocks_2", goroutineName, dataTypeBlockBody, nodeHost)
 	if err != nil {
+		log.Error("v", err)
 		return err
 	}
 	return nil
@@ -427,7 +428,7 @@ func (p *Parser) GetBlocks(blockId int64, host string, userId int64, rollbackBlo
 	log.Debug("blocks", blocks)
 
 	// для поиска бага
-	maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC").Int64()
+	maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC LIMIT 1").Int64()
 	if err != nil {
 		return utils.ErrInfo(err)
 	}
@@ -437,6 +438,9 @@ func (p *Parser) GetBlocks(blockId int64, host string, userId int64, rollbackBlo
 	for blockId, tmpFileName := range blocks {
 
 		block, err := ioutil.ReadFile(tmpFileName)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
 		blockHex := utils.BinToHex(block)
 
 		// пишем в цепочку блоков
@@ -461,9 +465,13 @@ func (p *Parser) GetBlocks(blockId int64, host string, userId int64, rollbackBlo
 			}
 			log.Debug("affect", affect)
 		}
-		os.Remove(tmpFileName)
+		err = os.Remove(tmpFileName)
+		if err != nil {
+			return utils.ErrInfo(err)
+		}
+		log.Debug("tmpFileName %v", tmpFileName)
 		// для поиска бага
-		maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC").Int64()
+		maxBlockId, err := p.Single("SELECT id FROM block_chain ORDER BY id DESC LIMIT 1").Int64()
 		if err != nil {
 			return utils.ErrInfo(err)
 		}

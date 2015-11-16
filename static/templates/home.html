@@ -81,9 +81,38 @@
 	{{if not .Mobile}}#dc_content{margin-top:30px}{{end}}
 </style>
 <link href="static/css/cf.css" rel="stylesheet">
-{{if .AlertMessage}}
-<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.AlertMessage}}</p></div>
-{{end}}
+<script>
+
+	$('#updDcoin').bind('click', function () {
+
+		$('#updDcoin').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+		$('#updDcoin').prop('disabled', true);
+
+		$.get('ajax?controllerName=UpdateDcoin', function (data) {
+			if (typeof data.success !== 'undefined') {
+				console.log("Download succeed");
+				$('#UpdateMessage p').html("Download succeed");
+			}
+			$('#updDcoin').html('complete');
+		}, 'JSON');
+
+	});
+
+	$( document ).ready(function() {
+		$.get('ajax?controllerName=AlertFromAdmin', function (data) {
+			if (typeof data.success !== 'undefined') {
+				$('#AlertMessage').css("display", "block");
+			}
+		}, 'JSON');
+		$.get('ajax?controllerName=Update', function (data) {
+			if (typeof data.success !== 'undefined') {
+				$('#UpdateMessage').css("display", "block");
+			}
+		}, 'JSON');
+	});
+</script>
+<div style="display: none" class="alert alert-danger alert-dismissable" id="AlertMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.AlertMessage}}</p></div>
+<div style="display: none" class="alert alert-info alert-dismissable" id="UpdateMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{noescape .UpdateMessage}}</p></div>
 {{ template "alertSuccess". }}
 
 <style>

@@ -158,6 +158,7 @@ BEGIN:
 		p.GoroutineName = GoroutineName
 		err = p.GetBlocks(blockId, host, utils.StrToInt64(newBlockData["user_id"]), "rollback_blocks_1", GoroutineName, 7, "")
 		if err != nil {
+			log.Error("v", err)
 			d.DeleteQueueBlock(newBlockData["head_hash_hex"], newBlockData["hash_hex"])
 			d.NodesBan(utils.StrToInt64(newBlockData["user_id"]), fmt.Sprintf("%v", err))
 			if d.unlockPrintSleep(utils.ErrInfo(err), 1) {	break BEGIN }

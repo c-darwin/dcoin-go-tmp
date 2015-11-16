@@ -122,6 +122,14 @@ func Start(dir string) {
 		}
 	}
 
+	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
+	if *utils.OldFileName != "" {
+		utils.CopyFileContents("tmp_dc", *utils.OldFileName)
+		exec.Command(*utils.OldFileName, "-dir", *utils.Dir)
+		utils.Sleep(1)
+		os.Exit(1)
+	}
+
 	// сохраним текущий pid и версию
 	pid := os.Getpid()
 	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})

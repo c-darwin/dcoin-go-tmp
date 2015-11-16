@@ -493,8 +493,8 @@ BEGIN:
 				// нужно привести данные в нашей БД в соответствие с данными у того, у кого качаем более свежий блок
 				//func (p *Parser) GetOldBlocks (userId, blockId int64, host string, hostUserId int64, goroutineName, getBlockScriptName, addNodeHost string) error {
 				err := parser.GetOldBlocks(blockData.UserId, blockId-1, maxBlockIdHost, maxBlockIdUserId, GoroutineName, dataTypeBlockBody, nodeHost)
-				log.Error("%v", err)
 				if err != nil {
+					log.Error("%v", err)
 					d.NodesBan(maxBlockIdUserId, fmt.Sprintf(`blockId: %v / %v`, blockId, err))
 					if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 					continue BEGIN
