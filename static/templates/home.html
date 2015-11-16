@@ -102,17 +102,19 @@
 		$.get('ajax?controllerName=AlertFromAdmin', function (data) {
 			if (typeof data.success !== 'undefined') {
 				$('#AlertMessage').css("display", "block");
+				$('#AlertMessage p').html(data.success);
 			}
 		}, 'JSON');
 		$.get('ajax?controllerName=Update', function (data) {
 			if (typeof data.success !== 'undefined') {
 				$('#UpdateMessage').css("display", "block");
+				$('#UpdateMessage p').html(data.success);
 			}
 		}, 'JSON');
 	});
 </script>
-<div style="display: none" class="alert alert-danger alert-dismissable" id="AlertMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{.AlertMessage}}</p></div>
-<div style="display: none" class="alert alert-info alert-dismissable" id="UpdateMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>{{noescape .UpdateMessage}}</p></div>
+<div style="display: none" class="alert alert-danger alert-dismissable" id="AlertMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p></p></div>
+<div style="display: none" class="alert alert-info alert-dismissable" id="UpdateMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p></p></div>
 {{ template "alertSuccess". }}
 
 <style>

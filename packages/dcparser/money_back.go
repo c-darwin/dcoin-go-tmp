@@ -246,5 +246,5 @@ func (p *Parser) MoneyBackRollback() error {
 }
 
 func (p *Parser) MoneyBackRollbackFront() error {
-	return p.limitRequestsRollback("name")
+	return nil
 }
