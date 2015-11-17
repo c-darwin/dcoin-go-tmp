@@ -26,11 +26,11 @@ func (c *Controller) UpdateDcoin() (string, error) {
 
 	fmt.Println(url)
 	if len(url) > 0 {
-		_, err := utils.DownloadToFile(url, *utils.Dir+"/tmp_dc.zip", 3600, nil, nil)
+		_, err := utils.DownloadToFile(url, *utils.Dir+"/dc.zip", 3600, nil, nil)
 		if err!= nil {
 			return "", utils.ErrInfo(err)
 		}
-		zipfile := *utils.Dir+"/tmp_dc.zip"
+		zipfile := *utils.Dir+"/dc.zip"
 		fmt.Println(zipfile)
 		reader, err := zip.OpenReader(zipfile)
 		if err != nil {
@@ -44,7 +44,7 @@ func (c *Controller) UpdateDcoin() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 
-		writer, err := os.OpenFile(*utils.Dir+"/tmp_dc", os.O_WRONLY|os.O_CREATE, f.Mode())
+		writer, err := os.OpenFile(*utils.Dir+"/dc.tmp", os.O_WRONLY|os.O_CREATE, f.Mode())
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -79,27 +79,27 @@ func (c *Controller) UpdateDcoin() (string, error) {
 			old = *utils.Dir+"/"+filepath.Base(os.Args[0])
 		}
 
-		/*file, _ := os.Open(*utils.Dir+"/tmp_dc")
+		/*file, _ := os.Open(*utils.Dir+"/dc")
 		defer file.Close()
 		stat, _ := file.Stat()
 		fmt.Println("File size is " , stat.Size())*/
 
-		fmt.Println(*utils.Dir+"/tmp_dc", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
+		fmt.Println(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
 		/*var cmdOut []byte
-		if cmdOut, err = exec.Command(*utils.Dir+"/tmp_dc", "-oldFileName", pwd+"/"+filepath.Base(os.Args[0]), "-dir", *utils.Dir, "-logLevel", "DEBUG").Output(); err != nil {
+		if cmdOut, err = exec.Command(*utils.Dir+"/dc", "-oldFileName", pwd+"/"+filepath.Base(os.Args[0]), "-dir", *utils.Dir, "-logLevel", "DEBUG").Output(); err != nil {
 			fmt.Println(os.Stderr)
 			return "", utils.ErrInfo(err)
 		}
 		fmt.Println(cmdOut)*/
-		err = exec.Command(*utils.Dir+"/tmp_dc", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG").Start()
+		err = exec.Command(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG").Start()
 		if err != nil {
 			fmt.Println(os.Stderr)
 			return "", utils.ErrInfo(err)
 		}
 /*
 		fmt.Println(os.Args[0])
-		fmt.Println(*utils.Dir+"/tmp_dc", "-oldFileName="+filepath.Base(os.Args[0]))
-		cmd := exec.Command(*utils.Dir+"/tmp_dc", "-oldFileName", os.Args[0], "-dir", *utils.Dir)
+		fmt.Println(*utils.Dir+"/dc", "-oldFileName="+filepath.Base(os.Args[0]))
+		cmd := exec.Command(*utils.Dir+"/dc", "-oldFileName", os.Args[0], "-dir", *utils.Dir)
 		var out bytes.Buffer
 		cmd.Stdout = &out
 		err = cmd.Run()

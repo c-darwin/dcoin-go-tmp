@@ -4,15 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"regexp"
-	//"math"
-	//"strings"
-	//	"os"
-	//"time"
-	//"strings"
-	//"sort"
-	//	"time"
-	//"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 func (p *Parser) NewMaxPromisedAmountsInit() error {
