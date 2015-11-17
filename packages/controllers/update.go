@@ -21,7 +21,7 @@ type updateType struct {
 
 func (c *Controller) Update() (string, error) {
 
-	if c.SessRestricted != 0 {
+	if c.SessRestricted != 0 || !c.NodeAdmin {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
@@ -29,7 +29,10 @@ func (c *Controller) Update() (string, error) {
 	if err!= nil {
 		return "", utils.ErrInfo(err)
 	}
-	return utils.JsonAnswer(ver, "success").String(), nil
+	if len(ver)  > 0 {
+		return utils.JsonAnswer(ver, "success").String(), nil
+	}
+	return "", nil
 }
 
 func (c *Controller) getUpdVerAndUrl() (string, string, error) {
@@ -64,8 +67,10 @@ func (c *Controller) getUpdVerAndUrl() (string, string, error) {
 		}
 
 		fmt.Println(runtime.GOOS+"_"+runtime.GOARCH)
-		fmt.Println(updateData.Message["dcoin_"+runtime.GOOS+"_"+runtime.GOARCH])
-		if len(updateData.Message["dcoin_"+runtime.GOOS+"_"+runtime.GOARCH]) > 0 && version.Compare(updateData.Message["version"], consts.VERSION, ">") {
+		fmt.Println(updateData.Message)
+		fmt.Println(updateData.Message[runtime.GOOS+"_"+runtime.GOARCH])
+		fmt.Println(updateData.Message["version"], consts.VERSION)
+		if len(updateData.Message[runtime.GOOS+"_"+runtime.GOARCH]) > 0 && version.Compare(updateData.Message["version"], consts.VERSION, ">") {
 			newVersion := strings.Replace(c.Lang["new_version"], "[ver]", updateData.Message["version"], -1)
 			return newVersion, updateData.Message[runtime.GOOS+"_"+runtime.GOARCH], nil
 		}

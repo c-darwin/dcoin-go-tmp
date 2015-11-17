@@ -4,6 +4,9 @@ import (
 //"fmt"
 )
 
+// текущая версия
+const VERSION = "1.0.1a4"
+
 // чтобы не выдавать одно и тоже голосование
 const ASSIGN_TIME = 86400
 
@@ -20,8 +23,6 @@ const AUTO_REDUCTION_PCT = 10
 // У скольких нодов должен быть такой же блок как и у нас, чтобы считать, что блок у большей части DC-сети. для get_confirmed_block_id()
 const MIN_CONFIRMED_NODES = 1
 
-// текущая версия
-const VERSION = "1.0.1a3"
 
 // примерный текущий крайний блок
 const LAST_BLOCK = 270000

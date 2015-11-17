@@ -123,9 +123,17 @@ func Start(dir string) {
 	}
 
 	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
+	log.Error("OldFileName %v", *utils.OldFileName)
 	if *utils.OldFileName != "" {
-		utils.CopyFileContents("tmp_dc", *utils.OldFileName)
-		exec.Command(*utils.OldFileName, "-dir", *utils.Dir)
+		log.Debug("OldFileName %v", *utils.OldFileName)
+		utils.CopyFileContents(*utils.Dir+"/tmp_dc", *utils.OldFileName)
+		log.Debug("tmp_dc %v", *utils.Dir+"/tmp_dc")
+		err = exec.Command(*utils.OldFileName, "-dir", *utils.Dir).Start()
+		if err != nil {
+			log.Debug("%v", os.Stderr)
+			log.Debug("%v", utils.ErrInfo(err))
+		}
+		log.Debug("OldFileName %v", *utils.OldFileName)
 		utils.Sleep(1)
 		os.Exit(1)
 	}

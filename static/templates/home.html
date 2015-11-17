@@ -83,7 +83,7 @@
 <link href="static/css/cf.css" rel="stylesheet">
 <script>
 
-	$('#updDcoin').bind('click', function () {
+	function updDcoin() {
 
 		$('#updDcoin').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
 		$('#updDcoin').prop('disabled', true);
@@ -96,7 +96,7 @@
 			$('#updDcoin').html('complete');
 		}, 'JSON');
 
-	});
+	}
 
 	$( document ).ready(function() {
 		$.get('ajax?controllerName=AlertFromAdmin', function (data) {
@@ -860,25 +860,31 @@
 					'token': token
 				}, function (data) {
 					$('#refreshEx').html('<i class="fa fa-refresh"></i>');
-					if (typeof data.Token != "undefined") {
+					if (typeof data.Token !== "undefined") {
 						$('#tokens').css("display", "block");
 						$('#tokensTable').html("<tr><td>Покупка " + data.Token.amount_fiat + " " + currency_name[data.Token.buy_currency_id] + "</td><td>" + data.Token.status + "</td></tr>");
 					}
 					$('#balancesTable').html("");
-					for (var i=0; i < data.Wallets.length; i++) {
-						$('#balancesTable').append("<tr><td>"+currency_name[data.Wallets[i].currency_id]+"</td><td>"+data.Wallets[i].amount+"</td></tr>");
+					if (typeof data.Wallets !== "undefined") {
+						for (var i = 0; i < data.Wallets.length; i++) {
+							$('#balancesTable').append("<tr><td>" + currency_name[data.Wallets[i].currency_id] + "</td><td>" + data.Wallets[i].amount + "</td></tr>");
+						}
 					}
 					$('#ordersTable').html("");
-					for (var i=0; i < data.Orders.length; i++) {
-						$('#ordersTable').append("<tr><td>"+currency_name[data.Orders[i].buy_currency_id]+"/"+currency_name[data.Orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.Orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount * (1/data.Orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.Orders[i].amount/data.Orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
+					if (typeof data.Orders !== "undefined") {
+						for (var i=0; i < data.Orders.length; i++) {
+							$('#ordersTable').append("<tr><td>"+currency_name[data.Orders[i].buy_currency_id]+"/"+currency_name[data.Orders[i].sell_currency_id]+"</td><td>"+parseFloat(data.Orders[i].sell_rate, 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount * (1/data.Orders[i].sell_rate), 2).toFixed(2)+"</td><td>"+parseFloat(data.Orders[i].begin_amount, 2).toFixed(2)+"</td><td>"+parseFloat(100-(data.Orders[i].amount/data.Orders[i].begin_amount)*100, 2).toFixed(2)+"%</td></tr>");
+						}
 					}
 					$('#withdrawTable').html("");
-					for (var i=0; i < data.Withdraw.length; i++) {
-						var status = "wait"
-						if (typeof data.Withdraw[i].close_time != "undefined") {
-							status = "complete"
+					if (typeof data.Withdraw !== "undefined") {
+						for (var i = 0; i < data.Withdraw.length; i++) {
+							var status = "wait"
+							if (typeof data.Withdraw[i].close_time != "undefined") {
+								status = "complete"
+							}
+							$('#withdrawTable').append("<tr><td>" + data.Withdraw[i].open_time + "</td><td>" + data.Withdraw[i].amount + "</td><td>" + status + "</td></tr>");
 						}
-						$('#withdrawTable').append("<tr><td>"+data.Withdraw[i].open_time+"</td><td>"+data.Withdraw[i].amount+"</td><td>"+status+"</td></tr>");
 					}
 				}, 'JSON');
 			}
