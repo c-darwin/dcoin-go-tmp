@@ -85,13 +85,14 @@ func (c *Controller) UpdateDcoin() (string, error) {
 		fmt.Println("File size is " , stat.Size())*/
 
 		fmt.Println(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
+		log.Error(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
 		/*var cmdOut []byte
 		if cmdOut, err = exec.Command(*utils.Dir+"/dc", "-oldFileName", pwd+"/"+filepath.Base(os.Args[0]), "-dir", *utils.Dir, "-logLevel", "DEBUG").Output(); err != nil {
 			fmt.Println(os.Stderr)
 			return "", utils.ErrInfo(err)
 		}
 		fmt.Println(cmdOut)*/
-		err = exec.Command(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG").Start()
+		err = exec.Command(*utils.Dir+`/dc.tmp`, "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG").Start()
 		if err != nil {
 			fmt.Println(os.Stderr)
 			return "", utils.ErrInfo(err)

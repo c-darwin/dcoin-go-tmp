@@ -126,8 +126,8 @@ func Start(dir string) {
 	log.Error("OldFileName %v", *utils.OldFileName)
 	if *utils.OldFileName != "" {
 		log.Debug("OldFileName %v", *utils.OldFileName)
-		utils.CopyFileContents(*utils.Dir+"/dc.tmp", *utils.OldFileName)
-		log.Debug("dc.tmp %v", *utils.Dir+"/dc.tmp")
+		utils.CopyFileContents(*utils.Dir+`/dc.tmp`, *utils.OldFileName)
+		log.Debug("dc.tmp %v", *utils.Dir+`/dc.tmp`)
 		err = exec.Command(*utils.OldFileName, "-dir", *utils.Dir).Start()
 		if err != nil {
 			log.Debug("%v", os.Stderr)
