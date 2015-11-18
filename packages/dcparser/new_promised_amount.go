@@ -3,12 +3,6 @@ package dcparser
 import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//	"encoding/json"
-	//"regexp"
-	//"math"
-	//"strings"
-	//	"os"
-	//"time"
 	"strings"
 )
 

@@ -76,6 +76,9 @@ func Start(dir string) {
 	IosLog("dir:" + dir)
 	fmt.Println("utils.Dir", *utils.Dir)
 
+
+	ioutil.WriteFile("tmp.txt", []byte(*utils.Dir+"\n"), 0644)
+
 	// убьем ранее запущенный Dcoin
 	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
 		dat, err := ioutil.ReadFile(*utils.Dir+"/dcoin.pid")
@@ -102,6 +105,8 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
+		ioutil.WriteFile("tmp.txt", []byte("KillPid\n"), 0644)
+
 		err = KillPid(pidMap["pid"])
 		if nil != err {
 			fmt.Println(err)
@@ -119,11 +124,13 @@ func Start(dir string) {
 					break
 				}
 			}
+			ioutil.WriteFile("tmp.txt", []byte("KillPid ok\n"), 0644)
 		}
 	}
 
 
 
+	ioutil.WriteFile("tmp.txt", []byte("SAVE PID\n"), 0644)
 	// сохраним текущий pid и версию
 	pid := os.Getpid()
 	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
@@ -133,8 +140,10 @@ func Start(dir string) {
 	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
-		//panic(err)
+		panic(err)
 	}
+
+	ioutil.WriteFile("tmp.txt", []byte("SAVE PID ok\n"), 0644)
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -162,17 +171,19 @@ func Start(dir string) {
 		if err != nil {
 			IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 			log.Error("%v", utils.ErrInfo(err))
-			//panic(err)
-			//os.Exit(1)
+			panic(err)
+			os.Exit(1)
 		}
 	}()
+
+	ioutil.WriteFile("tmp.txt", []byte("dclog.txt\n"), 0644)
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
 		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
-		//panic(err)
-		//os.Exit(1)
+		panic(err)
+		os.Exit(1)
 	}
 	defer f.Close()
 	IosLog("configIni:" + fmt.Sprintf("%v", configIni))
@@ -208,6 +219,7 @@ func Start(dir string) {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 
+	ioutil.WriteFile("tmp.txt", []byte("OldFileName "+*utils.OldFileName+"\n"), 0644)
 	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
 	log.Error("OldFileName %v", *utils.OldFileName)
 	if *utils.OldFileName != "" {
@@ -227,8 +239,6 @@ func Start(dir string) {
 		utils.Sleep(1)
 		os.Exit(1)
 	}
-
-
 	// откат БД до указанного блока
 	if *utils.RollbackToBlockId > 0 {
 		utils.DB, err = utils.NewDbConnect(configIni)
