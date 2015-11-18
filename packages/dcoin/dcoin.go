@@ -68,6 +68,12 @@ func Start(dir string) {
 		}
 	}()
 
+	file, err := os.OpenFile("tmp.txt", os.O_APPEND|os.O_WRONLY,0600)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
 
 	if dir != "" {
 		fmt.Println("dir", dir)
@@ -77,7 +83,7 @@ func Start(dir string) {
 	fmt.Println("utils.Dir", *utils.Dir)
 
 
-	ioutil.WriteFile("tmp.txt", []byte(*utils.Dir+"\n"), 0644)
+	file.WriteString(*utils.Dir+"\n")
 
 	// убьем ранее запущенный Dcoin
 	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
@@ -105,13 +111,14 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
-		ioutil.WriteFile("tmp.txt", []byte("KillPid\n"), 0644)
+		file.WriteString("KillPid\n")
 
 		err = KillPid(pidMap["pid"])
 		if nil != err {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
+		file.WriteString("KillPid 0\n")
 
 		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
 		if fmt.Sprintf("%s", err) != "no such process" {
@@ -124,13 +131,12 @@ func Start(dir string) {
 					break
 				}
 			}
-			ioutil.WriteFile("tmp.txt", []byte("KillPid ok\n"), 0644)
+			file.WriteString("KillPid 1\n")
 		}
 	}
 
 
-
-	ioutil.WriteFile("tmp.txt", []byte("SAVE PID\n"), 0644)
+	file.WriteString("SAVE PID\n")
 	// сохраним текущий pid и версию
 	pid := os.Getpid()
 	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
@@ -142,8 +148,6 @@ func Start(dir string) {
 		log.Error("%v", utils.ErrInfo(err))
 		panic(err)
 	}
-
-	ioutil.WriteFile("tmp.txt", []byte("SAVE PID ok\n"), 0644)
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -175,8 +179,6 @@ func Start(dir string) {
 			os.Exit(1)
 		}
 	}()
-
-	ioutil.WriteFile("tmp.txt", []byte("dclog.txt\n"), 0644)
 
 	f, err := os.OpenFile(*utils.Dir+"/dclog.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 	if err != nil {
@@ -219,7 +221,6 @@ func Start(dir string) {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 
-	ioutil.WriteFile("tmp.txt", []byte("OldFileName "+*utils.OldFileName+"\n"), 0644)
 	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
 	log.Error("OldFileName %v", *utils.OldFileName)
 	if *utils.OldFileName != "" {
