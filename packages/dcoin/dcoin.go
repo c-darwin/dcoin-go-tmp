@@ -217,6 +217,18 @@ func Start(dir string) {
 			log.Debug("%v", os.Stderr)
 			log.Debug("%v", utils.ErrInfo(err))
 		}
+
+		err := utils.DB.Close()
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+			//panic(err)
+		}
+		fmt.Println("DB Closed")
+		err = os.Remove(*utils.Dir+"/dcoin.pid")
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}
+
 		log.Debug("dc.tmp %v", *utils.Dir+`/dc.tmp`)
 		err = exec.Command(*utils.OldFileName, "-dir", *utils.Dir).Start()
 		if err != nil {
@@ -224,7 +236,6 @@ func Start(dir string) {
 			log.Debug("%v", utils.ErrInfo(err))
 		}
 		log.Debug("OldFileName %v", *utils.OldFileName)
-		utils.Sleep(1)
 		os.Exit(1)
 	}
 	// откат БД до указанного блока
