@@ -85,6 +85,8 @@ func Start(dir string) {
 
 	file.WriteString(*utils.Dir+"\n")
 
+	utils.Sleep(3)
+
 	// убьем ранее запущенный Dcoin
 	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
 		dat, err := ioutil.ReadFile(*utils.Dir+"/dcoin.pid")
