@@ -212,6 +212,8 @@ func Start(dir string) {
 	logLevel_ := "ERROR"
 	if *utils.LogLevel == "" {
 		logLevel_ = configIni["log_level"]
+	} else {
+		logLevel_ = *utils.LogLevel
 	}
 
 	logLevel, err := logging.LogLevel(logLevel_)
