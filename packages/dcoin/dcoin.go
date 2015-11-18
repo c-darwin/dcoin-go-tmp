@@ -119,11 +119,11 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
+		utils.Sleep(1)
 		file.WriteString("KillPid 0\n")
-
-		utils.Sleep(5)
+		utils.Sleep(4)
 		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
-		file.WriteString("("+fmt.Sprintf("%s", err)+")\n")
+		file.WriteString(""+fmt.Sprintf("%v", err)+"\n")
 		if fmt.Sprintf("%s", err) != "no such process" {
 			// даем 15 сек, чтобы завершиться предыдущему процессу
 			for i := 0; i<15; i++ {
