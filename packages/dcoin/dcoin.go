@@ -121,6 +121,7 @@ func Start(dir string) {
 		}
 		file.WriteString("KillPid 0\n")
 
+		utils.Sleep(5)
 		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
 		file.WriteString("("+fmt.Sprintf("%s", err)+")\n")
 		if fmt.Sprintf("%s", err) != "no such process" {

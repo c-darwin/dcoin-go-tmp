@@ -297,12 +297,16 @@ func (p *Parser) MiningRollback() error {
 	// откатим комиссию системы
 	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["system_commission"])/100), 2)
 	if systemCommission == 0 {
+		log.Debug("systemCommission == 0")
 		systemCommission = 0.01
 	}
 	if systemCommission >= p.TxMaps.Money["amount"] {
+		log.Debug(`systemCommission >= p.TxMaps.Money["amount"]`)
 		systemCommission = 0
 	}
 	if systemCommission > 0 {
+
+		log.Debug("generalRollback 1")
 		err = p.generalRollback("wallets", 1, "AND currency_id = "+promisedAmountData["currency_id"], false)
 		if err != nil {
 			return p.ErrInfo(err)
