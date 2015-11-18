@@ -133,7 +133,7 @@ func Start(dir string) {
 	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
 	if err != nil {
 		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
+		//panic(err)
 	}
 
 	fmt.Println("dcVersion:", consts.VERSION)
@@ -162,8 +162,8 @@ func Start(dir string) {
 		if err != nil {
 			IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 			log.Error("%v", utils.ErrInfo(err))
-			panic(err)
-			os.Exit(1)
+			//panic(err)
+			//os.Exit(1)
 		}
 	}()
 
@@ -171,8 +171,8 @@ func Start(dir string) {
 	if err != nil {
 		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
 		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
-		os.Exit(1)
+		//panic(err)
+		//os.Exit(1)
 	}
 	defer f.Close()
 	IosLog("configIni:" + fmt.Sprintf("%v", configIni))
