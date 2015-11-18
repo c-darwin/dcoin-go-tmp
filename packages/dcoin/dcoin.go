@@ -68,7 +68,7 @@ func Start(dir string) {
 		}
 	}()
 
-	file, err := os.OpenFile("tmp.txt", os.O_APPEND|os.O_WRONLY,0600)
+	file, err := os.OpenFile("tmp.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE,0600)
 	if err != nil {
 		panic(err)
 	}
