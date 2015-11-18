@@ -9,7 +9,7 @@ import (
 
 func KillPid(pid string) error {
 	var rez []byte
-	rez, err := exec.Command("taskkill","/pid", pid).Output()
+	rez, err := exec.Command("taskkill","/pid", pid).Start()
 	if err!=nil {
 		return err
 	}

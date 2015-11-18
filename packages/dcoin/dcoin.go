@@ -111,10 +111,11 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
-		file.WriteString("KillPid\n")
+		file.WriteString("KillPid "+pidMap["pid"]+"\n")
 
 		err = KillPid(pidMap["pid"])
 		if nil != err {
+			file.WriteString(fmt.Sprintf("%s", err)+"\n")
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
