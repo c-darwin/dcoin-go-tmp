@@ -69,7 +69,7 @@ func (p *Parser) MiningFront() error {
  * */
 func (p *Parser) mining_(delMiningBlockId int64) error {
 
-	// возможно нужно обновить таблицу points_status
+	// 1 возможно нужно обновить таблицу points_status
 	err := p.pointsUpdateMain(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -114,8 +114,15 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 		return p.ErrInfo(err)
 	}
 
-	// списываем сумму с promised_amount
+	// 2 списываем сумму с promised_amount
 	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, del_mining_block_id = ?, log_id = ? WHERE id = ?", utils.Round((newTdc-p.TxMaps.Money["amount"]), 2), p.BlockData.Time, delMiningBlockId, logId, p.TxMaps.Int64["promised_amount_id"])
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+
+	// 3 теперь начисляем DC, залогировав предыдущее значение
+	err = p.updateRecipientWallet(p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -123,23 +130,20 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 	// комиссия системы
 	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["system_commission"])/100), 2)
 	if systemCommission == 0 {
+		log.Debug("systemCommission == 0")
 		systemCommission = 0.01
 	}
 	if systemCommission >= p.TxMaps.Money["amount"] {
+		log.Debug(`systemCommission >= p.TxMaps.Money["amount"]`)
 		systemCommission = 0
 	}
 	log.Debug("systemCommission", systemCommission)
 
-	// теперь начисляем DC, залогировав предыдущее значение
-	err = p.updateRecipientWallet(p.TxUserID, currencyId, p.TxMaps.Money["amount"], "from_mining_id", p.TxMaps.Int64["promised_amount_id"], "", "", true)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	// теперь начисляем комиссию системе
+	// 4 теперь начисляем комиссию системе
 	if systemCommission > 0 {
 		err = p.updateRecipientWallet(1, currencyId, systemCommission, "system_commission", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 	}
-	// реферальные
+	// 5 реферальные
 	refData, err := p.OneRow("SELECT * FROM referral").Float64()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -234,13 +238,8 @@ func (p *Parser) MiningRollback() error {
 		return p.ErrInfo(err)
 	}
 
-	// возможно нужно обновить таблицу points_status
-	err = p.pointsUpdateRollbackMain(p.TxUserID)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
 
-	// реферальные
+	// 5 реферальные
 	var usersWalletsRollback []int64
 	refData, err := p.OneRow("SELECT * FROM referral").Int64()
 	if err != nil {
@@ -294,7 +293,7 @@ func (p *Parser) MiningRollback() error {
 
 
 
-	// откатим комиссию системы
+	// 4 откатим комиссию системы
 	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["system_commission"])/100), 2)
 	if systemCommission == 0 {
 		log.Debug("systemCommission == 0")
@@ -319,11 +318,6 @@ func (p *Parser) MiningRollback() error {
 		}
 	}
 
-	// откатим начисленные DC
-	err = p.generalRollback("wallets", p.TxUserID, "AND currency_id = "+promisedAmountData["currency_id"], false)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
 
 	// возможно были списания по кредиту
 	err = p.loanPaymentsRollback(p.TxUserID, utils.StrToInt64(promisedAmountData["currency_id"]))
@@ -331,13 +325,20 @@ func (p *Parser) MiningRollback() error {
 		return p.ErrInfo(err)
 	}
 
+	// 3 откатим начисленные DC
+	err = p.generalRollback("wallets", p.TxUserID, "AND currency_id = "+promisedAmountData["currency_id"], false)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+
 	// данные, которые восстановим в promised_amount
 	logData, err := p.OneRow("SELECT * FROM log_promised_amount WHERE log_id  =  ?", promisedAmountData["log_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	// откатываем promised_amount
+	// 2 откатываем promised_amount
 	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update= ?, log_id = ? WHERE id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
@@ -352,6 +353,14 @@ func (p *Parser) MiningRollback() error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+
+
+	// 1 возможно нужно обновить таблицу points_status
+	err = p.pointsUpdateRollbackMain(p.TxUserID)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
 
 	err = p.mydctxRollback()
 	if err != nil {
