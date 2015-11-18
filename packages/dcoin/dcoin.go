@@ -68,13 +68,6 @@ func Start(dir string) {
 		}
 	}()
 
-	file, err := os.OpenFile("tmp.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE,0600)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-
 	if dir != "" {
 		fmt.Println("dir", dir)
 		*utils.Dir = dir
@@ -82,24 +75,6 @@ func Start(dir string) {
 	IosLog("dir:" + dir)
 	fmt.Println("utils.Dir", *utils.Dir)
 
-
-	file.WriteString(*utils.Dir+"\n")
-
-
-
-
-	file.WriteString("SAVE PID\n")
-	// сохраним текущий pid и версию
-	pid := os.Getpid()
-	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-	}
-	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
-	}
 
 	fmt.Println("dcVersion:", consts.VERSION)
 	log.Debug("dcVersion: %v", consts.VERSION)
@@ -140,37 +115,39 @@ func Start(dir string) {
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}*/
-		file.WriteString("KillPid num: "+pidMap["pid"]+"\n")
-
 		utils.DB, err = utils.NewDbConnect(configIni)
 
 		err = KillPid(pidMap["pid"])
 		if nil != err {
-			file.WriteString(fmt.Sprintf("%s", err)+"\n")
 			fmt.Println(err)
 			log.Error("%v", utils.ErrInfo(err))
 		}
-		utils.Sleep(1)
-		file.WriteString("KillPid 0\n")
-		utils.Sleep(4)
 		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
-		file.WriteString(""+fmt.Sprintf("%v", err)+"\n")
 		if fmt.Sprintf("%s", err) != "no such process" {
 			// даем 15 сек, чтобы завершиться предыдущему процессу
 			for i := 0; i<15; i++ {
-				file.WriteString(""+fmt.Sprintf("%d", i)+"\n")
 				if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
-					file.WriteString("waiting killer\n")
 					fmt.Println("waiting killer")
 					utils.Sleep(1)
 				} else { // если dcoin.pid нет, значит завершился
-					file.WriteString("break\n")
 					break
 				}
 			}
-			file.WriteString("KillPid 1\n")
 		}
 	}
+
+	// сохраним текущий pid и версию
+	pid := os.Getpid()
+	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+	}
+	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+		panic(err)
+	}
+
 
 	controllers.SessInit()
 	controllers.ConfigInit()
