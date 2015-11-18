@@ -122,21 +122,7 @@ func Start(dir string) {
 		}
 	}
 
-	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
-	log.Error("OldFileName %v", *utils.OldFileName)
-	if *utils.OldFileName != "" {
-		log.Debug("OldFileName %v", *utils.OldFileName)
-		utils.CopyFileContents(*utils.Dir+`/dc.tmp`, *utils.OldFileName)
-		log.Debug("dc.tmp %v", *utils.Dir+`/dc.tmp`)
-		err = exec.Command(*utils.OldFileName, "-dir", *utils.Dir).Start()
-		if err != nil {
-			log.Debug("%v", os.Stderr)
-			log.Debug("%v", utils.ErrInfo(err))
-		}
-		log.Debug("OldFileName %v", *utils.OldFileName)
-		utils.Sleep(1)
-		os.Exit(1)
-	}
+
 
 	// сохраним текущий pid и версию
 	pid := os.Getpid()
@@ -220,6 +206,28 @@ func Start(dir string) {
 	logging.SetBackend(backendLeveled)
 
 	rand.Seed(time.Now().UTC().UnixNano())
+
+
+	// если есть OldFileName, значит работаем под именем tmp_dc и нужно перезапуститься под нормальным именем
+	log.Error("OldFileName %v", *utils.OldFileName)
+	if *utils.OldFileName != "" {
+		log.Debug("OldFileName %v", *utils.OldFileName)
+		err = utils.CopyFileContents(*utils.Dir+`/dc.tmp`, *utils.OldFileName)
+		if err != nil {
+			log.Debug("%v", os.Stderr)
+			log.Debug("%v", utils.ErrInfo(err))
+		}
+		log.Debug("dc.tmp %v", *utils.Dir+`/dc.tmp`)
+		err = exec.Command(*utils.OldFileName, "-dir", *utils.Dir).Start()
+		if err != nil {
+			log.Debug("%v", os.Stderr)
+			log.Debug("%v", utils.ErrInfo(err))
+		}
+		log.Debug("OldFileName %v", *utils.OldFileName)
+		utils.Sleep(1)
+		os.Exit(1)
+	}
+
 
 	// откат БД до указанного блока
 	if *utils.RollbackToBlockId > 0 {
