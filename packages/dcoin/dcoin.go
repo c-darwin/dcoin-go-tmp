@@ -85,7 +85,34 @@ func Start(dir string) {
 
 	file.WriteString(*utils.Dir+"\n")
 
-	utils.Sleep(3)
+
+
+
+	file.WriteString("SAVE PID\n")
+	// сохраним текущий pid и версию
+	pid := os.Getpid()
+	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+	}
+	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
+	if err != nil {
+		log.Error("%v", utils.ErrInfo(err))
+		panic(err)
+	}
+
+	fmt.Println("dcVersion:", consts.VERSION)
+	log.Debug("dcVersion: %v", consts.VERSION)
+
+	// читаем config.ini
+	configIni := make(map[string]string)
+	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
+	if err != nil {
+		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
+		log.Error("%v", utils.ErrInfo(err))
+	} else {
+		configIni, err = configIni_.GetSection("default")
+	}
 
 	// убьем ранее запущенный Dcoin
 	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
@@ -115,6 +142,8 @@ func Start(dir string) {
 		}*/
 		file.WriteString("KillPid num: "+pidMap["pid"]+"\n")
 
+		utils.DB, err = utils.NewDbConnect(configIni)
+
 		err = KillPid(pidMap["pid"])
 		if nil != err {
 			file.WriteString(fmt.Sprintf("%s", err)+"\n")
@@ -142,35 +171,6 @@ func Start(dir string) {
 			file.WriteString("KillPid 1\n")
 		}
 	}
-
-
-	file.WriteString("SAVE PID\n")
-	// сохраним текущий pid и версию
-	pid := os.Getpid()
-	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-	}
-	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
-	}
-
-	fmt.Println("dcVersion:", consts.VERSION)
-	log.Debug("dcVersion: %v", consts.VERSION)
-
-	// читаем config.ini
-	configIni := make(map[string]string)
-	configIni_, err := config.NewConfig("ini", *utils.Dir+"/config.ini")
-	if err != nil {
-		IosLog("err:" + fmt.Sprintf("%s", utils.ErrInfo(err)))
-		log.Error("%v", utils.ErrInfo(err))
-	} else {
-		configIni, err = configIni_.GetSection("default")
-	}
-
-
 
 	controllers.SessInit()
 	controllers.ConfigInit()
