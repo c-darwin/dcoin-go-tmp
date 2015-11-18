@@ -122,13 +122,17 @@ func Start(dir string) {
 		file.WriteString("KillPid 0\n")
 
 		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
+		file.WriteString("("+fmt.Sprintf("%s", err)+")\n")
 		if fmt.Sprintf("%s", err) != "no such process" {
 			// даем 15 сек, чтобы завершиться предыдущему процессу
 			for i := 0; i<15; i++ {
+				file.WriteString(""+fmt.Sprintf("%d", i)+"\n")
 				if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
+					file.WriteString("waiting killer\n")
 					fmt.Println("waiting killer")
 					utils.Sleep(1)
 				} else { // если dcoin.pid нет, значит завершился
+					file.WriteString("break\n")
 					break
 				}
 			}
