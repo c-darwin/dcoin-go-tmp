@@ -292,8 +292,9 @@ func (p *Parser) MiningRollback() error {
 		}
 	}
 
+
 	// откатим комиссию системы
-	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["systemCommission"])/100), 2)
+	systemCommission := utils.Round(p.TxMaps.Money["amount"]*float64(float64(p.Variables.Int64["system_commission"])/100), 2)
 	if systemCommission == 0 {
 		systemCommission = 0.01
 	}
