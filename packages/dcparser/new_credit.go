@@ -83,10 +83,13 @@ func (p *Parser) NewCredit() error {
 }
 
 func (p *Parser) NewCreditRollback() error {
-	err := p.ExecSql("DELETE FROM credits WHERE tx_block_id = ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
+	log.Debug("p.TxHash %s", p.TxHash)
+	log.Debug("p.BlockData.BlockId %v", p.BlockData.BlockId)
+	affect, err := p.ExecSqlGetAffect("DELETE FROM credits WHERE tx_block_id = ? AND hex(tx_hash) = ?", p.BlockData.BlockId, p.TxHash)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Debug("affect %v", affect)
 	err = p.rollbackAI("credits", 1)
 	if err != nil {
 		return p.ErrInfo(err)
