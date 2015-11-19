@@ -281,7 +281,7 @@ func (p *Parser) MiningRollback() error {
 	}
 	if refs[0] > 0 {
 		log.Debug("refs[0] %v", refs[0])
-		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
+		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["first"]/100), 2)
 		if refAmount > 0 {
 			log.Debug("refAmount %v", refAmount)
 			err = p.generalRollback("wallets", refs[0], "AND currency_id = "+promisedAmountData["currency_id"], false)
