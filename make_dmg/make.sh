@@ -1,6 +1,5 @@
 diskutil unmount dcoin
 go get -u github.com/c-darwin/dcoin-go-tmp
-cd ../
 GOARCH=amd64  CGO_ENABLED=1  go build -o make_dmg/dcoin.app/Contents/MacOs/dcoinbin
 cd make_dmg
 zip -r dcoin_osx64.zip dcoin.app
