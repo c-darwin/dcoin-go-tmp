@@ -244,7 +244,7 @@ func (p *Parser) MiningRollback() error {
 
 	// 5 реферальные
 	var usersWalletsRollback []int64
-	refData, err := p.OneRow("SELECT * FROM referral").Int64()
+	refData, err := p.OneRow("SELECT * FROM referral").Float64()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
