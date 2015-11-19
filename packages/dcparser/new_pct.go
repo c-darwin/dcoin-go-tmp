@@ -281,7 +281,7 @@ func (p *Parser) NewPct() error {
 }
 
 func (p *Parser) NewPctRollback() error {
-	if p.BlockData.BlockId < 77951 {
+	if p.BlockData.BlockId > 77951 {
 		err := p.selectiveRollback([]string{"first", "second", "third"}, "referral", "", false)
 		if err != nil {
 			return p.ErrInfo(err)
