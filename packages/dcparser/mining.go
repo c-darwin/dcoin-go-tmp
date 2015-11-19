@@ -154,6 +154,7 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 		log.Debug("refs[0]", refs[0], refAmount)
 		//log.Debug(p.TxMaps.Money["amount"], float64(refData["first"] / 100), refData["first"], refAmount)
 		if refAmount > 0 {
+			log.Debug("refAmount %v", refAmount)
 			err = p.updateRecipientWallet(refs[0], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
@@ -170,6 +171,7 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
 		log.Debug("refs[1]", refs[1], refAmount)
 		if refAmount > 0 {
+			log.Debug("refAmount %v", refAmount)
 			err = p.updateRecipientWallet(refs[1], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
@@ -186,6 +188,7 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["third"]/100), 2)
 		log.Debug("refs[2]", refs[2], refAmount)
 		if refAmount > 0 {
+			log.Debug("refAmount %v", refAmount)
 			err = p.updateRecipientWallet(refs[2], currencyId, refAmount, "referral", p.TxMaps.Int64["promised_amount_id"], "", "", true)
 			if err != nil {
 				return p.ErrInfo(err)
@@ -250,13 +253,13 @@ func (p *Parser) MiningRollback() error {
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["third"]/100), 2)
 		if refAmount > 0 {
 			log.Debug("refAmount %v", refAmount)
-			err = p.generalRollback("wallets", refs[2], "AND currency_id = "+promisedAmountData["currency_id"], false)
-			if err != nil {
-				return p.ErrInfo(err)
-			}
 			usersWalletsRollback = append(usersWalletsRollback, refs[2])
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[2], utils.StrToInt64(promisedAmountData["currency_id"]))
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			err = p.generalRollback("wallets", refs[2], "AND currency_id = "+promisedAmountData["currency_id"], false)
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -267,16 +270,17 @@ func (p *Parser) MiningRollback() error {
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
 		if refAmount > 0 {
 			log.Debug("refAmount %v", refAmount)
-			err = p.generalRollback("wallets", refs[1], "AND currency_id = "+promisedAmountData["currency_id"], false)
-			if err != nil {
-				return p.ErrInfo(err)
-			}
 			usersWalletsRollback = append(usersWalletsRollback, refs[1])
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[1], utils.StrToInt64(promisedAmountData["currency_id"]))
 			if err != nil {
 				return p.ErrInfo(err)
 			}
+			err = p.generalRollback("wallets", refs[1], "AND currency_id = "+promisedAmountData["currency_id"], false)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+
 		}
 	}
 	if refs[0] > 0 {
@@ -284,16 +288,17 @@ func (p *Parser) MiningRollback() error {
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["first"]/100), 2)
 		if refAmount > 0 {
 			log.Debug("refAmount %v", refAmount)
-			err = p.generalRollback("wallets", refs[0], "AND currency_id = "+promisedAmountData["currency_id"], false)
-			if err != nil {
-				return p.ErrInfo(err)
-			}
-			usersWalletsRollback = append(usersWalletsRollback, refs[0])
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[0], utils.StrToInt64(promisedAmountData["currency_id"]))
 			if err != nil {
 				return p.ErrInfo(err)
 			}
+			err = p.generalRollback("wallets", refs[0], "AND currency_id = "+promisedAmountData["currency_id"], false)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+			usersWalletsRollback = append(usersWalletsRollback, refs[0])
+
 		}
 	}
 
