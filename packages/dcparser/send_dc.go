@@ -231,15 +231,17 @@ func (p *Parser) SendDc() error {
 		return p.ErrInfo(err)
 	}
 
-	// возможно нужно обновить таблицу points_status
+	// 1 возможно нужно обновить таблицу points_status
 	err = p.pointsUpdateMain(p.BlockData.UserId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	// 2
 	err = p.pointsUpdateMain(p.TxMaps.Int64["from_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	// 3
 	err = p.pointsUpdateMain(p.TxMaps.Int64["to_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
@@ -266,20 +268,20 @@ func (p *Parser) SendDc() error {
 			}
 		}
 	}
-	// обновим сумму на кошельке отправителя, залогировав предыдущее значение
+	// 4 обновим сумму на кошельке отправителя, залогировав предыдущее значение
 	err = p.updateSenderWallet(p.TxMaps.Int64["from_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], commission, "from_user", p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["to_user_id"], string(utils.BinToHex(p.TxMap["comment"])), "encrypted")
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
 	log.Debug("SendDC updateRecipientWallet")
-	// обновим сумму на кошельке получателю
+	// 5 обновим сумму на кошельке получателю
 	err = p.updateRecipientWallet(p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["amount"], "from_user", p.TxMaps.Int64["from_user_id"], p.TxMaps.String["comment"], "encrypted", true)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	// теперь начисляем комиссию майнеру, который этот блок сгенерил
+	// 6 теперь начисляем комиссию майнеру, который этот блок сгенерил
 	if p.TxMaps.Float64["commission"] >= 0.01 {
 		err = p.updateRecipientWallet(p.BlockData.UserId, p.TxMaps.Int64["currency_id"], p.TxMaps.Float64["commission"], "node_commission", p.BlockData.BlockId, "", "encrypted", true)
 		if err != nil {
@@ -290,6 +292,7 @@ func (p *Parser) SendDc() error {
 	log.Debug("p.BlockData.BlockId", p.BlockData.BlockId)
 	log.Debug("consts.ARBITRATION_BLOCK_START", consts.ARBITRATION_BLOCK_START)
 	if p.BlockData.BlockId > consts.ARBITRATION_BLOCK_START {
+
 		// если продавец не согласен на арбитраж, то $arbitration_days_refund будет равно 0
 
 		log.Debug("arbitration_days_refund", arbitration_days_refund)
@@ -333,16 +336,51 @@ func (p *Parser) SendDcRollback() error {
 		return p.ErrInfo(err)
 	}
 
-	// возможно нужно обновить таблицу points_status
+	// 6 комиссия нода-генератора блока
+	if p.TxMaps.Float64["commission"] >= 0.01 {
+		err = p.generalRollback("wallets", p.BlockData.UserId, "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		// возможно были списания по кредиту нода-генератора
+		err = p.loanPaymentsRollback(p.BlockData.UserId, p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+	}
+
+
+	// 5 обновим сумму на кошельке получателю
+	// возможно были списания по кредиту
+	err = p.loanPaymentsRollback(p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"])
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+	err = p.generalRollback("wallets", p.TxMaps.Int64["to_user_id"], "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+
+	// 4 обновим сумму на кошельке отправителя
+	err = p.generalRollback("wallets", p.TxMaps.Int64["from_user_id"], "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
+	if err != nil {
+		return p.ErrInfo(err)
+	}
+
+	// 3
 	err = p.pointsUpdateRollbackMain(p.TxMaps.Int64["to_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+
+	// 2
 	err = p.pointsUpdateRollbackMain(p.TxMaps.Int64["from_user_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.pointsUpdateRollbackMain(p.BlockData.BlockId)
+	// 1
+	err = p.pointsUpdateRollbackMain(p.BlockData.UserId))
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -388,33 +426,6 @@ func (p *Parser) SendDcRollback() error {
 				}
 			}
 		}
-	}
-
-	// комиссия нода-генератора блока
-	if p.TxMaps.Float64["commission"] >= 0.01 {
-		err = p.generalRollback("wallets", p.BlockData.UserId, "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-		// возможно были списания по кредиту нода-генератора
-		err = p.loanPaymentsRollback(p.BlockData.UserId, p.TxMaps.Int64["currency_id"])
-		if err != nil {
-			return p.ErrInfo(err)
-		}
-	}
-
-	err = p.generalRollback("wallets", p.TxMaps.Int64["to_user_id"], "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	// возможно были списания по кредиту
-	err = p.loanPaymentsRollback(p.TxMaps.Int64["to_user_id"], p.TxMaps.Int64["currency_id"])
-	if err != nil {
-		return p.ErrInfo(err)
-	}
-	err = p.generalRollback("wallets", p.TxMaps.Int64["from_user_id"], "AND currency_id = "+utils.Int64ToStr(p.TxMaps.Int64["currency_id"]), false)
-	if err != nil {
-		return p.ErrInfo(err)
 	}
 
 	err = p.mydctxRollback()
