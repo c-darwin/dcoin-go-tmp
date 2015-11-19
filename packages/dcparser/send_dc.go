@@ -380,7 +380,7 @@ func (p *Parser) SendDcRollback() error {
 		return p.ErrInfo(err)
 	}
 	// 1
-	err = p.pointsUpdateRollbackMain(p.BlockData.UserId))
+	err = p.pointsUpdateRollbackMain(p.BlockData.UserId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
