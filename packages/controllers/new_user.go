@@ -148,7 +148,7 @@ func (c *Controller) NewUser() (string, error) {
 			WHERE currency_id = 72
 			GROUP BY user_id
 			ORDER BY amount DESC
-			`), c.SessUserId)
+			`))
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
