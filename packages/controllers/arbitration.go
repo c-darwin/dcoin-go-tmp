@@ -64,8 +64,18 @@ func (c *Controller) Arbitration() (string, error) {
 
 	var arbitrators []*arbitrationType
 	// top 10 арбитров
-	rows, err := c.Query(c.FormatQuery(`
-			SELECT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT DISTINCT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
+			FROM arbitration_trust_list
+			LEFT JOIN miners_data ON miners_data.user_id = arbitration_trust_list.user_id
+			LEFT JOIN users ON users.user_id = arbitration_trust_list.arbitrator_user_id
+			WHERE miners_data.status='miner' AND
+						 arbitration_trust_list.arbitrator_user_id > 0
+			GROUP BY arbitrator_user_id, url
+			ORDER BY count(arbitration_trust_list.user_id)  DESC
+			LIMIT 10`
+	} else {
+		q = `SELECT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
 			FROM arbitration_trust_list
 			LEFT JOIN miners_data ON miners_data.user_id = arbitration_trust_list.user_id
 			LEFT JOIN users ON users.user_id = arbitration_trust_list.arbitrator_user_id
@@ -73,8 +83,9 @@ func (c *Controller) Arbitration() (string, error) {
 						 arbitration_trust_list.arbitrator_user_id > 0
 			GROUP BY arbitrator_user_id
 			ORDER BY count(arbitration_trust_list.user_id)  DESC
-			LIMIT 10
-	`))
+			LIMIT 10`
+	}
+	rows, err := c.Query(c.FormatQuery(q))
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
