@@ -240,7 +240,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 			LEFT JOIN users ON users.user_id = cf_funding.user_id
 			WHERE project_id = ? AND
 						del_block_id = 0
-			GROUP BY cf_funding.user_id, time
+			GROUP BY cf_funding.user_id, time, name, avatar
 			ORDER BY time DESC
 			LIMIT 100`
 	} else {
