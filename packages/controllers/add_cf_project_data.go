@@ -29,7 +29,7 @@ func (c *Controller) AddCfProjectData() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
-	projectId := int64(utils.StrToFloat64(c.Parameters["project_id"]))
+	projectId := int64(utils.StrToFloat64(c.Parameters["projectId"]))
 	id := int64(utils.StrToFloat64(c.Parameters["id"]))
 	cfData := make(map[string]string)
 	if id > 0 {

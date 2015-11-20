@@ -77,6 +77,7 @@ func (p *Parser) VotesMinerFront() error {
 }
 
 func (p *Parser) VotesMiner() error {
+
 	// начисляем баллы
 	p.points(p.Variables.Int64["miner_points"])
 

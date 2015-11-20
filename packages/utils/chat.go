@@ -196,7 +196,7 @@ func ChatOutputTesting() {
 	for {
 		// шлем всем горутинам ChatTxDisseminator, чтобы они разослали по серверам,
 		// которые ранее к нам подключились или к которым мы подключались
-		fmt.Println("ChatOutConnections:", ChatOutConnections)
+		//fmt.Println("ChatOutConnections:", ChatOutConnections)
 		for i:=0; i < len(ChatOutConnections); i++ {
 			ChatDataChan <- nil
 		}

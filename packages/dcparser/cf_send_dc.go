@@ -336,11 +336,11 @@ func (p *Parser) CfSendDcRollback() error {
 		}
 	}
 	// возможно нужно откатить таблицу points_status
-	err = p.pointsUpdateMain(p.TxUserID)
+	err = p.pointsUpdateRollbackMain(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	err = p.pointsUpdateMain(p.BlockData.UserId)
+	err = p.pointsUpdateRollbackMain(p.BlockData.UserId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
