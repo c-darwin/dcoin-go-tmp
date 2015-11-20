@@ -41,7 +41,13 @@ func (c *Controller) GetSellerData() (string, error) {
 	}
 
 	// Кол-во покупателей за последний месяц
-	buyersCountM, err := c.Single("SELECT count(id) FROM ( SELECT id FROM orders WHERE seller  =  ? AND time > ? AND currency_id  =  ? GROUP BY buyer ) as t1", getUserId, currencyId, time.Now().Unix()-3600*24*30).Int64()
+	var q string
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT count(id) FROM ( SELECT DISTINCT id FROM orders WHERE seller  =  ? AND time > ? AND currency_id  =  ? GROUP BY buyer, id ) as t1`
+	} else {
+		q = `SELECT count(id) FROM ( SELECT id FROM orders WHERE seller  =  ? AND time > ? AND currency_id  =  ? GROUP BY buyer ) as t1`
+	}
+	buyersCountM, err := c.Single(q, getUserId, currencyId, time.Now().Unix()-3600*24*30).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
