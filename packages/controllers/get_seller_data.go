@@ -53,6 +53,31 @@ func (c *Controller) GetSellerData() (string, error) {
 	}
 
 	// Кол-во покупателей-майнеров за последний месяц
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT count(id)
+			FROM (
+				SELECT DISTINCT orders.id
+				FROM orders
+				LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
+				WHERE seller = ? AND
+							 orders.time > ? AND
+							 orders.currency_id =  ? AND
+							 miner_id > 0
+				GROUP BY buyer, orders.id
+			) as t1`
+	} else {
+		q = `SELECT count(id)
+			FROM (
+				SELECT orders.id
+				FROM orders
+				LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
+				WHERE seller = ? AND
+							 orders.time > ? AND
+							 orders.currency_id =  ? AND
+							 miner_id > 0
+				GROUP BY buyer
+			) as t1`
+	}
 	buyersMinersCountM, err := c.Single(`
 			SELECT count(id)
 			FROM (
