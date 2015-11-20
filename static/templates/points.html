@@ -11,7 +11,7 @@
 <strong>{{.Mean}}</strong><br>
 {{.Lang.points_yours}}: <br>
 <strong>{{.MyPoints}}</strong><br>
-{{.Lang.points_votes}}: <br><strong>{{.VotesOk}}</strong><br>
+{{noescape .Lang.points_votes}}: <br><strong>{{.VotesOk}}</strong><br>
 
 {{if .PointsStatus}}
 	<table class="table table-bordered" style="width:500px"><caption><h3>{{.Lang.points_status}}</h3></caption>

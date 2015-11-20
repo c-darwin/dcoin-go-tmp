@@ -30,7 +30,7 @@ func (c *Controller) HolidaysList() (string, error) {
 	myHolidaysAccepted, err := c.GetAll(`SELECT * FROM holidays WHERE user_id = ?`, -1, c.SessUserId)
 
 	limitsText := strings.Replace(c.Lang["limits_text"], "[limit]", utils.Int64ToStr(c.Variables.Int64["limit_holidays"]), -1)
-	limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["holidays_limits_text"]], -1)
+	limitsText = strings.Replace(limitsText, "[period]", c.Periods[c.Variables.Int64["limit_holidays_period"]], -1)
 
 	last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewHolidays"}), 3, c.TimeFormat)
 	lastTxFormatted := ""

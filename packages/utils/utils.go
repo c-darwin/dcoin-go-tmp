@@ -1035,6 +1035,10 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 		if ok, _ := regexp.MatchString(`^\[[0-9]{1,10}(,[0-9]{1,10}){0,100}\]$`, data); ok {
 			return true
 		}
+	case "abuse_comment", "vote_comment":
+		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\,\s\.\-]{1,255}$`, data); ok {
+			return true
+		}
 	case "private_key":
 		if ok, _ := regexp.MatchString(`^(?i)[0-9a-z\+\-\s\=\/\n\r]+$`, data); ok {
 			if len(data) > 256 && len(data) < 3072 {
@@ -1066,6 +1070,12 @@ func CheckInputData_(data_ interface{}, dataType string, info string) bool {
 	case "currency_id":
 		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok {
 			if StrToInt(data) <= 255 {
+				return true
+			}
+		}
+	case "system_commission":
+		if ok, _ := regexp.MatchString(`^[0-9]{1,3}$`, data); ok {
+			if StrToInt(data) <= 15 {
 				return true
 			}
 		}

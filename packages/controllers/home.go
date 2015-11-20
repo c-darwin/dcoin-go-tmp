@@ -220,12 +220,15 @@ func (c *Controller) Home() (string, error) {
 	calcTotal := utils.Round(100*math.Pow(1+currency_pct[72].MinerSec, 3600*24*30)-100, 0)
 
 	// токен для запроса инфы с биржи
-	tokenAndUrl, err := c.OneRow(`SELECT token, e_host FROM ` + c.MyPrefix + `my_tokens LEFT JOIN miners_data ON miners_data.user_id = e_owner_id ORDER BY time DESC LIMIT 1`).String()
-	if err != nil {
-		return "", err
+	var token, exchangeUrl string
+	if c.SessRestricted==0 {
+		tokenAndUrl, err := c.OneRow(`SELECT token, e_host FROM ` + c.MyPrefix + `my_tokens LEFT JOIN miners_data ON miners_data.user_id = e_owner_id ORDER BY time DESC LIMIT 1`).String()
+		if err != nil {
+			return "", err
+		}
+		token = tokenAndUrl["token"];
+		exchangeUrl = tokenAndUrl["e_host"];
 	}
-	token := tokenAndUrl["token"];
-	exchangeUrl := tokenAndUrl["e_host"];
 
 	myChatName := utils.Int64ToStr(c.SessUserId)
 	// возможно у отпарвителя есть ник

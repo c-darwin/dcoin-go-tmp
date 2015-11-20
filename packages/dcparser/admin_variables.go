@@ -57,7 +57,7 @@ func (p *Parser) AdminVariablesFront() error {
 			}
 			i++
 		case "system_commission":
-			if !utils.CheckInputData(value, "int") {
+			if !utils.CheckInputData(value, "system_commission") {
 				return p.ErrInfo(fmt.Errorf(errorText, name))
 			}
 			i++

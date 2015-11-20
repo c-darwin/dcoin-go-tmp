@@ -39,15 +39,25 @@ func (c *Controller) Arbitration() (string, error) {
 	txTypeId := utils.TypeInt(txType)
 	timeNow := time.Now().Unix()
 
-	myTrustList, err := c.GetAll(`
-			SELECT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
+	var q string
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT DISTINCT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
+			FROM arbitration_trust_list
+			LEFT JOIN users ON users.user_id = arbitration_trust_list.arbitrator_user_id
+			WHERE arbitration_trust_list.user_id = ? AND
+						 arbitration_trust_list.arbitrator_user_id > 0
+			GROUP BY arbitrator_user_id, url
+			ORDER BY count(arbitration_trust_list.user_id)  DESC`
+	} else {
+		q = `SELECT arbitrator_user_id, url, count(arbitration_trust_list.user_id) as count
 			FROM arbitration_trust_list
 			LEFT JOIN users ON users.user_id = arbitration_trust_list.arbitrator_user_id
 			WHERE arbitration_trust_list.user_id = ? AND
 						 arbitration_trust_list.arbitrator_user_id > 0
 			GROUP BY arbitrator_user_id
-			ORDER BY count(arbitration_trust_list.user_id)  DESC
-			`, 100, c.SessUserId)
+			ORDER BY count(arbitration_trust_list.user_id)  DESC`
+	}
+	myTrustList, err := c.GetAll(q, 100, c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

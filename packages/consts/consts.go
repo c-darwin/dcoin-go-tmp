@@ -53,7 +53,7 @@ const AUTO_REDUCTION_PROMISED_AMOUNT_MIN = 10
 // сколько должно быть процентов PROMISED_AMOUNT от кол-ва DC на кошельках, чтобы запустилось урезание
 const AUTO_REDUCTION_PROMISED_AMOUNT_PCT = 1 // X*100%
 
-const LIMIT_NEW_CF_PROJECT = 1
+const LIMIT_NEW_CF_PROJECT = 5
 const LIMIT_NEW_CF_PROJECT_PERIOD = 3600 * 24 * 7
 const LIMIT_CF_PROJECT_DATA = 10
 const LIMIT_CF_PROJECT_DATA_PERIOD = 3600 * 24

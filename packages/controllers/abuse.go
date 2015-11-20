@@ -21,7 +21,7 @@ func (c *Controller) Abuse() (string, error) {
 
 	var err error
 
-	txType := "Abuse"
+	txType := "Abuses"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 

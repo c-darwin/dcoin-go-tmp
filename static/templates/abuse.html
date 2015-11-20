@@ -10,7 +10,7 @@
 
 			comment = $('#comment_'+i).val();
 			user_id = $('#user_id_'+i).val();
-			if ( user_id!='' && comment!='' && ( /^[a-zA-Z0-9\,\s\.\-]*$/.test(comment) ) )
+			if ( typeof user_id != "undefined" && typeof comment != "undefined" && user_id!='' && comment!='' && ( /^[a-zA-Z0-9\,\s\.\-]*$/.test(comment) ) )
 				data = data + '"'+user_id + '":"' + comment + '",';
 
 		}

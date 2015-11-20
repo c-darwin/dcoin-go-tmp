@@ -45,14 +45,28 @@
 		my_notice();
 		return false;
 	});
+	{{if gt .UserId 0}}
 	my_notice();
+	{{end}}
 </script>
 
-<link href="static/css/cf.css" rel="stylesheet">
+{{if eq .UserId 0}}
+<style>
+	#page-wrapper{margin:0}
+</style>
+{{end}}
 
+<link href="static/css/cf.css" rel="stylesheet">
+{{if not .UserId}}
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="#" style="display: block; padding-left: 0px;  padding-top: 6px; margin-left: 15px; margin-right: 50px"><img src="static/img/logo.png" height="40"></a>
+	</div>
+</nav>
+{{end}}
 <h1 class="page-header">Block explorer</h1>
 
-{{if and (not .Start) (not .BlockId)}}
+{{if and (not .Start) (not .BlockId) (gt .UserId 0)}}
 <div>
 	<ul class="list-group">
 		<li class="list-group-item" id="main_status">{{.MyNotice.mainStatus}}</li>
@@ -78,10 +92,14 @@
 <ol class="breadcrumb" style="position: relative;">
 	<li><a href="#blockExplorer">Block explorer</a></li>
 	<li class="active">{{.BlockId}}</li>
-<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span></ol>
+</ol>
+{{else if eq .UserId 0}}
+<span style="position: absolute; right: 13px;"><i class="fa fa-refresh" onclick="rTpl()" style="color: #2A6496;cursor: pointer; cursor: hand; "></i></span>
+
 {{end}}
 {{noescape .Data}}
 
 <script src="static/js/unixtime.js"></script>
+<input type='hidden' id='tpl_name' value='blockExplorer'>
 
 {{end}}

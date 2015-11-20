@@ -75,7 +75,7 @@
 
 				{{if .ShowSignData}}$("#sign").css("display", "block"); $("#comment_div").css("display", "none");{{end}}
 
-				$("#for-signature").val( {{.TxTypeId}},{{.TimeNow}},{{.UserId}},{{.ProjectId}},{{.LangId}},'+$("#comment").val());
+				$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},{{.ProjectId}},{{.LangId}},'+$("#comment").val());
 
 				doSign();
 
@@ -86,7 +86,7 @@
 				$('#comment_send_to_net').find('#send_to_net').bind('click', function () {
 							$('#wrapper').spin();
 							$.post( 'ajax?controllerName=saveQueue', {
-								'type' : '{{.TxTypeId}}',
+								'type' : '{{.TxType}}',
 								'time' : '{{.TimeNow}}',
 								'user_id' : '{{.UserId}}',
 								'project_id' : {{.ProjectId}},

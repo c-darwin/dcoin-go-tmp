@@ -204,7 +204,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("dbInit", dbInit)
 
-	match, _ := regexp.MatchString("^installStep[0-9_]+$", tplName)
+	match, _ := regexp.MatchString("^(installStep[0-9_]+)|(blockExplorer)$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName != "" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
 		tplName = tplName
@@ -313,7 +313,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("tplName::", tplName, sessUserId, installProgress)
 
-	if ok, _ := regexp.MatchString(`^(?i)adminVariables|exchangeAdmin|votesExchange|chat|firstSelect|PoolAdminLogin|setupPassword|waitingAcceptNewKey|SetPassword|CfPagePreview|CfCatalog|AddCfProjectData|CfProjectChangeCategory|NewCfProject|MyCfProjects|DelCfProject|DelCfFunding|CfStart|PoolAdminControl|Credits|Home|WalletsList|Information|Notifications|Interface|MiningMenu|Upgrade5|NodeConfigControl|Upgrade7|Upgrade6|Upgrade5|Upgrade4|Upgrade3|Upgrade2|Upgrade1|Upgrade0|StatisticVoting|ProgressBar|MiningPromisedAmount|CurrencyExchangeDelete|CurrencyExchange|ChangeCreditor|ChangeCommission|CashRequestOut|ArbitrationSeller|ArbitrationBuyer|ArbitrationArbitrator|Arbitration|InstallStep2|InstallStep1|InstallStep0|DbInfo|ChangeHost|Assignments|NewUser|NewPhoto|Voting|VoteForMe|RepaymentCredit|PromisedAmountList|PromisedAmountActualization|NewPromisedAmount|Login|ForRepaidFix|DelPromisedAmount|DelCredit|ChangePromisedAmount|ChangePrimaryKey|ChangeNodeKey|ChangeAvatar|BugReporting|Abuse|UpgradeResend|UpdatingBlockchain|Statistic|RewritePrimaryKey|RestoringAccess|PoolTechWorks|Points|NewHolidays|NewCredit|MoneyBackRequest|MoneyBack|ChangeMoneyBack|ChangeKeyRequest|ChangeKeyClose|ChangeGeolocation|ChangeCountryRace|ChangeArbitratorConditions|CashRequestIn|BlockExplorer$`, tplName); !ok {
+	if ok, _ := regexp.MatchString(`^(?i)holidaysList|adminVariables|exchangeAdmin|votesExchange|chat|firstSelect|PoolAdminLogin|setupPassword|waitingAcceptNewKey|SetPassword|CfPagePreview|CfCatalog|AddCfProjectData|CfProjectChangeCategory|NewCfProject|MyCfProjects|DelCfProject|DelCfFunding|CfStart|PoolAdminControl|Credits|Home|WalletsList|Information|Notifications|Interface|MiningMenu|Upgrade5|NodeConfigControl|Upgrade7|Upgrade6|Upgrade5|Upgrade4|Upgrade3|Upgrade2|Upgrade1|Upgrade0|StatisticVoting|ProgressBar|MiningPromisedAmount|CurrencyExchangeDelete|CurrencyExchange|ChangeCreditor|ChangeCommission|CashRequestOut|ArbitrationSeller|ArbitrationBuyer|ArbitrationArbitrator|Arbitration|InstallStep2|InstallStep1|InstallStep0|DbInfo|ChangeHost|Assignments|NewUser|NewPhoto|Voting|VoteForMe|RepaymentCredit|PromisedAmountList|PromisedAmountActualization|NewPromisedAmount|Login|ForRepaidFix|DelPromisedAmount|DelCredit|ChangePromisedAmount|ChangePrimaryKey|ChangeNodeKey|ChangeAvatar|BugReporting|Abuse|UpgradeResend|UpdatingBlockchain|Statistic|RewritePrimaryKey|RestoringAccess|PoolTechWorks|Points|NewHolidays|NewCredit|MoneyBackRequest|MoneyBack|ChangeMoneyBack|ChangeKeyRequest|ChangeKeyClose|ChangeGeolocation|ChangeCountryRace|ChangeArbitratorConditions|CashRequestIn|BlockExplorer$`, tplName); !ok {
 		w.Write([]byte("Access denied 0"))
 	} else if len(tplName) > 0 && sessUserId > 0 && installProgress == "complete" {
 		// если ключ юзера изменился, то выбрасываем его
@@ -349,7 +349,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Error("%v", err)
 			}
-			if data["first_select"] == 0 && data["miner_id"] == 0 {
+			if data["first_select"] == 0 && data["miner_id"] == 0 && c.SessRestricted==0 {
 				tplName = "firstSelect"
 			}
 		}
@@ -452,7 +452,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if len(tplName) > 0 {
 		log.Debug("tplName", tplName)
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)blockExplorer|waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
 			// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню

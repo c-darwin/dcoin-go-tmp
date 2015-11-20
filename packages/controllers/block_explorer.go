@@ -129,9 +129,12 @@ func (c *Controller) BlockExplorer() (string, error) {
 	}
 
 	// пока панель тут
-	myNotice, err := c.GetMyNoticeData(c.SessUserId, c.SessUserId, c.MyPrefix, c.Lang)
-	if err != nil {
-		return "", utils.ErrInfo(err)
+	myNotice := make(map[string]string)
+	if c.SessUserId > 0 {
+		myNotice, err = c.GetMyNoticeData(c.SessUserId, c.SessUserId, c.MyPrefix, c.Lang)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
 	}
 
 	TemplateStr, err := makeTemplate("block_explorer", "blockExplorer", &BlockExplorerPage{
