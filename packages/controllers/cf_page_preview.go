@@ -233,16 +233,27 @@ func (c *Controller) CfPagePreview() (string, error) {
 	}
 
 	// список фундеров
-	projectFunders, err := c.GetAll(`
-			SELECT cf_funding.user_id, sum(amount) as amount, time,  name, avatar
+	var q string
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT DISTINCT cf_funding.user_id, sum(amount) as amount, time,  name, avatar
+			FROM cf_funding
+			LEFT JOIN users ON users.user_id = cf_funding.user_id
+			WHERE project_id = ? AND
+						del_block_id = 0
+			GROUP BY cf_funding.user_id, time
+			ORDER BY time DESC
+			LIMIT 100`
+	} else {
+		q = `SELECT cf_funding.user_id, sum(amount) as amount, time,  name, avatar
 			FROM cf_funding
 			LEFT JOIN users ON users.user_id = cf_funding.user_id
 			WHERE project_id = ? AND
 						del_block_id = 0
 			GROUP BY cf_funding.user_id
 			ORDER BY time DESC
-			LIMIT 100
-			`, 100, projectId)
+			LIMIT 100`
+	}
+	projectFunders, err := c.GetAll(q, 100, projectId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
