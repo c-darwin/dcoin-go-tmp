@@ -295,7 +295,12 @@ func (c *Controller) CfPagePreview() (string, error) {
 		}
 	}
 	// сколько всего комментов на каждом языке
-	langComments, err := c.GetMap("SELECT lang_id, count(id) as count FROM cf_comments WHERE project_id = ?", "lang_id", "count", projectId)
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT DISTINCT ON (lang_id) lang_id, count(id) as count FROM cf_comments WHERE project_id = ?`
+	} else {
+		q = `SELECT lang_id, count(id) as count FROM cf_comments WHERE project_id = ?`
+	}
+	langComments, err := c.GetMap(q, "lang_id", "count", projectId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
