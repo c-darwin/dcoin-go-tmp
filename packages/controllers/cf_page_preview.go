@@ -296,7 +296,7 @@ func (c *Controller) CfPagePreview() (string, error) {
 	}
 	// сколько всего комментов на каждом языке
 	if c.ConfigIni["db_type"] == "postgresql" {
-		q = `SELECT DISTINCT ON (lang_id) lang_id, count(id) as count FROM cf_comments WHERE project_id = ?`
+		q = `SELECT DISTINCT lang_id, count(id) as count FROM cf_comments WHERE project_id = ?`
 	} else {
 		q = `SELECT lang_id, count(id) as count FROM cf_comments WHERE project_id = ?`
 	}
