@@ -15,7 +15,7 @@
 		else {
 				$.post( 'ajax?controllerName=encryptComment', {
 
-					'to_user_id' : {{.AdminUserId}},
+					'to_id' : {{.AdminUserId}},
 					'type' : 'restoringAccess',
 					'comment' : $("#secret").val()
 

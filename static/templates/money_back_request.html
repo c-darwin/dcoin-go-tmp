@@ -6,8 +6,9 @@
 
 	$('#next').bind('click', function () {
 
+		var json = JSON.stringify({'0':{{.Order.arbitrator0}},'1':{{.Order.arbitrator1}},'2':{{.Order.arbitrator2}},'3':{{.Order.arbitrator3}},'4':{{.Order.arbitrator4}}});
 		$.post( 'ajax?controllerName=encryptComment', {
-			'to_id' : {'0':{{.Order.arbitrator0}},'1':{{.Order.arbitrator1}},'2':{{.Order.arbitrator2}},'3':{{.Order.arbitrator3}},'4':{{.Order.arbitrator4}}},
+			'to_ids' : json,
 			'type' : 'arbitration_arbitrators',
 			'comment' :  $("#comment").val()
 	}, function (arbitrator_enc_text_) {
@@ -24,7 +25,7 @@
 
 		{{if .ShowSignData}}$("#main_data").css("display", "none"); $("#sign").css("display", "block");{{end}}
 
-		$("#for-signature").val( '{{.Data.creditPartTypeId}},{{.TimeNow}},{{.UserId}},{{.Order.id}},'+arbitrator_enc_text[0]+','+arbitrator_enc_text[1]+','+arbitrator_enc_text[2]+','+arbitrator_enc_text[3]+','+arbitrator_enc_text[4]+','+seller_enc_text);
+		$("#for-signature").val( '{{.TxTypeId}},{{.TimeNow}},{{.UserId}},{{.Order.id}},'+arbitrator_enc_text[0]+','+arbitrator_enc_text[1]+','+arbitrator_enc_text[2]+','+arbitrator_enc_text[3]+','+arbitrator_enc_text[4]+','+seller_enc_text);
 		console.log($("#for-signature").val());
 		doSign();
 		{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
@@ -35,13 +36,14 @@
 	});
 
 	$('#send_to_net').bind('click', function () {
+		var json = JSON.stringify(arbitrator_enc_text);
 
 		$.post( 'ajax?controllerName=saveQueue', {
-					'type' : '{{.Data.creditPartType}}',
+					'type' : '{{.TxType}}',
 					'time' : '{{.TimeNow}}',
 					'user_id' : '{{.UserId}}',
 					'order_id' : '{{.Order.id}}',
-					'arbitrator_enc_text' : arbitrator_enc_text,
+					'arbitrator_enc_text' : json,
 					'seller_enc_text' : seller_enc_text,
 					'signature1': $('#signature1').val(),
 					'signature2': $('#signature2').val(),

@@ -39,11 +39,11 @@
 	});
 
 	function money_back(id) {
-		fc_navigate('money_back', {'order_id': id, 'arbitrator': 1, 'amount': $('#money_back_amount_'+id).val()})
+		fc_navigate('moneyBack', {'order_id': id, 'arbitrator': 1, 'amount': $('#money_back_amount_'+id).val()})
 	}
 
 	function change_money_back_time(id) {
-		fc_navigate('change_money_back_time', {'order_id': id, 'days': $('#change_money_back_time_'+id).val()})
+		fc_navigate('changeMoneyBackTime', {'order_id': id, 'days': $('#change_money_back_time_'+id).val()})
 	}
 
 	function decrypt_comment_0 (id) {
@@ -72,7 +72,7 @@
 			{{range $data := .MyOrders}}
 				<tr>
 					<td>{{$data.id}}</td>
-					<td class='unixtime'>{{$data.time}}}</td>
+					<td class='unixtime'>{{$data.time}}</td>
 					<td>{{$data.amount}}</td>
 					<td>{{$data.seller}}</td>
 						{{if eq $data.comment_status "decrypted"}}

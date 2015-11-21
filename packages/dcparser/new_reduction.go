@@ -349,7 +349,10 @@ func (p *Parser) NewReductionRollback() error {
 				return p.ErrInfo(err)
 			}
 		}
-/*
+	/*
+
+	Когда будет много данных, то для свежего отката будем использовать то, что закомменчено
+
 		// крауд-фандинг
 		err := p.ExecSql("UPDATE cf_funding SET amount = amount_backup, amount_backup = 0 WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {

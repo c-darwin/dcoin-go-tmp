@@ -1328,10 +1328,29 @@ func (c *Controller) SaveQueue() (string, error) {
 	case "MoneyBackRequest":
 
 		var arbitratorEncText [5]string
+
+		var arbitrator_enc_text map[string]string
+		err = json.Unmarshal([]byte(c.r.PostFormValue("arbitrator_enc_text")), &arbitrator_enc_text)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		var arbitratorEncText_ []string
+		for _, encText:=range arbitrator_enc_text {
+			arbitratorEncText_ = append(arbitratorEncText_, encText)
+		}
+		for i:=0; i < 5; i++ {
+			if i < len(arbitrator_enc_text) {
+				if arbitratorEncText_[i] == "0" {
+					arbitratorEncText_[i] = "00"
+				}
+				arbitratorEncText[i] = arbitratorEncText_[i]
+			}
+		}
+		/*
 		err := json.Unmarshal([]byte(c.r.PostFormValue("arbitrator_enc_text")), &arbitratorEncText)
 		if err != nil {
 			return fmt.Sprintf("%q", err), err
-		}
+		}*/
 
 		data = utils.DecToBin(txType, 1)
 		data = append(data, utils.DecToBin(txTime, 4)...)
@@ -1344,6 +1363,14 @@ func (c *Controller) SaveQueue() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(arbitratorEncText[4])))...)
 		data = append(data, utils.EncodeLengthPlusData(utils.HexToBin([]byte(c.r.FormValue("seller_enc_text"))))...)
 		data = append(data, binSignatures...)
+
+		fmt.Println(c.r.FormValue("order_id"))
+		fmt.Println(arbitratorEncText[0])
+		fmt.Println(arbitratorEncText[1])
+		fmt.Println(arbitratorEncText[2])
+		fmt.Println(arbitratorEncText[3])
+		fmt.Println(arbitratorEncText[4])
+		fmt.Println(c.r.FormValue("seller_enc_text"))
 
 	case "ChangeSellerHoldBack":
 

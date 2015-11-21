@@ -22,9 +22,15 @@ func (c *Controller) EncryptComment() (string, error) {
 	if len(toIds_) == 0 {
 		toId = utils.StrToInt64(c.r.FormValue("to_id"))
 	} else {
-		err = json.Unmarshal([]byte(toIds_), &toIds)
+		var toIdsMap map[string]string
+		err = json.Unmarshal([]byte(toIds_), &toIdsMap)
 		if err != nil {
 			return "", utils.ErrInfo(err)
+		}
+		for _, uid:=range toIdsMap {
+			if utils.StrToInt64(uid) > 0 {
+				toIds = append(toIds, utils.StrToInt64(uid))
+			}
 		}
 	}
 
@@ -50,10 +56,10 @@ func (c *Controller) EncryptComment() (string, error) {
 	log.Debug("toId:", toId)
 	log.Debug("toIds:", toIds)
 	log.Debug("toUserId:", toUserId)
-	enc := make(map[int][]byte)
+	enc := make(map[string]string)
 	for i := 0; i < len(toIds); i++ {
 		if toIds[i] == 0 {
-			enc[i] = []byte("0")
+			enc[utils.IntToStr(i)] = "0"
 			continue
 		}
 		// если получатель майнер, тогда шифруем нодовским ключем
@@ -62,7 +68,7 @@ func (c *Controller) EncryptComment() (string, error) {
 			return "", utils.ErrInfo(err)
 		}
 		var publicKey string
-		if utils.StrToInt(minersData["miner_id"]) > 0 && txType != "cash_request" && txType != "bug_reporting" && txType != "project" && txType != "money_back" {
+		if utils.StrToInt(minersData["miner_id"]) > 0 && txType != "cash_request" && txType != "bug_reporting" && txType != "project" && txType != "money_back" && txType != "restoringAccess" {
 			publicKey = minersData["node_public_key"]
 		} else {
 			publicKey, err = c.Single("SELECT public_key_0 FROM users WHERE user_id  =  ?", toIds[i]).String()
@@ -79,11 +85,16 @@ func (c *Controller) EncryptComment() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		enc[i] = utils.BinToHex(enc_)
+		enc[utils.IntToStr(i)] = string(utils.BinToHex(enc_))
+	}
+	if len(enc) < 5 && len(enc) > 0 {
+		for i := len(enc); i < 5 ; i ++ {
+			enc[utils.IntToStr(i)] = "0"
+		}
 	}
 	log.Debug("enc:", enc)
 	if txType != "arbitration_arbitrators" {
-		return string(enc[0]), nil
+		return string(enc["0"]), nil
 	} else {
 		result, err := json.Marshal(enc)
 		if err != nil {
