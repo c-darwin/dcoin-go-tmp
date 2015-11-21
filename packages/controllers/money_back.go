@@ -28,7 +28,7 @@ func (c *Controller) MoneyBack() (string, error) {
 	timeNow := utils.Time()
 
 	orderId := int64(utils.StrToFloat64(c.Parameters["order_id"]))
-	amount := utils.StrToFloat64(c.Parameters["days"])
+	amount := utils.StrToFloat64(c.Parameters["amount"])
 	arbitrator := int64(utils.StrToFloat64(c.Parameters["arbitrator"]))
 	var li, redirect string
 	if arbitrator > 0 {
