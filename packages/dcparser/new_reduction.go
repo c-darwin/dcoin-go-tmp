@@ -260,7 +260,7 @@ func (p *Parser) NewReduction() error {
 			return p.ErrInfo(err)
 		}
 
-		err = p.ExecSql(`INSERT INTO reduction_backup (block_id, currency_id, cf_funding, forex_orders, promised_amount_cash_request_out_time, , promised_amount_tdc_amount, wallets) VALUES (?, ?, ?, ?, ?, ?, ?)`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"], jsonDataPromisedAmountCF, jsonDataPromisedAmountForex, jsonDataPromisedAmountTime, jsonDataPromisedAmountTdc, jsonDataWallets)
+		err = p.ExecSql(`INSERT INTO reduction_backup (block_id, currency_id, cf_funding, forex_orders, promised_amount_cash_request_out_time, promised_amount_tdc_amount, wallets) VALUES (?, ?, ?, ?, ?, ?, ?)`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"], jsonDataPromisedAmountCF, jsonDataPromisedAmountForex, jsonDataPromisedAmountTime, jsonDataPromisedAmountTdc, jsonDataWallets)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
