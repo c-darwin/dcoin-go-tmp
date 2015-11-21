@@ -963,7 +963,7 @@ func (db *DCDB) HashTableData(table, where, orderBy string) (string, error) {
 	case "postgresql":
 		q = "SELECT md5(CAST((array_agg(t.* " + orderBy + ")) AS text)) FROM \"" + table + "\" t " + where
 	case "mysql":
-		err := db.ExecSql("SET GLOBAL group_concat_max_len=18446744073709551615")
+		err := db.ExecSql("SET @@group_concat_max_len = 4294967295")
 		if err != nil {
 			return "", ErrInfo(err)
 		}

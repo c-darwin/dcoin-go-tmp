@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	//"regexp"
-	//"math"
-	//"strings"
-	//"os"
 )
 
 func (p *Parser) AdminSpotsInit() error {

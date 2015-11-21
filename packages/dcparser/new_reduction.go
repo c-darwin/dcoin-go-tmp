@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"encoding/json"
 )
 
 func (p *Parser) NewReductionInit() error {
@@ -181,19 +182,45 @@ func (p *Parser) NewReduction() error {
 
 		// т.к. невозможо 2 отката подряд из-за промежутка в 2 дня между reduction,
 		// то можем использовать только бекап на 1 уровень назад вместо _log
-		err := p.ExecSql("UPDATE wallets SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
+		// но для теста полного роллбека до 1-го блока нужно бекапить данные
+		data, err := p.DCDB.GetMap("SELECT user_id, amount FROM wallets WHERE currency_id = ?", "user_id", "amount", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		jsonDataWallets, err := json.Marshal(data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		err = p.ExecSql("UPDATE wallets SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// если бы не урезали amount, то пришлось бы делать пересчет tdc по всем, у кого есть данная валюта
 		// после 87826 блока убрано amount_backup = amount, amount = amount*({$d}) т.к. теряется смысл в reduction c type=promised_amount
+		data, err = p.DCDB.GetMap("SELECT user_id, tdc_amount FROM promised_amount WHERE currency_id = ?", "user_id", "tdc_amount", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		jsonDataPromisedAmountTdc, err := json.Marshal(data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		err = p.ExecSql("UPDATE promised_amount SET tdc_amount_backup = tdc_amount, tdc_amount = round(tdc_amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// все свежие cash_request_out_time отменяем
+		data, err = p.DCDB.GetMap("SELECT user_id, cash_request_out_time FROM promised_amount WHERE currency_id = ?", "user_id", "cash_request_out_time", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		jsonDataPromisedAmountTime, err := json.Marshal(data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		err = p.ExecSql("UPDATE promised_amount SET cash_request_out_time_backup = cash_request_out_time, cash_request_out_time = 0 WHERE currency_id = ? AND cash_request_out_time > ?", p.TxMaps.Int64["currency_id"], (p.BlockData.Time - p.Variables.Int64["cash_request_time"]))
 		if err != nil {
 			return p.ErrInfo(err)
@@ -206,13 +233,34 @@ func (p *Parser) NewReduction() error {
 		}
 
 		// форeкс-ордеры
+		data, err = p.DCDB.GetMap("SELECT user_id, amount FROM forex_orders WHERE currency_id = ?", "user_id", "amount", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		jsonDataPromisedAmountForex, err := json.Marshal(data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		err = p.ExecSql("UPDATE forex_orders SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE sell_currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
 
 		// крауд-фандинг
+		data, err = p.DCDB.GetMap("SELECT user_id, amount FROM cf_funding WHERE currency_id = ?", "user_id", "amount", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		jsonDataPromisedAmountCF, err := json.Marshal(data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		err = p.ExecSql("UPDATE cf_funding SET amount_backup = amount, amount = round(amount*"+utils.Float64ToStr(d)+"+"+utils.Float64ToStr(consts.ROUND_FIX)+", 2) WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		err = p.ExecSql(`INSERT INTO reduction_backup (block_id, currency_id, cf_funding, forex_orders, promised_amount_cash_request_out_time, , promised_amount_tdc_amount, wallets) VALUES (?, ?, ?, ?, ?, ?, ?)`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"], jsonDataPromisedAmountCF, jsonDataPromisedAmountForex, jsonDataPromisedAmountTime, jsonDataPromisedAmountTdc, jsonDataWallets)
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -231,7 +279,77 @@ func (p *Parser) NewReduction() error {
 }
 
 func (p *Parser) NewReductionRollback() error {
-	if utils.StrToInt64(p.TxMaps.String["pct"]) > 0 {
+	if utils.StrToFloat64(p.TxMaps.String["pct"]) > 0 {
+
+		jsonData, err := p.OneRow(`SELECT * FROM reduction_backup WHERE block_id = ? AND currency_id = ?`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"]).Bytes()
+
+		// крауд-фандинг
+		var data map[string]string
+		err = json.Unmarshal(jsonData["cf_funding"], &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		for user_id, amount := range data {
+			err := p.ExecSql("UPDATE cf_funding SET amount = ? WHERE user_id = ?", amount, user_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+
+		// форекс-ордеры
+		err = json.Unmarshal(jsonData["forex_orders"], &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		for user_id, amount := range data {
+			err := p.ExecSql("UPDATE forex_orders SET amount = ? WHERE user_id = ?", amount, user_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+
+		// cash_requests del_block_id
+		err = p.ExecSql("UPDATE cash_requests SET del_block_id = 0 WHERE del_block_id = ?", p.BlockData.BlockId)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+
+		// promised_amount cash_request_out_time
+		err = json.Unmarshal(jsonData["promised_amount_cash_request_out_time"], &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		for user_id, cash_request_out_time := range data {
+			err := p.ExecSql("UPDATE promised_amount SET cash_request_out_time = ? WHERE user_id = ?", cash_request_out_time, user_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+
+		// promised_amount tdc_amount
+		err = json.Unmarshal(jsonData["promised_amount_tdc_amount"], &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		for user_id, tdc_amount := range data {
+			err := p.ExecSql("UPDATE promised_amount SET tdc_amount = ? WHERE user_id = ?", tdc_amount, user_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+
+		// wallets
+		err = json.Unmarshal(jsonData["wallets"], &data)
+		if err != nil {
+			return p.ErrInfo(err)
+		}
+		for user_id, amount := range data {
+			err := p.ExecSql("UPDATE wallets SET amount = ? WHERE user_id = ?", amount, user_id)
+			if err != nil {
+				return p.ErrInfo(err)
+			}
+		}
+/*
 		// крауд-фандинг
 		err := p.ExecSql("UPDATE cf_funding SET amount = amount_backup, amount_backup = 0 WHERE currency_id = ?", p.TxMaps.Int64["currency_id"])
 		if err != nil {
@@ -259,7 +377,7 @@ func (p *Parser) NewReductionRollback() error {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-
+*/
 	}
 
 	affect, err := p.ExecSqlGetAffect("DELETE FROM reduction WHERE block_id = ?", p.BlockData.BlockId)
