@@ -23,7 +23,7 @@ type moneyBackPage struct {
 
 func (c *Controller) MoneyBack() (string, error) {
 
-	txType := "MoneyBackTime"
+	txType := "MoneyBack"
 	txTypeId := utils.TypeInt(txType)
 	timeNow := utils.Time()
 
