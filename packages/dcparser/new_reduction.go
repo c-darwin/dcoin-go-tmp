@@ -233,7 +233,7 @@ func (p *Parser) NewReduction() error {
 		}
 
 		// форeкс-ордеры
-		data, err = p.DCDB.GetMap("SELECT user_id, amount FROM forex_orders WHERE currency_id = ?", "user_id", "amount", p.TxMaps.Int64["currency_id"])
+		data, err = p.DCDB.GetMap("SELECT user_id, amount FROM forex_orders WHERE sell_currency_id = ?", "user_id", "amount", p.TxMaps.Int64["currency_id"])
 		if err != nil {
 			return p.ErrInfo(err)
 		}
@@ -290,7 +290,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, amount := range data {
-			err := p.ExecSql("UPDATE cf_funding SET amount = ? WHERE user_id = ?", amount, user_id)
+			err := p.ExecSql("UPDATE cf_funding SET amount = ? WHERE user_id = ? AND sell_currency_id = ?", amount, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -302,7 +302,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, amount := range data {
-			err := p.ExecSql("UPDATE forex_orders SET amount = ? WHERE user_id = ?", amount, user_id)
+			err := p.ExecSql("UPDATE forex_orders SET amount = ? WHERE user_id = ? AND sell_currency_id = ?", amount, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -320,7 +320,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, cash_request_out_time := range data {
-			err := p.ExecSql("UPDATE promised_amount SET cash_request_out_time = ? WHERE user_id = ?", cash_request_out_time, user_id)
+			err := p.ExecSql("UPDATE promised_amount SET cash_request_out_time = ? WHERE user_id = ? AND currency_id = ?", cash_request_out_time, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -332,7 +332,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, tdc_amount := range data {
-			err := p.ExecSql("UPDATE promised_amount SET tdc_amount = ? WHERE user_id = ?", tdc_amount, user_id)
+			err := p.ExecSql("UPDATE promised_amount SET tdc_amount = ? WHERE user_id = ? AND currency_id = ?", tdc_amount, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
@@ -344,7 +344,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, amount := range data {
-			err := p.ExecSql("UPDATE wallets SET amount = ? WHERE user_id = ?", amount, user_id)
+			err := p.ExecSql("UPDATE wallets SET amount = ? WHERE user_id = ? AND currency_id = ?", amount, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
