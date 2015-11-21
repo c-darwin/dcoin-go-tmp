@@ -84,24 +84,41 @@ func (c *Controller) GetSellerData() (string, error) {
 	}
 
 	// Кол-во покупателей всего
-	buyersCount, err := c.Single("SELECT count(id) FROM ( SELECT id FROM orders WHERE seller  =  ? AND currency_id  =  ? GROUP BY buyer ) as t1", getUserId, currencyId).Int64()
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT count(id) FROM ( SELECT DISTINCT id FROM orders WHERE seller  =  ? AND currency_id  =  ? GROUP BY buyer, id ) as t1`
+	} else {
+		q = `SELECT count(id) FROM ( SELECT id FROM orders WHERE seller  =  ? AND currency_id  =  ? GROUP BY buyer ) as t1`
+	}
+	buyersCount, err := c.Single(q, getUserId, currencyId).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 
 	// Кол-во покупателей-майнеров всего
-	buyersMinersCount, err := c.Single(`
-		SELECT count(id)
-		FROM (
-			SELECT orders.id
-			FROM orders
-			LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
-			WHERE seller = ? AND
-						 orders.currency_id = ? AND
-						 miner_id > 0
-			GROUP BY buyer
-		) as t1
-	`, getUserId, currencyId).Int64()
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = `SELECT count(id)
+			FROM (
+				SELECT DISTINCT orders.id
+				FROM orders
+				LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
+				WHERE seller = ? AND
+							 orders.currency_id = ? AND
+							 miner_id > 0
+				GROUP BY buyer, orders.id
+			) as t1`
+	} else {
+		q = `SELECT count(id)
+			FROM (
+				SELECT orders.id
+				FROM orders
+				LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
+				WHERE seller = ? AND
+							 orders.currency_id = ? AND
+							 miner_id > 0
+				GROUP BY buyer
+			) as t1`
+	}
+	buyersMinersCount, err := c.Single(q, getUserId, currencyId).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
