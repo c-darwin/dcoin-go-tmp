@@ -78,19 +78,7 @@ func (c *Controller) GetSellerData() (string, error) {
 				GROUP BY buyer
 			) as t1`
 	}
-	buyersMinersCountM, err := c.Single(`
-			SELECT count(id)
-			FROM (
-				SELECT orders.id
-				FROM orders
-				LEFT JOIN miners_data ON miners_data.user_id =  orders.buyer
-				WHERE seller = ? AND
-							 orders.time > ? AND
-							 orders.currency_id =  ? AND
-							 miner_id > 0
-				GROUP BY buyer
-			) as t1
-		`, getUserId, time.Now().Unix()-3600*24*30, currencyId).Int64()
+	buyersMinersCountM, err := c.Single(q, getUserId, time.Now().Unix()-3600*24*30, currencyId).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
