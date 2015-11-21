@@ -290,7 +290,7 @@ func (p *Parser) NewReductionRollback() error {
 			return p.ErrInfo(err)
 		}
 		for user_id, amount := range data {
-			err := p.ExecSql("UPDATE cf_funding SET amount = ? WHERE user_id = ? AND sell_currency_id = ?", amount, user_id, p.TxMaps.Int64["currency_id"])
+			err := p.ExecSql("UPDATE cf_funding SET amount = ? WHERE user_id = ? AND currency_id = ?", amount, user_id, p.TxMaps.Int64["currency_id"])
 			if err != nil {
 				return p.ErrInfo(err)
 			}
