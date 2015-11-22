@@ -68,17 +68,18 @@
 
 		<h3>{{.Lang.requests}}</h3>
 		<table class="table" style="max-width: 600px">
-			<tr><th>ID</th><th>{{.Lang.time}}</th><th>{{.Lang.amount}}</th><th>{{.Lang.buyer}}</th><th>{{.Lang.contacts}}</th><th>{{.Lang.extend_days}}</th><th>{{.Lang.money_back}}</th></tr>
+			<tr><th>ID</th><th>{{.Lang.time}}</th><th>{{.Lang.amount}}</th><th>{{.Lang.seller}}</th><th>{{.Lang.buyer}}</th><th>{{.Lang.contacts}}</th><th>{{.Lang.extend_days}}</th><th>{{.Lang.money_back}}</th></tr>
 			{{range $data := .MyOrders}}
 				<tr>
 					<td>{{$data.id}}</td>
 					<td class='unixtime'>{{$data.time}}</td>
 					<td>{{$data.amount}}</td>
 					<td>{{$data.seller}}</td>
+					<td>{{$data.buyer}}</td>
 						{{if eq $data.comment_status "decrypted"}}
 							<td><div style="width: 100px; overflow: auto">{{$data.comment}}</div></td>
 						{{else}}
-							<td><div class="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment_0({{$data.id}})">{{.Lang.decrypt}}</button></div></td>
+							<td><div class="comment_{{$data.id}}"><input type="hidden" id="encrypt_comment_{{$data.id}}" value="{{$data.comment}}"><button class="btn" onclick="decrypt_comment_0({{$data.id}})">{{$.Lang.decrypt}}</button></div></td>
 						{{end}}
 					<td><input type='text' class='form-control' style='width:100px; margin: 5px 0px' id='change_money_back_time_{{$data.id}}'><button type='button' class='btn btn-outline btn-primary' onclick='change_money_back_time({{$data.id}})'>OK</button></td>
 					<td><input type='text' class='form-control' style='width:100px; margin: 5px 0px' id='money_back_amount_{{$data.id}}'><button type='button' class='btn btn-outline btn-primary' onclick='money_back({{$data.id}})'>Money back</button></td>

@@ -33,10 +33,10 @@ func (c *Controller) MoneyBack() (string, error) {
 	var li, redirect string
 	if arbitrator > 0 {
 		li = `<li><a href="#arbitrationArbitrator">` + c.Lang["i_arbitrator"] + `</a></li>`
-		redirect = `arbitration_arbitrator`
+		redirect = `arbitrationArbitrator`
 	} else {
 		li = `<li><a href="#arbitrationArbitrator">` + c.Lang["i_seller"] + `</a></li>`
-		redirect = `arbitration_seller`
+		redirect = `arbitrationSeller`
 	}
 
 	TemplateStr, err := makeTemplate("money_back", "moneyBack", &moneyBackPage{
