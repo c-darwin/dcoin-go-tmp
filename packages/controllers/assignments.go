@@ -94,7 +94,7 @@ func (c *Controller) Assignments() (string, error) {
 		// ***********************************
 		// задания по модерации новых майнеров
 		// ***********************************
-		txType = "votes_miner"
+		txType = "VotesMiner"
 		txTypeId = utils.TypeInt(txType)
 		timeNow = utils.Time()
 
@@ -291,7 +291,7 @@ func (c *Controller) Assignments() (string, error) {
 			}
 		}
 
-		txType := "votes_promised_amount"
+		txType = "VotesPromisedAmount"
 		txTypeId = utils.TypeInt(txType)
 		timeNow = utils.Time()
 

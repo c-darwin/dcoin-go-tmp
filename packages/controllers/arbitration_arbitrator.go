@@ -52,6 +52,9 @@ func (c *Controller) ArbitrationArbitrator() (string, error) {
 			}
 			data["comment"] = data_["comment"]
 			data["comment_status"] = data_["comment_status"]
+		} else {
+			data["comment"] = ""
+			data["comment_status"] = "decrypted"
 		}
 		myOrders[k] = data
 	}

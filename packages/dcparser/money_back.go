@@ -6,7 +6,6 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"math"
 	"time"
-	//
 )
 
 func (p *Parser) MoneyBackInit() error {

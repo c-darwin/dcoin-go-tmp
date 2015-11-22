@@ -2337,6 +2337,7 @@ func (p *Parser) loan_payments(toUserId int64, amount float64, currencyId int64)
 		}
 		amountForCredit -= take
 		log.Debug("amountForCredit", amountForCredit)
+		log.Debug("%v / %v / %v / %v", rowId, currencyId, p.BlockData.BlockId, p.TxHash)
 		err := p.selectiveLoggingAndUpd([]string{"amount", "tx_hash", "tx_block_id"}, []interface{}{rowAmount - take, p.TxHash, p.BlockData.BlockId}, "credits", []string{"id"}, []string{rowId})
 		if err != nil {
 			return 0, p.ErrInfo(err)
@@ -2432,7 +2433,7 @@ func (p *Parser) updateRecipientWallet(toUserId, currencyId int64, amount float6
 			return p.ErrInfo(err)
 		}
 	}
-	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(toUserId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2488,7 +2489,7 @@ func (p *Parser) updateSenderWallet(fromUserId, currencyId int64, amount, commis
 	if err != nil {
 		return p.ErrInfo(err)
 	}
-	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(p.TxUserID)
+	myUserId, myBlockId, myPrefix, _, err := p.GetMyUserId(fromUserId)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -2586,6 +2587,7 @@ func (p*Parser) FormatQuery(q string) string {
 func (p *Parser) loanPaymentsRollback(userId, currencyId int64) error {
 	// было `amount` > 0  в WHERE, из-за чего были проблемы с откатами, т.к. amount может быть равно 0, если кредит был погашен этой тр-ей
 	//newQuery, newArgs := utils.FormatQueryArgs("SELECT id, to_user_id FROM credits WHERE from_user_id = ? AND currency_id = ? AND tx_block_id = ? AND hex(tx_hash) = ? AND del_block_id = 0 ORDER BY time DESC", p.ConfigIni["db_type"], []interface{}{userId, currencyId, p.BlockData.BlockId, p.TxHash}...)
+	log.Debug("loanPaymentsRollback %v / %v / %v / %v", userId, currencyId, p.BlockData.BlockId, p.TxHash)
 	rows, err := p.Query(p.FormatQuery(`
 		SELECT id, to_user_id
 		FROM credits
@@ -2602,6 +2604,7 @@ func (p *Parser) loanPaymentsRollback(userId, currencyId int64) error {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
+		log.Debug("loanPaymentsRollback %v / %v", id, to_user_id)
 		err := p.selectiveRollback([]string{"amount", "tx_hash", "tx_block_id"}, "credits", "id="+id, false)
 		if err != nil {
 			return p.ErrInfo(err)

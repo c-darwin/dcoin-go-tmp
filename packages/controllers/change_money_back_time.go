@@ -18,7 +18,7 @@ type changeMoneyBackTimePage struct {
 	TimeNow      int64
 }
 
-func (c *Controller) ChangeMoneyBack() (string, error) {
+func (c *Controller) ChangeMoneyBackTime() (string, error) {
 
 	txType := "ChangeMoneyBackTime"
 	txTypeId := utils.TypeInt(txType)
