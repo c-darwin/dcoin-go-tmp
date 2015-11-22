@@ -99,6 +99,7 @@ func (p *Parser) DelPromisedAmountRollback() error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Debug("delMiningBlockId %v p.BlockData.BlockId %v", delMiningBlockId, p.BlockData.BlockId)
 	if delMiningBlockId == p.BlockData.BlockId {
 		// выяснили, что начисление намайненного было, т.к. в методе mining() был указан del_mining_block_id. но какова сумма?
 		// т.к. сумма, которая сейчас хранится в tdc_amount, равна нулю, значит предыдущую можно получить только в log_promised_amount
@@ -106,10 +107,12 @@ func (p *Parser) DelPromisedAmountRollback() error {
 		if err != nil {
 			return p.ErrInfo(err)
 		}
-		tdcAmount, err := p.Single("SELECT tdc_amount FROM log_promised_amount WHERE log_id  =  ?", logId).Float64()
+		log.Debug("logId %v", logId)
+		tdcAmount, err := p.Single("SELECT tdc_and_profit FROM log_promised_amount WHERE log_id  =  ?", logId).Float64()
 		if err != nil {
 			return p.ErrInfo(err)
 		}
+		log.Debug("tdcAmount %v", tdcAmount)
 		p.TxMaps.Money["amount"] = tdcAmount
 		err = p.MiningRollback()
 		if err != nil {

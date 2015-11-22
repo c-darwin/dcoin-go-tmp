@@ -102,14 +102,17 @@ func (p *Parser) mining_(delMiningBlockId int64) error {
 	}
 	currencyId := utils.StrToInt64(data["currency_id"])
 
-	// логируем текущее значение по обещанным суммам
-	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ? )", "log_id", data["tdc_amount"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])
+
+	// возможно, что данный юзер имеет непогашенные cash_requests, значит новые TDC у него не растут, а просто обновляется tdc_amount_update
+	newTdc, err := p.getTdc(p.TxMaps.Int64["promised_amount_id"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
 
-	// возможно, что данный юзер имеет непогашенные cash_requests, значит новые TDC у него не растут, а просто обновляется tdc_amount_update
-	newTdc, err := p.getTdc(p.TxMaps.Int64["promised_amount_id"], p.TxUserID)
+
+	// логируем текущее значение по обещанным суммам
+	// tdc_and_profit - для del_promised_amount
+	logId, err := p.ExecSqlGetLastInsertId("INSERT INTO log_promised_amount ( tdc_and_profit, tdc_amount, tdc_amount_update, block_id, prev_log_id ) VALUES ( ?, ?, ?, ?, ? )", "log_id", newTdc, data["tdc_amount"], data["tdc_amount_update"], p.BlockData.BlockId, data["log_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
@@ -208,10 +211,14 @@ func (p *Parser) Mining() error {
 }
 
 func (p *Parser) MiningRollback() error {
+
+	log.Debug("p.TxMaps.Money[amount] %v", p.TxMaps.Money["amount"])
+
 	promisedAmountData, err := p.OneRow("SELECT * FROM promised_amount WHERE id  =  ?", p.TxMaps.Int64["promised_amount_id"]).String()
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Debug("promisedAmountData %v", promisedAmountData)
 	refs, err := p.getRefs(p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
@@ -248,11 +255,12 @@ func (p *Parser) MiningRollback() error {
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Debug("refData %v", refData)
 	if refs[2] > 0 {
 		log.Debug("refs[2] %v", refs[2])
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["third"]/100), 2)
+		log.Debug("refAmount %v", refAmount)
 		if refAmount > 0 {
-			log.Debug("refAmount %v", refAmount)
 			usersWalletsRollback = append(usersWalletsRollback, refs[2])
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[2], utils.StrToInt64(promisedAmountData["currency_id"]))
@@ -268,8 +276,8 @@ func (p *Parser) MiningRollback() error {
 	if refs[1] > 0 {
 		log.Debug("refs[1] %v", refs[1])
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["second"]/100), 2)
+		log.Debug("refAmount %v", refAmount)
 		if refAmount > 0 {
-			log.Debug("refAmount %v", refAmount)
 			usersWalletsRollback = append(usersWalletsRollback, refs[1])
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[1], utils.StrToInt64(promisedAmountData["currency_id"]))
@@ -286,8 +294,8 @@ func (p *Parser) MiningRollback() error {
 	if refs[0] > 0 {
 		log.Debug("refs[0] %v", refs[0])
 		refAmount := utils.Round(p.TxMaps.Money["amount"]*float64(refData["first"]/100), 2)
+		log.Debug("refAmount %v", refAmount)
 		if refAmount > 0 {
-			log.Debug("refAmount %v", refAmount)
 			// возможно были списания по кредиту
 			err = p.loanPaymentsRollback(refs[0], utils.StrToInt64(promisedAmountData["currency_id"]))
 			if err != nil {
@@ -352,7 +360,7 @@ func (p *Parser) MiningRollback() error {
 	}
 
 	// 2 откатываем promised_amount
-	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update= ?, log_id = ? WHERE id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMaps.Int64["promised_amount_id"])
+	err = p.ExecSql("UPDATE promised_amount SET tdc_amount = ?, tdc_amount_update = ?, log_id = ? WHERE id = ?", logData["tdc_amount"], logData["tdc_amount_update"], logData["prev_log_id"], p.TxMaps.Int64["promised_amount_id"])
 	if err != nil {
 		return p.ErrInfo(err)
 	}
