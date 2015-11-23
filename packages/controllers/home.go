@@ -43,6 +43,7 @@ type homePage struct {
 	MyChatName            string
 	ExchangeUrl 		  string
 	Miner bool
+	ChatEnabled bool
 	TopExMap map[int64]*topEx
 }
 
@@ -319,6 +320,7 @@ func (c *Controller) Home() (string, error) {
 		IOS:                   utils.IOS(),
 		Mobile:                utils.Mobile(),
 		TopExMap: topExMap,
+		ChatEnabled: c.ConfigIni["chat_enabled"],
 		Miner: miner,
 		Token:                 token,
 		ExchangeUrl : exchangeUrl})

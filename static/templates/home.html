@@ -1012,6 +1012,7 @@
 	</script>
 	<script src="/static/js/chat.js"></script>
 
+	{{if .ChatEnabled}}
 	<style>
 		#chat img{width: 50px; float: left; margin-right: 10px}
 		#chatLock { padding: 3px 7px; font-size: 20px; }
@@ -1032,6 +1033,7 @@
 		<input type="text" class="form-control" id="myChatMessage" style="display: inline-block;vertical-align: middle; width: 200px" placeholder="{{.MyChatName}}:" onfocus="this.placeholder = ''" onblur="this.placeholder = '{{.MyChatName}}:'">
 		<button class="btn btn-primary" id="sendToChat" style="display: inline-block">Send</button>
 	</div>
+	{{end}}
 
 <style>
 	.panel {

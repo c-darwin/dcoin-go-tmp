@@ -79,11 +79,6 @@ func (c *Controller) UpdateDcoin() (string, error) {
 			old = *utils.Dir+"/"+filepath.Base(os.Args[0])
 		}
 
-		/*file, _ := os.Open(*utils.Dir+"/dc")
-		defer file.Close()
-		stat, _ := file.Stat()
-		fmt.Println("File size is " , stat.Size())*/
-
 		fmt.Println(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
 		log.Error(*utils.Dir+"/dc.tmp", "-oldFileName", old, "-dir", *utils.Dir, "-logLevel", "DEBUG")
 		/*var cmdOut []byte
@@ -97,18 +92,7 @@ func (c *Controller) UpdateDcoin() (string, error) {
 			fmt.Println(os.Stderr)
 			return "", utils.ErrInfo(err)
 		}
-/*
-		fmt.Println(os.Args[0])
-		fmt.Println(*utils.Dir+"/dc", "-oldFileName="+filepath.Base(os.Args[0]))
-		cmd := exec.Command(*utils.Dir+"/dc", "-oldFileName", os.Args[0], "-dir", *utils.Dir)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		err = cmd.Run()
-		fmt.Printf("%s\n", out.String())
-		if err != nil {
-			fmt.Println(err)
-			return "", utils.ErrInfo(err)
-		}*/
+
 		return utils.JsonAnswer("success", "success").String(), nil
 	}
 	return "", nil

@@ -14,6 +14,8 @@
 				'exchange_api_url' : $('#exchange_api_url').val(),
 				'tcp_listening' : $('#tcp_listening').val(),
 				'http_host' : $('#http_host').val(),
+				'auto_update' : $('#auto_update').val(),
+				'chat_enabled' : $('#chat_enabled').val(),
 				'config_ini' : $('#config_ini').val()
 			});
 
@@ -110,6 +112,10 @@
 		<input id="http_host" class="input" type="text" value="{{.Config.http_host}}">
 		<label>{{.Lang.auto_reload}}</label>
 		<input id="auto_reload" class="input" type="text" value="{{.Config.auto_reload}}">
+		<label>Auto Update</label>
+		<input id="auto_update" class="input" type="text" value="{{.Config.auto_update}}">
+		<label>Chat</label>
+		<input id="chat_enabled" class="input" type="text" value="{{.Config.chat_enabled}}">
 		<br>
 
 		<textarea style="width: 300px; height: 150px" id="config_ini">{{.ConfigIni}}</textarea>
