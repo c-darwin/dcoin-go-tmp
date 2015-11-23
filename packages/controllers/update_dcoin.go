@@ -3,7 +3,7 @@ package controllers
 import (
 	"errors"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"fmt"
+	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 )
 
 
@@ -13,12 +13,12 @@ func (c *Controller) UpdateDcoin() (string, error) {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
-	_, url, err := c.getUpdVerAndUrl()
+	_, url, err := utils.GetUpdVerAndUrl(consts.UPD_AND_VER_URL)
 	if err!= nil {
 		return "", utils.ErrInfo(err)
 	}
 
-	fmt.Println(url)
+	//fmt.Println(url)
 	if len(url) > 0 {
 		err = utils.DcoinUpd(url)
 		if err!= nil {

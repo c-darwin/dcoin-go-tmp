@@ -48,7 +48,14 @@ BEGIN:
 		}
 
 		if config["auto_update"] == "1" {
-			err = utils.DcoinUpd(config["auto_update_url"])
+			_, url, err := utils.GetUpdVerAndUrl(config["auto_update_url"])
+			if err != nil {
+				if (d.dPrintSleep(err, d.sleepTime)) {
+					break BEGIN
+				}
+				continue BEGIN
+			}
+			err = utils.DcoinUpd(url)
 			if err != nil {
 				if (d.dPrintSleep(err, d.sleepTime)) {
 					break BEGIN

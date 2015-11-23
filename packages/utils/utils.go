@@ -47,6 +47,7 @@ import (
 	"os/exec"
 	"github.com/kardianos/osext"
 	"archive/zip"
+	"github.com/mcuadros/go-version"
 )
 
 type BlockData struct {
@@ -3294,4 +3295,53 @@ func DcoinUpd(url string) error {
 		return ErrInfo(err)
 	}
 	return nil
+}
+
+
+
+func GetUpdVerAndUrl(host string) (string, string, error) {
+
+	update, err := GetHttpTextAnswer(host+"/update.json")
+	if len(update) > 0 {
+
+		//fmt.Println(update)
+
+		updateData := new(updateType)
+		err = json.Unmarshal([]byte(update), &updateData)
+		if err != nil {
+			return "", "", ErrInfo(err)
+		}
+
+		//fmt.Println(updateData)
+
+		dataJson, err := json.Marshal(updateData.Message)
+		if err != nil {
+			return "", "", ErrInfo(err)
+		}
+
+		pub, err := BinToRsaPubKey(HexToBin(consts.ALERT_KEY))
+		if err != nil {
+			return "", "", ErrInfo(err)
+		}
+		//fmt.Println(updateData.Signature)
+		//fmt.Println(string(dataJson))
+		err = rsa.VerifyPKCS1v15(pub, crypto.SHA1, HashSha1(string(dataJson)), []byte(HexToBin(updateData.Signature)))
+		if err != nil {
+			return "", "", ErrInfo(err)
+		}
+
+		//fmt.Println(runtime.GOOS+"_"+runtime.GOARCH)
+		//fmt.Println(updateData.Message)
+		//fmt.Println(updateData.Message[runtime.GOOS+"_"+runtime.GOARCH])
+		//fmt.Println(updateData.Message["version"], consts.VERSION)
+		if len(updateData.Message[runtime.GOOS+"_"+runtime.GOARCH]) > 0 && version.Compare(updateData.Message["version"], consts.VERSION, ">") {
+			return updateData.Message["version"], updateData.Message[runtime.GOOS+"_"+runtime.GOARCH], nil
+		}
+	}
+	return "", "", nil
+}
+
+type updateType struct {
+	Message map[string]string
+	Signature string
 }
