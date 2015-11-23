@@ -30,6 +30,13 @@ func (c *Controller) EDataBaseDump() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
+			for k, arr := range data {
+				for name, value := range arr {
+					if ok, _ := regexp.MatchString("(tx_hash)", name); ok {
+						data[k][name] = string(utils.BinToHex([]byte(value)))
+					}
+				}
+			}
 			mainMap[table] = data
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/schema"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"io"
+	"regexp"
 )
 func (c *Controller) EImportData() (string, error) {
 
@@ -44,7 +45,7 @@ func (c *Controller) EImportData() (string, error) {
 
 		log.Debug("table %v", table)
 
-		_ = c.ExecSql(`DROP TABLE `+table)
+		_ = c.ExecSql(`DELETE FROM  `+table)
 
 		log.Debug(table)
 		for i, data := range arr {
@@ -55,7 +56,11 @@ func (c *Controller) EImportData() (string, error) {
 			for name, value := range data {
 				colNames += name + ","
 				values = append(values, value)
-				qq += "?,"
+				if ok, _ := regexp.MatchString("(tx_hash)", name); ok {
+					qq += "[hex],"
+				} else {
+					qq += "?,"
+				}
 			}
 			colNames = colNames[0 : len(colNames)-1]
 			qq = qq[0 : len(qq)-1]
