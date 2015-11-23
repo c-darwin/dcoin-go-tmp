@@ -87,16 +87,21 @@
 
 	<button class="btn" id="e_save">{{.Lang.save}}</button>
 
-	<div class="form-group">
-		<label class="col-md-4 control-label" for="singlebutton">Export to sql</label>
-		<div class="col-md-4">
-			<a type="button"  href="ajax?controllerName=EDataBaseDump" id="singlebutton" name="singlebutton" class="btn btn-primary">Download</a>
-		</div>
-	</div>
+	<br>
+	Export to sql: <a type="button" href="ajax?controllerName=EDataBaseDump" id="singlebutton" name="singlebutton" class="btn btn-primary">Download</a>
+	<br>
 
+	<div id="sql_progress" class="my_progress">0%</div><br>
+	<div id="sql_ok" class="alert alert-success" style="display: none"></div>
+	Import users from sql: <input id="sql" name="file" class="input-file" type="file">
 
 </div>
 <script>
+
+	$('#sql').change(function () {
+		file_upload('sql', 'sql_progress', 'sql', 'eImportData');
+	});
+
 	$('#e_save').bind('click', function () {
 
 		var json = JSON.stringify({
