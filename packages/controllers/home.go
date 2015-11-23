@@ -43,7 +43,7 @@ type homePage struct {
 	MyChatName            string
 	ExchangeUrl 		  string
 	Miner bool
-	ChatEnabled bool
+	ChatEnabled string
 	TopExMap map[int64]*topEx
 }
 

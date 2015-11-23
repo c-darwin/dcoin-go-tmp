@@ -22,7 +22,7 @@ type index struct {
 	Android     bool
 	Mobile      bool
 	ShowIOSMenu bool
-	ChatEnabled bool
+	ChatEnabled string
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	var key, myPrefix, status string
 	var communityUsers []int64
-	var chatEnabled bool
+	var chatEnabled string
 	if utils.DB != nil && utils.DB.DB != nil {
 		communityUsers, err = utils.DB.GetCommunityUsers()
 		if err != nil {
@@ -73,7 +73,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		chatEnabled, err = utils.DB.Single(`SELECT chat_enabled FROm config`).Int64()
+		chatEnabled, err = utils.DB.Single(`SELECT chat_enabled FROm config`).String()
 		if err != nil {
 			log.Error("%v", err)
 		}
