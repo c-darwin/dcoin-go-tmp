@@ -15,6 +15,7 @@
 				'tcp_listening' : $('#tcp_listening').val(),
 				'http_host' : $('#http_host').val(),
 				'auto_update' : $('#auto_update').val(),
+				'auto_update_url' : $('#auto_update_url').val(),
 				'chat_enabled' : $('#chat_enabled').val(),
 				'config_ini' : $('#config_ini').val()
 			});
@@ -114,6 +115,8 @@
 		<input id="auto_reload" class="input" type="text" value="{{.Config.auto_reload}}">
 		<label>Auto Update</label>
 		<input id="auto_update" class="input" type="text" value="{{.Config.auto_update}}">
+		<label>Auto Update url</label>
+		<input id="auto_update_url" class="input" type="text" value="{{.Config.auto_update_url}}">
 		<label>Chat</label>
 		<input id="chat_enabled" class="input" type="text" value="{{.Config.chat_enabled}}">
 		<br>

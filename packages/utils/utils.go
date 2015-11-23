@@ -44,6 +44,9 @@ import (
 	"strings"
 	"time"
 	"sync"
+	"os/exec"
+	"github.com/kardianos/osext"
+	"archive/zip"
 )
 
 type BlockData struct {
@@ -3233,4 +3236,62 @@ func IPwoPort(ipport string) string {
 		return ""
 	}
 	return match[1]
+}
+
+func DcoinUpd(url string) error {
+	_, err := DownloadToFile(url, *Dir+"/dc.zip", 3600, nil, nil)
+	if err!= nil {
+		return ErrInfo(err)
+	}
+	zipfile := *Dir+"/dc.zip"
+	fmt.Println(zipfile)
+	reader, err := zip.OpenReader(zipfile)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	f_ := reader.Reader.File
+	f := f_[0]
+	zipped, err := f.Open()
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	writer, err := os.OpenFile(*Dir+"/dc.tmp", os.O_WRONLY|os.O_CREATE, f.Mode())
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	if _, err = io.Copy(writer, zipped); err != nil {
+		return ErrInfo(err)
+	}
+	reader.Close()
+	zipped.Close()
+	writer.Close()
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return ErrInfo(err)
+	}
+	fmt.Print(pwd)
+
+	folderPath, err := osext.ExecutableFolder()
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	old := ""
+	if _, err := os.Stat(os.Args[0]); err == nil {
+		old = os.Args[0]
+	} else if _, err := os.Stat(folderPath+"/"+filepath.Base(os.Args[0])); err == nil {
+		old = folderPath+"/"+filepath.Base(os.Args[0])
+	} else {
+		old = *Dir+"/"+filepath.Base(os.Args[0])
+	}
+	log.Debug(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir, "-logLevel", "DEBUG")
+	err = exec.Command(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir, "-logLevel", "DEBUG").Start()
+	if err != nil {
+		return ErrInfo(err)
+	}
+	return nil
 }
