@@ -71,6 +71,7 @@ func (c *Controller) PoolDataBaseDump() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 
+	// для теста
 	for table, arr := range mainMap {
 		log.Debug(table)
 		for i, data := range arr {
