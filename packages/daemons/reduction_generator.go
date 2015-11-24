@@ -248,7 +248,7 @@ BEGIN:
 		if reductionCurrencyId > 0 && reductionPct > 0 {
 
 			_, myUserId, _, _, _, _, err := d.TestBlock()
-			forSign := fmt.Sprintf("%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
+			forSign := fmt.Sprintf("%v,%v,%v,%v,%v,%v", utils.TypeInt("NewReduction"), curTime, myUserId, reductionCurrencyId, reductionPct, reductionType)
 			log.Debug("forSign = %v", forSign)
 			binSign, err := d.GetBinSign(forSign, myUserId)
 			if err != nil {
