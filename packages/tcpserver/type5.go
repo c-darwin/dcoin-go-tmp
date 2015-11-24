@@ -4,6 +4,10 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 )
 
+/*
+Запросы от домена connector
+*/
+
 func (t *TcpServer) Type5() {
 	// данные присылает демон connector
 	buf := make([]byte, 5)
@@ -52,7 +56,7 @@ func (t *TcpServer) Type5() {
 			return
 		}
 		if len(myNodeKey) == 0 {
-			log.Error("%v", utils.ErrInfo("len(myNodeKey)"))
+			log.Error("len(myNodeKey) userId %d",  userId)
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}

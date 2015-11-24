@@ -309,6 +309,7 @@ func Connector() {
 		}
 
 		log.Debug("hosts: %v", hosts)
+		/*
 		ch := make(chan *answerType)
 		for _, host := range hosts {
 			userId := utils.StrToInt64(host["user_id"])
@@ -328,6 +329,7 @@ func Connector() {
 		}
 
 		log.Debug("%v", "hosts", hosts)
+
 		var newHosts []map[string]string
 		var countOk int
 		// если нода не отвечает, то удалем её из таблы nodes_connection
@@ -349,10 +351,13 @@ func Connector() {
 			}
 			log.Info("answer: %v", result)
 		}
-		hosts = newHosts
-		log.Debug("%v", "hosts", hosts)
+		*/
+		var countOk int
+		hosts = checkHosts(hosts, &countOk)
+		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
 
 		// добьем недостающие хосты до $max_hosts
+		var newHostsForCheck []map[string]string
 		if len(hosts) < maxHosts {
 			need := maxHosts - len(hosts)
 			max, err := d.Single("SELECT max(miner_id) FROM miners").Int()
@@ -392,27 +397,36 @@ func Connector() {
 						SELECT tcp_host, user_id
 						FROM miners_data
 						WHERE miner_id IN (`+ids+`)`, "tcp_host", "user_id")
+				if err != nil {
+					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+					continue BEGIN
+				}
 				for host, userId := range minersHosts {
 					if len(nodesBan[host]) > 0 {
 						if utils.StrToInt64(nodesBan[host]) > utils.Time()-consts.NODE_BAN_TIME {
 							continue
 						}
 					}
-					hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
-					err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
+					//hosts = append(hosts, map[string]string{"host": host, "user_id": userId})
+					/*err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 					if err != nil {
 						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
-					log.Debug(host)
-					err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+					log.Debug(host)*/
+					newHostsForCheck = append(newHostsForCheck, map[string]string{"user_id": userId, "host": host})
+					/*err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 					if err != nil {
 						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
-					}
+					}*/
 				}
 			}
 		}
+
+
+		hosts = checkHosts(newHostsForCheck, &countOk)
+		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
 
 		log.Debug("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
@@ -451,23 +465,40 @@ func Connector() {
 						continue
 					}
 				}
-
+				/*
 				err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host)
 				if err != nil {
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
 				log.Debug(host)
-				err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
+				/*err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host, userId)
 				if err != nil {
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
-				}
+				}*/
+				newHostsForCheck = append(newHostsForCheck, map[string]string{"user_id": userId, "host": host})
+
 				nodesInc[host] = userId
 
 			}
 		}
 
+		hosts = checkHosts(newHostsForCheck, &countOk)
+		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
+
+		for _, host := range hosts {
+			err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host["host"])
+			if err != nil {
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+				continue BEGIN
+			}
+			err = d.ExecSql("INSERT INTO nodes_connection ( host, user_id ) VALUES ( ?, ? )", host["host"], host["user_id"])
+			if err != nil {
+				if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
+				continue BEGIN
+			}
+		}
 		if nodeCount > 5 {
 			nodesFile := ""
 			for k, v := range nodesInc {
@@ -497,6 +528,54 @@ func Connector() {
 type answerType struct {
 	userId int64
 	answer int64
+}
+
+func checkHosts(hosts []map[string]string, countOk *int) ([]map[string]string) {
+	ch := make(chan *answerType)
+	for _, host := range hosts {
+		userId := utils.StrToInt64(host["user_id"])
+		go func(userId int64, host string) {
+			ch_ := make(chan *answerType, 1)
+			go func() {
+				log.Debug("host: %v / userId: %v", host, userId)
+				ch_ <- check(host, userId)
+			}()
+			select {
+			case reachable := <-ch_:
+				ch <- reachable
+			case <-time.After(consts.WAIT_CONFIRMED_NODES * time.Second):
+				ch <- &answerType{userId: userId, answer: 0}
+			}
+		}(userId, host["host"])
+	}
+
+	log.Debug("%v", "hosts", hosts)
+	var newHosts []map[string]string
+	// если нода не отвечает, то удалем её из таблы nodes_connection
+	for i := 0; i < len(hosts); i++ {
+		result := <-ch
+		if result.answer == 0 {
+			log.Info("delete %v", result.userId)
+			err = utils.DB.ExecSql("DELETE FROM nodes_connection WHERE user_id = ?", result.userId)
+			if err != nil {
+				log.Error("%v", err)
+			}
+			/*for _, data := range hosts {
+				if utils.StrToInt64(data["user_id"]) != result.userId {
+					newHosts = append(newHosts, data)
+				}
+			}*/
+		} else {
+			for _, data := range hosts {
+				if utils.StrToInt64(data["user_id"]) == result.userId {
+					newHosts = append(newHosts, data)
+				}
+			}
+			*countOk++
+		}
+		log.Info("answer: %v", result)
+	}
+	return newHosts
 }
 
 func check(host string, userId int64) *answerType {
@@ -545,6 +624,6 @@ func check(host string, userId int64) *answerType {
 	if utils.BinToDec(answer) == 1 {
 
 	}
-	log.Debug("host: %v / answer: %v", host, answer)
+	log.Debug("host: %v / answer: %v / userId: %v", host, answer, userId)
 	return &answerType{userId: userId, answer: utils.BinToDec(answer)}
 }

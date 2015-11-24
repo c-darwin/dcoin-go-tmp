@@ -73,7 +73,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		chatEnabled, err = utils.DB.Single(`SELECT chat_enabled FROm config`).String()
+		chatEnabled, err = utils.DB.Single(`SELECT chat_enabled FROM config`).String()
 		if err != nil {
 			log.Error("%v", err)
 		}

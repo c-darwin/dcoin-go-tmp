@@ -320,7 +320,7 @@ func (c *Controller) Home() (string, error) {
 		IOS:                   utils.IOS(),
 		Mobile:                utils.Mobile(),
 		TopExMap: topExMap,
-		ChatEnabled: c.ConfigIni["chat_enabled"],
+		ChatEnabled: c.NodeConfig["chat_enabled"],
 		Miner: miner,
 		Token:                 token,
 		ExchangeUrl : exchangeUrl})
