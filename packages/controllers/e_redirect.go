@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"errors"
+	"encoding/base64"
 )
 
 type ERedirectPage struct {
@@ -11,6 +12,7 @@ type ERedirectPage struct {
 	TokenId string
 	Amount string
 	EURL string
+	MDesc string
 }
 
 func (c *Controller) ERedirect() (string, error) {
@@ -40,6 +42,7 @@ func (c *Controller) ERedirect() (string, error) {
 		EConfig : c.EConfig,
 		TokenId: tokenId,
 		EURL: c.EURL,
+		MDesc:  base64.StdEncoding.EncodeToString(utils.Int64ToByte(c.SessUserId)),
 		Amount: amount})
 	if err != nil {
 		return "", utils.ErrInfo(err)
