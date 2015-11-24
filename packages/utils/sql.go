@@ -2540,7 +2540,7 @@ func (db *DCDB) DecryptData(binaryTx *[]byte) ([]byte, []byte, []byte, error) {
 	}
 	if len(collective) > 0 {
 		if !InSliceInt64(myUserId, collective) {
-			return nil, nil, nil, ErrInfo("!InSliceInt64(myUserId, collective)")
+			return nil, nil, nil, ErrInfo(fmt.Sprintf("!InSliceInt64(myUserId, collective) %d %v", myUserId, collective))
 		}
 		myPrefix = Int64ToStr(myUserId) + "_"
 	}

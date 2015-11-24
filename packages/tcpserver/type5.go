@@ -17,26 +17,26 @@ func (t *TcpServer) Type5() {
 	// если работаем в режиме пула, то нужно проверить, верный ли у юзера нодовский ключ
 	community, err := t.GetCommunityUsers()
 	if err != nil {
-		log.Error("%v", utils.ErrInfo("incorrect user_id"))
+		log.Error("%v", utils.ErrInfo(err))
 		t.Conn.Write(utils.DecToBin(0, 1))
 		return
 	}
 	if len(community) > 0 {
 		allTables, err := t.GetAllTables()
 		if err != nil {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo(err))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		keyTable := utils.Int64ToStr(userId) + "_my_node_keys"
 		if !utils.InSliceString(keyTable, allTables) {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("incorrect user_id %d", userId)
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		myBlockId, err := t.GetMyBlockId()
 		if err != nil {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo(err))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
@@ -47,18 +47,18 @@ func (t *TcpServer) Type5() {
 							 block_id < ?
 				`, myBlockId).String()
 		if err != nil {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo(err))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		if len(myNodeKey) == 0 {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo("len(myNodeKey)"))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
 		nodePublicKey, err := t.GetNodePublicKey(userId)
 		if err != nil {
-			log.Error("%v", utils.ErrInfo("incorrect user_id"))
+			log.Error("%v", utils.ErrInfo(err))
 			t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}

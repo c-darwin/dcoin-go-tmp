@@ -114,9 +114,10 @@ func (c *Controller) BlockExplorer() (string, error) {
 					}
 					if k == "file" {
 						parser.TxMapArr[i][k] = []byte("file size: " + utils.IntToStr(len(data_)))
-					}
-					if k == "code" {
+					} else if k == "code" {
 						parser.TxMapArr[i][k] = utils.DSha256(data_)
+					} else if k == "secret" {
+						parser.TxMapArr[i][k] = utils.BinToHex(data_)
 					}
 					data += fmt.Sprintf("%v : %s\n", k, parser.TxMapArr[i][k])
 				}
