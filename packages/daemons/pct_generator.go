@@ -229,7 +229,9 @@ BEGIN:
 
 			_, myUserId, _, _, _, _, err := d.TestBlock()
 			forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewPct"), curTime, myUserId, jsonData)
+			log.Debug("forSign = %v", forSign)
 			binSign, err := d.GetBinSign(forSign, myUserId)
+			log.Debug("binSign = %x", binSign)
 			if err != nil {
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN

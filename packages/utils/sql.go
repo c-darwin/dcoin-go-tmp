@@ -2593,6 +2593,7 @@ func (db *DCDB) GetBinSign(forSign string, myUserId int64) ([]byte, error) {
 	if err != nil {
 		return nil, ErrInfo(err)
 	}
+	log.Debug("nodePrivateKey = %s", nodePrivateKey)
 	// подписываем нашим нод-ключем данные транзакции
 	privateKey, err := MakePrivateKey(nodePrivateKey)
 	if err != nil {
