@@ -48,12 +48,16 @@ func (c *Controller) EImportData() (string, error) {
 		_ = c.ExecSql(`DELETE FROM  `+table)
 
 		log.Debug(table)
+		var id bool
 		for i, data := range arr {
 			log.Debug("%v", i)
 			colNames := ""
 			values := []interface{}{}
 			qq := ""
 			for name, value := range data {
+				if name == "id" {
+					id = true
+				}
 				colNames += name + ","
 				values = append(values, value)
 				if ok, _ := regexp.MatchString("(tx_hash)", name); ok {
@@ -68,6 +72,16 @@ func (c *Controller) EImportData() (string, error) {
 			log.Debug("%v", query)
 			log.Debug("%v", values)
 			err = c.ExecSql(query, values...)
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+		}
+		if id {
+			maxId, err := c.Single(`SELECT max(id) FROM `+table).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			err = c.SetAI(table, maxId+1)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}

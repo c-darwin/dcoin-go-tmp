@@ -81,13 +81,16 @@ func (c *Controller) PoolAddUsers() (string, error) {
 		//	return "", utils.ErrInfo(err)
 		//}
 		log.Debug(table)
+		var id bool
 		for i, data := range arr {
 			log.Debug("%v", i)
 			colNames := ""
 			values := []interface{}{}
 			qq := ""
 			for name, value := range data {
-
+				if name == "id" {
+					id = true
+				}
 				if ok, _ := regexp.MatchString("my_table", table); ok {
 					if name == "host" {
 						name = "http_host"
@@ -111,6 +114,16 @@ func (c *Controller) PoolAddUsers() (string, error) {
 			log.Debug("%v", query)
 			log.Debug("%v", values)
 			err = c.ExecSql(query, values...)
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+		}
+		if id {
+			maxId, err := c.Single(`SELECT max(id) FROM `+table).Int64()
+			if err != nil {
+				return "", utils.ErrInfo(err)
+			}
+			err = c.SetAI(table, maxId+1)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
