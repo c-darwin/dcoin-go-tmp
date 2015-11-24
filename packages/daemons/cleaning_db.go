@@ -142,7 +142,7 @@ BEGIN:
 			}
 			for _, table := range allTables {
 				log.Debug("table: %s", table)
-				if ok, _ := regexp.MatchString(`my_|install|config|daemons|payment_systems|community|cf_lang|main_lock`, table); !ok {
+				if ok, _ := regexp.MatchString(`^[0-9]*_my_|e_|install|config|daemons|payment_systems|community|cf_lang|main_lock`, table); !ok {
 					log.Debug("DELETE FROM %s", table)
 					err = d.ExecSql("DELETE FROM " + table)
 					if err != nil {

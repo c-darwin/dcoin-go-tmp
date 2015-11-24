@@ -14,13 +14,12 @@ import (
  * попадет в DC сеть только, если мы окажемся генератором блока
  * */
 func ReductionGenerator() {
-	/*defer func() {
+	defer func() {
 		if r := recover(); r != nil {
 			log.Error("daemon Recovered", r)
 			panic(r)
 		}
-	}()*/
-
+	}()
 
 	const GoroutineName = "ReductionGenerator"
 	d := new(daemon)
@@ -187,6 +186,8 @@ BEGIN:
 			}
 		}
 
+		log.Debug("sumWallets", sumWallets)
+
 		// получаем суммы обещанных сумм
 		sumPromisedAmount, err := d.GetMap(`
 				SELECT currency_id,
@@ -203,6 +204,8 @@ BEGIN:
 			continue BEGIN
 		}
 
+		log.Debug("sumPromisedAmount", sumPromisedAmount)
+
 		if len(sumWallets) > 0 {
 			for currencyId, sumAmount := range sumWallets {
 				//недопустимо для WOC
@@ -214,12 +217,15 @@ BEGIN:
 					if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 					continue BEGIN
 				}
+				log.Debug("reductionTime", reductionTime)
 				// прошло ли 48 часов
 				if curTime-reductionTime <= consts.AUTO_REDUCTION_PERIOD {
+					log.Debug("curTime-reductionTime <= consts.AUTO_REDUCTION_PERIOD %d <= %d", curTime-reductionTime, consts.AUTO_REDUCTION_PERIOD )
 					continue
 				}
 
 				// если обещанных сумм менее чем 100% от объема DC на кошельках, то запускаем урезание
+				log.Debug("utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount*consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT %d < %d", utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]), sumAmount*consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT)
 				if utils.StrToFloat64(sumPromisedAmount[utils.IntToStr(currencyId)]) < sumAmount*consts.AUTO_REDUCTION_PROMISED_AMOUNT_PCT {
 
 					// проверим, есть ли хотя бы 1000 юзеров, у которых на кошелках есть или была данная валюты
@@ -228,6 +234,7 @@ BEGIN:
 						if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 						continue BEGIN
 					}
+					log.Debug("countUsers>=countUsers %d >= %d", countUsers, consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN )
 					if countUsers >= consts.AUTO_REDUCTION_PROMISED_AMOUNT_MIN {
 						reductionCurrencyId = currencyId
 						reductionPct = consts.AUTO_REDUCTION_PCT
