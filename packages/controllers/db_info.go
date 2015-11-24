@@ -7,6 +7,7 @@ import (
 
 type DbInfoPage struct {
 	TimeNow               string
+	TimeNowInt               int64
 	NodesBan              []map[string]string
 	NodesConnection       []map[string]string
 	MainLock              []map[string]string
@@ -21,6 +22,7 @@ type DbInfoPage struct {
 	Testblock []map[string]string
 	BlockGeneratorIsReadySleepTime int64
 	BlockGeneratorSleepTime int64
+	Version string
 }
 
 func (c *Controller) DbInfo() (string, error) {
@@ -139,7 +141,9 @@ func (c *Controller) DbInfo() (string, error) {
 		TxTypes				:  consts.TxTypes,
 		Transactions:          transactions,
 		Testblock:          testblock,
+		TimeNowInt: utils.Time(),
 		BlockGeneratorIsReadySleepTime: blockGeneratorIsReadySleepTime,
+		Version: consts.VERSION,
 		BlockGeneratorSleepTime: blockGeneratorSleepTime})
 	if err != nil {
 		return "", utils.ErrInfo(err)

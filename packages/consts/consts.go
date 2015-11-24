@@ -5,7 +5,7 @@ import (
 )
 
 // текущая версия
-const VERSION = "1.0.1a5"
+const VERSION = "1.0.1b1"
 
 // чтобы не выдавать одно и тоже голосование
 const ASSIGN_TIME = 86400
