@@ -3149,7 +3149,6 @@ func (schema *SchemaStruct) GetSchema() {
 	s2[6] = map[string]string{"name": "wallets", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
 	s1["fields"] = s2
 	s1["PRIMARY"] = []string{"block_id", "currency_id"}
-	s1["AI"] = "id"
 	s1["comment"] = ""
 	s["reduction_backup"] = s1
 	schema.S = s
