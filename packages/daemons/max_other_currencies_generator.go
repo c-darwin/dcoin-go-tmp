@@ -131,8 +131,8 @@ BEGIN:
 		jsonData, err := json.Marshal(newMaxOtherCurrenciesVotes)
 
 		_, myUserId, _, _, _, _, err := d.TestBlock()
-		forSign := fmt.Sprintf("%v,%v,%v,%v", utils.TypeInt("NewMaxOtherCurrencies"), curTime, myUserId, jsonData)
-		log.Debug("forSign: %s", forSign)
+		forSign := fmt.Sprintf("%v,%v,%v,%s", utils.TypeInt("NewMaxOtherCurrencies"), curTime, myUserId, jsonData)
+		log.Debug("forSign = %v", forSign)
 		binSign, err := d.GetBinSign(forSign, myUserId)
 		if err != nil {
 			if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
