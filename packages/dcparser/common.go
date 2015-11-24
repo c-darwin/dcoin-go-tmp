@@ -3907,7 +3907,7 @@ func (p *Parser) AllTxParser() error {
 		if err != nil {
 			err0 := p.ExecSql(`INSERT INTO incorrect_tx (time, hash, err) VALUES (?, [hex], ?)`, utils.Time(), utils.BinToHex(data["hash"]), fmt.Sprintf("%s", err))
 			if err0 != nil {
-				log.Error(utils.ErrInfo(err0))
+				log.Error("%v", utils.ErrInfo(err0))
 			}
 			return utils.ErrInfo(err)
 		}
