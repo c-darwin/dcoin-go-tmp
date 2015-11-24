@@ -42,7 +42,7 @@ func (c *Controller) ERedirect() (string, error) {
 		EConfig : c.EConfig,
 		TokenId: tokenId,
 		EURL: c.EURL,
-		MDesc:  base64.StdEncoding.EncodeToString(utils.Int64ToByte(c.SessUserId)),
+		MDesc:  base64.StdEncoding.EncodeToString([]byte("token-"+tokenId)),
 		Amount: amount})
 	if err != nil {
 		return "", utils.ErrInfo(err)
