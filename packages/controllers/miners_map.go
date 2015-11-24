@@ -79,7 +79,7 @@ func (c *Controller) MinersMap() (string, error) {
 		if returnAmount <= 0 {
 			continue
 		}
-		result += fmt.Sprintf(`{"user_id": %v, "amount": %v, "longitude": %v, "latitude": %v},`, user_id, amount, longitude, latitude)
+		result += fmt.Sprintf(`{"user_id": %v, "amount": %v, "longitude": %v, "latitude": %v},`, user_id, returnAmount, longitude, latitude)
 	}
 	if len(result) > 0 {
 		result = result[:len(result)-1]

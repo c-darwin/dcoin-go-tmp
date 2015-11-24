@@ -3155,11 +3155,27 @@ func (schema *SchemaStruct) GetSchema() {
 	schema.S = s
 	schema.PrintSchema()
 
+	s = make(Recmap)
+	s1 = make(Recmap)
+	s2 = make(Recmapi)
+	s2[0] = map[string]string{"name": "hash", "mysql": "binary(16) NOT NULL DEFAULT ''", "sqlite": "binary(16) NOT NULL DEFAULT ''", "postgresql": "bytea  NOT NULL DEFAULT ''", "comment": "md5 от тр-ии"}
+	s2[1] = map[string]string{"name": "time", "mysql": "int(11) unsigned NOT NULL DEFAULT '0'", "sqlite": "int(11)  NOT NULL DEFAULT '0'", "postgresql": "int  NOT NULL DEFAULT '0'", "comment": ""}
+	s2[2] = map[string]string{"name": "err", "mysql": "text CHARACTER SET utf8 NOT NULL DEFAULT ''", "sqlite": "text NOT NULL DEFAULT ''", "postgresql": "text NOT NULL DEFAULT ''", "comment": ""}
+	s1["fields"] = s2
+	s1["PRIMARY"] = []string{"hash"}
+	s1["comment"] = ""
+	s["incorrect_tx"] = s1
+	schema.S = s
+	schema.PrintSchema()
+
+
 	prefix := ""
 	if schema.PrefixUserId > 0 {
 		prefix = utils.IntToStr(schema.PrefixUserId) + `_`
 	}
 	schema.DB.Exec(`INSERT INTO ` + prefix + `my_notifications (name, email, sms, mobile) VALUES ('admin_messages',1,1,1),('change_in_status',1,0,0),('fc_came_from',1,0,1),('fc_sent',1,0,0),('incoming_cash_requests',1,1,1),('new_version',1,1,1),('node_time',1,1,0),('system_error',1,1,0),('update_email',1,0,0),('update_primary_key',1,0,0),('update_sms_request',1,0,0),('voting_results',1,0,0),('voting_time',1,0,0)`)
+	schema.DB.Exec(`INSERT INTO e_currency VALUES (1,1001,'USD',5),(3,23,'dEUR',10),(4,1,'dWOC',100),(2,72,'dUSD',5),(5,58,'dRUB',400)`)
+	schema.DB.Exec(`INSERT INTO e_currency_pair VALUES (1,1001,72),(2,1001,1),(3,1001,23),(4,1001,58)`)
 
 }
 

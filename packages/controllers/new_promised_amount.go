@@ -44,7 +44,7 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 					 name,
 					 full_name,
 					 max_other_currencies
-		FROM currency
+		FROM currency WHERE id != 1
 		ORDER BY full_name`))
 	if err != nil {
 		return "", utils.ErrInfo(err)
