@@ -1,8 +1,8 @@
 {{define "dbInfo"}}
 <h1 class="page-header">{{.Lang.db_info}}</h1>
 
-<p>{{.Version}}</p>
-<p>{{.TimeNow}} ({{.TimeNowInt}})</p>
+<p>Version: {{.Version}}</p>
+<p>Time: {{.TimeNow}} ({{.TimeNowInt}})</p>
 
 <table class="table table-bordered" style="width:600px"><caption>nodes_ban</caption>
 <thead><tr><th>host</th><th>user_id</th><th>ban_start</th><th>info</th></tr></thead>

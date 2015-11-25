@@ -13,5 +13,5 @@ mv dcoin_linux32.zip /home/z/multiplatform/dc-compiled/dcoin_linux32.zip
 mv dcoin_linux64.zip /home/z/multiplatform/dc-compiled/dcoin_linux64.zip
 mv dcoin.deb /home/z/multiplatform/dc-compiled/dcoin32.deb
 mv dcoin64.deb /home/z/multiplatform/dc-compiled/dcoin64.deb
-rm -rf make_deb/dcoin64/usr/share/dcoin/dcoin
-rm -rf make_deb/dcoin/usr/share/dcoin/dcoin
+rm -rf dcoin64/usr/share/dcoin/dcoin
+rm -rf dcoin/usr/share/dcoin/dcoin

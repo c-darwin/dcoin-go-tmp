@@ -85,15 +85,15 @@
 
 	function updDcoin() {
 
-		$('#updDcoin').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
-		$('#updDcoin').prop('disabled', true);
+		$('#UpdateMessage').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+		$('#UpdateMessage').prop('disabled', true);
 
 		$.get('ajax?controllerName=UpdateDcoin', function (data) {
 			if (typeof data.success !== 'undefined') {
 				console.log("Download succeed");
-				$('#UpdateMessage p').html("Download succeed");
+				$('#UpdateMessage').html("Download succeed");
 			}
-			$('#updDcoin').html('complete');
+			$('#UpdateMessage').html('complete');
 		}, 'JSON');
 
 	}
