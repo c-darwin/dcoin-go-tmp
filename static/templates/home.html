@@ -942,6 +942,19 @@
 		</select>
 		<button class="btn btn-primary exNext" id="exNext" style="vertical-align: top;">Next</button>
 	</div>
+	<script>
+		$('#exAmount').bind("keyup change", function(e) {
+
+			var amount = $("#exAmount").val();
+			if (amount > 0) {
+				amount_ = parseFloat(amount.replace(",", "."));
+				amount_ = amount_.toFixed(2);
+
+				$("#exAmount").val(amount_);
+			}
+		});
+
+	</script>
 	<form method="get" id="sendForm">
 		<input type="hidden" name="FormExAmount">
 		<input type="hidden" name="FormDC">
