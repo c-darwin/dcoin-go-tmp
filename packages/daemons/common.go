@@ -146,6 +146,7 @@ func CheckDaemonsRestart(GoroutineName string) bool {
 	log.Debug("CheckDaemonsRestart %v", GoroutineName)
 	select {
 	case <-DaemonCh:
+		log.Debug("DaemonCh true %v", GoroutineName)
 		AnswerDaemonCh <- GoroutineName
 		return true
 	default:

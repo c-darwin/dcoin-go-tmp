@@ -337,11 +337,19 @@ func Start(dir string) {
 				fmt.Println("Stop_daemons from DB!")
 				log.Debug("countDaemons: %d", countDaemons)
 				fmt.Printf("countDaemons %v\n", countDaemons)
+				var findDoubleBug []string
 				for i := 0; i < countDaemons; i++ {
 					daemons.DaemonCh <- true
 					log.Debug("daemons.DaemonCh <- true")
 					answer := <-daemons.AnswerDaemonCh
 					log.Debug("answer: %v", answer)
+					if utils.InSliceString(answer, findDoubleBug) {
+						log.Error("findDoubleBug true")
+						fmt.Println("findDoubleBug true")
+						//panic("findDoubleBug true")
+						daemons.DaemonCh <- true
+					}
+					findDoubleBug = append(findDoubleBug, answer)
 				}
 				fmt.Println("Daemons killed")
 				err := utils.DB.Close()

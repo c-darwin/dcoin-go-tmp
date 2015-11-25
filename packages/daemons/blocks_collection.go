@@ -59,6 +59,7 @@ BEGIN:
 
 		err, restart := d.dbLock()
 		if restart {
+			log.Debug("restart true")
 			break BEGIN
 		}
 		if err != nil {
@@ -581,4 +582,6 @@ BEGIN:
 			break BEGIN
 		}
 	}
+
+	log.Debug("break BEGIN %v", GoroutineName)
 }

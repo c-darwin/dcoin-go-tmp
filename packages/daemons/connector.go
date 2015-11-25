@@ -523,6 +523,7 @@ func Connector() {
 			break BEGIN
 		}
 	}
+	log.Debug("break BEGIN %v", GoroutineName)
 }
 
 type answerType struct {

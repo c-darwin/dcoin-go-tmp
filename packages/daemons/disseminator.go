@@ -329,7 +329,7 @@ BEGIN:
 			break BEGIN
 		}
 	}
-
+	log.Debug("break BEGIN %v", GoroutineName)
 }
 
 func (d *daemon) DisseminatorType1(host string, userId int64, node_public_key string, toBeSent []byte, dataType int64) {

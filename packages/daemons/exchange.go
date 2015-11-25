@@ -12,13 +12,13 @@ import (
 )
 
 func Exchange() {
+
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("daemon Recovered", r)
 			panic(r)
 		}
 	}()
-
 
 	const GoroutineName = "Exchange"
 	d := new(daemon)
@@ -384,4 +384,5 @@ BEGIN:
 			break BEGIN
 		}
 	}
+	log.Debug("break BEGIN %v", GoroutineName)
 }

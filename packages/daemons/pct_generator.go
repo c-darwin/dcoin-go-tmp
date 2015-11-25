@@ -266,6 +266,7 @@ BEGIN:
 			break BEGIN
 		}
 	}
+	log.Debug("break BEGIN %v", GoroutineName)
 }
 
 type newPctType struct {

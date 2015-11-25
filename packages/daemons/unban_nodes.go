@@ -51,4 +51,5 @@ BEGIN:
 			break BEGIN
 		}
 	}
+	log.Debug("break BEGIN %v", GoroutineName)
 }

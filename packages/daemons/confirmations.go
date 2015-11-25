@@ -167,6 +167,7 @@ func Confirmations() {
 			break BEGIN
 		}
 	}
+	log.Debug("break BEGIN %v", GoroutineName)
 }
 
 func checkConf(host string, blockId int64) string {
