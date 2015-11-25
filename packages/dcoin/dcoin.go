@@ -181,7 +181,7 @@ func Start(dir string) {
 	case "console":
 		backend = logging.NewLogBackend(os.Stderr, "", 0)
 	case "file_console":
-		backend = logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
+		//backend = logging.NewLogBackend(io.MultiWriter(f, os.Stderr), "", 0)
 	default:
 		backend = logging.NewLogBackend(f, "", 0)
 	}
