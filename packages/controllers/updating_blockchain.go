@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"net/http"
 	"runtime"
+	"math"
+	"strings"
 )
 
 type updatingBlockchainStruct struct {
@@ -21,6 +23,7 @@ type updatingBlockchainStruct struct {
 	LastBlock      int64
 	BlockChainSize int64
 	Mobile         bool
+	AlertTime string
 }
 
 func (c *Controller) UpdatingBlockchain() (string, error) {
@@ -101,6 +104,16 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		mobile = true
 	}
 
+	networkTime, err := utils.GetNetworkTime()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
+	var alertTime string
+	if diff > c.Variables.Int64["alert_error_time"] {
+		alertTime = strings.Replace(c.Lang["alert_time"], "[sec]", utils.Int64ToStr(diff), -1)
+	}
+
 	funcMap := template.FuncMap{
 		"noescape": func(s string) template.HTML {
 			return template.HTML(s)
@@ -113,6 +126,6 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	b := new(bytes.Buffer)
-	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter: blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE, Mobile: mobile})
+	t.Execute(b, &updatingBlockchainStruct{Lang: c.Lang, WaitText: waitText, BlockId: blockId, BlockTime: blockTime, StartDaemons: startDaemons, BlockMeter: blockMeter, CheckTime: checkTime, LastBlock: consts.LAST_BLOCK, BlockChainSize: consts.BLOCKCHAIN_SIZE, Mobile: mobile, AlertTime: alertTime})
 	return b.String(), nil
 }

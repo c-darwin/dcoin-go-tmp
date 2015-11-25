@@ -23,7 +23,7 @@ func MaxPromisedAmountGenerator() {
 
 	const GoroutineName = "MaxPromisedAmountGenerator"
 	d := new(daemon)
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -33,10 +33,10 @@ func MaxPromisedAmountGenerator() {
 	} else {
 		d.sleepTime = 60
 	}
-	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh, GoroutineName) {
 		return
 	}
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -53,7 +53,7 @@ BEGIN:
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
 		// проверим, не нужно ли нам выйти из цикла
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			break BEGIN
 		}
 

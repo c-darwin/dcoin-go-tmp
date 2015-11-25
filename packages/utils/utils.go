@@ -1500,7 +1500,7 @@ func GetEndBlockId() (int64, error) {
 	return 0, nil
 }
 
-func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh chan bool) (int64, error) {
+func DownloadToFile(url, file string, timeoutSec int64, DaemonCh chan bool, AnswerDaemonCh chan string, GoroutineName string) (int64, error) {
 
 	f, err := os.Create(file)
 	if err != nil {
@@ -1523,7 +1523,10 @@ func DownloadToFile(url, file string, timeoutSec int64, DaemonCh, AnswerDaemonCh
 		if DaemonCh != nil {
 			select {
 			case <-DaemonCh:
-				AnswerDaemonCh <- true
+				if GoroutineName == "NodeVoting" {
+					DB.DbUnlock(GoroutineName)
+				}
+				AnswerDaemonCh <- GoroutineName
 				return offset, fmt.Errorf("daemons restart")
 			default:
 			}
@@ -3240,7 +3243,7 @@ func IPwoPort(ipport string) string {
 }
 
 func DcoinUpd(url string) error {
-	_, err := DownloadToFile(url, *Dir+"/dc.zip", 3600, nil, nil)
+	_, err := DownloadToFile(url, *Dir+"/dc.zip", 3600, nil, nil, "upd")
 	if err!= nil {
 		return ErrInfo(err)
 	}

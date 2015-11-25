@@ -401,8 +401,9 @@
 	<div id="start_daemons_div">{{.StartDaemons}}</div>
 
 	{{if not .Mobile}}
-	<div id="check_time" style="margin-top: 50px">
-		{{noescape .CheckTime}}</div>
+	<div id="check_time" style="margin-top: 50px">{{AlertTime}} {{noescape .CheckTime}}</div>
+	{{else}}
+	<div id="check_time" style="margin-top: 50px">{{AlertTime}}</div>
 	{{end}}
 </div>
 

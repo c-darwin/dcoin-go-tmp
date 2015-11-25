@@ -20,7 +20,7 @@ func QueueParserTx() {
 
 	const GoroutineName = "QueueParserTx"
 	d := new(daemon)
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -30,10 +30,10 @@ func QueueParserTx() {
 	} else {
 		d.sleepTime = 1
 	}
-	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh, GoroutineName) {
 		return
 	}
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -44,7 +44,7 @@ BEGIN:
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
 		// проверим, не нужно ли нам выйти из цикла
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			break BEGIN
 		}
 

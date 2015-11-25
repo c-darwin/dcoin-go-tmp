@@ -93,7 +93,7 @@ func (c *Controller) InstallStep1() (string, error) {
 			}
 			for i := 0; i < 5; i++ {
 				log.Debug("sqliteDbUrl %v", sqliteDbUrl)
-				_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil)
+				_, err := utils.DownloadToFile(sqliteDbUrl, *utils.Dir+"/litedb.db", 3600, nil, nil, "install")
 				if err != nil {
 					log.Error("%v", utils.ErrInfo(err))
 				}

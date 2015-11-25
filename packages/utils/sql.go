@@ -782,13 +782,13 @@ func FormatQueryArgs(q, dbType string, args ...interface{}) (string, []interface
 	return newQ, newArgs
 }
 
-func (db *DCDB) CheckInstall(DaemonCh, AnswerDaemonCh chan bool) bool {
+func (db *DCDB) CheckInstall(DaemonCh chan bool, AnswerDaemonCh chan string, GoroutineName string) bool {
 	// Возможна ситуация, когда инсталяция еще не завершена. База данных может быть создана, а таблицы еще не занесены
 	for {
 		select {
 		case <-DaemonCh:
 			log.Debug("Restart from CheckInstall")
-			AnswerDaemonCh <- true
+			AnswerDaemonCh <- GoroutineName
 			return false
 		default:
 		}
@@ -2101,7 +2101,7 @@ func (db *DCDB) CheckDaemonsRestart() bool {
 	return false
 }
 
-func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string) (error, bool) {
+func (db *DCDB) DbLock(DaemonCh chan bool, AnswerDaemonCh chan string, goRoutineName string) (error, bool) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -2115,7 +2115,7 @@ func (db *DCDB) DbLock(DaemonCh, AnswerDaemonCh chan bool, goRoutineName string)
 		select {
 		case <-DaemonCh:
 			log.Debug("Restart from DbLock")
-			AnswerDaemonCh <- true
+			AnswerDaemonCh <- goRoutineName
 			return ErrInfo("Restart from DbLock"), true
 		default:
 		}

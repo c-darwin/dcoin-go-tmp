@@ -22,7 +22,7 @@ func BlocksCollection() {
 
 	const GoroutineName = "BlocksCollection"
 	d := new(daemon)
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -32,10 +32,10 @@ func BlocksCollection() {
 	} else {
 		d.sleepTime = 60
 	}
-	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh, GoroutineName) {
 		return
 	}
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -46,7 +46,7 @@ BEGIN:
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
 		// проверим, не нужно ли нам выйти из цикла
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			break BEGIN
 		}
 		log.Debug("0")
@@ -105,7 +105,7 @@ BEGIN:
 				// возможно сервер отдаст блокчейн не с первой попытки
 				var blockchainSize int64
 				for i := 0; i < 10; i++ {
-					blockchainSize, err = utils.DownloadToFile(blockchain_url, *utils.Dir+"/public/blockchain", 3600, DaemonCh, AnswerDaemonCh)
+					blockchainSize, err = utils.DownloadToFile(blockchain_url, *utils.Dir+"/public/blockchain", 3600, DaemonCh, AnswerDaemonCh, GoroutineName)
 					if blockchainSize > consts.BLOCKCHAIN_SIZE {
 						break
 					}
@@ -156,7 +156,7 @@ BEGIN:
 
 				for {
 					// проверим, не нужно ли нам выйти из цикла
-					if CheckDaemonsRestart() {
+					if CheckDaemonsRestart(GoroutineName) {
 						d.unlockPrintSleep(fmt.Errorf("DaemonsRestart"), 0)
 						break BEGIN
 					}
@@ -212,7 +212,7 @@ BEGIN:
 								file.Close()
 								continue BEGIN
 							}
-							if CheckDaemonsRestart() {
+							if CheckDaemonsRestart(GoroutineName) {
 								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								file.Close()
 								continue BEGIN
@@ -311,7 +311,7 @@ BEGIN:
 		var maxBlockIdUserId int64
 		// получим максимальный номер блока
 		for i := 0; i < len(hosts); i++ {
-			if CheckDaemonsRestart() {
+			if CheckDaemonsRestart(GoroutineName) {
 				break BEGIN
 			}
 			conn, err := utils.TcpConn(hosts[i]["host"])
@@ -349,7 +349,7 @@ BEGIN:
 				maxBlockIdHost = hosts[i]["host"]
 				maxBlockIdUserId = utils.StrToInt64(hosts[i]["user_id"])
 			}
-			if CheckDaemonsRestart() {
+			if CheckDaemonsRestart(GoroutineName) {
 				utils.Sleep(1)
 				break BEGIN
 			}
@@ -382,7 +382,7 @@ BEGIN:
 		// в цикле собираем блоки, пока не дойдем до максимального
 		for blockId := currentBlockId + 1; blockId < maxBlockId+1; blockId++ {
 			d.UpdMainLock()
-			if CheckDaemonsRestart() {
+			if CheckDaemonsRestart(GoroutineName) {
 				if d.unlockPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				break BEGIN
 			}

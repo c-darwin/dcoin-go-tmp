@@ -264,7 +264,7 @@ func Start(dir string) {
 	}
 
 	daemons.DaemonCh = make(chan bool, 1)
-	daemons.AnswerDaemonCh = make(chan bool, 1)
+	daemons.AnswerDaemonCh = make(chan string, 1)
 	log.Debug("daemonsStart")
 	IosLog("daemonsStart")
 	daemonsStart := map[string]func(){"UnbanNodes": daemons.UnbanNodes, "FirstChangePkey": daemons.FirstChangePkey, "TestblockIsReady": daemons.TestblockIsReady, "TestblockGenerator": daemons.TestblockGenerator, "TestblockDisseminator": daemons.TestblockDisseminator, "Shop": daemons.Shop, "ReductionGenerator": daemons.ReductionGenerator, "QueueParserTx": daemons.QueueParserTx, "QueueParserTestblock": daemons.QueueParserTestblock, "QueueParserBlocks": daemons.QueueParserBlocks, "PctGenerator": daemons.PctGenerator, "Notifications": daemons.Notifications, "NodeVoting": daemons.NodeVoting, "MaxPromisedAmountGenerator": daemons.MaxPromisedAmountGenerator, "MaxOtherCurrenciesGenerator": daemons.MaxOtherCurrenciesGenerator, "ElectionsAdmin": daemons.ElectionsAdmin, "Disseminator": daemons.Disseminator, "Confirmations": daemons.Confirmations, "Connector": daemons.Connector, "Clear": daemons.Clear, "CleaningDb": daemons.CleaningDb, "CfProjects": daemons.CfProjects, "BlocksCollection": daemons.BlocksCollection, "Exchange": daemons.Exchange, "AutoUpdate": daemons.AutoUpdate}

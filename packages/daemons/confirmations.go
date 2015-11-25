@@ -24,15 +24,15 @@ func Confirmations() {
 
 	const GoroutineName = "Confirmations"
 	d := new(daemon)
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
 	d.goRoutineName = GoroutineName
-	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh, GoroutineName) {
 		return
 	}
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -58,7 +58,7 @@ func Confirmations() {
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
 		// проверим, не нужно ли нам выйти из цикла
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			break BEGIN
 		}
 
@@ -86,7 +86,7 @@ func Confirmations() {
 		for blockId := LastBlockId; blockId > startBlockId; blockId-- {
 
 			// проверим, не нужно ли нам выйти из цикла
-			if CheckDaemonsRestart() {
+			if CheckDaemonsRestart(GoroutineName) {
 				break BEGIN
 			}
 

@@ -225,12 +225,20 @@ func signals(countDaemons int) {
 		<-SigChan
 		log.Debug("countDaemons %v", countDaemons)
 		fmt.Printf("countDaemons %v\n", countDaemons)
+		var findDoubleBug []string
 		for i := 0; i < countDaemons; i++ {
 			daemons.DaemonCh <- true
 			log.Debug("daemons.DaemonCh <- true")
 			answer := <-daemons.AnswerDaemonCh
-			log.Debug("answer: %v", answer)
+			log.Debug("daemonsAnswer: %v", answer)
+			if utils.InSliceString(answer, findDoubleBug) {
+				log.Error("findDoubleBug true")
+				fmt.Println("findDoubleBug true")
+				panic("findDoubleBug true")
+			}
+			findDoubleBug = append(findDoubleBug, answer)
 		}
+		log.Debug("Daemons killed")
 		fmt.Println("Daemons killed")
 		if utils.DB != nil && utils.DB.DB != nil {
 			err := utils.DB.Close()

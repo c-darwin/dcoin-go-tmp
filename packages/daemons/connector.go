@@ -164,7 +164,7 @@ func Connector() {
 
 	GoroutineName := "Connector"
 	d := new(daemon)
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -174,10 +174,10 @@ func Connector() {
 	} else {
 		d.sleepTime = 30
 	}
-	if !d.CheckInstall(DaemonCh, AnswerDaemonCh) {
+	if !d.CheckInstall(DaemonCh, AnswerDaemonCh, GoroutineName) {
 		return
 	}
-	d.DCDB = DbConnect()
+	d.DCDB = DbConnect(GoroutineName)
 	if d.DCDB == nil {
 		return
 	}
@@ -203,7 +203,7 @@ func Connector() {
 		MonitorDaemonCh <- []string{GoroutineName, utils.Int64ToStr(utils.Time())}
 
 		// проверим, не нужно ли нам выйти из цикла
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			break BEGIN
 		}
 
@@ -274,7 +274,7 @@ func Connector() {
 		for _, data := range nodesConnections {
 
 			// проверим, не нужно нам выйти, т.к. обновилась версия софта
-			if CheckDaemonsRestart() {
+			if CheckDaemonsRestart(GoroutineName) {
 				break BEGIN
 			}
 

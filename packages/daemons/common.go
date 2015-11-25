@@ -12,7 +12,7 @@ import (
 var (
 	log             = logging.MustGetLogger("daemons")
 	DaemonCh        chan bool
-	AnswerDaemonCh  chan bool
+	AnswerDaemonCh  chan string
 	MonitorDaemonCh chan []string = make(chan []string, 100)
 	configIni       map[string]string
 )
@@ -21,7 +21,7 @@ type daemon struct {
 	*utils.DCDB
 	goRoutineName 	string
 	DaemonCh        chan bool
-	AnswerDaemonCh  chan bool
+	AnswerDaemonCh  chan string
 	sleepTime int
 }
 
@@ -36,7 +36,7 @@ func (d *daemon) dbUnlock() error {
 
 func (d *daemon) dSleep(sleep int) bool {
 	for i := 0; i < sleep; i++ {
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(d.goRoutineName) {
 			return true
 		}
 		utils.Sleep(1)
@@ -68,7 +68,7 @@ func (d *daemon) unlockPrintSleep(err error, sleep int) bool {
 		log.Error("%v", err)
 	}
 	for i := 0; i < sleep; i++ {
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(d.goRoutineName) {
 			return true
 		}
 		utils.Sleep(1)
@@ -86,7 +86,7 @@ func (d *daemon) unlockPrintSleepInfo(err error, sleep int) bool {
 	}
 
 	for i := 0; i < sleep; i++ {
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(d.goRoutineName) {
 			return true
 		}
 		utils.Sleep(1)
@@ -142,19 +142,20 @@ func init() {
 
 }
 
-func CheckDaemonsRestart() bool {
+func CheckDaemonsRestart(GoroutineName string) bool {
+	log.Debug("CheckDaemonsRestart %v", GoroutineName)
 	select {
 	case <-DaemonCh:
-		AnswerDaemonCh <- true
+		AnswerDaemonCh <- GoroutineName
 		return true
 	default:
 	}
 	return false
 }
 
-func DbConnect() *utils.DCDB {
+func DbConnect(GoroutineName string) *utils.DCDB {
 	for {
-		if CheckDaemonsRestart() {
+		if CheckDaemonsRestart(GoroutineName) {
 			return nil
 		}
 		if utils.DB == nil || utils.DB.DB == nil {
