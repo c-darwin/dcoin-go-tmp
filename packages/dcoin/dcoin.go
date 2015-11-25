@@ -12,7 +12,7 @@ import (
 	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/op/go-logging"
 	_ "image/png"
-	"io"
+	//"io"
 	"math/rand"
 	"net/http"
 	"os"
