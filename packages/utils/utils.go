@@ -1462,6 +1462,7 @@ func GetEndBlockId() (int64, error) {
 	if _, err := os.Stat(*Dir + "/public/blockchain"); os.IsNotExist(err) {
 		return 0, nil
 	} else {
+
 		// размер блока, записанный в 5-и последних байтах файла blockchain
 		fname := *Dir + "/public/blockchain"
 		file, err := os.Open(fname)
@@ -1469,6 +1470,14 @@ func GetEndBlockId() (int64, error) {
 			return 0, ErrInfo(err)
 		}
 		defer file.Close()
+
+		fi, err := file.Stat()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if fi.Size() == 0 {
+			return 0, ErrInfo(err)
+		}
 
 		// размер блока, записанный в 5-и последних байтах файла blockchain
 		_, err = file.Seek(-5, 2)
