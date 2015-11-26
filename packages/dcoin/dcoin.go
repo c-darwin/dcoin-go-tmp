@@ -374,7 +374,7 @@ func Start(dir string) {
 
 	BrowserHttpHost := "http://localhost:8089"
 	HandleHttpHost := ""
-	ListenHttpHost := ":8089"
+	ListenHttpHost := ":"+*utils.ListenHttpHost
 	go func() {
 		// уже прошли процесс инсталяции, где юзер указал БД и был перезапуск кошелька
 		if len(configIni["db_type"]) > 0 && !utils.Mobile() {
@@ -405,7 +405,6 @@ func Start(dir string) {
 		http.HandleFunc(HandleHttpHost+"/cf/content", controllers.ContentCf)
 		http.Handle(HandleHttpHost+"/public/", noDirListing(http.FileServer(http.Dir(*utils.Dir))))
 		http.Handle(HandleHttpHost+"/static/", http.FileServer(&assetfs.AssetFS{Asset: static.Asset, AssetDir: static.AssetDir, Prefix: ""}))
-
 
 		log.Debug("ListenHttpHost", ListenHttpHost)
 

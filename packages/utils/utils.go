@@ -79,6 +79,7 @@ var SqliteDbUrl string
 var StartBlockId = flag.Int64("startBlockId", 0, "Start block for blockCollection daemon")
 var EndBlockId = flag.Int64("endBlockId", 0, "End block for blockCollection daemon")
 var RollbackToBlockId = flag.Int64("rollbackToBlockId", 0, "Rollback to block_id")
+var ListenHttpHost = flag.String("listenHttpHost", "8089", "ListenHttpHost")
 
 var eWallets = &sync.Mutex{}
 
