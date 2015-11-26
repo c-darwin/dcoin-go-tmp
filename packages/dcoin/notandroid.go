@@ -232,8 +232,8 @@ func signals(countDaemons int) {
 			answer := <-daemons.AnswerDaemonCh
 			log.Debug("daemonsAnswer: %v", answer)
 			if utils.InSliceString(answer, findDoubleBug) {
-				log.Error("findDoubleBug true")
-				fmt.Println("findDoubleBug true")
+				log.Error("findDoubleBug true %v", answer)
+				fmt.Println("findDoubleBug true", answer)
 				//panic("findDoubleBug true")
 				daemons.DaemonCh <- true
 			}
