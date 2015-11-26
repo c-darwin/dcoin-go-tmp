@@ -355,7 +355,10 @@ func Connector() {
 		var countOk int
 		hosts = checkHosts(hosts, &countOk)
 		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
-
+		// проверим, не нужно нам выйти, т.к. обновилась версия софта
+		if CheckDaemonsRestart(GoroutineName) {
+			break BEGIN
+		}
 		// добьем недостающие хосты до $max_hosts
 		var newHostsForCheck []map[string]string
 		if len(hosts) < maxHosts {
@@ -427,7 +430,10 @@ func Connector() {
 
 		hosts = checkHosts(newHostsForCheck, &countOk)
 		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
-
+		// проверим, не нужно нам выйти, т.к. обновилась версия софта
+		if CheckDaemonsRestart(GoroutineName) {
+			break BEGIN
+		}
 		log.Debug("%v", "hosts", hosts)
 		// если хосты не набрались из miner_data, то берем из файла
 		if len(hosts) < 10 {
@@ -486,7 +492,10 @@ func Connector() {
 
 		hosts = checkHosts(newHostsForCheck, &countOk)
 		log.Debug("countOk: %d / hosts: %v", countOk, hosts)
-
+		// проверим, не нужно нам выйти, т.к. обновилась версия софта
+		if CheckDaemonsRestart(GoroutineName) {
+			break BEGIN
+		}
 		for _, host := range hosts {
 			err = d.ExecSql("DELETE FROM nodes_connection WHERE host = ?", host["host"])
 			if err != nil {
