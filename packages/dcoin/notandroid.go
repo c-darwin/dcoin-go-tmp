@@ -235,7 +235,8 @@ func signals(countDaemons int) {
 				log.Error("findDoubleBug true %v", answer)
 				fmt.Println("findDoubleBug true", answer)
 				//panic("findDoubleBug true")
-				daemons.DaemonCh <- true
+				//daemons.DaemonCh <- true
+				countDaemons++
 			}
 			findDoubleBug = append(findDoubleBug, answer)
 		}
