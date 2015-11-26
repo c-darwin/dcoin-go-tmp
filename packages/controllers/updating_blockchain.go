@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"math"
 	"strings"
-	"fmt"
 )
 
 type updatingBlockchainStruct struct {
@@ -110,11 +109,9 @@ func (c *Controller) UpdatingBlockchain() (string, error) {
 		return "", utils.ErrInfo(err)
 	}
 	diff := int64(math.Abs(float64(utils.Time() - networkTime.Unix())))
-	fmt.Println("diff", diff)
 	var alertTime string
 	if diff > c.Variables.Int64["alert_error_time"] {
 		alertTime = strings.Replace(c.Lang["alert_time"], "[sec]", utils.Int64ToStr(diff), -1)
-		fmt.Println("alertTime", alertTime)
 	}
 
 	funcMap := template.FuncMap{

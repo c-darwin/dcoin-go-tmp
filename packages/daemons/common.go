@@ -11,8 +11,8 @@ import (
 
 var (
 	log             = logging.MustGetLogger("daemons")
-	DaemonCh        chan bool
-	AnswerDaemonCh  chan string
+	DaemonCh        chan bool = make(chan bool, 100)
+	AnswerDaemonCh  chan string = make(chan string, 100)
 	MonitorDaemonCh chan []string = make(chan []string, 100)
 	configIni       map[string]string
 )
@@ -143,7 +143,7 @@ func init() {
 }
 
 func CheckDaemonsRestart(GoroutineName string) bool {
-	log.Debug("CheckDaemonsRestart %v", GoroutineName)
+	log.Debug("CheckDaemonsRestart %v %v", GoroutineName, utils.Caller(2))
 	select {
 	case <-DaemonCh:
 		log.Debug("DaemonCh true %v", GoroutineName)

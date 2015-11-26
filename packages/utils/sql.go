@@ -31,7 +31,7 @@ var DB *DCDB
 type DCDB struct {
 	*sql.DB
 	ConfigIni     map[string]string
-	GoroutineName string
+	//GoroutineName string
 }
 
 func ReplQ(q string) string {
@@ -95,7 +95,7 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 		}
 	}
 	log.Debug("return")
-	return &DCDB{db, ConfigIni, ""}, err
+	return &DCDB{db, ConfigIni}, err
 }
 
 /*
@@ -800,7 +800,7 @@ func (db *DCDB) CheckInstall(DaemonCh chan bool, AnswerDaemonCh chan string, Gor
 					db = DB
 				}
 			}
-			log.Debug("%v", `progress != "complete"`, db.GoroutineName)
+			//log.Debug("%v", `progress != "complete"`, db.GoroutineName)
 			if err != nil {
 				log.Error("%v", ErrInfo(err))
 			}

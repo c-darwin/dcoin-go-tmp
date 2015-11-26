@@ -63,6 +63,7 @@ BEGIN:
 			break BEGIN
 		}
 		if err != nil {
+			log.Debug("restart err %v", err)
 			if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
