@@ -19,6 +19,8 @@ func (p *Parser) NewUserInit() error {
 
 func (p *Parser) NewUserFront() error {
 
+	log.Debug("NewUserFront")
+
 	err := p.generalCheck()
 	if err != nil {
 		return p.ErrInfo(err)
@@ -77,11 +79,13 @@ func (p *Parser) NewUserFront() error {
 }
 
 func (p *Parser) NewUser() error {
+	log.Debug("NewUser")
 	// пишем в БД нового юзера
 	newUserId, err := p.ExecSqlGetLastInsertId("INSERT INTO users (public_key_0, referral) VALUES ([hex], ?)", "user_id", p.TxMap["public_key_hex"], p.TxUserID)
 	if err != nil {
 		return p.ErrInfo(err)
 	}
+	log.Debug("newUserId %v", newUserId)
 
 	// если работаем в режиме пула, то ищем тех, у кого еще нет user_id
 	community, err := p.DCDB.GetCommunityUsers()
