@@ -70,12 +70,21 @@
 			var e_text = $("#encrypt_message_"+id).val();
 			var pass = $("#password").text();
 			if (pass) {
+				ivAndText = atob(key)
+				iv = ivAndText.substr(0, 16)
+				encText = ivAndText.substr(16)
 				cipherParams = CryptoJS.lib.CipherParams.create({
+					ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+				});
+				pass = CryptoJS.enc.Latin1.parse(hex_md5(pass))
+				var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+				decrypt_PEM = hex2a(decrypted.toString());
+				/*cipherParams = CryptoJS.lib.CipherParams.create({
 					ciphertext: CryptoJS.enc.Base64.parse((key.replace(/\n|\r/g, "")))
 				});
 				key = CryptoJS.enc.Latin1.parse(hex_md5(pass))
 				var decrypted = CryptoJS.AES.decrypt(cipherParams, key, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Base64.parse("AAAAAAAAAAAAAAAAAAAAAA=="), padding: CryptoJS.pad.NoPadding });
-				var decrypt_PEM = hex2a(decrypted.toString());
+				var decrypt_PEM = hex2a(decrypted.toString());*/
 			}
 			else {
 				decrypt_PEM = key;

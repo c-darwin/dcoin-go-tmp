@@ -260,6 +260,7 @@ func (p *Parser) NewReduction() error {
 			return p.ErrInfo(err)
 		}
 
+		log.Error(`INSERT INTO reduction_backup (block_id, currency_id, cf_funding, forex_orders, promised_amount_cash_request_out_time, promised_amount_tdc_amount, wallets) VALUES (%v, %v, %v, %v, %v, %v, %v) `, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"], jsonDataPromisedAmountCF, jsonDataPromisedAmountForex, jsonDataPromisedAmountTime, jsonDataPromisedAmountTdc, jsonDataWallets)
 		err = p.ExecSql(`INSERT INTO reduction_backup (block_id, currency_id, cf_funding, forex_orders, promised_amount_cash_request_out_time, promised_amount_tdc_amount, wallets) VALUES (?, ?, ?, ?, ?, ?, ?)`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"], jsonDataPromisedAmountCF, jsonDataPromisedAmountForex, jsonDataPromisedAmountTime, jsonDataPromisedAmountTdc, jsonDataWallets)
 		if err != nil {
 			return p.ErrInfo(err)
@@ -279,10 +280,13 @@ func (p *Parser) NewReduction() error {
 }
 
 func (p *Parser) NewReductionRollback() error {
+
 	if utils.StrToFloat64(p.TxMaps.String["pct"]) > 0 {
 
 		jsonData, err := p.OneRow(`SELECT * FROM reduction_backup WHERE block_id = ? AND currency_id = ?`, p.BlockData.BlockId, p.TxMaps.Int64["currency_id"]).Bytes()
-
+		if err != nil {
+			return p.ErrInfo(err)
+		}
 		// крауд-фандинг
 		var data map[string]string
 		err = json.Unmarshal(jsonData["cf_funding"], &data)

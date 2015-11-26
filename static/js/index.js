@@ -413,13 +413,13 @@ function get_e_n_sign(key, pass, forsignature, alert_div) {
     else if (pass && key.indexOf('RSA PRIVATE KEY')==-1) {
         try{
 
-            ivAndText = atob(key)
-            iv = ivAndText.substr(0, 16)
-            encText = ivAndText.substr(16)
+            ivAndText = atob(key);
+            iv = ivAndText.substr(0, 16);
+            encText = ivAndText.substr(16);
             cipherParams = CryptoJS.lib.CipherParams.create({
                 ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
             });
-            pass = CryptoJS.enc.Latin1.parse(hex_md5(pass))
+            pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
             var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
             decrypt_PEM = hex2a(decrypted.toString());
 

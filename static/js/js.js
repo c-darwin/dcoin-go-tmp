@@ -99,7 +99,18 @@ function decrypt_comment(id, type) {
 
     if (pass) {
         text = atob(key.replace(/\n|\r/g,""));
+        /*
         var decrypt_PEM = mcrypt.Decrypt(text, "\u0098nq\u0001\u009f\u00c9\u00d1\u00eb\u0012\u008dj\u000e\u00e0\u009d\u008f", hex_md5(pass), 'rijndael-128', 'ecb');
+        */
+        ivAndText = atob(key);
+        iv = ivAndText.substr(0, 16);
+        encText = ivAndText.substr(16);
+        cipherParams = CryptoJS.lib.CipherParams.create({
+            ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+        });
+        pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
+        var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+        decrypt_PEM = hex2a(decrypted.toString());
     }
     else
         decrypt_PEM = key;
@@ -134,7 +145,16 @@ function decrypt_comment_01 (id, type, miner_id, mcrypt_iv) {
     else {
         if (pass) {
             text = atob(key.replace(/\n|\r/g, ""));
-            var decrypt_PEM = mcrypt.Decrypt(text, mcrypt_iv, hex_md5(pass), 'rijndael-128', 'ecb');
+           // var decrypt_PEM = mcrypt.Decrypt(text, mcrypt_iv, hex_md5(pass), 'rijndael-128', 'ecb');
+            ivAndText = atob(key);
+            iv = ivAndText.substr(0, 16);
+            encText = ivAndText.substr(16);
+            cipherParams = CryptoJS.lib.CipherParams.create({
+                ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+            });
+            pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
+            var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+            decrypt_PEM = hex2a(decrypted.toString());
         }
         else {
             decrypt_PEM = key;
@@ -162,7 +182,17 @@ function decrypt_message(id, type) {
     text = atob(key.replace(/\n|\r/g,""));
     var pass = $("#password").text();
     var e_text = $("#encrypt_comment_"+id).val();
-    var decrypt_PEM = mcrypt.Decrypt(text, "\u0098nq\u0001\u009f\u00c9\u00d1\u00eb\u0012\u008dj\u000e\u00e0\u009d\u008f", pass, 'rijndael-128', 'ecb');
+
+    ivAndText = atob(key);
+    iv = ivAndText.substr(0, 16);
+    encText = ivAndText.substr(16);
+    cipherParams = CryptoJS.lib.CipherParams.create({
+        ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+    });
+    pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
+    var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+    decrypt_PEM = hex2a(decrypted.toString());
+    //var decrypt_PEM = mcrypt.Decrypt(text, "\u0098nq\u0001\u009f\u00c9\u00d1\u00eb\u0012\u008dj\u000e\u00e0\u009d\u008f", pass, 'rijndael-128', 'ecb');
 
     var rsa2 = new RSAKey();
     rsa2.readPrivateKeyFromPEMString(decrypt_PEM); // N,E,D,P,Q,DP,DQ,C
@@ -183,7 +213,16 @@ function decrypt_admin_message(id) {
     text = atob(key.replace(/\n|\r/g,""));
     var pass = $("#password").text();
     var e_text = $("#encrypt_message_"+id).val();
-    var decrypt_PEM = mcrypt.Decrypt(text, "\u0098nq\u0001\u009f\u00c9\u00d1\u00eb\u0012\u008dj\u000e\u00e0\u009d\u008f", pass, 'rijndael-128', 'ecb');
+    ivAndText = atob(key);
+    iv = ivAndText.substr(0, 16);
+    encText = ivAndText.substr(16);
+    cipherParams = CryptoJS.lib.CipherParams.create({
+        ciphertext: CryptoJS.enc.Base64.parse(btoa(encText))
+    });
+    pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
+    var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
+    decrypt_PEM = hex2a(decrypted.toString());
+    //var decrypt_PEM = mcrypt.Decrypt(text, "\u0098nq\u0001\u009f\u00c9\u00d1\u00eb\u0012\u008dj\u000e\u00e0\u009d\u008f", pass, 'rijndael-128', 'ecb');
 
     var rsa2 = new RSAKey();
     rsa2.readPrivateKeyFromPEMString(decrypt_PEM); // N,E,D,P,Q,DP,DQ,C
