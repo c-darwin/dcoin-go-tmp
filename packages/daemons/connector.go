@@ -528,6 +528,7 @@ func Connector() {
 			sleepTime = d.sleepTime
 		}
 
+		
 		if d.dSleep(sleepTime) {
 			break BEGIN
 		}
