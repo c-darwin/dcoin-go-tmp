@@ -121,9 +121,21 @@ BEGIN:
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 			continue BEGIN
 		}
+		var infoBlockRestart bool
+		// если с main_lock всё норм, то возможно, что новые блоки не собираются из-за бана нодов
+		if utils.Time()-autoReload < mainLock {
+			timeInfoBlock, err := d.Single(`SELECT time FROM info_block`).Int64()
+			if err != nil {
+				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+				continue BEGIN
+			}
+			if utils.Time()-timeInfoBlock > autoReload {
+				infoBlockRestart = true
+			}
+		}
 		log.Debug("mainLock: %v", mainLock)
 		log.Debug("utils.Time(): %v", utils.Time())
-		if mainLock > 0 && utils.Time()-autoReload > mainLock {
+		if (mainLock > 0 && utils.Time()-autoReload > mainLock) || infoBlockRestart {
 			// на всякий случай пометим, что работаем
 			err = d.ExecSql("UPDATE main_lock SET script_name = 'cleaning_db'")
 			if err != nil {

@@ -204,6 +204,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("dbInit", dbInit)
 
+	setupPassword:=c.NodeConfig["setup_password"]
 	match, _ := regexp.MatchString("^(installStep[0-9_]+)|(blockExplorer)$", tplName)
 	// CheckInputData - гарантирует, что tplName чист
 	if tplName != "" && utils.CheckInputData(tplName, "tpl_name") && (sessUserId > 0 || match) {
@@ -211,7 +212,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if dbInit && installProgress == "complete" && len(configExists) == 0 {
 		// первый запуск, еще не загружен блокчейн
 		tplName = "updatingBlockchain"
-	} else if dbInit && installProgress == "complete" && sessUserId > 0 {
+	} else if dbInit && installProgress == "complete" && (sessUserId > 0 || setupPassword=="") {
 		if status == "waiting_set_new_key" {
 			tplName = "setPassword"
 		} else if status == "waiting_accept_new_key" {

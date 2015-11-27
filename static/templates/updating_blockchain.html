@@ -362,6 +362,10 @@
 						console.log(data.download);
 						$('#meter0').width(data.download+'%');
 						$('#meter0').text(data.download+'%');
+					} else if (data.error > 0) {
+						console.log(data.error);
+						$('#error').text(data.error);
+						alert(data.error);
 					}
 				}, 'JSON'
 			);
@@ -378,6 +382,7 @@
 	</div>
 	<div id="blocks_counter" style="display: {{if .WaitText}} none {{else}} block {{end}}">
 		<h3 style="margin-bottom: 20px">{{.Lang.synchronization_blockchain}}</h3>
+		<div style="display: none" class="alert alert-danger alert-dismissable" id="AlertMessage"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p></p></div>
 		<p id="current_load_blockchain">Connections: 0</p>
 		<div style="text-align:center; position:relative; width:230px; margin:auto; margin-bottom: 10px">
 			<div class="example example-hole">
@@ -408,5 +413,14 @@
 </div>
 
 </div>
-
+<script>
+	$( document ).ready(function() {
+		$.get('ajax?controllerName=AlertFromAdmin', function (data) {
+			if (typeof data.success !== 'undefined') {
+				$('#AlertMessage').css("display", "block");
+				$('#AlertMessage p').html(data.success);
+			}
+		}, 'JSON');
+	});
+</script>
 <script src="static/js/unixtime.js"></script>
