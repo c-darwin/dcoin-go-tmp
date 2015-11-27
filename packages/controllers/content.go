@@ -453,18 +453,22 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if len(tplName) > 0 {
 		log.Debug("tplName", tplName)
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)blockExplorer|waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)setPassword|blockExplorer|waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
-			// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню
-			if len(r.FormValue("tpl_name")) > 0 && tplName == "login" {
-				w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
-				return
-			}
-			// вызываем контроллер в зависимости от шаблона
-			html, err = CallController(c, tplName)
-			if err != nil {
-				log.Error("%v", err)
+			if tplName=="setPassword" && setupPassword!="" {
+				html = "Access denied 1"
+			} else {
+				// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню
+				if len(r.FormValue("tpl_name")) > 0 && tplName == "login" {
+					w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
+					return
+				}
+				// вызываем контроллер в зависимости от шаблона
+				html, err = CallController(c, tplName)
+				if err != nil {
+					log.Error("%v", err)
+				}
 			}
 		}
 		w.Write([]byte(html))
