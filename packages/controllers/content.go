@@ -212,13 +212,13 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if dbInit && installProgress == "complete" && len(configExists) == 0 {
 		// первый запуск, еще не загружен блокчейн
 		tplName = "updatingBlockchain"
-	} else if dbInit && installProgress == "complete" && (sessUserId > 0 || setupPassword=="") {
+	} else if dbInit && installProgress == "complete" && sessUserId > 0 {
 		if status == "waiting_set_new_key" {
 			tplName = "setPassword"
 		} else if status == "waiting_accept_new_key" {
 			tplName = "waitingAcceptNewKey"
 		}
-	} else if dbInit && installProgress == "complete" && !c.Community && sessUserId == 0 && status == "waiting_set_new_key" {
+	} else if dbInit && installProgress == "complete" && !c.Community && sessUserId == 0 && status == "waiting_set_new_key" && setupPassword!="" {
 		tplName = "setupPassword"
 	} else if dbInit && installProgress == "complete" && sessUserId == 0 && status == "waiting_accept_new_key" {
 		tplName = "waitingAcceptNewKey"
@@ -453,22 +453,18 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	} else if len(tplName) > 0 {
 		log.Debug("tplName", tplName)
 		html := ""
-		if ok, _ := regexp.MatchString(`^(?i)setPassword|blockExplorer|waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
+		if ok, _ := regexp.MatchString(`^(?i)blockExplorer|waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Check_sign|CheckNode|GetBlock|GetMinerData|GetMinerDataMap|GetSellerData|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain|Menu$`, tplName); !ok && c.SessUserId <= 0 {
 			html = "Access denied 1"
 		} else {
-			if tplName=="setPassword" && setupPassword!="" {
-				html = "Access denied 1"
-			} else {
-				// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню
-				if len(r.FormValue("tpl_name")) > 0 && tplName == "login" {
-					w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
-					return
-				}
-				// вызываем контроллер в зависимости от шаблона
-				html, err = CallController(c, tplName)
-				if err != nil {
-					log.Error("%v", err)
-				}
+			// если сессия обнулилась в процессе навигации по админке, то вместо login шлем на /, чтобы очистилось меню
+			if len(r.FormValue("tpl_name")) > 0 && tplName == "login" {
+				w.Write([]byte("<script language=\"javascript\">window.location.href = \"/\"</script>If you are not redirected automatically, follow the <a href=\"/\">/</a>"))
+				return
+			}
+			// вызываем контроллер в зависимости от шаблона
+			html, err = CallController(c, tplName)
+			if err != nil {
+				log.Error("%v", err)
 			}
 		}
 		w.Write([]byte(html))
