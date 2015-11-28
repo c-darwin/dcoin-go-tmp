@@ -403,17 +403,24 @@
 		</div>
 	</div>
 
-	<div id="start_daemons_div">{{.StartDaemons}}</div>
+	<a hrep="#" id="debug">Debug</a>
+	<div id="debugDiv"></div>
 
 	{{if not .Mobile}}
 	<div id="check_time" style="margin-top: 50px">{{.AlertTime}} {{noescape .CheckTime}}</div>
 	{{else}}
 	<div id="check_time" style="margin-top: 50px">{{.AlertTime}}</div>
 	{{end}}
-</div>
+
+	<div id="help" style="margin-top: 10px"><a href="mailto:darwin@dcoin.club">help</a></div>
 
 </div>
 <script>
+	$('#debug').bind('click', function () {
+		$.get('ajax?controllerName=Debug', function (data) {
+			$('#debugDiv').html("<textarea>"+data+"</textarea>")
+		}, 'JSON');
+	});
 	$( document ).ready(function() {
 		$.get('ajax?controllerName=AlertFromAdmin', function (data) {
 			if (typeof data.success !== 'undefined') {

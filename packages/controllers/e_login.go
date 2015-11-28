@@ -24,7 +24,7 @@ func (c *Controller) ELogin() (string, error) {
 
 
 	// проверяем, верный ли пароль
-	passAndSalt := utils.DSha256(password+data["salt"])
+	passAndSalt := utils.Sha256(password+data["salt"])
 	userId, err := utils.DB.Single("SELECT id FROM e_users WHERE id  =  ? AND password  =  ?", data["id"], passAndSalt).Int64()
 	if err != nil {
 		return "", utils.ErrInfo(err)
