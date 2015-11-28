@@ -1,8 +1,5 @@
 package consts
 
-import (
-//"fmt"
-)
 
 // текущая версия
 const VERSION = "1.0.1b7"
