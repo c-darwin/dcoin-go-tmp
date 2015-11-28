@@ -417,9 +417,10 @@
 </div>
 <script>
 	$('#debug').bind('click', function () {
-		$.get('ajax?controllerName=Debug', function (data) {
+		$.get('ajax?controllerName=DebugInfo', function (data) {
+			console.log(data)
 			$('#debugDiv').html("<textarea>"+data+"</textarea>")
-		}, 'JSON');
+		});
 	});
 	$( document ).ready(function() {
 		$.get('ajax?controllerName=AlertFromAdmin', function (data) {

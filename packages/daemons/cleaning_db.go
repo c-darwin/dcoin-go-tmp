@@ -130,7 +130,19 @@ BEGIN:
 				continue BEGIN
 			}
 			if utils.Time()-timeInfoBlock > autoReload {
-				infoBlockRestart = true
+				// подождем 5 минут и проверим еще раз
+				if d.dSleep(300) {
+					break BEGIN
+				}
+				newTimeInfoBlock, err := d.Single(`SELECT time FROM info_block`).Int64()
+				if err != nil {
+					if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
+					continue BEGIN
+				}
+				// Если за 5 минут info_block тот же, значит обновление блокчейна не идет
+				if newTimeInfoBlock == timeInfoBlock {
+					infoBlockRestart = true
+				}
 			}
 		}
 		log.Debug("mainLock: %v", mainLock)
