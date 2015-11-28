@@ -3302,8 +3302,8 @@ func DcoinUpd(url string) error {
 	} else {
 		old = *Dir+"/"+filepath.Base(os.Args[0])
 	}
-	log.Debug(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir, "-logLevel", "DEBUG")
-	err = exec.Command(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir, "-logLevel", "DEBUG").Start()
+	log.Debug(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir)
+	err = exec.Command(*Dir+"/dc.tmp", "-oldFileName", old, "-dir", *Dir).Start()
 	if err != nil {
 		return ErrInfo(err)
 	}
