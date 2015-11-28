@@ -123,7 +123,7 @@ BEGIN:
 		}
 		var infoBlockRestart bool
 		// если с main_lock всё норм, то возможно, что новые блоки не собираются из-за бана нодов
-		if utils.Time()-autoReload < mainLock {
+		if mainLock == 0 || utils.Time()-autoReload < mainLock {
 			timeInfoBlock, err := d.Single(`SELECT time FROM info_block`).Int64()
 			if err != nil {
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
