@@ -304,7 +304,7 @@ BEGIN:
 		log.Info("%v", hosts)
 
 		if len(hosts) == 0 {
-			d.PrintSleep("len hosts = 0", 1)
+			if d.dPrintSleep(err, 1) {	break BEGIN }
 			continue
 		}
 
@@ -375,7 +375,7 @@ BEGIN:
 		}
 		log.Info("currentBlockId", currentBlockId, "maxBlockId", maxBlockId)
 		if maxBlockId <= currentBlockId {
-			d.unlockPrintSleep(utils.ErrInfo(errors.New("maxBlockId <= currentBlockId")), d.sleepTime)
+			if d.unlockPrintSleep(utils.ErrInfo(errors.New("maxBlockId <= currentBlockId")), d.sleepTime) {	break BEGIN }
 			continue
 		}
 

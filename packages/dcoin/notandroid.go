@@ -24,7 +24,7 @@ import (
 
 extern void go_callback_int();
 static inline void SigBreak_Handler(int n_signal){
-      printf("closed\n");
+    printf("closed\n");
 	go_callback_int();
 }
 static inline void waitSig() {

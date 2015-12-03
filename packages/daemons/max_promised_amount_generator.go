@@ -72,7 +72,7 @@ BEGIN:
 			continue BEGIN
 		}
 		if blockId == 0 {
-			d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("blockId == 0"), 1) {	break BEGIN }
 			continue BEGIN
 		}
 
@@ -101,7 +101,7 @@ BEGIN:
 			continue BEGIN
 		}
 		if curTime-pctTime <= variables.Int64["new_max_promised_amount"] {
-			d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1)
+			if d.unlockPrintSleep(utils.ErrInfo("14 day error"), 1) {	break BEGIN }
 			continue BEGIN
 		}
 

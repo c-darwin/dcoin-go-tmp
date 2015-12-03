@@ -90,62 +90,55 @@ func Start(dir string) {
 	}
 
 	// убьем ранее запущенный Dcoin
-	if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
-		dat, err := ioutil.ReadFile(*utils.Dir+"/dcoin.pid")
-		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
-		}
-		var pidMap map[string]string
-		err = json.Unmarshal(dat, &pidMap)
-		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
-		}
-		fmt.Println("old PID ("+*utils.Dir+"/dcoin.pid"+"):", pidMap["pid"])
-		/*err = syscall.Kill(utils.StrToInt(pidMap["pid"]), syscall.SIGTERM)
-		if err != nil {
-			log.Error("%v", utils.ErrInfo(err))
-		}*/
-		/*kp, err := os.FindProcess(utils.StrToInt(pidMap["pid"]))
-		if nil != err {
-			fmt.Println(err)
-			log.Error("%v", utils.ErrInfo(err))
-		}
-		err = kp.Kill()
-		if nil != err {
-			fmt.Println(err)
-			log.Error("%v", utils.ErrInfo(err))
-		}*/
-		utils.DB, err = utils.NewDbConnect(configIni)
+	if !utils.Mobile() {
+		fmt.Println("kill dcoin.pid")
+		if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
+			dat, err := ioutil.ReadFile(*utils.Dir+"/dcoin.pid")
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			var pidMap map[string]string
+			err = json.Unmarshal(dat, &pidMap)
+			if err != nil {
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			fmt.Println("old PID ("+*utils.Dir+"/dcoin.pid"+"):", pidMap["pid"])
 
-		err = KillPid(pidMap["pid"])
-		if nil != err {
-			fmt.Println(err)
-			log.Error("%v", utils.ErrInfo(err))
-		}
-		fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
-		if fmt.Sprintf("%s", err) != "no such process" {
-			// даем 15 сек, чтобы завершиться предыдущему процессу
-			for i := 0; i<15; i++ {
-				if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
-					fmt.Println("waiting killer")
-					utils.Sleep(1)
-				} else { // если dcoin.pid нет, значит завершился
-					break
+			utils.DB, err = utils.NewDbConnect(configIni)
+
+			err = KillPid(pidMap["pid"])
+			if nil != err {
+				fmt.Println(err)
+				log.Error("%v", utils.ErrInfo(err))
+			}
+			fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
+			if fmt.Sprintf("%s", err) != "no such process" {
+				// даем 15 сек, чтобы завершиться предыдущему процессу
+				for i := 0; i<15; i++ {
+					log.Debug("waiting killer %d", i)
+					if _, err := os.Stat(*utils.Dir+"/dcoin.pid"); err == nil {
+						fmt.Println("waiting killer")
+						utils.Sleep(1)
+					} else { // если dcoin.pid нет, значит завершился
+						break
+					}
 				}
 			}
 		}
 	}
 
 	// сохраним текущий pid и версию
-	pid := os.Getpid()
-	PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-	}
-	err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
-	if err != nil {
-		log.Error("%v", utils.ErrInfo(err))
-		panic(err)
+	if !utils.Mobile() {
+		pid := os.Getpid()
+		PidAndVer, err := json.Marshal(map[string]string{"pid": utils.IntToStr(pid), "version": consts.VERSION})
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+		}
+		err = ioutil.WriteFile(*utils.Dir+"/dcoin.pid", PidAndVer, 0644)
+		if err != nil {
+			log.Error("%v", utils.ErrInfo(err))
+			panic(err)
+		}
 	}
 
 
@@ -188,7 +181,7 @@ func Start(dir string) {
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
 
-	logLevel_ := "ERROR"
+	logLevel_ := "DEBUG"
 	if *utils.LogLevel == "" {
 		logLevel_ = configIni["log_level"]
 	} else {
@@ -410,10 +403,12 @@ func Start(dir string) {
 
 		IosLog(fmt.Sprintf("ListenHttpHost: %v", ListenHttpHost))
 
+		fmt.Println("ListenHttpHost", ListenHttpHost)
+
 		httpListener(ListenHttpHost, BrowserHttpHost)
 
-		utils.Sleep(1)
 		if *utils.Console == 0 && !utils.Mobile() {
+			utils.Sleep(1)
 			openBrowser(BrowserHttpHost)
 		}
 	}()
@@ -424,6 +419,7 @@ func Start(dir string) {
 
 	log.Debug("ALL RIGHT")
 	IosLog("ALL RIGHT")
+	fmt.Println("ALL RIGHT")
 	utils.Sleep(3600 * 24 * 90)
 	log.Debug("EXIT")
 }

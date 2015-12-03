@@ -2736,20 +2736,6 @@ func Encrypt(key, text []byte) ([]byte, error) {
 	EncPrivateKeyBin = append(iv, EncPrivateKeyBin...)
 	//EncPrivateKeyB64 := base64.StdEncoding.EncodeToString(EncPrivateKeyBin)
 	return EncPrivateKeyBin, nil
-	/*
-		plaintext := []byte(strpad(string(text)))
-		ivtext := make([]byte, aes.BlockSize+len(plaintext))
-		iv := ivtext[:aes.BlockSize]
-		iv = []byte("1111111111111111")
-		c, err := aes.NewCipher(key)
-		if err != nil {
-			return nil, err
-		}
-		cfbdec := cipher.NewCBCEncrypter(c, iv)
-		ciphertext := make([]byte, len(plaintext))
-		cfbdec.CryptBlocks(ciphertext, plaintext)
-		//crypt1 := base64.StdEncoding.EncodeToString((ciphertext))
-		return ciphertext, nil*/
 }
 
 func EncryptCFB(text, key, iv []byte) ([]byte, []byte, error) {

@@ -74,22 +74,13 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 			db.Close()
 			return &DCDB{}, err
 		}
-		/*_, err = db.Exec(`VACUUM`);
-		if err != nil {
-			db.Close()
-			return &DCDB{}, err
-		}*/
 	case "postgresql":
 		db, err = sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
-		//fmt.Println(db)
-		//fmt.Println(err)
 		if err != nil {
 			return &DCDB{}, err
 		}
 	case "mysql":
 		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", ConfigIni["db_user"], ConfigIni["db_password"], ConfigIni["db_name"]))
-		//fmt.Println("db",db)
-		//fmt.Println(err)
 		if err != nil {
 			return &DCDB{}, err
 		}
@@ -98,17 +89,6 @@ func NewDbConnect(ConfigIni map[string]string) (*DCDB, error) {
 	return &DCDB{db, ConfigIni}, err
 }
 
-/*
-func (db *DCDB) DbConnect() {
-	dbInfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
-	db, err := sql.Open("postgres", dbInfo)
-	CheckErr(err)
-	err = db.Ping()
-	//if err != nil {
-	//	panic(err.Error()) // proper error handling instead of panic in your app
-	//}
-	//return db
-}*/
 
 func (db *DCDB) GetConfigIni(name string) string {
 	return db.ConfigIni[name]
@@ -643,13 +623,26 @@ func (db *DCDB) NodeAdminAccess(sessUserId, sessRestricted int64) (bool, error) 
 
 func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interface{}) (int64, error) {
 	var lastId int64
+	var res sql.Result
+	var err error
 	newQuery, newArgs := FormatQueryArgs(query, db.ConfigIni["db_type"], args...)
 	if db.ConfigIni["db_type"] == "postgresql" {
 		newQuery = newQuery + " RETURNING " + returning
-		err := db.QueryRow(newQuery, newArgs...).Scan(&lastId)
-		if err != nil {
-			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		for {
+			err := db.QueryRow(newQuery, newArgs...).Scan(&lastId)
+			if err != nil {
+				if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok {
+					log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
+					time.Sleep(250 * time.Millisecond)
+					continue
+				} else {
+					return 0, fmt.Errorf("%s in query %s %s %s", err, newQuery, newArgs, GetParent())
+				}
+			} else {
+				break
+			}
 		}
+				
 		if db.ConfigIni["sql_log"] == "1" {
 			log.Debug("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
 		}
@@ -661,12 +654,32 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 		}*/
 
 	} else {
-		res, err := db.Exec(newQuery, newArgs...)
+		/*res, err := db.Exec(newQuery, newArgs...)
+		if err != nil {
+			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		}*/
+		for {
+			res, err = db.Exec(newQuery, newArgs...)
+			if err != nil {
+				if ok, _ := regexp.MatchString(`(?i)database is locked`, fmt.Sprintf("%s", err)); ok {
+					log.Error("database is locked %s / %s / %s", newQuery, newArgs, GetParent())
+					time.Sleep(250 * time.Millisecond)
+					continue
+				} else {
+					return 0, fmt.Errorf("%s in query %s %s %s", err, newQuery, newArgs, GetParent())
+				}
+			} else {
+				break
+			}
+		}
+		affect, err := res.RowsAffected()
 		if err != nil {
 			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
 		}
-		affect, err := res.RowsAffected()
 		lastId, err = res.LastInsertId()
+		if err != nil {
+			return 0, fmt.Errorf("%s in query %s %s", err, newQuery, newArgs)
+		}
 		if db.ConfigIni["sql_log"] == "1" {
 			log.Debug("SQL: %s / RowsAffected=%d / LastInsertId=%d / %s", newQuery, affect, lastId, newArgs)
 		}
