@@ -119,7 +119,7 @@ func (c *Controller) AlertMessage() (string, error) {
 	}
 
 	if c.SessRestricted == 0 && (!c.Community || c.PoolAdmin) {
-		myMinerId, err := c.GetMyMinerId(c.SessUserId)
+		myMinerId, err := c.GetMinerId(c.SessUserId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -143,11 +143,11 @@ func (c *Controller) AlertMessage() (string, error) {
 	if c.SessRestricted == 0 {
 		// после обнуления таблиц my_node_key будет пуст
 		// получим время из последнего блока
-		myNodeKey, err := c.GetNodePrivateKey(c.MyPrefix)
+		myNodePrivateKey, err := c.GetNodePrivateKey(c.MyPrefix)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		myMinerId, err := c.GetMyMinerId(c.SessUserId)
+		minerId, err := c.GetMinerId(c.SessUserId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
@@ -161,7 +161,7 @@ func (c *Controller) AlertMessage() (string, error) {
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
-		if (len(myNodeKey) == 0 && myMinerId > 0) || string(nodePublicKey) != myNodePublicKey {
+		if (len(myNodePrivateKey) == 0 && minerId > 0) || (string(nodePublicKey) != myNodePublicKey && len(nodePublicKey) > 0) {
 			result += `<div class="alert alert-danger alert-dismissable" style='margin-top: 30px'><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				     <h4>Warning!</h4>
 				     <div>` + c.Lang["alert_change_node_key"] + `</div>

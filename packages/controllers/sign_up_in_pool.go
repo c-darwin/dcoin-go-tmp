@@ -111,7 +111,7 @@ func (c *Controller) SignUpInPool() (string, error) {
 	schema_.GetSchema()
 
 	prefix := utils.Int64ToStr(userId) + "_"
-	minerId, err := c.GetMyMinerId(userId)
+	minerId, err := c.GetMinerId(userId)
 	if err != nil {
 		return "", utils.JsonAnswer(utils.ErrInfo(err), "error").Error()
 	}

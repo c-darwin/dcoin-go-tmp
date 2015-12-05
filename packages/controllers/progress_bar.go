@@ -68,7 +68,7 @@ func (c *Controller) ProgressBar() (string, error) {
 	}
 
 	// апгрейд аккаунта
-	myMinersId, err := c.GetMyMinerId(c.SessUserId)
+	myMinersId, err := c.GetMinerId(c.SessUserId)
 	if myMinersId > 0 {
 		progressBar["upgrade_country"] = 1
 		progressBar["upgrade_face_hash"] = 1

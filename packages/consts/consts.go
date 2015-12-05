@@ -36,6 +36,8 @@ const MAX_TX_FORW = 0
 // тр-ия может блуждать по сети сутки и потом попасть в блок
 const MAX_TX_BACK = DAY
 
+const MAX_BLOCK_SIZE = 16<<20
+
 const USD_CURRENCY_ID = 71
 
 const ARBITRATION_BLOCK_START = 189300

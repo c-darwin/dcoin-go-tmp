@@ -912,7 +912,7 @@
 			{{range $id, $data := .TopExMap}}
 			<tr>
 				<td id="ps-{{$id}}"></td>
-				<td><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}', 'btn-{{$id}}')" id="btn-{{$id}}" class="btn btn-default">Buy</button></td>
+				<td id="btnbuy-{{$id}}"><button onclick="selectEx('{{$data.Host}}', '{{$data.UserId}}', 'btn-{{$id}}')" id="btn-{{$id}}" class="btn btn-default">Buy</button></td>
 				<td>{{$data.Host}}</td>
 				<td>{{$data.UserId}}</td>
 				<td>{{$data.Vote1}}</td>
@@ -930,7 +930,7 @@
 					if (patt.test(data.ps)) {
 						$('#ps-{{$id}}').html(data.ps);
 					}
-				}, 'JSON');
+				}, 'JSON').fail(function() { $('#ps-{{$id}}').html("Unavailable"); $('#btnbuy-{{$id}}').html(""); });
 			</script>
 			{{end}}
 		</table>

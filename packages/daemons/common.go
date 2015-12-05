@@ -104,7 +104,7 @@ func (d *daemon) notMinerSetSleepTime(sleep int) error {
 		if err != nil {
 			return err
 		}
-		minerId, err := d.GetMyMinerId(userId)
+		minerId, err := d.GetMinerId(userId)
 		if minerId == 0 {
 			d.sleepTime = sleep
 		}

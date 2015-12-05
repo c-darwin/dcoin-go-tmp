@@ -1742,7 +1742,7 @@ func (db *DCDB) GetPromisedAmounts(userId, cash_request_time int64) (int64, []Pr
 	return actualizationPromisedAmounts, promisedAmountListAccepted, promisedAmountListGen, nil
 }
 
-func (db *DCDB) GetMyMinerId(userId int64) (int64, error) {
+func (db *DCDB) GetMinerId(userId int64) (int64, error) {
 	return db.Single("SELECT miner_id FROM miners_data WHERE user_id  =  ?", userId).Int64()
 }
 

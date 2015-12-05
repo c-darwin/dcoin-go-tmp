@@ -39,7 +39,7 @@ func (c *Controller) RewritePrimaryKey() (string, error) {
 		}
 
 		// может быть юзер уже майнер?
-		minerId, err := c.GetMyMinerId(userId)
+		minerId, err := c.GetMinerId(userId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

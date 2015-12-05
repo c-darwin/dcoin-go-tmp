@@ -88,7 +88,7 @@ func (c *Controller) Menu() (string, error) {
 	}
 
 	noAvatar := "static/img/noavatar.png"
-	minerId, err := c.GetMyMinerId(c.SessUserId)
+	minerId, err := c.GetMinerId(c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

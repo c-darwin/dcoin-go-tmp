@@ -114,7 +114,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		}
 		c.ConfirmedBlockId = confirmedBlockId
 
-		c.MinerId, err = c.GetMyMinerId(c.SessUserId)
+		c.MinerId, err = c.GetMinerId(c.SessUserId)
 		if err != nil {
 			log.Error("%v", err)
 		}

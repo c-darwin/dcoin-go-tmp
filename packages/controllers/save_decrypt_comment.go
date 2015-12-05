@@ -23,7 +23,7 @@ func (c *Controller) SaveDecryptComment() (string, error) {
 	}
 
 	// == если мы майнер и это dc_transactions, то сюда прислан зашифрованный коммент, который можно расшифровать только нод-кдючем
-	minerId, err := c.GetMyMinerId(c.SessUserId)
+	minerId, err := c.GetMinerId(c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

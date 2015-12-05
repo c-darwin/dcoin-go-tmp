@@ -86,7 +86,7 @@ func (c *Controller) WalletsList() (string, error) {
 	names["cf_project"] = "Crowd funding"
 	names["cf_project_refund"] = "Crowd funding refund"
 
-	minerId, err := c.GetMyMinerId(c.SessUserId)
+	minerId, err := c.GetMinerId(c.SessUserId)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}

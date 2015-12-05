@@ -213,7 +213,7 @@ func (c *Controller) Check_sign() (string, error) {
 					if err != nil {
 						return "{\"result\":0}", err
 					}
-					minerId, err := c.GetMyMinerId(utils.StrToInt64(userId))
+					minerId, err := c.GetMinerId(utils.StrToInt64(userId))
 					if err != nil {
 						return "{\"result\":0}", err
 					}

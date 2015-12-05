@@ -52,7 +52,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 			parser.BinaryData = binaryData
 			err = parser.ParseDataLite()
 			parser.BlockData.Sign = utils.BinToHex(parser.BlockData.Sign)
-			minerId, err := c.GetMyMinerId(parser.BlockData.UserId)
+			minerId, err := c.GetMinerId(parser.BlockData.UserId)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
@@ -81,7 +81,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 		previous := parser.BlockData.BlockId - 1
 		next := parser.BlockData.BlockId + 1
 		levelsRange := utils.GetBlockGeneratorMinerIdRange(utils.StrToInt64(blockChain["cur_0l_miner_id"]), utils.StrToInt64(blockChain["max_miner_id"]))
-		minerId, err := c.GetMyMinerId(parser.BlockData.UserId)
+		minerId, err := c.GetMinerId(parser.BlockData.UserId)
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}

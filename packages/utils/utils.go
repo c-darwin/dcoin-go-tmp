@@ -1477,7 +1477,7 @@ func GetEndBlockId() (int64, error) {
 			log.Fatal(err)
 		}
 		if fi.Size() == 0 {
-			return 0, ErrInfo(err)
+			return 0, ErrInfo("/public/blockchain size=0")
 		}
 
 		// размер блока, записанный в 5-и последних байтах файла blockchain
@@ -1491,6 +1491,9 @@ func GetEndBlockId() (int64, error) {
 			return 0, ErrInfo(err)
 		}
 		size := BinToDec(buf)
+		if size > consts.MAX_BLOCK_SIZE {
+			return 0, ErrInfo("size > conts.MAX_BLOCK_SIZE")
+		}
 		// сам блок
 		_, err = file.Seek(-(size + 5), 2)
 		if err != nil {

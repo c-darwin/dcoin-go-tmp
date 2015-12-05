@@ -54,7 +54,8 @@ BEGIN:
 		endBlockId, err := utils.GetEndBlockId()
 		if err != nil {
 			if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
-			continue BEGIN
+			// чтобы не стопориться тут, а дойти до пересборки БД
+			endBlockId = 4294967295
 		}
 		log.Debug("curBlockId: %v / endBlockId: %v", curBlockId, endBlockId)
 		if curBlockId-30 > endBlockId {

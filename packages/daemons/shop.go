@@ -96,7 +96,7 @@ BEGIN:
 				continue
 			}
 			// проверим, майнер ли
-			minerId, err := d.GetMyMinerId(userId)
+			minerId, err := d.GetMinerId(userId)
 			if err != nil {
 				if d.dPrintSleep(utils.ErrInfo(err), d.sleepTime) {	break BEGIN }
 				continue BEGIN
