@@ -791,6 +791,8 @@
 											'e_owner_id': user_id
 										}, function () {
 											console.log(data);
+											$('#'+bId).prop('disabled', false);
+											$('#'+bId).html('Buy');
 											$('#sendForm').attr('action', url+'ajax');
 											$('input[name="FormExPs"]').val($("#payment_system").val());
 											$('input[name="FormExAmount"]').val($("#exAmount").val());
@@ -800,6 +802,8 @@
 										});
 									} else {
 										$("#ex_alert").html('<div id="alertModalPull" class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button><p>Incorrect Signature</p></div>');
+										$('#'+bId).prop('disabled', false);
+										$('#'+bId).html('Buy');
 									}
 									//$('#'+bId).prop('disabled', false);
 									//$('#'+bId).html('Buy');
