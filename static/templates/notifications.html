@@ -63,7 +63,6 @@
 		$.ajax({
 			type: "POST",
 			url: "ajax?controllerName=sendTestEmail",
-			data: { text: $('#sms_text').val() },
 			dataType: "json",
 			timeout: 10000, // in milliseconds
 			success: function(data) {

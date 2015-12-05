@@ -25,7 +25,7 @@ function file_upload (file_id, progress, type, script) {
     up.send();
 }
 
-function send_video (file_id, progress, type) {
+function send_video (file_id, progress, type, user_id) {
 
     var
         $f = $('#'+file_id),
@@ -47,6 +47,11 @@ function send_video (file_id, progress, type) {
                     $('#'+file_id+'_ok').css("display", "block");
                     $('#'+file_id+'_ok').html('File successfully downloaded');
                     $('#video').css("display", "block");
+                    if (/promised_amount/.test(type)) {
+                        $('#video').html('<video class="video-js vjs-default-skin videosize" controls preload="none" data-setup="{}"><source src="public/'+user_id+'_'+type.replace("-","_")+'.mp4?r='+Math.floor((Math.random() * 99999999) + 1)+'" type="video/mp4" /></video>');
+                    } else {
+                        $('#video').html('<video class="video-js vjs-default-skin videosize" controls preload="none" data-setup="{}"><source src="public/'+user_id+'_user_video.mp4?r='+Math.floor((Math.random() * 99999999) + 1)+'" type="video/mp4" /></video>');
+                    }
                 }
             }
         });

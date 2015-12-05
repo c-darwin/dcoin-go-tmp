@@ -3,10 +3,8 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
-	"io/ioutil"
-	"net/http"
+	"github.com/c-darwin/dcoin-go-tmp/packages/sendnotif"
 )
 
 func (c *Controller) SendMobile() (string, error) {
@@ -15,26 +13,9 @@ func (c *Controller) SendMobile() (string, error) {
 		return "", utils.ErrInfo(errors.New("Permission denied"))
 	}
 
-	c.r.ParseForm()
-	text := c.r.FormValue("text")
+	sendnotif.SendMobileNotification("Test", "Test message")
 
-	sms_http_get_request, err := c.Single("SELECT sms_http_get_request FROM " + c.MyPrefix + "my_table").String()
-	if err != nil {
-		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
-		return string(result), nil
-	}
-	resp, err := http.Get(sms_http_get_request + text)
-	if err != nil {
-		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
-		return string(result), nil
-	}
-	defer resp.Body.Close()
-	htmlData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		result, _ := json.Marshal(map[string]string{"error": fmt.Sprintf(`%s`, err)})
-		return string(result), nil
-	}
-	result, _ := json.Marshal(map[string]string{"success": string(htmlData)})
+	result, _ := json.Marshal(map[string]string{"success": "success"})
 	return string(result), nil
 
 }

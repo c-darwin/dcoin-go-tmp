@@ -26,6 +26,8 @@ type newPromisedAmountPage struct {
 	LimitsText         string
 	PaymentSystems     map[string]string
 	CountPs            []int
+	Mobile          bool
+	IncNavigate string
 }
 
 func (c *Controller) NewPromisedAmount() (string, error) {
@@ -94,12 +96,14 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 		SignData:           "",
 		ConfigCommission:   c.ConfigCommission,
 		Navigate:           navigate,
+		IncNavigate: c.Navigate,
 		CurrencyId:         currencyId,
 		CurrencyList:       currencyList,
 		CurrencyListName:   currencyListName,
 		MaxPromisedAmounts: maxPromisedAmounts,
 		LimitsText:         limitsText,
 		PaymentSystems:     paymentSystems,
+		Mobile:          utils.Mobile(),
 		CountPs:            countPs})
 	if err != nil {
 		return "", utils.ErrInfo(err)
