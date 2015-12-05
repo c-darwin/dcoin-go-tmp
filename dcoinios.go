@@ -15,13 +15,10 @@ import (
 #import <GLKit/GLKit.h>
 
 void ShowMessX(void) {
-        NSLog(@"ShowMessX<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-
 	UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"1111111111111" message:@"Это простой UIAlertView, он просто показывает сообщение" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
 	[alert show];
 	[alert release];
 }
-
 
 */
 import "C"

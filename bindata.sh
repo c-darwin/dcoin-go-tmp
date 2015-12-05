@@ -1,6 +1,5 @@
 #!/bin/bash
-DEBUG=""
-if [ $# -gt 0 ] && [ $1 == "debug" ] 
+if [ $# -gt 0 ] && [ $1 = "debug" ] 
 then
   DEBUG="-debug=true"
 fi

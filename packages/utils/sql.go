@@ -642,7 +642,7 @@ func (db *DCDB) ExecSqlGetLastInsertId(query, returning string, args ...interfac
 				break
 			}
 		}
-				
+
 		if db.ConfigIni["sql_log"] == "1" {
 			log.Debug("SQL: %s / LastInsertId=%d / %s", newQuery, lastId, newArgs)
 		}
