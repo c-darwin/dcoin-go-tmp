@@ -115,7 +115,7 @@ BEGIN:
 				}
 				for _, data := range myNotifications {
 					notificationsArray[data["name"]] = make(map[int64]map[string]string)
-					notificationsArray[data["name"]][myUsersIds[i]] = map[string]string{"email": data["email"], "sms": data["sms"]}
+					notificationsArray[data["name"]][myUsersIds[i]] = map[string]string{"email": data["email"], "sms": data["sms"], "mobile": data["mobile"]}
 					userEmailSmsData[myUsersIds[i]] = myData
 				}
 			}
@@ -244,7 +244,6 @@ BEGIN:
 						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					// откатываем наши блоки до начала вилки
 					myDcTransactions, err := d.GetAll(`
 							SELECT  id,
 							               amount,
@@ -295,7 +294,6 @@ BEGIN:
 						myPrefix = utils.Int64ToStr(myUsersIds[i]) + "_"
 					}
 					userId := myUsersIds[i]
-					// откатываем наши блоки до начала вилки
 					myDcTransactions, err := d.GetAll(`
 							SELECT id,
 									    amount,

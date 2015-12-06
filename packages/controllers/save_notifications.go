@@ -25,9 +25,10 @@ func (c *Controller) SaveNotifications() (string, error) {
 		err := c.ExecSql(`
 				UPDATE `+c.MyPrefix+`my_notifications
 				SET  email = ?,
-						sms =  ?
+					 sms =  ?,
+					 mobile = ?
 				WHERE name = ?
-				`, data[k]["email"].(float64), data[k]["sms"].(float64), data[k]["name"].(string))
+				`, data[k]["email"].(float64), data[k]["sms"].(float64), data[k]["name"].(string), data[k]["mobile"].(string))
 		if err != nil {
 			return "", utils.ErrInfo(err)
 		}
