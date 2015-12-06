@@ -377,7 +377,7 @@
 -->
 <h3>{{.Lang.configuring_notifications}}</h3>
 <div id="notifications">
-	<table class="table table-striped" style="width:500px">
+	<table class="table table-striped" style="max-width:500px">
 		<tr><th></th>{{if .Mobile}}<th>Mobile</th><!--<th>SMS</th>-->{{end}}<th>Email</th></tr>
 		{{range $name, $data := .MyNotifications}}
 			<tr><td><input type='hidden' id='names' value='{{$name}}'><span {{if $data.important}} class='text-error'{{end}}>{{notificationsLang $.Lang $name}}</span></td>
