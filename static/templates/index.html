@@ -554,7 +554,7 @@
 			else if (page=='upgrade4')
 				user_webcam_navigate(page);
 			else
-				fc_navigate(page, param_obj);
+				dc_navigate(page, param_obj);
 
 			/*if (/waitingAcceptNewKey|SetupPassword|CfCatalog|CfPagePreview|CfStart|Index|IndexCf|InstallStep0|InstallStep1|InstallStep2|Login|SignLogin|SynchronizationBlockchain|UpdatingBlockchain/.test(page)) {
 				$("#ios_menu").css("display", "none");
@@ -579,7 +579,7 @@
 	function rTpl() {
 		console.log("1111");
 		console.log($('#tpl_name').val());
-		fc_navigate($('#tpl_name').val())
+		dc_navigate($('#tpl_name').val())
 	}
 
 </script>

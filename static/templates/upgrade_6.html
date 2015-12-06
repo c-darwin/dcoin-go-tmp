@@ -49,7 +49,7 @@
 								function (data) {
 									if (data.success == "1") {
 										$( "#send"+i ).html( "<strong>OK</strong>" );
-										fc_navigate('upgrade7');
+										dc_navigate('upgrade7');
 									} else {
 										$( "#send"+i ).html( "<strong>"+data.error+"</strong>" )
 										if (i < pools.length-1) {

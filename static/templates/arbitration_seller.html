@@ -28,13 +28,13 @@
 					'signature2': $('#signature2').val(),
 					'signature3': $('#signature3').val()
 				}, function (data) {
-					fc_navigate ('arbitrationSeller', {'alert': '{{.Lang.sent_to_the_net}}'} );
+					dc_navigate ('arbitrationSeller', {'alert': '{{.Lang.sent_to_the_net}}'} );
 				}
 		);
 	});
 
 	function money_back(id) {
-		fc_navigate('money_back', {'order_id': id, 'amount': $('#money_back_amount_'+id).val()})
+		dc_navigate('money_back', {'order_id': id, 'amount': $('#money_back_amount_'+id).val()})
 	}
 
 	$('#generate_token').bind('click', function (e) {
@@ -48,7 +48,7 @@
 					'shop_secret_key' : $('#shop_secret_key').val()
 				},
 				function () {
-					fc_navigate ('arbitrationSeller', {'alert': '{{.Lang.saved}}'} );
+					dc_navigate ('arbitrationSeller', {'alert': '{{.Lang.saved}}'} );
 				});
 	});
 

@@ -56,7 +56,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
-			data += fmt.Sprintf(`<tr><td><a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId, parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, minerId, parser.BlockData.Level)
+			data += fmt.Sprintf(`<tr><td><a href="#" onclick="dc_navigate('blockExplorer', {'blockId':%d})">%d</a></td><td>%s</td><td><nobr><span class='unixtime'>%d</span></nobr></td><td>%d</td><td>%d</td><td>%d</td><td>`, parser.BlockData.BlockId, parser.BlockData.BlockId, hash, parser.BlockData.Time, parser.BlockData.UserId, minerId, parser.BlockData.Level)
 			data += utils.IntToStr(len(parser.TxMapArr))
 			data += "</td></tr>"
 		}
@@ -98,7 +98,7 @@ func (c *Controller) BlockExplorer() (string, error) {
 		NextBlockLevelsRange := utils.GetBlockGeneratorMinerIdRange(currentMinerId, maxMinerId)
 
 		data += fmt.Sprintf(`<tr><td><strong>Raw&nbsp;data</strong></td><td><a href='ajax?controllerName=getBlock&id=%d&download=1' target='_blank'>Download</a></td></tr>`, parser.BlockData.BlockId)
-		data += fmt.Sprintf(`<tr><td><strong>Block_id</strong></td><td>%d (<a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">Previous</a> / <a href="#" onclick="fc_navigate('blockExplorer', {'blockId':%d})">Next</a> )</td></tr>`, parser.BlockData.BlockId, previous, next)
+		data += fmt.Sprintf(`<tr><td><strong>Block_id</strong></td><td>%d (<a href="#" onclick="dc_navigate('blockExplorer', {'blockId':%d})">Previous</a> / <a href="#" onclick="dc_navigate('blockExplorer', {'blockId':%d})">Next</a> )</td></tr>`, parser.BlockData.BlockId, previous, next)
 		data += fmt.Sprintf(`<tr><td><strong>Hash</strong></td><td>%s</td></tr>`, hash)
 		data += fmt.Sprintf(`<tr><td><strong>Time</strong></td><td><span class='unixtime'>%d</span> / %d</td></tr>`, parser.BlockData.Time, parser.BlockData.Time)
 		data += fmt.Sprintf(`<tr><td><strong>User_id</strong></td><td>%d</td></tr>`, parser.BlockData.UserId)

@@ -15,6 +15,7 @@ type notificationsPage struct {
 	LangInt         int64
 	NodeAdmin       bool
 	Data            map[string]string
+	Mobile          bool
 }
 
 func (c *Controller) Notifications() (string, error) {
@@ -56,6 +57,7 @@ func (c *Controller) Notifications() (string, error) {
 		MyNotifications: myNotifications,
 		NodeAdmin:       c.NodeAdmin,
 		LangInt:         c.LangInt,
+		Mobile: utils.Mobile(),
 		Data:            data})
 	if err != nil {
 		return "", utils.ErrInfo(err)

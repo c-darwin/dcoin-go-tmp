@@ -41,7 +41,7 @@
 						'signature2': $('#signature2').val(),
 						'signature3': $('#signature3').val()
 					}, function (data) {
-						fc_navigate ('newUser', {'alert': '{{.Lang.sent_to_the_net}}'} );
+						dc_navigate ('newUser', {'alert': '{{.Lang.sent_to_the_net}}'} );
 					}
 			);
 		} );
@@ -87,7 +87,7 @@
 
 		$('#refreshTpl').bind('click', function () {
 			console.log("refreshTpl");
-			fc_navigate($('#tpl_name').val())
+			dc_navigate($('#tpl_name').val())
 		});
 
 </script>

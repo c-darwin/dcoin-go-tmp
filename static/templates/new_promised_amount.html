@@ -89,12 +89,12 @@
 				'signature3': $('#signature3').val()
 			}, function(data) {
 				//alert(data);
-				fc_navigate ('{{.Navigate}}', {'alert': '{{.Lang.promised_amount_add_wait_24h}}'} );
+				dc_navigate ('{{.Navigate}}', {'alert': '{{.Lang.promised_amount_add_wait_24h}}'} );
 			});
 		});
 
 		$('#skip').bind('click', function () {
-			fc_navigate ('{{.Navigate}}', {'skip_promised_amount': 1} );
+			dc_navigate ('{{.Navigate}}', {'skip_promised_amount': 1} );
 		});
 
 		var currency_id;
@@ -343,7 +343,7 @@
 				<div style="width:100%;  border:2px dashed black; height: 100px; padding: 15px 0px 15px 0px" id="change_pkey_key_div">
 					<div style="margin:auto; text-align:center; line-height:22px">
 						<p style="margin-bottom:0px" onclick="document.getElementById('video_mp4').click();"></p>
-						<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select photo</button>
+						<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select video</button>
 						{{if not .Mobile}}<p>or drag and drop file</p>{{end}}
 					</div>
 				</div>

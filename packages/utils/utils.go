@@ -19,7 +19,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
 	"github.com/c-darwin/dcoin-go-tmp/packages/static"
 	"github.com/golang/freetype"
-	"github.com/jordan-wright/email"
+	"net/mail"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"image"
@@ -48,6 +48,7 @@ import (
 	"github.com/kardianos/osext"
 	"archive/zip"
 	"github.com/mcuadros/go-version"
+	"crypto/tls"
 )
 
 type BlockData struct {
@@ -1354,8 +1355,80 @@ func SendSms(sms_http_get_request, text string) (string, error) {
 	return string(result), nil
 }
 
-func sendMail(message, subject string, To string, mailData map[string]string) error {
+func sendMail(body, subj string, To string, mailData map[string]string) error {
 
+	smtpHostAndPort := mailData["smtp_server"]+":"+mailData["smtp_port"]
+
+	from := mail.Address{"", mailData["smtp_username"]}
+	to   := mail.Address{"", To}
+
+	// Setup headers
+	headers := make(map[string]string)
+	headers["From"] = from.String()
+	headers["To"] = to.String()
+	headers["Subject"] = subj
+
+	// Setup message
+	message := ""
+	for k,v := range headers {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + body
+
+	auth := smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"])
+
+	// TLS config
+	tlsconfig := &tls.Config {
+		InsecureSkipVerify: true,
+		ServerName: mailData["smtp_server"],
+	}
+
+	// Here is the key, you need to call tls.Dial instead of smtp.Dial
+	// for smtp servers running on 465 that require an ssl connection
+	// from the very beginning (no starttls)
+	conn, err := tls.Dial("tcp", smtpHostAndPort, tlsconfig)
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	c, err := smtp.NewClient(conn, mailData["smtp_server"])
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	// Auth
+	if err = c.Auth(auth); err != nil {
+		return ErrInfo(err)
+	}
+
+	// To && From
+	if err = c.Mail(from.Address); err != nil {
+		return ErrInfo(err)
+	}
+
+	if err = c.Rcpt(to.Address); err != nil {
+		return ErrInfo(err)
+	}
+
+	// Data
+	w, err := c.Data()
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	_, err = w.Write([]byte(message))
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	err = w.Close()
+	if err != nil {
+		return ErrInfo(err)
+	}
+
+	c.Quit()
+
+	/*
 	if len(mailData["use_smtp"]) > 0 && len(mailData["smtp_server"]) > 0 {
 		e := email.NewEmail()
 		e.From = "Dcoin <" + mailData["smtp_username"] + ">"
@@ -1390,11 +1463,14 @@ func sendMail(message, subject string, To string, mailData map[string]string) er
                  </td>
         </tr>
 </table>';`)
-		err := e.Send(mailData["smtp_server"]+":"+mailData["smtp_port"], smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]))
+		fmt.Println("smtp_server", mailData["smtp_server"]+":"+mailData["smtp_port"])
+		fmt.Println("PlainAuth", smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]+":"+mailData["smtp_port"]))
+
+		err := e.Send(mailData["smtp_server"]+":"+mailData["smtp_port"], smtp.PlainAuth("", mailData["smtp_username"], mailData["smtp_password"], mailData["smtp_server"]+":"+mailData["smtp_port"]))
 		if err != nil {
 			return ErrInfo(err)
 		}
-	}
+	}*/
 	return nil
 }
 

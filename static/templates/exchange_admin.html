@@ -2,7 +2,7 @@
 <script>
 
 	$('#single_mode').bind('click', function () {
-		fc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
+		dc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
 	});
 
 </script>
@@ -13,7 +13,7 @@
 	<h1 class="page-header">Exchange admin</h1>
 	{{template "alertSuccess".}}
 
-	<p>lock: {{.Lock}} <button onclick="fc_navigate('exchangeAdmin', {'change_reduction_lock':1})">change</button></p>
+	<p>lock: {{.Lock}} <button onclick="dc_navigate('exchangeAdmin', {'change_reduction_lock':1})">change</button></p>
 
 	<h3 class="page-header">Withdraw</h3>
 	<table class="table table-striped table-bordered table-hover">
@@ -36,7 +36,7 @@
 			<tr><td>{{index $data "e_withdraw_id"}}</td><td class="unixtime">{{index $data "open_time"}}</td>
 
 				{{if eq (index $data "close_time") "0"}}
-					<td><button onclick="fc_navigate('exchangeAdmin', {'withdraw_id':{{$data.e_withdraw_id}}})">close</button></td>
+					<td><button onclick="dc_navigate('exchangeAdmin', {'withdraw_id':{{$data.e_withdraw_id}}})">close</button></td>
 				{{else}}
 					<td class="unixtime">{{index $data "close_time"}}</td>
 				{{end}}
@@ -121,7 +121,7 @@
 					parameters: json
 				},
 				function () {
-					fc_navigate ('exchangeAdmin', {'alert': '{{.Lang.saved}}'} );
+					dc_navigate ('exchangeAdmin', {'alert': '{{.Lang.saved}}'} );
 				});
 	});
 

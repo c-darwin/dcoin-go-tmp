@@ -136,40 +136,50 @@ func (c *Controller) MiningMenu() (string, error) {
 				result = "null"
 			}
 		} else {
-			// добавлена ли обещанная сумма
-			promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE user_id  =  ?", c.SessUserId).Int64()
+
+			// установлены ли уведомления
+			smtpUserName, err := c.Single("SELECT smtp_username FROM " + c.MyPrefix + "my_table").String()
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
-			if promisedAmount == 0 {
-				// возможно юзер уже отправил запрос на добавление обещенной суммы
-				last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewPromisedAmount"}), 1, c.TimeFormat)
-				if len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0) {
+			if len(smtpUserName) == 0 {
+				result = "need_notifications"
+			} else {
+				// добавлена ли обещанная сумма
+				promisedAmount, err := c.Single("SELECT id FROM promised_amount WHERE user_id  =  ?", c.SessUserId).Int64()
+				if err != nil {
+					return "", utils.ErrInfo(err)
+				}
+				if promisedAmount == 0 {
+					// возможно юзер уже отправил запрос на добавление обещенной суммы
+					last_tx, err := c.GetLastTx(c.SessUserId, utils.TypesToIds([]string{"NewPromisedAmount"}), 1, c.TimeFormat)
+					if len(last_tx) > 0 && (len(last_tx[0]["queue_tx"]) > 0 || len(last_tx[0]["tx"]) > 0) {
+						// установлена ли комиссия
+						err = checkCommission()
+						if err != nil {
+							return "", utils.ErrInfo(err)
+						}
+					} else {
+						// возможно юзер нажал кнопку "пропустить"
+						hideFirstPromisedAmount, err := c.Single("SELECT hide_first_promised_amount FROM " + c.MyPrefix + "my_table").Int64()
+						if err != nil {
+							return "", utils.ErrInfo(err)
+						}
+						if hideFirstPromisedAmount == 0 {
+							result = "need_promised_amount"
+						} else {
+							err = checkCommission()
+							if err != nil {
+								return "", utils.ErrInfo(err)
+							}
+						}
+					}
+				} else {
 					// установлена ли комиссия
 					err = checkCommission()
 					if err != nil {
 						return "", utils.ErrInfo(err)
 					}
-				} else {
-					// возможно юзер нажал кнопку "пропустить"
-					hideFirstPromisedAmount, err := c.Single("SELECT hide_first_promised_amount FROM " + c.MyPrefix + "my_table").Int64()
-					if err != nil {
-						return "", utils.ErrInfo(err)
-					}
-					if hideFirstPromisedAmount == 0 {
-						result = "need_promised_amount"
-					} else {
-						err = checkCommission()
-						if err != nil {
-							return "", utils.ErrInfo(err)
-						}
-					}
-				}
-			} else {
-				// установлена ли комиссия
-				err = checkCommission()
-				if err != nil {
-					return "", utils.ErrInfo(err)
 				}
 			}
 		}
@@ -192,6 +202,10 @@ func (c *Controller) MiningMenu() (string, error) {
 		tplTitle = "signUpInThePool"
 		//  сгенерим ключ для нода
 		nodePrivateKey, _ = utils.GenKeys()
+	} else if result == "need_notifications" {
+		tplName = "notifications"
+		tplTitle = "notifications"
+		return c.Notifications()
 	} else if result == "need_promised_amount" {
 		tplName = "promised_amount_add"
 		tplTitle = "upgrade"

@@ -20,7 +20,7 @@
 			'signature3': $('#signature3').val()
 		}, function(data){
 			//alert(data);
-			fc_navigate ('bugReporting', {'alert': '{{.Lang.sent_to_the_net}}'} );
+			dc_navigate ('bugReporting', {'alert': '{{.Lang.sent_to_the_net}}'} );
 		});
 
 	} );
@@ -97,7 +97,7 @@
 				'id' : id,
 				'data' : decrypt_comment
 			}, function (data) {
-				fc_navigate('bugReporting', {'parent_id':data.parent_id});
+				dc_navigate('bugReporting', {'parent_id':data.parent_id});
 			}, 'json' );
 		}
 

@@ -98,6 +98,10 @@ func (t *TcpServer) Type11() {
 			for i := 0; i < len(files); i++ {
 				utils.CopyFileContents(os.TempDir()+"/"+files[i], *utils.Dir+"/public/"+files[i])
 			}
+		} else {
+			for i := 0; i < len(files); i++ {
+				os.Remove(os.TempDir()+"/"+files[i])
+			}
 		}
 
 		// и возвращаем статус
@@ -106,5 +110,7 @@ func (t *TcpServer) Type11() {
 			log.Error("%v", utils.ErrInfo(err))
 			return
 		}
+	} else {
+		log.Error("%v", utils.ErrInfo("size>32mb"))
 	}
 }

@@ -120,7 +120,7 @@
 	                   background: url(/static/img/logo-small.png) center left no-repeat;
 	                   text-align: center;
 	                   background-size: 30px 30px;
-	                   padding-left: 40px; margin-left: 15px; margin-right: 50px" onclick="fc_navigate('EMain')">{{.EHost}}</a>
+	                   padding-left: 40px; margin-left: 15px; margin-right: 50px" onclick="dc_navigate('EMain')">{{.EHost}}</a>
       </div>
 
       <div class="sidebar-collapse">
@@ -128,27 +128,27 @@
 
         <ul class="nav navbar-top-links navbar-left" style="">
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EMain')">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="dc_navigate('EMain')">
               <i class="fa  fa-exchange  fa-fw"></i> {{.Lang.trade}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'about'})">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="dc_navigate('EPages', {'page': 'about'})">
               <i class="fa fa-desktop"></i> {{.Lang.about_exchange}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'rules'})">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="dc_navigate('EPages', {'page': 'rules'})">
               <i class="fa fa-file-text-o"></i> {{.Lang.rules}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'faq'})">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="dc_navigate('EPages', {'page': 'faq'})">
               <i class="fa fa-question-circle"></i> {{.Lang.faq}}</a>
             </a>
           </li>
           <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="fc_navigate('EPages', {'page': 'contacts'})">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" onclick="dc_navigate('EPages', {'page': 'contacts'})">
               <i class="fa  fa-envelope-o   fa-fw"></i> {{.Lang.contacts}}</a>
             </a>
           </li>
@@ -168,7 +168,7 @@
             </a>
             <ul class="dropdown-menu dropdown-user">
               <li><a><i class="fa  fa-user  fa-fw"></i> User ID: {{.UserId}}</a></li>
-              <!--<li><a href="#" onclick="fc_navigate('my_settings')"><i class="fa fa-gear fa-fw"></i> Settings</a></li>-->
+              <!--<li><a href="#" onclick="dc_navigate('my_settings')"><i class="fa fa-gear fa-fw"></i> Settings</a></li>-->
               <li class="divider"></li>
               <li><a href="#"  onclick="logout()"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
               </li>
@@ -201,8 +201,8 @@
               Language <i class="fa fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu dropdown-user">
-              <li><a href="#" onclick="fc_navigate('EMain', {'lang':'1'}); load_menu();"> English</a></li>
-              <li><a href="#" onclick="fc_navigate('EMain', {'lang':'42'}); load_menu();"> Русский</a></li>
+              <li><a href="#" onclick="dc_navigate('EMain', {'lang':'1'}); load_menu();"> English</a></li>
+              <li><a href="#" onclick="dc_navigate('EMain', {'lang':'42'}); load_menu();"> Русский</a></li>
             </ul>
           </li>
           <!-- /.dropdown -->
@@ -218,13 +218,13 @@
       <div class="sidebar-collapse">
         <ul class="nav" id="side-menu">
           <li>
-            <a href="#" onclick="fc_navigate('eMyOrders')"><i class="fa  fa-bars fa-fw"></i> {{.Lang.orders}} <!--<span class="badge pull-right">1</span>--> </a>
+            <a href="#" onclick="dc_navigate('eMyOrders')"><i class="fa  fa-bars fa-fw"></i> {{.Lang.orders}} <!--<span class="badge pull-right">1</span>--> </a>
           </li>
           <li>
-            <a href="#" onclick="fc_navigate('eMyHistory')"><i class="fa fa-history fa-fw"></i> {{.Lang.history_deals}}</a>
+            <a href="#" onclick="dc_navigate('eMyHistory')"><i class="fa fa-history fa-fw"></i> {{.Lang.history_deals}}</a>
           </li>
           <li>
-            <a href="#" onclick="fc_navigate('eMyFinance')"><i class="fa fa-money fa-fw"></i> {{.Lang.finance}}</a>
+            <a href="#" onclick="dc_navigate('eMyFinance')"><i class="fa fa-money fa-fw"></i> {{.Lang.finance}}</a>
           </li>
 
         </ul>
@@ -296,9 +296,9 @@
 
 
   $(document).ready(function() {
-    console.log("fc_navigate");
-    fc_navigate('eMain');
-    console.log("fc_navigate ok");
+    console.log("dc_navigate");
+    dc_navigate('eMain');
+    console.log("dc_navigate ok");
     $('#dataTables-example').dataTable();
   });
 

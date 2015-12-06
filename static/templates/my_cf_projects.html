@@ -26,7 +26,7 @@
 						'signature2': $('#signature2').val(),
 						'signature3': $('#signature3').val()
 					}, function (data) {
-						fc_navigate ('newCfProject', {'alert': '{{.Lang.sent_to_the_net}}'} );
+						dc_navigate ('newCfProject', {'alert': '{{.Lang.sent_to_the_net}}'} );
 					}
 			);
 		} );
@@ -69,7 +69,7 @@
 		<p><a href="#addCfProjectData/projectId={{$data.id}}">{{$.Lang.add_description}}</a></p>
 		<p>{{$.Lang.currency}}: {{$data.project_currency_name}}</p>
 		<p>{{$.Lang.project_id}}: {{$data.id}}</p>
-		<p>{{$.Lang.category}}: {{cfCategoryLang $.Lang $data.category_id}} <a href="#" onclick="fc_navigate('cfProjectChangeCategory', {'project_id':'{{$data.id}}'})"><i class="fa  fa-pencil fa-fw"></i></a></p>
+		<p>{{$.Lang.category}}: {{cfCategoryLang $.Lang $data.category_id}} <a href="#" onclick="dc_navigate('cfProjectChangeCategory', {'project_id':'{{$data.id}}'})"><i class="fa  fa-pencil fa-fw"></i></a></p>
 		<div>
 			<div class="card-location" style="margin-top:10px;font-size: 13px; color: #828587;"><i class="fa  fa-map-marker  fa-fw"></i> {{$data.country}},{{$data.city}}</div>
 			<div class="progress" style="height:5px; margin-top:10px; margin-bottom:10px"><div class="progress-bar progress-bar-success" style="width: {{$data.pct}}%;"></div></div>
@@ -80,7 +80,7 @@
 			</div>
 		</div>
 		<div class="clearfix"></div>
-		<p style="margin-top:5px; margin-bottom: 0px"><a href="#" onclick="fc_navigate('delCfProject', {'del_id':{{$data.id}}})">{{$.Lang.delete_project}}</a></p>
+		<p style="margin-top:5px; margin-bottom: 0px"><a href="#" onclick="dc_navigate('delCfProject', {'del_id':{{$data.id}}})">{{$.Lang.delete_project}}</a></p>
 	</div>
 	{{end}}
 	{{end}}

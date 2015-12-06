@@ -40,7 +40,7 @@
 					'signature2': $('#signature2').val(),
 					'signature3': $('#signature3').val()
 				}, function (data) {
-					fc_navigate ('restoringAccess', {'alert': '{{.Lang.sent_to_the_net}}'} );
+					dc_navigate ('restoringAccess', {'alert': '{{.Lang.sent_to_the_net}}'} );
 				}
 		);
 
@@ -61,7 +61,7 @@
 	{{end}}
 
 	<br><br><br>
-	<button onclick="fc_navigate('changeKeyRequest')" class="btn btn-primary">{{.Lang.make_a_request_for_a_access_to_the_account}}</button><br><br>
+	<button onclick="dc_navigate('changeKeyRequest')" class="btn btn-primary">{{.Lang.make_a_request_for_a_access_to_the_account}}</button><br><br>
 	{{if .Requests}}
 		<p>Request: {{.Requests}}</p>
 		<a href="#changeKeyClose" class="btn btn-primary">{{.Lang.cancel_the_requests}}</a>

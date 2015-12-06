@@ -1,5 +1,5 @@
 
-function fc_navigate (page, parameters) {
+function dc_navigate (page, parameters) {
 
     var json = JSON.stringify(parameters);
 

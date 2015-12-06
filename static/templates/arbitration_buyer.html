@@ -21,7 +21,7 @@
 					<td>{{$data.amount}}</td>
 					<td>{{$data.seller}}</td>
 					{{if eq $data.status "normal"}}
-						<td><a class="btn btn-danger" href="#" onclick="fc_navigate('moneyBackRequest', {'order_id':'{{$data.id}}'}); return false;">Moneyback</a></td>
+						<td><a class="btn btn-danger" href="#" onclick="dc_navigate('moneyBackRequest', {'order_id':'{{$data.id}}'}); return false;">Moneyback</a></td>
 					{{else}}
 						<td>{{.Lang.request_was_sent}}</td>
 					{{end}}

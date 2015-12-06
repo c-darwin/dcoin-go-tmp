@@ -190,7 +190,7 @@ func CallMethod(i interface{}, methodName string) (string, error) {
 	}
 
 	// return or panic, method not found of either type
-	return "", fmt.Errorf("not found")
+	return "", fmt.Errorf("method not found")
 }
 
 func GetSessEUserId(sess session.SessionStore) int64 {

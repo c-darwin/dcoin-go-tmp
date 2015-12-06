@@ -108,7 +108,7 @@ func (db *DCDB) SendMail(message, subject, To string, mailData map[string]string
 		if err != nil {
 			return ErrInfo(err)
 		}
-	} else if community {
+	/*} else if community {
 		// в пуле пробуем послать с смтп-ешника админа пула
 		prefix := Int64ToStr(poolAdminUserId) + "_"
 		mailData, err := db.OneRow("SELECT * FROM " + prefix + "my_table").String()
@@ -118,7 +118,7 @@ func (db *DCDB) SendMail(message, subject, To string, mailData map[string]string
 		err = sendMail(message, subject, To, mailData)
 		if err != nil {
 			return ErrInfo(err)
-		}
+		}*/
 	} else {
 		return errors.New(`Incorrect mail data`)
 	}

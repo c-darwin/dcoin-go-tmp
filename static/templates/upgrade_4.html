@@ -27,6 +27,11 @@
 				});
 	});
 
+	$('#video_mp4').change(function () {
+		send_video('video_mp4', 'video_mp4_progress', 'user_video', {{.UserId}})
+	//$("#source_mp4").attr('src', 'public/promised_amount_'+currency_id+'.mp4');
+	})
+
 	$('#del_mp4').bind('click', function () {
 		$.post('ajax?controllerName=deleteVideo', {'type' : 'mp4' },
 				function(data) {
@@ -156,11 +161,11 @@
 
 <div id="from_file">
 	<fieldset id="from_file_form">
-		<input accept="video/mov,video/mp4"  capture="camera" type="file" name="upload" id="video_mp4" style="position: absolute; display: block; overflow: hidden; width: 0; height: 0; border: 0; padding: 0;" onchange="send_video('video_mp4', 'video_mp4_progress', 'user_video', {{.UserId}})" />
+		<input accept="video/mov,video/mp4"  capture="camera" type="file" name="upload" id="video_mp4" style="position: absolute; display: block; overflow: hidden; width: 0; height: 0; border: 0; padding: 0;" />
 		<div style="width:100%;  border:2px dashed black; height: 100px; padding: 15px 0px 15px 0px" id="change_pkey_key_div">
 			<div style="margin:auto; text-align:center; line-height:22px">
 				<p style="margin-bottom:0px" onclick="document.getElementById('video_mp4').click();"></p>
-				<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select photo</button>
+				<button id="key_btn" style="margin-top:0px"  class="btn btn-outline btn-primary" onclick="document.getElementById('video_mp4').click();"><i class="fa fa-camera"></i> Select video</button>
 				{{if not .Mobile}}<p>or drag and drop file</p>{{end}}
 			</div>
 		</div>

@@ -44,7 +44,7 @@
 {{if not .UserID}}
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
 	<div class="navbar-header">
-		<a class="navbar-brand" href="#" style="display: block; padding-left: 0px;  padding-top: 6px; margin-left: 15px; margin-right: 50px" onclick="fc_navigate('home')"><img src="static/img/logo.png" height="40"></a>
+		<a class="navbar-brand" href="#" style="display: block; padding-left: 0px;  padding-top: 6px; margin-left: 15px; margin-right: 50px" onclick="dc_navigate('home')"><img src="static/img/logo.png" height="40"></a>
 	</div>
 </nav>
 {{end}}
@@ -112,7 +112,7 @@
 				$('#signUpModal').modal('hide');
 				$('.modal-backdrop').remove();
 				$('.modal-backdrop').css('display', 'none');
-				fc_navigate ('setPassword', '');
+				dc_navigate ('setPassword', '');
 			} else if (data.error && data.error == "no_available_keys") {
 				$('#login_div').css('display', 'table');
 				$('#loading_div').css('display', 'none');

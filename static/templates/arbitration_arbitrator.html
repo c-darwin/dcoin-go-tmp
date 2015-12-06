@@ -33,17 +33,17 @@
 					'signature2': $('#signature2').val(),
 					'signature3': $('#signature3').val()
 				}, function (data) {
-					fc_navigate ('arbitration', {'alert': '{{.Lang.sent_to_the_net}}'} );
+					dc_navigate ('arbitration', {'alert': '{{.Lang.sent_to_the_net}}'} );
 				}
 		);
 	});
 
 	function money_back(id) {
-		fc_navigate('moneyBack', {'order_id': id, 'arbitrator': 1, 'amount': $('#money_back_amount_'+id).val()})
+		dc_navigate('moneyBack', {'order_id': id, 'arbitrator': 1, 'amount': $('#money_back_amount_'+id).val()})
 	}
 
 	function change_money_back_time(id) {
-		fc_navigate('changeMoneyBackTime', {'order_id': id, 'days': $('#change_money_back_time_'+id).val()})
+		dc_navigate('changeMoneyBackTime', {'order_id': id, 'days': $('#change_money_back_time_'+id).val()})
 	}
 
 	function decrypt_comment_0 (id) {

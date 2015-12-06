@@ -24,7 +24,7 @@
 					parameters: json
 				},
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': '{{.Lang.saved}}'} );
+					dc_navigate ('nodeConfigControl', {'alert': '{{.Lang.saved}}'} );
 				});
 	});
 
@@ -32,7 +32,7 @@
 		$('#wait').text('{{.Lang.please_wait}}');
 		$.post( 'ajax?controllerName=startDaemons', { } ,
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': 'complete'} );
+					dc_navigate ('nodeConfigControl', {'alert': 'complete'} );
 					$('#status').text('ON');
 				});
 	});
@@ -41,19 +41,19 @@
 		$('#wait').text('{{.Lang.please_wait}}');
 		$.post( 'ajax?controllerName=stopDaemons', { } ,
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': 'complete'} );
+					dc_navigate ('nodeConfigControl', {'alert': 'complete'} );
 					$('#status').text('OFF');
 				});
 	});
 
 	$('#single_mode').bind('click', function () {
-			fc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
+			dc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
 			load_menu();
 			$('#mode').text('Single');
 	});
 
 	$('#pool_mode').bind('click', function () {
-			fc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
+			dc_navigate ('nodeConfigControl', {'alert': 'complete', 'switch_pool_mode' : 1} );
 			load_menu();
 			$('#mode').text('Pool');
 	});
@@ -63,21 +63,21 @@
 		$('#wait').text('{{.Lang.please_wait}}');
 		$.post( 'ajax?controllerName=clearDb', { } ,
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': 'Complete! Press F5'} );
+					dc_navigate ('nodeConfigControl', {'alert': 'Complete! Press F5'} );
 				});
 	});
 
 	$('#lite').bind('click', function () {
 		$.post( 'ajax?controllerName=clearDbLite', { } ,
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': '{{.Lang.please_wait}}'} );
+					dc_navigate ('nodeConfigControl', {'alert': '{{.Lang.please_wait}}'} );
 				});
 	});
 
 	$('#clear_daemons_time').bind('click', function () {
 		$.post( 'ajax?controllerName=clearDaemonsTime', { } ,
 				function () {
-					fc_navigate ('dbInfo', {'alert': 'Complete!'} );
+					dc_navigate ('dbInfo', {'alert': 'Complete!'} );
 				});
 	});
 
@@ -156,7 +156,7 @@
 	<br><br>
 
 	<div>
-		<button class="btn" onclick="fc_navigate('rewritePrimaryKey')">rewrite primary key</button>
+		<button class="btn" onclick="dc_navigate('rewritePrimaryKey')">rewrite primary key</button>
 	</div>
 
 	<h3>Exchange</h3>
@@ -197,7 +197,7 @@
 
 	<button class="btn" id="e_save">{{.Lang.save}}</button><br><br>
 
-	<button class="btn" onclick="fc_navigate('exchangeAdmin')">Exchange admin</button>
+	<button class="btn" onclick="dc_navigate('exchangeAdmin')">Exchange admin</button>
 
 
 
@@ -229,7 +229,7 @@
 					parameters: json
 				},
 				function () {
-					fc_navigate ('nodeConfigControl', {'alert': '{{.Lang.saved}}'} );
+					dc_navigate ('nodeConfigControl', {'alert': '{{.Lang.saved}}'} );
 				});
 	});
 

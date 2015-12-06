@@ -270,7 +270,8 @@ BEGIN:
 							sendnotif.SendMobileNotification(subj, text)
 						}
 						if notificationsArray[name][userId]["email"] == "1" {
-							err = d.SendMail(`<br><span style="font-size:16px">`+text+`</span>`, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							//err = d.SendMail(`<br><span style="font-size:16px">`+text+`</span>`, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
+							err = d.SendMail(text, subj, userEmailSmsData[userId]["email"], userEmailSmsData[userId], community, poolAdminUserId)
 							if err != nil {
 								if d.dPrintSleep(err, d.sleepTime) {	break BEGIN }
 								continue BEGIN

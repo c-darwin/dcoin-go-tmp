@@ -96,7 +96,7 @@
 
 						{{range $id, $pair := .CurrencyListPair}}
 						<button type="button" class="btn btn-default {{if and (eq (index $pair 0) $.CurrencyId) (eq (index $pair 1) $.DcCurrencyId)}} disabled {{end}}"
-								onclick="fc_navigate('eMain',  {'currency_id':'{{index $pair 0}}', 'dc_currency_id':'{{index $pair 1}}'})">{{index $.CurrencyList (index $pair 1)}}/{{index $.CurrencyList (index $pair 0)}}</button>
+								onclick="dc_navigate('eMain',  {'currency_id':'{{index $pair 0}}', 'dc_currency_id':'{{index $pair 1}}'})">{{index $.CurrencyList (index $pair 1)}}/{{index $.CurrencyList (index $pair 0)}}</button>
 						{{end}}
 					</div>
 				</div>

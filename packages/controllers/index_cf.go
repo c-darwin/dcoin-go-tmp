@@ -23,7 +23,7 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 		re, _ := regexp.Compile(`category\-([0-9]+)`)
 		match := re.FindStringSubmatch(r.URL.RawQuery)
 		if len(match) > 0 {
-			nav = "fc_navigate ('cfCatalog', {'category_id':" + match[1] + "})\n"
+			nav = "dc_navigate ('cfCatalog', {'category_id':" + match[1] + "})\n"
 		} else {
 			re, _ := regexp.Compile(`([A-Z0-9]{7}|id-[0-9]+)\-?([0-9]+)?\-?(funders|comments|news|home|payment)?`)
 			match0 := re.FindStringSubmatch(r.URL.RawQuery)
@@ -46,11 +46,11 @@ func IndexCf(w http.ResponseWriter, r *http.Request) {
 					addNav += "'page':'" + match0[3] + "',"
 				}
 				addNav = addNav[:len(addNav)-1]
-				nav = "fc_navigate ('cfPagePreview', {" + addNav + "})\n"
+				nav = "dc_navigate ('cfPagePreview', {" + addNav + "})\n"
 			}
 		}
 	} else {
-		nav = "fc_navigate ('cfCatalog')\n"
+		nav = "dc_navigate ('cfCatalog')\n"
 	}
 
 	log.Debug(nav)

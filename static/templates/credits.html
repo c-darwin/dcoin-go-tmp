@@ -2,11 +2,11 @@
 <script>
 
 	function change_creditor(credit_id) {
-		fc_navigate('changeCreditor', {'credit_id':credit_id});
+		dc_navigate('changeCreditor', {'credit_id':credit_id});
 	}
 
 	$('#new_credit').bind('click', function () {
-		fc_navigate('newCredit');
+		dc_navigate('newCredit');
 	});
 
 	$('#credit_part_save').bind('click', function () {
@@ -29,7 +29,7 @@
 					'signature2': $('#signature2').val(),
 					'signature3': $('#signature3').val()
 				}, function (data) {
-					fc_navigate ('credits', {'alert': '{{.Lang.sent_to_the_net}}'} );
+					dc_navigate ('credits', {'alert': '{{.Lang.sent_to_the_net}}'} );
 				}
 		);
 	});
@@ -56,7 +56,7 @@
 				<td>{{.Amount}}</td>
 				<td>D{{index $.CurrencyList .Currency_id}}</td>
 				<td>{{.From_user_id}}</td>
-				<td><button type='button' class='btn btn-default' onclick="change_creditor({{.Id}})">{{$.Lang.transfer}}</button> <a class="btn btn-danger" href="#" onclick="fc_navigate('delCredit', {'credit_id':'{{.Id}}'}); return false;"><i class="fa fa-trash-o fa-lg"></i></a></td>
+				<td><button type='button' class='btn btn-default' onclick="change_creditor({{.Id}})">{{$.Lang.transfer}}</button> <a class="btn btn-danger" href="#" onclick="dc_navigate('delCredit', {'credit_id':'{{.Id}}'}); return false;"><i class="fa fa-trash-o fa-lg"></i></a></td>
 				</tr>
 			{{end}}
 		</table>
@@ -72,7 +72,7 @@
 				<td>D{{index $.CurrencyList .Currency_id}}</td>
 				<td>{{.To_user_id}}</td>
 				<td>{{.Pct}}</td>
-				<td style='text-align: center'><button type='button' class='btn btn-default' onclick="fc_navigate('repaymentCredit', {'credit_id':'{{.Id}}'}); return false;">{{$.Lang.pay}}</button></td>
+				<td style='text-align: center'><button type='button' class='btn btn-default' onclick="dc_navigate('repaymentCredit', {'credit_id':'{{.Id}}'}); return false;">{{$.Lang.pay}}</button></td>
 				</tr>
 			{{end}}
 		</table>

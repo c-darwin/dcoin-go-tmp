@@ -11,7 +11,7 @@
 {{if .CurCategory}}
 <ol class="breadcrumb" style="position: relative;">
 	{{if gt .UserId 0}}
-		<li><a href='#'>CrowdFunding</a></li><li><a href='#' onclick="fc_navigate('cfCatalog')">{{.Lang.catalog}}</a></li>
+		<li><a href='#'>CrowdFunding</a></li><li><a href='#' onclick="dc_navigate('cfCatalog')">{{.Lang.catalog}}</a></li>
 	{{else}}
 		<li><a href='{{.CfUrl}}'>{{.Lang.catalog}}</a></li>
 	{{end}}
@@ -43,7 +43,7 @@
 		{{range $project_id, $data := .Projects}}
 			<div class="well project-card" style="float:left; margin-right:20px">
 			{{if gt $.UserId 0}}
-					<a href="#" onclick="fc_navigate('cfPagePreview', {'onlyProjectId':{{$project_id}}{{if ne $data.lang_id "0"}}, 'lang_id':{{$data.lang_id}}{{end}}})">
+					<a href="#" onclick="dc_navigate('cfPagePreview', {'onlyProjectId':{{$project_id}}{{if ne $data.lang_id "0"}}, 'lang_id':{{$data.lang_id}}{{end}}})">
 			{{else}}
 				<a href='?id-{{$project_id}}	{{if ne $data.lang_id "0"}}-{{$data.lang_id}}{{end}}	'>
 			{{end}}
@@ -71,7 +71,7 @@
 				{{if eq $.UserId 0}}
 					<li><a href='?category-{{$data.id}}'>{{$data.name}}</a></li>
 				{{else}}
-					<li><a href='#' onclick="fc_navigate('cfCatalog', {'category_id':{{$data.id}}})">{{$data.name}}</a></li>
+					<li><a href='#' onclick="dc_navigate('cfCatalog', {'category_id':{{$data.id}}})">{{$data.name}}</a></li>
 				{{end}}
 			{{end}}
 		</ul>

@@ -11,7 +11,7 @@
 		else
 			var pool_tech_works = '0';
 
-		fc_navigate ('poolAdminControl', {'pool_tech_works':pool_tech_works, 'pool_max_users':$('#pool_max_users').val(), 'commission':$('#commission').val() } );
+		dc_navigate ('poolAdminControl', {'pool_tech_works':pool_tech_works, 'pool_max_users':$('#pool_max_users').val(), 'commission':$('#commission').val() } );
 	} );
 
 </script>
@@ -79,7 +79,7 @@
 	<h3>Users</h3><table class='table' style='width: 500px'><thead><tr><th>user_id</th><th>miner_id</th><th>email</th><th>del</th></tr></thead>
 	{{range $id, $data_ := .Users}}
 	{{range $uid, $data := $data_}}
-		<tr><td><a onclick="fc_navigate('poolAdminLogin', {'userId': {{$uid}} })">{{$uid}}</a></td><td>{{$data.miner_id}}</td><td>{{$data.email}}</td><td><a class="btn btn-danger" href="#" onclick="fc_navigate('poolAdminControl', {'del_id':'{{$uid}}'}); return false;"><i class="fa fa-trash-o fa-lg"></i> {{.Lang.delete}}</a></td></tr>
+		<tr><td><a onclick="dc_navigate('poolAdminLogin', {'userId': {{$uid}} })">{{$uid}}</a></td><td>{{$data.miner_id}}</td><td>{{$data.email}}</td><td><a class="btn btn-danger" href="#" onclick="dc_navigate('poolAdminControl', {'del_id':'{{$uid}}'}); return false;"><i class="fa fa-trash-o fa-lg"></i> {{.Lang.delete}}</a></td></tr>
 	{{end}}
 	{{end}}
 	</table>

@@ -922,7 +922,7 @@
 				<td>{{$data.Vote1}}</td>
 				<td>{{$data.Vote0}}</td>
 				<td id="values-{{$id}}"></td>
-				{{if $.Miner}}<td><button class="btn btn-default btn-xs" onclick="fc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button class="btn btn-default btn-xs" onclick="fc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>
+				{{if $.Miner}}<td><button class="btn btn-default btn-xs" onclick="dc_navigate('votesExchange', {'result':'1', 'e_owner_id':'{{$data.UserId}}'})">+</button><button class="btn btn-default btn-xs" onclick="dc_navigate('votesExchange', {'result':'0', 'e_owner_id':'{{$data.UserId}}'})">-</button></td>
 				{{end}}
 			</tr>
 			<script>

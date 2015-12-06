@@ -6,10 +6,10 @@
 	}
 	function mining_click(id){
 		console.log($('#repaid-input-'+id).val());
-		fc_navigate('miningPromisedAmount',  {'promised_amount_id':id, 'amount':$('#repaid-input-'+id).val()});
+		dc_navigate('miningPromisedAmount',  {'promised_amount_id':id, 'amount':$('#repaid-input-'+id).val()});
 	}
 	function change_amount_click(id){
-		fc_navigate('changePromisedAmount',  {'promised_amount_id':id, 'amount':$('#amount-input-'+id).val()});
+		dc_navigate('changePromisedAmount',  {'promised_amount_id':id, 'amount':$('#amount-input-'+id).val()});
 	}
 
 	function clear_amount (id) {
@@ -83,7 +83,7 @@
 			<td id='currency_{{$data.CurrencyId}}_{{$data.Status}}' style='color: {{$color}}; font-weight: bold; font-size: 15px'>{{$data.Tdc}}</td>
 			<td style='text-align: center'><input type='text' class='input-mini' id='repaid-input-{{$data.Id}}' onkeyup="clear_amount('repaid-input-{{$data.Id}}')" value='{{$to_wallet}}'><button  onclick="mining_click({{$data.Id}})" class='btn put_in_the_wallet' >{{$.Lang.put_in_the_wallet}}</button></td>
 			{{if gt $data.CurrencyId 1}}
-				<td><a class="btn btn-outline btn-danger" href="#" onclick="fc_navigate('delPromisedAmount', {'del_id':'{{$data.Id}}'})"><i class="fa fa-trash-o fa-lg"></i> {{$.Lang.delete}}</a></td>
+				<td><a class="btn btn-outline btn-danger" href="#" onclick="dc_navigate('delPromisedAmount', {'del_id':'{{$data.Id}}'})"><i class="fa fa-trash-o fa-lg"></i> {{$.Lang.delete}}</a></td>
 			{{else}}
 				<td></td>
 			{{end}}
@@ -102,7 +102,7 @@
 	{{noescape .LastTxFormatted}}
 
 	{{if .ActualizationPromisedAmounts}}
-		<button  onclick="fc_navigate('promisedAmountActualization')" class="btn">{{.Lang.actualize_promised_amounts}}</button>
+		<button  onclick="dc_navigate('promisedAmountActualization')" class="btn">{{.Lang.actualize_promised_amounts}}</button>
 	{{end}}
 <br><br><div class="alert alert-info"><strong>{{.Lang.limits}}</strong>  {{.LimitsText}}</div>
 <br>

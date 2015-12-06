@@ -58,20 +58,6 @@ func (c *Controller) SendToPool() (string, error) {
 		}
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(2, 1), file...))...)
 	}
-	/*if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm"); err == nil {
-		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.webm")
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(3, 1), file...))...)
-	}
-	if _, err := os.Stat(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.ogv"); err == nil {
-		file, err := ioutil.ReadFile(*utils.Dir+"/public/"+utils.Int64ToStr(c.SessUserId)+"_user_video.ogv")
-		if err != nil {
-			return "", utils.ErrInfo(err)
-		}
-		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(4, 1), file...))...)
-	}*/
 
 	// тип данных
 	_, err = conn.Write(utils.DecToBin(11, 1))
