@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"time"
-	"fmt"
 )
 
 func (c *Controller) SendPromisedAmountToPool() (string, error) {
@@ -44,7 +43,6 @@ func (c *Controller) SendPromisedAmountToPool() (string, error) {
 		data = append(data, utils.EncodeLengthPlusData(append(utils.DecToBin(2, 1), file...))...)
 	}
 
-	fmt.Println("12")
 	// тип данных
 	_, err = conn.Write(utils.DecToBin(12, 1))
 	if err != nil {
@@ -53,19 +51,16 @@ func (c *Controller) SendPromisedAmountToPool() (string, error) {
 
 	// в 4-х байтах пишем размер данных, которые пошлем далее
 	size := utils.DecToBin(len(data), 4)
-	fmt.Println(len(data))
 	_, err = conn.Write(size)
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
 
 	// далее шлем сами данные
-	fmt.Println("03")
 	_, err = conn.Write([]byte(data))
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	fmt.Println("3")
 
 	// в ответ получаем статус
 	buf := make([]byte, 1)
@@ -73,7 +68,6 @@ func (c *Controller) SendPromisedAmountToPool() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-	fmt.Println("4")
 	status := utils.BinToDec(buf)
 	result := ""
 	if status == 1 {
