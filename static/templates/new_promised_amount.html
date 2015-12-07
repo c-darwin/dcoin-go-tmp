@@ -187,16 +187,19 @@
 				videoId: event.data.videoId,
 				events: {}
 			});
-			$("#refresh_youtube_div").css("display", "block");
-
+			alert('Video ID ' + event.data.videoId + ' was uploaded and is currently being processed. Please wait.');
 			video_url_id = event.data.videoId;
 			console.log("onUploadSuccess video_url_id", video_url_id);
 			console.log("onUploadSuccess event.data", event.data);
 			console.log("onUploadSuccess event", event);
+
+			$("#refresh_youtube_div").css("display", "block");
+
 		}
 
 		// 5. This function is called when a video has been successfully processed.
 		function onProcessingComplete(event) {
+			console.log("onProcessingComplete", event);
 
 		}
 		$( "#from_webcam_show" ).click(function() {
