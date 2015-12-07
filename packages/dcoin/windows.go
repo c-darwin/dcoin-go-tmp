@@ -8,6 +8,7 @@ import (
 	//"os"
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"os/exec"
+	"fmt"
 )
 
 func KillPid(pid string) error {
@@ -29,6 +30,13 @@ func KillPid(pid string) error {
 	err := exec.Command("taskkill","/pid", pid).Start()
 	if err!=nil {
 		return err
+	}
+	rez, err := exec.Command("tasklist","/fi", "PID eq "+pid).Output()
+	if err!=nil {
+		return err
+	}
+	if string(rez) == "" {
+		return fmt.Errorf("null")
 	}
 	//fmt.Printf("taskkill /pid %s: %s\n", pid, rez)
 	return nil

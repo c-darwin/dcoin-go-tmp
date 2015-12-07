@@ -111,8 +111,7 @@ func Start(dir string) {
 				fmt.Println(err)
 				log.Error("%v", utils.ErrInfo(err))
 			}
-			fmt.Printf("("+fmt.Sprintf("%s", err)+") != no such process\n")
-			if fmt.Sprintf("%s", err) != "no such process" {
+			if fmt.Sprintf("%s", err) != "null" {
 				// даем 15 сек, чтобы завершиться предыдущему процессу
 				for i := 0; i<15; i++ {
 					log.Debug("waiting killer %d", i)
