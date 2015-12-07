@@ -24,7 +24,8 @@
 
 	$('#add_promised_amount').bind('click', function () {
 
-		if (!video_url_id) {
+		console.log(video_url_id);
+		if (video_url_id=='') {
 			if ($("#video_url").val()) {
 				var re = /watch\?v=([0-9A-Za-z_-]+)/i;
 				var res = re.exec($("#video_url").val());
@@ -64,8 +65,9 @@
 				payment_systems_ids = payment_systems_ids.substr(0, payment_systems_ids.length - 1);
 			else
 				payment_systems_ids = '0';
-			{{if eq .Mode "pool"}}
+
 			if (video_url_id == 'null') {
+				{{if eq .Mode "pool"}}
 				$('#add_promised_amount').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
 				$('#add_promised_amount').prop('disabled', true);
 				$('#errors').html('<div class="alert alert-info alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>Sending data to the pool</div>');
@@ -86,14 +88,16 @@
 								$('#errors').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
 							}
 						}, "JSON").fail(function() { $('#add_promised_amount').prop('disabled', false); $('#add_promised_amount').html('Send'); });;
-			}
-			{{else}}
-			{{if .ShowSignData}}$("#add").css("display", "none"); $("#sign").css("display", "block");{{end}}
+				{{end}}
+			} else {
+					{{if .ShowSignData}}$("#add").css("display", "none"); $("#sign").css("display", "block");{{end}}
 
-			$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
-			doSign();
-			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
-			{{end}}
+					$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
+					doSign();
+					{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+
+				}
+
 			}
 
 		});
@@ -186,6 +190,9 @@
 			$("#refresh_youtube_div").css("display", "block");
 
 			video_url_id = event.data.videoId;
+			console.log("onUploadSuccess video_url_id", video_url_id);
+			console.log("onUploadSuccess event.data", event.data);
+			console.log("onUploadSuccess event", event);
 		}
 
 		// 5. This function is called when a video has been successfully processed.
