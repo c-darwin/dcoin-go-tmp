@@ -30,6 +30,7 @@ type upgrade6Page struct {
 	Pools           template.JS
 	VideoHash       string
 	Mobile          bool
+	VideoUrlId string
 }
 
 func (c *Controller) Upgrade6() (string, error) {
@@ -162,6 +163,12 @@ func (c *Controller) Upgrade6() (string, error) {
 	}
 	poolsJs = poolsJs[:len(poolsJs)-1]
 
+
+	videoUrlId, err := c.Single("SELECT video_url_id FROM " + c.MyPrefix + "my_table").String()
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+
 	saveAndGotoStep := strings.Replace(c.Lang["save_and_goto_step"], "[num]", "8", -1)
 	upgradeMenu := utils.MakeUpgradeMenu(6)
 
@@ -183,6 +190,7 @@ func (c *Controller) Upgrade6() (string, error) {
 		NodePrivateKey:  nodePrivateKey,
 		Pools:           template.JS(poolsJs),
 		UserId:          c.SessUserId,
+		VideoUrlId: videoUrlId,
 		Mobile:          utils.Mobile()})
 	if err != nil {
 		return "", utils.ErrInfo(err)
