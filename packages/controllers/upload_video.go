@@ -119,6 +119,5 @@ func (c *Controller) UploadVideo() (string, error) {
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
-
-	return utils.JsonAnswer("success", "success").String(), nil
+	return utils.JsonAnswer(string(utils.DSha256(binaryVideo)), "success").String(), nil
 }

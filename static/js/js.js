@@ -55,6 +55,7 @@ function send_video (file_id, progress, type, user_id) {
                     } else {
                         $('#video').html('<video class="video-js vjs-default-skin videosize" controls preload="none" data-setup="{}"><source src="public/'+user_id+'_user_video.mp4?r='+Math.floor((Math.random() * 99999999) + 1)+'" type="video/mp4" /></video>');
                     }
+                    $('#video_hash').val(data.success);
                 }
             }
         });

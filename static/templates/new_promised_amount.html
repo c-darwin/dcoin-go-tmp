@@ -51,6 +51,25 @@
 			else {
 				video_type = 'youtube';
 			}
+			{{if eq .Mode "pool"}}
+			if (video_url_id == 'null') {
+				$('#add_promised_amount').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+				$('#add_promised_amount').prop('disabled', true);
+				$('#errors').html('<div class="alert alert-info alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>Sending data to the pool</div>');
+				$("#for-signature").val($('#video_hash').val());
+				doSign("sign");
+				$.post( 'ajax?controllerName=SendPromisedAmountToPool', { 'filesSign' : $('#signature1').val(), 'currencyId' : $('#currency_id').val() },
+						function (data) {
+							$('#add_promised_amount').prop('disabled', false);
+							$('#add_promised_amount').html('Send');
+							if (data.success == "1") {
+								$('#errors').html('<div class="alert alert-info alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>Complete</div>');
+							} else {
+								$('#errors').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
+							}
+						}, "JSON").fail(function() { $('#add_promised_amount').prop('disabled', false); $('#add_promised_amount').html('Send'); });;
+			}
+			{{end}}
 
 			var ps_id;
 			for (i = 1; i < 6; i++) {
@@ -119,11 +138,11 @@
 			//$("#source_mp4").attr('src', 'public/promised_amount_'+currency_id+'.mp4');
 		})
 
-		$('#video_webm_ogg').change(function () {
+		/*$('#video_webm_ogg').change(function () {
 			send_video('video_webm_ogg', 'video_webm_ogg_progress', 'promised_amount-'+currency_id, {{.UserId}});
 			//$("#source_webm").attr('src', 'public/promised_amount_'+currency_id+'.webm');
 			//$("#source_ogg").attr('src', 'public/promised_amount_'+currency_id+'.ogg');
-		})
+		})*/
 
 
 		delete window['YT'];
@@ -401,6 +420,8 @@
 		<div id="errors"></div>
 		<button class="btn" id="add_promised_amount">{{.Lang.send_to_net}}</button> {{if eq .IncNavigate "miningMenu"}} <button  class="btn" id="skip">{{.Lang.skip}}</button>{{end}}<br><br>
 
+
+		<input type="hidden" id="video_hash">
 	</div>
 
 	{{template "signatures".}}

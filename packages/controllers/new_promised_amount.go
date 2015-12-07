@@ -4,6 +4,8 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"strings"
 	"time"
+	"net"
+	"fmt"
 )
 
 type newPromisedAmountPage struct {
@@ -27,6 +29,7 @@ type newPromisedAmountPage struct {
 	PaymentSystems     map[string]string
 	CountPs            []int
 	Mobile          bool
+	Mode string
 	IncNavigate string
 }
 
@@ -84,6 +87,23 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 
 	countPs := []int{1, 2, 3, 4, 5}
 
+
+	tcpHostPort, err := c.Single(`SELECT tcp_host from miners_data WHERE user_id = ?`, c.SessUserId).String()
+	tcpHost, _, _ := net.SplitHostPort(tcpHostPort)
+	nodeIp, err := net.ResolveIPAddr("ip4", tcpHost)
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	myIp, err := utils.GetHttpTextAnswer("http://api.ipify.org")
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	mode := "normal"
+	if myIp != nodeIp.String() {
+		mode = "pool"
+	}
+	fmt.Println(nodeIp.String(), myIp)
+
 	TemplateStr, err := makeTemplate("new_promised_amount", "newPromisedAmount", &newPromisedAmountPage{
 		Alert:              c.Alert,
 		Lang:               c.Lang,
@@ -104,6 +124,7 @@ func (c *Controller) NewPromisedAmount() (string, error) {
 		LimitsText:         limitsText,
 		PaymentSystems:     paymentSystems,
 		Mobile:          utils.Mobile(),
+		Mode: mode,
 		CountPs:            countPs})
 	if err != nil {
 		return "", utils.ErrInfo(err)
