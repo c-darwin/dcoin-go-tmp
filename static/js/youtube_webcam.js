@@ -31,11 +31,14 @@ function onUploadSuccess(event) {
         events: {}
     });
 
+    $("#video_url_id").val(event.data.videoId);
     $("#refresh_youtube_div").css("display", "block");
 
-    $.post('ajax?controllerName=saveVideo', {'video_url' : 'youtu.be/'+event.data.videoId },
-        function(data) {
-        }, "json");
+    if (ytType!="promised_amount") {
+        $.post('ajax?controllerName=saveVideo', {'video_url': 'youtu.be/' + event.data.videoId},
+            function (data) {
+            }, "json");
+    }
 }
 
 // 5. This function is called when a video has been successfully processed.

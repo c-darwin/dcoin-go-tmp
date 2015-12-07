@@ -21,10 +21,13 @@
 	var video_url_id = '';
 	var video_type = '';
 	var payment_systems_ids = '';
+	var ytType = 'promised_amount';
 
 	$('#add_promised_amount').bind('click', function () {
 
 		console.log(video_url_id);
+		video_url_id = $("#video_url_id").val();
+
 		if (video_url_id=='') {
 			if ($("#video_url").val()) {
 				var re = /watch\?v=([0-9A-Za-z_-]+)/i;
@@ -155,7 +158,7 @@
 		})*/
 
 
-		delete window['YT'];
+		/*delete window['YT'];
 		delete window['YTConfig'];
 
 		var YT = {loading: 0,loaded: 0};
@@ -201,7 +204,9 @@
 		function onProcessingComplete(event) {
 			console.log("onProcessingComplete", event);
 
-		}
+		}*/
+
+
 		$( "#from_webcam_show" ).click(function() {
 			$("#from_webcam").css("display", "block");
 			$("#from_file").css("display", "none");
@@ -438,6 +443,7 @@
 
 
 		<input type="hidden" id="video_hash">
+		<input type="hidden" id="video_url_id">
 	</div>
 
 	{{template "signatures".}}
