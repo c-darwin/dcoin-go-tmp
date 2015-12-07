@@ -27,10 +27,10 @@ func KillPid(pid string) error {
 	defer file.Close()
 	file.WriteString("1")
 	*/
-	err := exec.Command("taskkill","/pid", pid).Start()
+	/*err := exec.Command("taskkill","/pid", pid).Start()
 	if err!=nil {
 		return err
-	}
+	}*/
 	rez, err := exec.Command("tasklist","/fi", "PID eq "+pid).Output()
 	if err!=nil {
 		return err
