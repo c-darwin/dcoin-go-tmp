@@ -51,6 +51,19 @@
 			else {
 				video_type = 'youtube';
 			}
+
+
+			var ps_id;
+			for (i = 1; i < 6; i++) {
+				ps_id = $('#ps' + i).val();
+				if (ps_id > 0) {
+					payment_systems_ids = payment_systems_ids + ps_id + ',';
+				}
+			}
+			if (payment_systems_ids.length > 1)
+				payment_systems_ids = payment_systems_ids.substr(0, payment_systems_ids.length - 1);
+			else
+				payment_systems_ids = '0';
 			{{if eq .Mode "pool"}}
 			if (video_url_id == 'null') {
 				$('#add_promised_amount').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
@@ -64,30 +77,23 @@
 							$('#add_promised_amount').html('Send');
 							if (data.success == "1") {
 								$('#errors').html('<div class="alert alert-info alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>Complete</div>');
+								{{if .ShowSignData}}$("#add").css("display", "none"); $("#sign").css("display", "block");{{end}}
+
+								$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
+								doSign();
+								{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
 							} else {
 								$('#errors').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
 							}
 						}, "JSON").fail(function() { $('#add_promised_amount').prop('disabled', false); $('#add_promised_amount').html('Send'); });;
 			}
-			{{end}}
-
-			var ps_id;
-			for (i = 1; i < 6; i++) {
-				ps_id = $('#ps' + i).val();
-				if (ps_id > 0) {
-					payment_systems_ids = payment_systems_ids + ps_id + ',';
-				}
-			}
-			if (payment_systems_ids.length > 1)
-				payment_systems_ids = payment_systems_ids.substr(0, payment_systems_ids.length - 1);
-			else
-				payment_systems_ids = '0';
-
+			{{else}}
 			{{if .ShowSignData}}$("#add").css("display", "none"); $("#sign").css("display", "block");{{end}}
 
 			$("#for-signature").val('{{.TxTypeId}},{{.TimeNow}},{{.UserId}},' + $("#currency_id").val() + ',' + $("#amount").val() + ',' + video_type + ',' + video_url_id + ',' + payment_systems_ids);
 			doSign();
 			{{if not .ShowSignData}}$("#send_to_net").trigger("click");{{end}}
+			{{end}}
 			}
 
 		});
