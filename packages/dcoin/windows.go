@@ -37,6 +37,9 @@ func KillPid(pid string) error {
 	}
 	if string(rez) == "" {
 		return fmt.Errorf("null")
+	} else {
+		log.Debug("%rez s", string(rez))
+		fmt.Println("rez", string(rez))
 	}
 	//fmt.Printf("taskkill /pid %s: %s\n", pid, rez)
 	return nil

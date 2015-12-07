@@ -109,9 +109,10 @@ func Start(dir string) {
 			err = KillPid(pidMap["pid"])
 			if nil != err {
 				fmt.Println(err)
-				log.Error("%v", utils.ErrInfo(err))
+				log.Error("KillPid %v", utils.ErrInfo(err))
 			}
 			if fmt.Sprintf("%s", err) != "null" {
+				fmt.Println(fmt.Sprintf("%s", err))
 				// даем 15 сек, чтобы завершиться предыдущему процессу
 				for i := 0; i<15; i++ {
 					log.Debug("waiting killer %d", i)
