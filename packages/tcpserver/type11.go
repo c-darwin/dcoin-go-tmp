@@ -84,8 +84,9 @@ func (t *TcpServer) Type11() {
 			_, err = t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
-		forSign = forSign[:len(forSign)-1]
-
+		if len(files) == 3 {
+			forSign = forSign[:len(forSign)-1]
+		}
 		// проверим подпись
 		publicKey, err := t.GetUserPublicKey(userId)
 		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(filesSign), true)
