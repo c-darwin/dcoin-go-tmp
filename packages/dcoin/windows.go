@@ -9,6 +9,7 @@ import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"os/exec"
 	"fmt"
+	"regexp"
 )
 
 func KillPid(pid string) error {
@@ -40,6 +41,11 @@ func KillPid(pid string) error {
 	} else {
 		log.Debug("%rez s", string(rez))
 		fmt.Println("rez", string(rez))
+		if ok, _ := regexp.MatchString(`(?i)PID`, string(rez)); !ok {
+			return fmt.Errorf("null")
+		} else {
+			return nil
+		}
 	}
 	//fmt.Printf("taskkill /pid %s: %s\n", pid, rez)
 	return nil
