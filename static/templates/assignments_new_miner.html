@@ -346,7 +346,7 @@
 		{{if ne .UserInfo.video_url_id "null"}}
 			<iframe width="320" height="240" src="http://www.youtube.com/embed/{{.UserInfo.video_url_id}}" frameborder="0" allowfullscreen></iframe>
 		{{else}}
-			<video class="video-js vjs-default-skin" controls preload="none" width="320" height="240" data-setup="{}"><source src="{{.UserInfo.host}}public/{{.UserInfo.user_id}}_user_video.mp4" type="video/mp4" /></video>
+			<video class="video-js vjs-default-skin" controls preload="none" width="320" height="240" data-setup="{}"><source src="{{.UserInfo.http_host}}public/{{.UserInfo.user_id}}_user_video.mp4" type="video/mp4" /></video>
 		{{end}}
 	</div>
 
