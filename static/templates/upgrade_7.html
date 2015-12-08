@@ -17,6 +17,9 @@
 
 	$('#send_to_net').bind('click', function () {
 
+		$('#send_to_net').html('<img src="/static/img/squares.gif" style="width:20px; margin:0px">');
+		$('#send_to_net').prop('disabled', true);
+
 		doSign();
 
 		if ($('#agree').is(':checked')) {
@@ -41,6 +44,10 @@
 				'signature2': $('#signature2').val(),
 				'signature3': $('#signature3').val()
 			}, function (data) {
+
+				$('#send_to_net').prop('disabled', false);
+				$('#send_to_net').html('Send');
+
 				if (data.error != "null")
 					var my_alert = '{{.Lang.sent_to_the_net}}';
 				else

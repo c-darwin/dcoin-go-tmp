@@ -44,7 +44,6 @@ func (t *TcpServer) Type12() {
 		log.Debug("inPool %d", inPool)
 		filesSign := utils.BytesShift(&binaryData, utils.DecodeLength(&binaryData))
 		log.Debug("filesSign %x", filesSign)
-		forSign := ""
 		size := utils.DecodeLength(&binaryData)
 		log.Debug("size %d", size)
 		data := utils.BytesShift(&binaryData, size)
@@ -52,7 +51,7 @@ func (t *TcpServer) Type12() {
 		fileType := utils.BinToDec(utils.BytesShift(&data, 1))
 		log.Debug("fileType %d", fileType)
 		fileName := utils.Int64ToStr(userId) + "_promised_amount_"+utils.Int64ToStr(currencyId)+".mp4"
-        forSign = forSign + string(utils.DSha256((data))) + ","
+        forSign := string(utils.DSha256((data)))
 		log.Debug("forSign %s", forSign)
 		err = ioutil.WriteFile(os.TempDir()+"/"+fileName, data, 0644)
 		if err != nil {
@@ -65,8 +64,6 @@ func (t *TcpServer) Type12() {
 			_, err = t.Conn.Write(utils.DecToBin(0, 1))
 			return
 		}
-		forSign = forSign[:len(forSign)-1]
-
 		// проверим подпись
 		publicKey, err := t.GetUserPublicKey(userId)
 		resultCheckSign, err := utils.CheckSign([][]byte{[]byte(publicKey)}, forSign, utils.HexToBin(filesSign), true)

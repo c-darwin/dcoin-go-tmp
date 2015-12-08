@@ -152,9 +152,10 @@ BEGIN:
 				log.Info("%v", "faceHash", faceHash)
 
 				// проверяем хэш. Если сходится, то голосуем за, если нет - против и размер не должен быть более 200 Kb.
-				if profileHash == row_face_hash && faceHash == row_profile_hash && len(profileFile) < 204800 && len(faceFile) < 204800 {
+				if profileHash == row_profile_hash && faceHash == row_face_hash && len(profileFile) < 204800 && len(faceFile) < 204800 {
 					vote = 1
 				} else {
+					log.Error("%s %s %s %s %d %d", profileHash, row_face_hash, faceHash, row_profile_hash, len(profileFile), len(faceFile))
 					vote = 0 // если хэш не сходится, то удаляем только что скаченное фото
 					os.Remove(profilePath)
 					os.Remove(facePath)
