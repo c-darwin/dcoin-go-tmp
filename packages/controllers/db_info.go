@@ -72,7 +72,7 @@ func (c *Controller) DbInfo() (string, error) {
 	}
 
 	// проверенные транзакции
-	allTransactions, err := c.GetAll("SELECT hex(hash) as hex_hash, *  FROM transactions", 100);
+allTransactions, err := c.GetAll("SELECT hex(hash) as hex_hash, verified, used, high_rate, for_self_use, type, user_id, third_var, counter, sent   FROM transactions", 100);
 	if err != nil {
 		return "", utils.ErrInfo(err)
 	}
