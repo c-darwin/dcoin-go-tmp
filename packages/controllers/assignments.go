@@ -198,7 +198,7 @@ func (c *Controller) Assignments() (string, error) {
 							version IN (`+addSqlCompatibility+`) AND
 				             faces.status = 'used' AND
 				             miners_data.user_id != ?
-				LIMIT 0, 100
+				LIMIT 100
 				`), userInfo["user_id"])
 		if err != nil {
 			return "", utils.ErrInfo(err)
