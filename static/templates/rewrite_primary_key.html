@@ -17,14 +17,6 @@
 			pass = CryptoJS.enc.Latin1.parse(hex_md5(pass));
 			var decrypted = CryptoJS.AES.decrypt(cipherParams, pass, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Utf8.parse(iv), padding: CryptoJS.pad.Iso10126 });
 			decrypt_PEM = hex2a(decrypted.toString());
-
-			/*
-			cipherParams = CryptoJS.lib.CipherParams.create({
-				ciphertext: CryptoJS.enc.Base64.parse((key.replace(/\n|\r/g, "")))
-			});
-			key = CryptoJS.enc.Latin1.parse(hex_md5(pass))
-			var decrypted = CryptoJS.AES.decrypt(cipherParams, key, {mode: CryptoJS.mode.CBC, iv: CryptoJS.enc.Base64.parse("AAAAAAAAAAAAAAAAAAAAAA=="), padding: CryptoJS.pad.NoPadding });
-			var decrypt_PEM = hex2a(decrypted.toString());*/
 		}
 		else
 			var decrypt_PEM = key;
@@ -38,7 +30,7 @@
 			var a = rsa.readPrivateKeyFromPEMString(decrypt_PEM);
 			var modulus = a[1];
 			var exp = a[2];
-			$.post( 'ajax?controllerName=rewritePrimaryKey', {
+			$.post( 'ajax?controllerName=rewritePrimaryKeySave', {
 				'n' : modulus,
 				'e': exp
 			}, function (data) {
@@ -46,7 +38,7 @@
 					$('#alert-result').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.error+'</div>');
 				else
 					$('#alert-result').html('<div class="alert alert-success alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>'+data.success+'</div>');
-			}, 'json' );
+			}, 'JSON' );
 		}
 	} );
 

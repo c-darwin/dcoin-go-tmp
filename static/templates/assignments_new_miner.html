@@ -281,9 +281,9 @@
 			main_area : "face",
 			type : "face",
 			line_color : "#593AE0",
-		{{if .UserInfo.face_coords}}user_coords: {{.UserInfo.face_coords}},{{end}}
+		{{if .UserInfo.face_coords}}user_coords: {{js .UserInfo.face_coords}},{{end}}
 		example_coords : [
-			{{.ExamplePoints.face}}
+			{{js .ExamplePoints.face}}
 		]
 		});
 
@@ -294,9 +294,9 @@
 			main_area : "profile",
 			type : "profile",
 			line_color : "#593AE0",
-		{{if .UserInfo.profile_coords}}user_coords: {{.UserInfo.profile_coords}},{{end}}
+		{{if .UserInfo.profile_coords}}user_coords: {{js .UserInfo.profile_coords}},{{end}}
 		example_coords : [
-				{{.ExamplePoints.profile}}
+				{{js .ExamplePoints.profile}}
 		]
 		});
 

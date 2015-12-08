@@ -89,7 +89,8 @@ func (c *Controller) CheckNode() (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if ok, _ := regexp.MatchString(`(?i)(my_|_my|config|_refs)`, table); ok {
+			if ok, _ := regexp.MatchString(`^[0-9_]*my_|^e_|^_my|^config`, table); ok {
+			//if ok, _ := regexp.MatchString(`(?i)(my_|_my|config|_refs)`, table); ok {
 				continue
 			}
 			sqlWhere := ""

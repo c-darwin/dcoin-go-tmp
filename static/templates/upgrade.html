@@ -18,7 +18,7 @@
 	<div class="alert alert-info">{{noescape .Lang.upgrade_status_pending}}</div>
 {{end}}
 {{if eq .Result "bad_photos_hash"}}
-	<div class="alert alert-danger">{{.Lang.bad_photo}}{{.Host}}/user_face.jpg and {{.Host}}/user_profile.jpg<br><a type='button' class='btn btn-default' href='#upgrade_resend'>{{noescape .Lang.send_repeated_request}}</a></div>
+	<div class="alert alert-danger">{{.Lang.bad_photo}}{{.Host}}/public/{{.UserId}}_user_face.jpg and {{.Host}}/public/{{.UserId}}_user_profile.jpg<br><a type='button' class='btn btn-default' href='#upgradeResend'>{{noescape .Lang.send_repeated_request}}</a></div>
 {{end}}
 {{if eq .Result "resend"}}
 	<div class="alert alert-warning">{{noescape .Lang.error_send_repeated_request}}</div>
