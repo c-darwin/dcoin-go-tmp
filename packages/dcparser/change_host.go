@@ -36,7 +36,7 @@ func (p *Parser) ChangeHostFront() error {
 	} else if p.BlockData != nil && p.BlockData.BlockId < 261209 {
 		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host"}
 	} else {
-		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host", "e_host": "http_host"}
+		verifyData = map[string]string{"http_host": "http_host", "tcp_host": "tcp_host", "e_host": "e_host"}
 	}
 	err = p.CheckInputData(verifyData)
 	if err != nil {

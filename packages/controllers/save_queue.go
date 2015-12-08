@@ -1074,7 +1074,7 @@ func (c *Controller) SaveQueue() (string, error) {
 		if !utils.CheckInputData(c.r.FormValue("tcp_host"), "tcp_host") {
 			return `incorrect tcp_host`, nil
 		}
-		if !utils.CheckInputData(c.r.FormValue("e_host"), "http_host") {
+		if !utils.CheckInputData(c.r.FormValue("e_host"), "e_host") {
 			return `incorrect e_host`, nil
 		}
 
