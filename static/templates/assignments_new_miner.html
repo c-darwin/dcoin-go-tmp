@@ -364,7 +364,7 @@
 	<label>{{.Lang.data}}</label>
 		<textarea id="for-signature" style="width:500px;" rows="4" class="form-control"></textarea><br>
 		{{range $i := .CountSignArr}}
-			<label>{{$.Lang.data}} {{if gt $i 0}}{{$i}}{{end}}</label><textarea id="signature{{$i}}" style="width:500px;" rows="4" class="form-control"></textarea>
+		<div class="form-group"><label>{{$.Lang.sign}} {{if gt $i 0}}{{$i}}{{end}}</label><textarea class="form-control" id="signature{{sum $i 1}}" style="" rows="4">-</textarea></div>
 		{{end}}
 	<br>
 	<button class="btn btn-success" id="btn-step3-back">{{.Lang.back}}</button>
