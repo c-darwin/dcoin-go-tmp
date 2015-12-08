@@ -3,6 +3,8 @@ package controllers
 import (
 	"github.com/c-darwin/dcoin-go-tmp/packages/utils"
 	"github.com/c-darwin/dcoin-go-tmp/packages/consts"
+	"encoding/json"
+	"fmt"
 )
 
 type DbInfoPage struct {
@@ -125,6 +127,37 @@ func (c *Controller) DbInfo() (string, error) {
 			blockGeneratorIsReadySleepTime = c.GetIsReadySleep(prevBlock.Level, sleepData["is_ready"])
 		}
 
+	}
+
+	// стата по нодам
+	q := ""
+	if c.ConfigIni["db_type"] == "postgresql" {
+		q = "SELECT DISTINCT ON (http_host) http_host FROM miners_data WHERE miner_id > 0 LIMIT 20"
+	} else {
+		q = "SELECT http_host FROM miners_data WHERE miner_id > 0 GROUP BY http_host LIMIT 20"
+	}
+	rows, err := c.Query(c.FormatQuery(q))
+	if err != nil {
+		return "", utils.ErrInfo(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var http_host string
+		err = rows.Scan(&http_host)
+		if err != nil {
+			return "", utils.ErrInfo(err)
+		}
+		fmt.Println(http_host)
+		jsonData, err := utils.GetHttpTextAnswer(http_host+"/ajax?controllerName=checkNode")
+		if err != nil {
+			continue
+		}
+		var jsonMap map[string]string
+		err = json.Unmarshal([]byte(jsonData), &jsonMap)
+		if err != nil {
+			continue
+		}
+		fmt.Println("jsonMap", jsonMap)
 	}
 
 	TemplateStr, err := makeTemplate("db_info", "dbInfo", &DbInfoPage{

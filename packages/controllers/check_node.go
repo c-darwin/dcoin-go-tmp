@@ -89,8 +89,7 @@ func (c *Controller) CheckNode() (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if ok, _ := regexp.MatchString(`^[0-9_]*my_|^e_|^_my|^config`, table); ok {
-			//if ok, _ := regexp.MatchString(`(?i)(my_|_my|config|_refs)`, table); ok {
+			if ok, _ := regexp.MatchString(`^[0-9_]*my_|^e_|^_my|^x_|authorization|^config|chat`, table); ok {
 				continue
 			}
 			sqlWhere := ""
@@ -132,7 +131,7 @@ func (c *Controller) CheckNode() (string, error) {
 				return "", err
 			}
 			allCounts = append(allCounts, map[string]interface{}{table: count})
-			if c.ConfigIni["db_type"] != "sqlite" {
+			/*if c.ConfigIni["db_type"] != "sqlite" {
 				hash, err := c.HashTableData(table, sqlWhere, orderBy)
 				if err != nil {
 					return "", err
@@ -141,7 +140,8 @@ func (c *Controller) CheckNode() (string, error) {
 					hash = hash[:6]
 				}
 				allCounts = append(allCounts, map[string]interface{}{"_hash_" + table: hash})
-			}
+			}*/
+			log.Debug("%v", orderBy)
 
 		}
 		log.Debug("allCounts", allCounts)

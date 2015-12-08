@@ -2686,18 +2686,6 @@ func (schema *SchemaStruct) GetSchema() {
 	s = make(Recmap)
 	s1 = make(Recmap)
 	s2 = make(Recmapi)
-	s2[0] = map[string]string{"name": "ip", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Раз в минуту удаляется"}
-	s2[1] = map[string]string{"name": "req", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Кол-во запросов от ip. "}
-	s1["fields"] = s2
-	s1["PRIMARY"] = []string{"ip"}
-	s1["comment"] = "Защита от случайного ддоса"
-	s["ddos_protection"] = s1
-	schema.S = s
-	schema.PrintSchema()
-
-	s = make(Recmap)
-	s1 = make(Recmap)
-	s2 = make(Recmapi)
 	s2[0] = map[string]string{"name": "my_block_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Параллельно с info_block пишем и сюда. Нужно при обнулении рабочих таблиц, чтобы знать до какого блока не трогаем таблы my_"}
 	s2[1] = map[string]string{"name": "local_gate_ip", "mysql": "varchar(255) NOT NULL DEFAULT ''", "sqlite": "varchar(255) NOT NULL DEFAULT ''", "postgresql": "varchar(255) NOT NULL DEFAULT ''", "comment": "Если тут не пусто, то connector будет не активным, а ip для disseminator будет браться тут. Нужно для защищенного режима"}
 	s2[2] = map[string]string{"name": "static_node_user_id", "mysql": "int(11) NOT NULL DEFAULT '0'", "sqlite": "int(11) NOT NULL DEFAULT '0'", "postgresql": "int NOT NULL DEFAULT '0'", "comment": "Все исходящие тр-ии будут подписаны публичным ключом этой ноды. Нужно для защищенного режима"}
