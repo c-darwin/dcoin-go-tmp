@@ -299,10 +299,10 @@ func (c *Controller) SaveQueue() (string, error) {
 							time
 						)
 						VALUES (
-							'miner',
+							?,
 							?,
 							?
-						)`, voteId, txTime)
+						)`, "miner", voteId, txTime)
 			if err != nil {
 				return "", utils.ErrInfo(err)
 			}
